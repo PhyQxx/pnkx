@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.px.mapper.PxArticleMapper">
+
+    <!--获取文章列表-->
+    <select id="getArticleList" resultType="map" parameterType="map">
+        SELECT
+            a.id,
+            a.version,
+            a.create_by createBy,
+            nick_name nickName,
+            a.create_time createTime,
+            title,
+            content,
+            rich_text richText,
+            type typeCode,
+            dict_label typeName,
+            (SELECT count(*) from px_leave_message where article_id = a.id) leaveMessageNumber
+        FROM
+        px_article a left join sys_user u on a.create_by = u.user_id
+        left join sys_dict_data d on d.dict_value = a.type and d.dict_type = 'px_article_type'
+            where 1 = 1
+        <if test="type != '' and type != null">
+            and type = #{type}
+        </if>
+        <if test="articleId != '' and articleId != null">
+            and a.id = #{articleId}
+        </if>
+        order by a.create_time desc
+    </select>
+
+    <!--获取文章分类分组数据-->
+    <select id="getArticleTypeNumber" resultType="map">
+        SELECT
+            d.dict_value code,
+            d.dict_label name,
+            count( * ) number
+            from px_article a
+                LEFT JOIN sys_dict_data d ON a.type = d.dict_value
+                AND d.dict_type = 'px_article_type'
+        GROUP BY
+            d.dict_label,
+            d.dict_value
+    </select>
+</mapper>
