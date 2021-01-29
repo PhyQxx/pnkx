@@ -20,24 +20,6 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建人id" prop="createBy">
-        <el-input
-          v-model="queryParams.createBy"
-          placeholder="请输入创建人id"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-input
-          v-model="queryParams.createTime"
-          placeholder="请输入创建时间"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -52,7 +34,6 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['px:article:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -63,7 +44,6 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['px:article:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -74,7 +54,6 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['px:article:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -84,7 +63,6 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['px:article:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -97,10 +75,10 @@
           <span>{{scope.$index + 1}}</span>
         </template>
       </el-table-column>
-      <el-table-column label="文章标题" align="center" prop="title" />
+      <el-table-column class-name="article-title" label="文章标题" align="center" prop="title" />
       <el-table-column label="文章内容" align="center" prop="richText" />
       <el-table-column label="文章分类" align="center" prop="type" :formatter="typeFormat" />
-      <el-table-column label="创建人" align="center" prop="createBy" />
+      <el-table-column label="创建人" align="center" prop="nickName" />
       <el-table-column label="创建时间" align="center" prop="createTime" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -110,14 +88,12 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['px:article:edit']"
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['px:article:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -131,34 +107,6 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改文章对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="文章标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入文章标题" />
-        </el-form-item>
-        <el-form-item label="文章内容" prop="richText">
-          <el-input v-model="form.richText" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="文章分类" prop="type">
-          <el-select v-model="form.type" placeholder="请选择文章分类">
-            <el-option
-              v-for="dict in typeOptions"
-              :key="dict.dictValue"
-              :label="dict.dictLabel"
-              :value="dict.dictValue"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -228,6 +176,7 @@
       getList() {
         this.loading = true;
         listArticle(this.queryParams).then(response => {
+            console.log('文章列表', response);
           this.articleList = response.rows;
           this.total = response.total;
           this.loading = false;
@@ -277,39 +226,20 @@
       },
       /** 新增按钮操作 */
       handleAdd() {
-        this.reset();
-        this.open = true;
-        this.title = "添加文章";
+          this.$router.push({name: '/articleedit'})
       },
       /** 修改按钮操作 */
       handleUpdate(row) {
-        this.reset();
-        const id = row.id || this.ids
-        getArticle(id).then(response => {
-          this.form = response.data;
-          this.open = true;
-          this.title = "修改文章";
-        });
+        this.$router.push({
+                name: '/articleedit',
+                params: {
+                    id: row.id
+                }
+            })
       },
       /** 提交按钮 */
       submitForm() {
-        this.$refs["form"].validate(valid => {
-          if (valid) {
-            if (this.form.id != null) {
-              updateArticle(this.form).then(response => {
-                this.msgSuccess("修改成功");
-                this.open = false;
-                this.getList();
-              });
-            } else {
-              addArticle(this.form).then(response => {
-                this.msgSuccess("新增成功");
-                this.open = false;
-                this.getList();
-              });
-            }
-          }
-        });
+
       },
       /** 删除按钮操作 */
       handleDelete(row) {

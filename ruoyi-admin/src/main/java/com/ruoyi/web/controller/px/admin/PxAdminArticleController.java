@@ -1,8 +1,8 @@
-package com.ruoyi.web.controller.admin;
+package com.ruoyi.web.controller.px.admin;
 
 import java.util.List;
 
-import com.ruoyi.px.domain.PxArticle;
+import com.ruoyi.domain.po.PxArticle;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +37,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 查询文章列表
      */
-    @PreAuthorize("@ss.hasPermi('px:article:list')")
     @GetMapping("/list")
     public TableDataInfo list(PxArticle pxArticle)
     {
@@ -49,7 +48,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 导出文章列表
      */
-    @PreAuthorize("@ss.hasPermi('px:article:export')")
     @Log(title = "文章", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(PxArticle pxArticle)
@@ -62,7 +60,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 获取文章详细信息
      */
-    @PreAuthorize("@ss.hasPermi('px:article:query')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") String id)
     {
@@ -72,7 +69,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 新增文章
      */
-    @PreAuthorize("@ss.hasPermi('px:article:add')")
     @Log(title = "文章", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody PxArticle pxArticle)
@@ -83,7 +79,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 修改文章
      */
-    @PreAuthorize("@ss.hasPermi('px:article:edit')")
     @Log(title = "文章", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody PxArticle pxArticle)
@@ -94,7 +89,6 @@ public class PxAdminArticleController extends BaseController
     /**
      * 删除文章
      */
-    @PreAuthorize("@ss.hasPermi('px:article:remove')")
     @Log(title = "文章", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)

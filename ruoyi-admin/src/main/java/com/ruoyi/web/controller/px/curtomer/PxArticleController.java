@@ -1,4 +1,4 @@
-package com.ruoyi.web.controller.px;
+package com.ruoyi.web.controller.px.curtomer;
 
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.px.service.impl.PxArticleServiceImpl;
@@ -42,5 +42,25 @@ public class PxArticleController {
     @RequestMapping("/getArticleTypeNumber")
     public AjaxResult getArticleTypeNumber(@RequestBody Map<String, Object> params) {
         return AjaxResult.success("获取文章列表成功", pxArticleService.getArticleTypeNumber(params));
+    }
+
+    /**
+     * 根据id获取文章留言列表数据
+     * @param params 参数
+     * @return 文章留言列表数据
+     */
+    @RequestMapping("/getLeaveMessageByArticleId")
+    public AjaxResult getLeaveMessageByArticleId(@RequestBody Map<String, Object> params) {
+        return AjaxResult.success("获取文章留言列表成功", pxArticleService.getLeaveMessageByArticleId(params));
+    }
+
+    /**
+     * 留言
+     * @param params 参数
+     * @return 留言结果
+     */
+    @RequestMapping("/addMessage")
+    public AjaxResult addMessage(@RequestBody Map<String, Object> params) {
+        return AjaxResult.success("留言成功", pxArticleService.addMessage(params));
     }
 }

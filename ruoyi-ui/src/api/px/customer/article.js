@@ -20,3 +20,25 @@ export function getArticleTypeNumber(params) {
         data: params
     })
 }
+
+/**
+ * 根据文章ID获取留言列表
+ */
+export function getLeaveMessageByArticleId(params) {
+    return request({
+        url: '/px-article/getLeaveMessageByArticleId',
+        method: 'post',
+        data: params
+    })
+}
+
+/**
+ * 留言
+ */
+export function addMessage(params) {
+    return request({
+        url: '/px-article/addMessage',
+        method: 'post',
+        data: params
+    })
+}

@@ -1,6 +1,6 @@
 package com.ruoyi.admin.service;
 
-import com.ruoyi.px.domain.PxArticle;
+import com.ruoyi.domain.po.PxArticle;
 
 import java.util.List;
 

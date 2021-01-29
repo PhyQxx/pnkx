@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.admin.mapper.PxAdminArticleMapper">
 
-    <resultMap type="PxArticle" id="PxArticleResult">
+    <resultMap type="PxArticleVo" id="PxArticleResult">
         <result property="id"    column="id"    />
         <result property="title"    column="title"    />
         <result property="content"    column="content"    />
@@ -12,6 +12,7 @@
         <result property="type"    column="type"    />
         <result property="version"    column="version"    />
         <result property="createBy"    column="create_by"    />
+        <result property="nickName"    column="nick_name"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
@@ -19,7 +20,21 @@
     </resultMap>
 
     <sql id="selectPxArticleVo">
-        select id, title, content, rich_text, type, version, create_by, create_time, update_by, update_time, remark from px_article
+        SELECT
+            a.id,
+            a.title,
+            a.content,
+            a.rich_text,
+            a.type,
+            a.version,
+            u.nick_name,
+            a.create_time,
+            a.update_by,
+            a.update_time,
+            a.remark
+        FROM
+            px_article a
+                LEFT JOIN sys_user u on a.create_by = u.user_id
     </sql>
 
     <select id="selectPxArticleList" parameterType="PxArticle" resultMap="PxArticleResult">
@@ -31,6 +46,7 @@
             <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
             <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
         </where>
+        order by create_time desc
     </select>
 
     <select id="selectPxArticleById" parameterType="String" resultMap="PxArticleResult">

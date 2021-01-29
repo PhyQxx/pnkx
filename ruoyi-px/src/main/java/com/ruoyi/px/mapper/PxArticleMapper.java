@@ -29,4 +29,18 @@ public interface PxArticleMapper {
      * @return 文章分类分组数据
      */
     List<Map<String, Object>> getArticleTypeNumber(Map<String, Object> params);
+
+    /**
+     * 根据id获取文章留言列表数据
+     * @param params 参数
+     * @return 文章留言列表数据
+     */
+    List<Map<String, Object>> getLeaveMessageByArticleId(Map<String, Object> params);
+
+    /**
+     * 留言
+     * @param params 参数
+     * @return 留言结果
+     */
+    Integer addMessage(Map<String, Object> params);
 }

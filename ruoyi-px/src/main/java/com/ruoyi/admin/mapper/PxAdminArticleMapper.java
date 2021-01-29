@@ -1,7 +1,7 @@
 package com.ruoyi.admin.mapper;
 
 import java.util.List;
-import com.ruoyi.px.domain.PxArticle;
+import com.ruoyi.domain.po.PxArticle;
 
 /**
  * 文章Mapper接口

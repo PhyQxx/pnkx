@@ -1,4 +1,4 @@
-package com.ruoyi.px.domain;
+package com.ruoyi.domain.po;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -26,7 +26,7 @@ public class PxArticle extends BaseEntity
     private String content;
 
     /** 文章内容（富文本形式） */
-    @Excel(name = "文章内容", readConverterExp = "富=文本形式")
+    @Excel(name = "文章内容", readConverterExp = "富文本形式")
     private String richText;
 
     /** 文章分类 */

@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="page" v-loading="loading">
         <div class="top">
             <div class="label">位置：</div>
             <el-breadcrumb separator-class="el-icon-arrow-right">
@@ -50,9 +50,7 @@
                             </div>
                             <div class="message-right">
                                 <div class="message-right-top">
-                                    <div class="leave-message-content">
-                                        {{leaveMessage.content}}
-                                    </div>
+                                    <div class="leave-message-content" v-html="leaveMessage.content"></div>
                                     <div class="floor">{{index+1}}F</div>
                                 </div>
                                 <div class="leave-message-time">
@@ -61,7 +59,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="message-board">
+                    <div v-loading="messageLoading" class="message-board">
                         <div class="message-board-left">
                             <div class="message-board-left-top">
                                 <div class="message-logo"></div>
@@ -79,7 +77,31 @@
                         </div>
                         <div class="message-board-right">
                             <div class="your-header">
-                                <input type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
+                                <el-image
+                                    class="header-picture"
+                                    :src="messageForm.authorHeader"
+                                    fit="scale-down">
+                                    <div slot="error" class="image-slot">
+                                        请上传头像
+                                    </div>
+                                </el-image>
+                                <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"></i>
+                                <input v-if="!messageForm.authorHeader" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
+                            </div>
+                            <div class="customer-name">
+                                <div class="label">您的姓名：</div>
+                                <div class="name">
+                                    <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"></el-input>
+                                </div>
+                            </div>
+                            <div class="customer-mail">
+                                <div class="label">您的邮箱： </div>
+                                <div class="name">
+                                    <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"></el-input>
+                                </div>
+                            </div>
+                            <div class="button">
+                                <el-button type="primary" @click="addMessage">提交</el-button>
                             </div>
                         </div>
                     </div>
@@ -110,11 +132,14 @@
 </template>
 
 <script>
-import { getArticleList, getArticleTypeNumber } from '@/api/px/customer/article.js';
-import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
+import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMessage } from '@/api/px/customer/article.js';
     export default {
         data() {
             return {
+                //留言板遮罩
+                messageLoading: true,
+                //遮罩层
+                loading: true,
                 //文章信息
                 article: {},
                 //留言列表
@@ -127,18 +152,75 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
                 textNumber: 500,
                 //输入标志
                 inputFlag: true,
+                //留言表单
+                messageForm: {
+                    //文章ID
+                    articleId: '',
+                    //留言内容
+                    content: '',
+                    //游客姓名
+                    authorName: '',
+                    //游客邮箱
+                    authorMailbox: '',
+                    //头像的URL
+                    authorHeader: '',
+                }
             }
         },
         mounted () {
-            this.getarticleById();
+            this.getArticleById();
             this.getLeaveMessage();
             this.getArticleTypeNumber();
         },
         methods: {
+            /**
+             * 新增留言
+             */
+            addMessage() {
+                this.messageForm.content = this.$refs.leaveMessage.innerHTML;
+                if (this.messageForm.content === '') {
+                    this.$message.warning('请输入留言内容')
+                } else if (this.messageForm.authorHeader === '') {
+                    this.$message.warning('请上传头像')
+                } else if (this.messageForm.authorName === '') {
+                    this.$message.warning('请留下您的姓名')
+                } else if (this.messageForm.authorMailbox === 'authorMailbox') {
+                    this.$message.warning('请留下您的邮箱')
+                } else {
+                    this.messageForm.articleId = this.$route.params.articleId;
+                    console.log(this.messageForm);
+                    addMessage(this.messageForm).then(res => {
+                        console.log('留言结果', res);
+                        if (res.data === 1) {
+                            this.$message.success('留言成功');
+                            this.getLeaveMessage();
+                            this.messageForm = {
+                                //文章ID
+                                articleId: '',
+                                    //留言内容
+                                    content: '',
+                                    //游客姓名
+                                    authorName: '',
+                                    //游客邮箱
+                                    authorMailbox: '',
+                                    //头像的URL
+                                    authorHeader: '',
+                            };
+                            this.$refs.leaveMessage.innerHTML = '';
+                        }
+                    })
+                }
+            },
+            /**
+             * 删除头像
+             */
+            deleteHeader() {
+                this.messageForm.authorHeader = '';
+            },
             blobToDataURL(blob,cb) {
                 let reader = new FileReader();
                 reader.onload = function (evt) {
-                let base64 = evt.target.result
+                let base64 = evt.target.result;
                 cb(base64)
                 };
                 reader.readAsDataURL(blob);
@@ -150,7 +232,7 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
                 if(e.target.files[0]){
                     let url = URL.createObjectURL(e.target.files[0]);
                     let base64 = this.blobToDataURL(e.target.files[0], (base64Url) => {
-                        console.log(base64Url)
+                        this.messageForm.authorHeader = base64Url;
                     })
                 }
             },
@@ -166,19 +248,21 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
             /**
              * 根据ID获取文章
              */
-            getarticleById() {
+            getArticleById() {
                 getArticleList({articleId: this.$route.params.articleId}).then(res => {
                     console.log('文章', res);
                     this.article = res.data[0];
+                    this.loading = false;
                 })
             },
             /**
              * 获取留言
              */
             getLeaveMessage() {
-                getLeaveMessageByArticleId({article_id: this.$route.params.articleId}).then(res => {
+                getLeaveMessageByArticleId({articleId: this.$route.params.articleId, messageBoard: '0'}).then(res => {
                     console.log('留言列表', res);
                     this.leaveMessageList = res.data;
+                    this.messageLoading = false;
                 })
             },
             /**
@@ -277,6 +361,10 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
+                                img{
+                                    width: 100%;
+                                    height: 100%;
+                                }
                             }
                             .author-name{
                                 color: #999;
@@ -326,7 +414,6 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
                     }
                 }
                 .message-board{
-                    width: 100%;
                     margin: 1rem;
                     padding: 1rem;
                     border: 3px dashed #ACEBFF;
@@ -383,6 +470,56 @@ import { getLeaveMessageByArticleId } from '@/api/px/customer/leaveMessage.js';
                     }
                     .message-board-right{
                         width: 40%;
+                        display: flex;
+                        padding-left: 1rem;
+                        height: 100%;
+                        flex-flow: column;
+                        align-items: center;
+                        justify-content: space-around;
+                        .customer-name, .customer-mail{
+                            display: flex;
+                            align-items: center;
+                            .label{
+                                white-space: nowrap;
+                            }
+                        }
+                        .button{
+                            width: 6rem;
+                            .el-button{
+                                width: 100%;
+                            }
+                        }
+                        .your-header{
+                            width: 6rem;
+                            height: 6rem;
+                            border: 1px solid #999;
+                            border-radius: 5px;
+                            display: flex;
+                            flex-flow: column;
+                            align-items: center;
+                            justify-content: center;
+                            .close-icon{
+                                position: absolute;
+                                margin: -5rem -5rem 0 0;
+                                color: red;
+                            }
+                            #headerPhoto{
+                                width: 4.5rem;
+                                position: absolute;
+                            }
+                            .header-picture{
+                                width: 100%;
+                                height: 100%;
+                                padding: 0.5rem;
+                                display: flex;
+                                justify-content: center;
+                                white-space: nowrap;
+                                img{
+                                    width: 100%;
+                                    height: 100%;
+                                }
+                            }
+                        }
                     }
                 }
             }

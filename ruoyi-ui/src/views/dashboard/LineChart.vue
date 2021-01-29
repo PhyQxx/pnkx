@@ -4,7 +4,7 @@
 
 <script>
 import echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons'); // echarts theme
 import resize from './mixins/resize'
 
 export default {
@@ -61,10 +61,10 @@ export default {
       this.chart = echarts.init(this.$el, 'macarons')
       this.setOptions(this.chartData)
     },
-    setOptions({ expectedData, actualData } = {}) {
+    setOptions({ phyData, qxxData } = {}) {
       this.chart.setOption({
         xAxis: {
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
           boundaryGap: false,
           axisTick: {
             show: false
@@ -90,10 +90,10 @@ export default {
           }
         },
         legend: {
-          data: ['expected', 'actual']
+          data: ['裴大头', '秦小丑']
         },
         series: [{
-          name: 'expected', itemStyle: {
+          name: '裴大头', itemStyle: {
             normal: {
               color: '#FF005A',
               lineStyle: {
@@ -104,12 +104,12 @@ export default {
           },
           smooth: true,
           type: 'line',
-          data: expectedData,
+          data: phyData,
           animationDuration: 2800,
           animationEasing: 'cubicInOut'
         },
         {
-          name: 'actual',
+          name: '秦小丑',
           smooth: true,
           type: 'line',
           itemStyle: {
@@ -124,7 +124,7 @@ export default {
               }
             }
           },
-          data: actualData,
+          data: qxxData,
           animationDuration: 2800,
           animationEasing: 'quadraticOut'
         }]

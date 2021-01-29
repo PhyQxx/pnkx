@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="page" v-loading="loading">
         <div class="phy" v-if="this.phyArticleList.length < 1">
             <div class="no-data">暂无内容</div>
         </div>
@@ -74,6 +74,8 @@ import { getArticleList } from '@/api/px/customer/article.js';
     export default {
         data() {
             return {
+                //遮罩层
+                loading: true,
                 //phy文章列表
                 phyArticleList: [],
                 //qxx文章列表
@@ -90,7 +92,7 @@ import { getArticleList } from '@/api/px/customer/article.js';
                     params: {
                         articleId: article.id
                     }
-                })
+                });
                 console.log(this.$route);
             },
             /**
@@ -105,7 +107,8 @@ import { getArticleList } from '@/api/px/customer/article.js';
                         } else if (item.createBy === '2') {
                             this.qxxArticleList.push(item)
                         }
-                    })
+                    });
+                    this.loading = false;
                 })
             },
         },

@@ -30,18 +30,19 @@ export const constantRoutes = [
   {
     path: '/',
     name: 'index',
+    hidden: true,
     redirect:'/homepage',
     component:() => import('@/views/px/customer/index/index'),
     children: [
       {
         path: '/homepage',
         name: 'homepage',
-        component: () => import('@/views/px/customer/index/homepage/homepage')
+        component: () => import('@/views/px/customer/index/homepage/index')
       },
       {
         path: '/article',
         name: 'article',
-        component: () => import('@/views/px/customer/index/article/article')
+        component: () => import('@/views/px/customer/index/article/index')
       }
     ]
   },
@@ -78,7 +79,7 @@ export const constantRoutes = [
     children: [
       {
         path: 'index',
-        component: (resolve) => require(['@/views/index'], resolve),
+        component: (resolve) => require(['@/views/index_v1'], resolve),
         name: '首页',
         meta: { title: '首页', icon: 'dashboard', noCache: true, affix: true }
       }
@@ -140,7 +141,6 @@ export const constantRoutes = [
 ]
 
 export default new Router({
-  mode: 'history', // 去掉url中的#
-  scrollBehavior: () => ({ y: 0 }),
+  mode: 'hash', // 去掉url中的#
   routes: constantRoutes
 })

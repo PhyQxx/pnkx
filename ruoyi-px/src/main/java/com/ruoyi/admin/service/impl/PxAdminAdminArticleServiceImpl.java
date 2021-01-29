@@ -1,8 +1,12 @@
 package com.ruoyi.admin.service.impl;
 
 import java.util.List;
+
+import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.px.domain.PxArticle;
+import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.framework.web.service.TokenService;
 import org.springframework.stereotype.Service;
 import com.ruoyi.admin.mapper.PxAdminArticleMapper;
 import com.ruoyi.admin.service.IPxAdminArticleService;
@@ -20,7 +24,8 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
 {
     @Resource
     private PxAdminArticleMapper pxAdminArticleMapper;
-
+    @Resource
+    private TokenService tokenService;
     /**
      * 查询文章
      *
@@ -55,6 +60,8 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     public int insertPxArticle(PxArticle pxArticle)
     {
         pxArticle.setCreateTime(DateUtils.getNowDate());
+        LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
+        pxArticle.setCreateBy(loginUser.getUser().getUserId().toString());
         return pxAdminArticleMapper.insertPxArticle(pxArticle);
     }
 
@@ -68,6 +75,8 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     public int updatePxArticle(PxArticle pxArticle)
     {
         pxArticle.setUpdateTime(DateUtils.getNowDate());
+        LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
+        pxArticle.setUpdateBy(loginUser.getUser().getUserId().toString());
         return pxAdminArticleMapper.updatePxArticle(pxArticle);
     }
 
