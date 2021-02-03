@@ -1,6 +1,6 @@
 <template>
     <div class="message-board-page">
-        <div class="message">
+        <div v-loading="loading" class="message">
             <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
                 还没有童鞋留言，快来留言吧！
             </div>
@@ -29,7 +29,7 @@
                 </div>
             </div>
         </div>
-        <div v-loading="" class="message-board">
+        <div class="message-board">
             <div class="message-board-left">
                 <div class="message-board-left-top">
                     <div class="message-logo"></div>
@@ -86,7 +86,7 @@
         data() {
             return {
                 //留言板遮罩
-                messageLoading: true,
+                loading: true,
                 //留言列表
                 leaveMessageList: [],
                 //留言内容最大长度
@@ -121,7 +121,7 @@
                 getLeaveMessageByArticleId({messageBoard: '1'}).then(res => {
                     console.log('留言列表', res);
                     this.leaveMessageList = res.data;
-                    this.messageLoading = false;
+                    this.loading = false;
                 })
             },
             /**

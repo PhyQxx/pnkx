@@ -34,7 +34,7 @@
                     </div>
                     <div class="article-content" v-html="article.richText"></div>
                     <div :class="article.createBy === '1' ? 'phy-hr' : 'qxx-hr'"></div>
-                    <div class="message">
+                    <div v-loading="messageLoading" class="message">
                         <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
                             还没有童鞋留言，快来留言吧！
                         </div>
@@ -63,7 +63,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-loading="messageLoading" class="message-board">
+                    <div class="message-board">
                         <div class="message-board-left">
                             <div class="message-board-left-top">
                                 <div class="message-logo"></div>

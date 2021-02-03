@@ -26,7 +26,7 @@
             </el-form-item>
         </el-form>
 
-        <div class="article-list">
+        <div class="article-list" v-loading="loading">
             <div class="article-one" v-for="article in articleList" :key="article.id">
                 <i class="el-icon-cherry article-icon"></i>
                 <div class="title pointer" @click="goToArticlePage(article)">{{article.title}}</div>
