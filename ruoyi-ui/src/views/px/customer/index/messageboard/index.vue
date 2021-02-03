@@ -97,8 +97,6 @@
                 inputFlag: true,
                 //留言表单
                 messageForm: {
-                    //文章ID
-                    articleId: '',
                     //留言内容
                     content: '',
                     //游客姓名
@@ -147,8 +145,6 @@
                             this.$message.success('留言成功');
                             this.getLeaveMessage();
                             this.messageForm = {
-                                //文章ID
-                                articleId: '',
                                 //留言内容
                                 content: '',
                                 //游客姓名
