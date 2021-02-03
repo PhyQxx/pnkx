@@ -114,8 +114,9 @@
             <div class="bottom-right">
                 <div class="personal-info" :class="article.createBy === '1' ? 'phy-header-photo' : 'qxx-header-photo'">
                     <div class="personal-profile">
-                        <div class="profile">爱好广泛，喜欢CSGO，喜欢软件开发，更喜欢俺家二狗子</div>
-                        <div class="blogger-name" :class="article.createBy === '1' ? 'phy-name' : 'qxx-name'">裴浩宇</div>
+                        <div class="profile" v-if="article.createBy === '1'">爱好广泛，喜欢CSGO，喜欢软件开发，更喜欢俺家二狗子</div>
+                        <div class="profile" v-if="article.createBy === '2'">我是秦憨憨</div>
+                        <div class="blogger-name" :class="article.createBy === '1' ? 'phy-name' : 'qxx-name'">{{article.createBy === '1' ? '裴浩宇' : '秦晓雪'}}</div>
                     </div>
                 </div>
                 <div class="article-type">
