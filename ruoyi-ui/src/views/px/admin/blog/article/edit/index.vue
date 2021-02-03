@@ -96,17 +96,18 @@
                         if (this.article.id != null) {
                             updateArticle(this.article).then(response => {
                                 this.msgSuccess("修改成功");
+                                this.$router.push({name: '/articlemanager'})
                                 this.open = false;
                                 this.getList();
                             });
                         } else {
                             addArticle(this.article).then(response => {
                                 this.msgSuccess("新增成功");
+                                this.$router.push({name: '/articlemanager'})
                                 this.open = false;
                                 this.getList();
                             });
                         }
-                        this.$router.push({name: '/articlemanager'})
                     }
                 });
             },

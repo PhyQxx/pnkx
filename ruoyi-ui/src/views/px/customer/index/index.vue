@@ -2,7 +2,7 @@
     <div class="page">
         <div class="nav-box">
             <div class="nav theme-pink">
-            <div class="nav-one cursor-pointer" :class="nav.isSelected ? 'nav-selected' : ''"
+            <div class="nav-one pointer" :class="nav.isSelected ? 'nav-selected' : ''"
                                                 v-for="nav in navList"
                                                 :key="nav.name"
                                                 @click="selectNav(nav)">{{nav.name}}</div>
@@ -54,10 +54,10 @@ import { getTimeDifference } from '@/assets/js/public.js';
                 keyCode: '',
                 //导航栏功能
                 navList: [
-                    {name: '首页', isSelected: true},
-                    {name: '文章', isSelected: false},
-                    {name: '相册', isSelected: false},
-                    {name: '留言板', isSelected: false}
+                    {name: '首页', isSelected: true, path: 'homepage'},
+                    {name: '文章', isSelected: false, path: 'articlelist'},
+                    {name: '相册', isSelected: false, path: ''},
+                    {name: '留言板', isSelected: false, path: 'messageboard'}
                 ],
                 //相恋时间
                 loveTime: '1314天1小时3分钟14秒',
@@ -93,6 +93,7 @@ import { getTimeDifference } from '@/assets/js/public.js';
                         element.isSelected = true
                     }
                 });
+                this.$router.push({name: nav.path})
             },
         },
     }
@@ -167,10 +168,11 @@ import { getTimeDifference } from '@/assets/js/public.js';
         }
     }
     .middle{
-        margin: 0 27.8rem;
+        margin: 0 28rem;
         background-image: url("../../../../assets/images/conent-bg.png");
         background-repeat: repeat;
         background-size: 100%;
+        min-height: 30rem;
     }
     .footer{
         margin: 0 28rem;

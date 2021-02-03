@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.admin.mapper.PxAdminArticleMapper">
+<mapper namespace="com.ruoyi.px.admin.mapper.PxAdminArticleMapper">
 
     <resultMap type="PxArticleVo" id="PxArticleResult">
         <result property="id"    column="id"    />
@@ -28,6 +28,7 @@
             a.type,
             a.version,
             u.nick_name,
+            a.create_by,
             a.create_time,
             a.update_by,
             a.update_time,
@@ -43,7 +44,7 @@
             <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
             <if test="richText != null  and richText != ''"> and rich_text like concat('%', #{richText}, '%')</if>
             <if test="type != null  and type != ''"> and type = #{type}</if>
-            <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
+            <if test="createBy != null  and createBy != ''"> and a.create_by like concat('%', #{createBy}, '%')</if>
             <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
         </where>
         order by create_time desc

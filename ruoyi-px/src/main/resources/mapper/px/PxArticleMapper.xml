@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.px.mapper.PxArticleMapper">
+<mapper namespace="com.ruoyi.px.customer.mapper.PxArticleMapper">
 
     <!--新增留言-->
     <insert id="addMessage" parameterType="map">
@@ -45,6 +45,9 @@
             from px_article a
                 LEFT JOIN sys_dict_data d ON a.type = d.dict_value
                 AND d.dict_type = 'px_article_type'
+        <if test="createBy != '' and createBy != null">
+            where a.create_by = #{createBy}
+        </if>
         GROUP BY
             d.dict_label,
             d.dict_value
@@ -60,6 +63,23 @@
             author_name authorName,
             content,
             create_time createTime
-        from px_leave_message where article_id = #{articleId} and message_board = #{messageBoard}
+        from px_leave_message where 1 = 1
+        <if test="articleId != '' and articleId != null">
+            and article_id = #{articleId}
+        </if>
+        <if test="messageBoard != '' and messageBoard != null">
+            and message_board = #{messageBoard}
+        </if>
+    </select>
+
+    <!--获取文章类型列表-->
+    <select id="getArticleTypeList" resultType="java.util.Map">
+        SELECT
+            dict_value dictValue,
+            dict_label dictLabel
+        FROM
+            sys_dict_data
+        WHERE
+            dict_type = #{dictType}
     </select>
 </mapper>

@@ -1,4 +1,4 @@
-package com.ruoyi.admin.mapper;
+package com.ruoyi.px.admin.mapper;
 
 import java.util.List;
 import com.ruoyi.domain.po.PxArticle;

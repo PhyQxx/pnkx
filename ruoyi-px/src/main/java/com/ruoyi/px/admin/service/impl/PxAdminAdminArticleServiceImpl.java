@@ -1,4 +1,4 @@
-package com.ruoyi.admin.service.impl;
+package com.ruoyi.px.admin.service.impl;
 
 import java.util.List;
 
@@ -8,8 +8,8 @@ import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.domain.po.PxArticle;
 import com.ruoyi.framework.web.service.TokenService;
 import org.springframework.stereotype.Service;
-import com.ruoyi.admin.mapper.PxAdminArticleMapper;
-import com.ruoyi.admin.service.IPxAdminArticleService;
+import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
+import com.ruoyi.px.admin.service.IPxAdminArticleService;
 
 import javax.annotation.Resource;
 
@@ -47,6 +47,8 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     @Override
     public List<PxArticle> selectPxArticleList(PxArticle pxArticle)
     {
+        LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
+        pxArticle.setCreateBy(loginUser.getUser().getUserId().toString());
         return pxAdminArticleMapper.selectPxArticleList(pxArticle);
     }
 

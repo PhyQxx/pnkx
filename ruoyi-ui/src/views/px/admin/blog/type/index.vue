@@ -74,10 +74,8 @@
 
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" align="center" />
-            <el-table-column label="文章类型编码" align="center" prop="dictCode" />
             <el-table-column label="文章类型标签" align="center" prop="dictLabel" />
             <el-table-column label="文章类型键值" align="center" prop="dictValue" />
-            <el-table-column label="文章类型排序" align="center" prop="dictSort" />
             <el-table-column label="状态" align="center" prop="status" :formatter="statusFormat" />
             <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
             <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -150,12 +148,40 @@
 </template>
 
 <script>
-    import { listData, getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-    import { listType, getType } from "@/api/system/dict/type";
+    import { getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
+    import { listData } from "@/api/px/admin/blog/type";
 
     export default {
         name: "Data",
         data() {
+            //文章类型名称校验规则
+            const dictLabelValidate = (rule, value, callback) => {
+                let flag = false;
+                this.dataList.forEach(item => {
+                    if (item.dictLabel === value) {
+                        flag = true
+                    }
+                });
+                if (flag) {
+                    callback(new Error('文章类型名称不能重复'));
+                } else {
+                    callback();
+                }
+            };
+            //文章类型键值校验规则
+            const dictValueValidate = (rule, value, callback) => {
+                let flag = false;
+                this.dataList.forEach(item => {
+                    if (item.dictValue === value) {
+                        flag = true
+                    }
+                });
+                if (flag) {
+                    callback(new Error('文章类型键值不能重复'));
+                } else {
+                    callback();
+                }
+            };
             return {
                 // 遮罩层
                 loading: true,
@@ -186,7 +212,7 @@
                     pageNum: 1,
                     pageSize: 10,
                     dictName: undefined,
-                    dictType: undefined,
+                    dictType: 'px_article_type',
                     status: undefined
                 },
                 // 表单参数
@@ -194,33 +220,26 @@
                 // 表单校验
                 rules: {
                     dictLabel: [
-                        { required: true, message: "数据标签不能为空", trigger: "blur" }
+                        { required: true, message: "文章类型名称不能为空", trigger: "blur" },
+                        { validator: dictLabelValidate, trigger: 'blur' }
                     ],
                     dictValue: [
-                        { required: true, message: "数据键值不能为空", trigger: "blur" }
+                        { required: true, message: "文章类型键值不能为空", trigger: "blur" },
+                        { validator: dictValueValidate, trigger: 'blur' }
                     ],
                     dictSort: [
-                        { required: true, message: "数据顺序不能为空", trigger: "blur" }
+                        { required: true, message: "文章类型顺序不能为空", trigger: "blur" }
                     ]
                 }
             };
         },
         created() {
-            this.getType('100');
-            this.getTypeList();
+            this.getList();
             this.getDicts("sys_normal_disable").then(response => {
                 this.statusOptions = response.data;
             });
         },
         methods: {
-            /** 查询文章类型类型详细 */
-            getType(dictId) {
-                getType(dictId).then(response => {
-                    this.queryParams.dictType = response.data.dictType;
-                    this.defaultDictType = response.data.dictType;
-                    this.getList();
-                });
-            },
             /** 查询文章类型数据列表 */
             getList() {
                 this.loading = true;

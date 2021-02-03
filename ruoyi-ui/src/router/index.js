@@ -43,7 +43,17 @@ export const constantRoutes = [
         path: '/article',
         name: 'article',
         component: () => import('@/views/px/customer/index/article/index')
-      }
+      },
+        {
+            path: '/articlelist',
+            name: 'articlelist',
+            component: () => import('@/views/px/customer/index/articlelist/index')
+        },
+        {
+            path: '/messageboard',
+            name: 'messageboard',
+            component: () => import('@/views/px/customer/index/messageboard/index')
+        }
     ]
   },
   {

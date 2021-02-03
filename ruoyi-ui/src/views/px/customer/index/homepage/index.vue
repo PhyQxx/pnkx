@@ -86,13 +86,12 @@ import { getArticleList } from '@/api/px/customer/article.js';
             this.getArticleList();
         },
         methods: {
+            /**
+             * 跳转文章详情
+             */
             goToArticlePage(article) {
-                this.$router.push({
-                    name: 'article',
-                    params: {
-                        articleId: article.id
-                    }
-                });
+                sessionStorage.setItem('articleId', article.id);
+                this.$router.push({name: 'article'});
                 console.log(this.$route);
             },
             /**

@@ -2,8 +2,13 @@ package com.ruoyi.web.controller.px.admin;
 
 import java.util.List;
 
+import com.ruoyi.px.admin.service.IPxAdminArticleService;
+import com.ruoyi.common.core.domain.entity.SysDictData;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.domain.po.PxArticle;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,9 +22,10 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+
+import javax.annotation.Resource;
 
 /**
  * 文章Controller
@@ -28,11 +34,15 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2021-01-26
  */
 @RestController
-@RequestMapping("/px/article")
+@RequestMapping("/admin")
 public class PxAdminArticleController extends BaseController
 {
-    @Autowired
+    @Resource
     private IPxAdminArticleService pxArticleService;
+    @Resource
+    private ISysDictDataService dictDataService;
+    @Resource
+    private TokenService tokenService;
 
     /**
      * 查询文章列表
@@ -95,4 +105,21 @@ public class PxAdminArticleController extends BaseController
     {
         return toAjax(pxArticleService.deletePxArticleByIds(ids));
     }
+
+    /**
+     * 获取文章类型列表
+     * @param dictData
+     * @return
+     */
+    @GetMapping("/getArticleTypeList")
+    public TableDataInfo list(SysDictData dictData)
+    {
+        LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
+        dictData.setCreateBy(loginUser.getUser().getUserName());
+        startPage();
+        List<SysDictData> list = dictDataService.selectDictDataList(dictData);
+        return getDataTable(list);
+    }
+
+
 }

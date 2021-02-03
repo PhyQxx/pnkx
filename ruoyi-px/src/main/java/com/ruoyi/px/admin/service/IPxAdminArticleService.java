@@ -1,4 +1,4 @@
-package com.ruoyi.admin.service;
+package com.ruoyi.px.admin.service;
 
 import com.ruoyi.domain.po.PxArticle;
 

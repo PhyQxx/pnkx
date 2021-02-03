@@ -1,7 +1,9 @@
-package com.ruoyi.px.service.impl;
+package com.ruoyi.px.customer.service.impl;
 
-import com.ruoyi.px.mapper.PxArticleMapper;
-import com.ruoyi.px.service.IPxArticleService;
+import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
+import com.ruoyi.px.customer.mapper.PxArticleMapper;
+import com.ruoyi.px.customer.service.IPxArticleService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -21,6 +23,32 @@ public class PxArticleServiceImpl implements IPxArticleService {
 
     @Resource
     PxArticleMapper pxArticleMapper;
+    @Resource
+    private PxAdminArticleMapper pxAdminArticleMapper;
+
+    /**
+     * 查询文章
+     *
+     * @param id 文章ID
+     * @return 文章
+     */
+    @Override
+    public PxArticle selectPxArticleById(String id)
+    {
+        return pxAdminArticleMapper.selectPxArticleById(id);
+    }
+
+    /**
+     * 查询文章列表
+     *
+     * @param pxArticle 文章
+     * @return 文章
+     */
+    @Override
+    public List<PxArticle> selectPxArticleList(PxArticle pxArticle)
+    {
+        return pxAdminArticleMapper.selectPxArticleList(pxArticle);
+    }
 
     /**
      * 获取文章列表
@@ -60,5 +88,15 @@ public class PxArticleServiceImpl implements IPxArticleService {
     @Override
     public Integer addMessage(Map<String, Object> params) {
         return pxArticleMapper.addMessage(params);
+    }
+
+    /**
+     * 获取文章类型列表
+     * @param params
+     * @return
+     */
+    @Override
+    public Object getArticleTypeList(Map<String, Object> params) {
+        return pxArticleMapper.getArticleTypeList(params);
     }
 }

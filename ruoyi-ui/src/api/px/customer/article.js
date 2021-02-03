@@ -5,17 +5,29 @@ import request from '@/utils/customer-request'
  */
 export function getArticleList(params) {
     return request({
-        url: '/px-article/getArticleList',
+        url: '/customer/getArticleList',
         method: 'post',
         data: params
     })
 }
+
 /**
- * 获取文章分类分组数据
+ * 获取文章分类列表
  */
 export function getArticleTypeNumber(params) {
     return request({
-        url: '/px-article/getArticleTypeNumber',
+        url: '/customer/getArticleTypeNumber',
+        method: 'post',
+        data: params
+    })
+}
+
+/**
+ * 获取文章分类列表
+ */
+export function getArticleTypeList(params) {
+    return request({
+        url: '/customer/getArticleTypeList',
         method: 'post',
         data: params
     })
@@ -26,7 +38,7 @@ export function getArticleTypeNumber(params) {
  */
 export function getLeaveMessageByArticleId(params) {
     return request({
-        url: '/px-article/getLeaveMessageByArticleId',
+        url: '/customer/getLeaveMessageByArticleId',
         method: 'post',
         data: params
     })
@@ -37,8 +49,25 @@ export function getLeaveMessageByArticleId(params) {
  */
 export function addMessage(params) {
     return request({
-        url: '/px-article/addMessage',
+        url: '/customer/addMessage',
         method: 'post',
         data: params
+    })
+}
+
+// 查询文章列表
+export function listArticle(query) {
+    return request({
+        url: '/customer/list',
+        method: 'get',
+        params: query
+    })
+}
+
+// 查询文章详细
+export function getArticle(id) {
+    return request({
+        url: '/customer/' + id,
+        method: 'get'
     })
 }

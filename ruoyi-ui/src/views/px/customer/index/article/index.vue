@@ -42,7 +42,11 @@
                         <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id'>
                             <div class="message-left">
                                 <div class="header-photo">
-                                    <img :src="leaveMessage.authorHeader" alt="">
+                                    <el-image
+                                        class="header-picture"
+                                        :src="leaveMessage.authorHeader"
+                                        fit="scale-down">
+                                    </el-image>
                                 </div>
                                 <div class="author-name">
                                     {{leaveMessage.authorName}}
@@ -164,13 +168,15 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
                     authorMailbox: '',
                     //头像的URL
                     authorHeader: '',
+                    //是否是留言板留言
+                    messageBoard: '0',
                 }
             }
         },
         mounted () {
+            this.messageForm.articleId = sessionStorage.getItem('articleId')
             this.getArticleById();
             this.getLeaveMessage();
-            this.getArticleTypeNumber();
         },
         methods: {
             /**
@@ -187,8 +193,7 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
                 } else if (this.messageForm.authorMailbox === 'authorMailbox') {
                     this.$message.warning('请留下您的邮箱')
                 } else {
-                    this.messageForm.articleId = this.$route.params.articleId;
-                    console.log(this.messageForm);
+                    console.log('留言内容', this.messageForm);
                     addMessage(this.messageForm).then(res => {
                         console.log('留言结果', res);
                         if (res.data === 1) {
@@ -249,9 +254,10 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
              * 根据ID获取文章
              */
             getArticleById() {
-                getArticleList({articleId: this.$route.params.articleId}).then(res => {
+                getArticleList({articleId: this.messageForm.articleId}).then(res => {
                     console.log('文章', res);
                     this.article = res.data[0];
+                    this.getArticleTypeNumber();
                     this.loading = false;
                 })
             },
@@ -259,7 +265,7 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
              * 获取留言
              */
             getLeaveMessage() {
-                getLeaveMessageByArticleId({articleId: this.$route.params.articleId, messageBoard: '0'}).then(res => {
+                getLeaveMessageByArticleId({articleId: this.messageForm.articleId, messageBoard: '0'}).then(res => {
                     console.log('留言列表', res);
                     this.leaveMessageList = res.data;
                     this.messageLoading = false;
@@ -269,7 +275,7 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
              * 获取文章分类分组数据
              */
             getArticleTypeNumber() {
-                getArticleTypeNumber({}).then(res => {
+                getArticleTypeNumber({createBy: this.article.createBy}).then(res => {
                     console.log('文章分类分组数据', res);
                     this.articleTypeList = res.data;
                 })

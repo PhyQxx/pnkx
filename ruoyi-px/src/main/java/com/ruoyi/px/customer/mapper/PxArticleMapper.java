@@ -1,17 +1,20 @@
-package com.ruoyi.px.service;
+package com.ruoyi.px.customer.mapper;
+
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * <p>
- * 文章表 服务类
+ * 文章表 Mapper 接口
  * </p>
  *
  * @author 裴浩宇
  * @since 2021-01-10
  */
-public interface IPxArticleService {
+@Mapper
+public interface PxArticleMapper {
 
     /**
      * 获取文章列表
@@ -40,4 +43,12 @@ public interface IPxArticleService {
      * @return 留言结果
      */
     Integer addMessage(Map<String, Object> params);
+
+
+    /**
+     * 获取文章类型列表
+     * @param params
+     * @return
+     */
+    List<Map<String, Object>> getArticleTypeList(Map<String, Object> params);
 }
