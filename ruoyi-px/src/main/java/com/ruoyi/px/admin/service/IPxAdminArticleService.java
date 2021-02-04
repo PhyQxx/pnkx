@@ -1,6 +1,8 @@
 package com.ruoyi.px.admin.service;
 
+import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.vo.PxArticleVo;
 
 import java.util.List;
 
@@ -26,7 +28,7 @@ public interface IPxAdminArticleService
      * @param pxArticle 文章
      * @return 文章集合
      */
-    public List<PxArticle> selectPxArticleList(PxArticle pxArticle);
+    public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle);
 
     /**
      * 新增文章
@@ -59,4 +61,11 @@ public interface IPxAdminArticleService
      * @return 结果
      */
     public int deletePxArticleById(String id);
+
+    /**
+     * 校验字典项标签、键值唯一性
+     * @param dictData
+     * @return
+     */
+    Integer dictDataCheckUniqueness(SysDictData dictData);
 }

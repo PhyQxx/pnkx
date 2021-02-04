@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.px.admin;
 
 import java.util.List;
 
+import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
@@ -9,7 +10,6 @@ import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.domain.po.PxArticle;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.service.ISysDictDataService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -38,7 +38,7 @@ import javax.annotation.Resource;
 public class PxAdminArticleController extends BaseController
 {
     @Resource
-    private IPxAdminArticleService pxArticleService;
+    private IPxAdminArticleService pxAdminArticleService;
     @Resource
     private ISysDictDataService dictDataService;
     @Resource
@@ -48,10 +48,10 @@ public class PxAdminArticleController extends BaseController
      * 查询文章列表
      */
     @GetMapping("/list")
-    public TableDataInfo list(PxArticle pxArticle)
+    public TableDataInfo list(PxArticleVo pxArticle)
     {
         startPage();
-        List<PxArticle> list = pxArticleService.selectPxArticleList(pxArticle);
+        List<PxArticleVo> list = pxAdminArticleService.selectPxArticleList(pxArticle);
         return getDataTable(list);
     }
 
@@ -62,8 +62,8 @@ public class PxAdminArticleController extends BaseController
     @GetMapping("/export")
     public AjaxResult export(PxArticle pxArticle)
     {
-        List<PxArticle> list = pxArticleService.selectPxArticleList(pxArticle);
-        ExcelUtil<PxArticle> util = new ExcelUtil<PxArticle>(PxArticle.class);
+        List<PxArticleVo> list = pxAdminArticleService.selectPxArticleList(pxArticle);
+        ExcelUtil<PxArticleVo> util = new ExcelUtil<PxArticleVo>(PxArticleVo.class);
         return util.exportExcel(list, "article");
     }
 
@@ -73,7 +73,7 @@ public class PxAdminArticleController extends BaseController
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") String id)
     {
-        return AjaxResult.success(pxArticleService.selectPxArticleById(id));
+        return AjaxResult.success(pxAdminArticleService.selectPxArticleById(id));
     }
 
     /**
@@ -83,7 +83,7 @@ public class PxAdminArticleController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody PxArticle pxArticle)
     {
-        return toAjax(pxArticleService.insertPxArticle(pxArticle));
+        return toAjax(pxAdminArticleService.insertPxArticle(pxArticle));
     }
 
     /**
@@ -93,7 +93,7 @@ public class PxAdminArticleController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody PxArticle pxArticle)
     {
-        return toAjax(pxArticleService.updatePxArticle(pxArticle));
+        return toAjax(pxAdminArticleService.updatePxArticle(pxArticle));
     }
 
     /**
@@ -103,7 +103,7 @@ public class PxAdminArticleController extends BaseController
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)
     {
-        return toAjax(pxArticleService.deletePxArticleByIds(ids));
+        return toAjax(pxAdminArticleService.deletePxArticleByIds(ids));
     }
 
     /**
@@ -119,6 +119,18 @@ public class PxAdminArticleController extends BaseController
         startPage();
         List<SysDictData> list = dictDataService.selectDictDataList(dictData);
         return getDataTable(list);
+    }
+
+    /**
+     * 校验字典项标签，键值唯一性
+     * @param dictData
+     * @return
+     */
+    @RequestMapping("/dictDataCheckUniqueness")
+    public AjaxResult dictDataCheckUniqueness(SysDictData dictData)
+    {
+        Integer res = pxAdminArticleService.dictDataCheckUniqueness(dictData);
+        return AjaxResult.success(res);
     }
 
 

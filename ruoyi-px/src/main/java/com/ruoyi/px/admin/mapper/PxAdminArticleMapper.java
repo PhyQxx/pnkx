@@ -1,7 +1,10 @@
 package com.ruoyi.px.admin.mapper;
 
 import java.util.List;
+
+import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.vo.PxArticleVo;
 
 /**
  * 文章Mapper接口
@@ -25,7 +28,7 @@ public interface PxAdminArticleMapper
      * @param pxArticle 文章
      * @return 文章集合
      */
-    public List<PxArticle> selectPxArticleList(PxArticle pxArticle);
+    public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle);
 
     /**
      * 新增文章
@@ -58,4 +61,11 @@ public interface PxAdminArticleMapper
      * @return 结果
      */
     public int deletePxArticleByIds(String[] ids);
+
+    /**
+     * 校验字典项标签、键值唯一性
+     * @param dictData
+     * @return
+     */
+    Integer dictDataCheckUniqueness(SysDictData dictData);
 }

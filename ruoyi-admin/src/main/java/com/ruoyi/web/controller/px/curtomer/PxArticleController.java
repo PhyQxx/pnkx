@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.px.curtomer;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -76,10 +77,10 @@ public class PxArticleController extends BaseController {
      * 查询文章列表
      */
     @GetMapping("/list")
-    public TableDataInfo list(PxArticle pxArticle)
+    public TableDataInfo list(PxArticleVo pxArticle)
     {
         startPage();
-        List<PxArticle> list = pxArticleService.selectPxArticleList(pxArticle);
+        List<PxArticleVo> list = pxArticleService.selectPxArticleList(pxArticle);
         return getDataTable(list);
     }
 

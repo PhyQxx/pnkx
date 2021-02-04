@@ -38,7 +38,7 @@
                 LEFT JOIN sys_user u on a.create_by = u.user_id
     </sql>
 
-    <select id="selectPxArticleList" parameterType="PxArticle" resultMap="PxArticleResult">
+    <select id="selectPxArticleList" parameterType="PxArticleVo" resultMap="PxArticleResult">
         <include refid="selectPxArticleVo"/>
         <where>
             <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
@@ -46,6 +46,11 @@
             <if test="type != null  and type != ''"> and type = #{type}</if>
             <if test="createBy != null  and createBy != ''"> and a.create_by like concat('%', #{createBy}, '%')</if>
             <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
+            <if test="search != null  and search != ''">
+                and title like concat('%', #{search}, '%')
+                or rich_text like concat('%', #{search}, '%')
+                or type like concat('%', #{search}, '%')
+             </if>
         </where>
         order by create_time desc
     </select>
@@ -53,6 +58,22 @@
     <select id="selectPxArticleById" parameterType="String" resultMap="PxArticleResult">
         <include refid="selectPxArticleVo"/>
         where id = #{id}
+    </select>
+
+    <!--校验字典项标签、键值唯一性-->
+    <select id="dictDataCheckUniqueness" resultType="java.lang.Integer">
+        SELECT
+            count(*)
+        FROM
+            `sys_dict_data`
+        WHERE
+            dict_type = #{dictType}
+          <if test="dictLabel != '' and dictLabel != null">
+              AND dict_label = #{dictLabel}
+          </if>
+          <if test="dictValue != '' and dictValue != null">
+              AND dict_value = #{dictValue}
+          </if>
     </select>
 
     <insert id="insertPxArticle" parameterType="PxArticle">

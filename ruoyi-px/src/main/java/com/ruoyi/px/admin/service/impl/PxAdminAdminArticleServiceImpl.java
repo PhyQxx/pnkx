@@ -2,10 +2,12 @@ package com.ruoyi.px.admin.service.impl;
 
 import java.util.List;
 
+import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.framework.web.service.TokenService;
 import org.springframework.stereotype.Service;
 import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
@@ -45,7 +47,7 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
      * @return 文章
      */
     @Override
-    public List<PxArticle> selectPxArticleList(PxArticle pxArticle)
+    public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle)
     {
         LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
         pxArticle.setCreateBy(loginUser.getUser().getUserId().toString());
@@ -104,5 +106,15 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     public int deletePxArticleById(String id)
     {
         return pxAdminArticleMapper.deletePxArticleById(id);
+    }
+
+    /**
+     * 校验字典项标签、键值唯一性
+     * @param dictData
+     * @return
+     */
+    @Override
+    public Integer dictDataCheckUniqueness(SysDictData dictData) {
+        return pxAdminArticleMapper.dictDataCheckUniqueness(dictData);
     }
 }

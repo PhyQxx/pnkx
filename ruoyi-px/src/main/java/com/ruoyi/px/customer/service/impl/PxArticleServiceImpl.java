@@ -1,6 +1,7 @@
 package com.ruoyi.px.customer.service.impl;
 
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
 import com.ruoyi.px.customer.mapper.PxArticleMapper;
 import com.ruoyi.px.customer.service.IPxArticleService;
@@ -45,7 +46,7 @@ public class PxArticleServiceImpl implements IPxArticleService {
      * @return 文章
      */
     @Override
-    public List<PxArticle> selectPxArticleList(PxArticle pxArticle)
+    public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle)
     {
         return pxAdminArticleMapper.selectPxArticleList(pxArticle);
     }

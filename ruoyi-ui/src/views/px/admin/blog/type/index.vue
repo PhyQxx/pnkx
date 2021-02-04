@@ -149,38 +149,36 @@
 
 <script>
     import { getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-    import { listData } from "@/api/px/admin/blog/type";
+    import { listData, dictDataCheckUniqueness } from "@/api/px/admin/blog/type";
 
     export default {
         name: "Data",
         data() {
             //文章类型名称校验规则
             const dictLabelValidate = (rule, value, callback) => {
-                let flag = false;
-                this.dataList.forEach(item => {
-                    if (item.dictLabel === value) {
-                        flag = true
+                dictDataCheckUniqueness({
+                    dictType: 'px_article_type',
+                    dictLabel: value
+                }).then(res => {
+                    if (res.data > 0) {
+                        callback(new Error('文章类型名称不能重复'));
+                    } else {
+                        callback();
                     }
                 });
-                if (flag) {
-                    callback(new Error('文章类型名称不能重复'));
-                } else {
-                    callback();
-                }
             };
             //文章类型键值校验规则
             const dictValueValidate = (rule, value, callback) => {
-                let flag = false;
-                this.dataList.forEach(item => {
-                    if (item.dictValue === value) {
-                        flag = true
+                dictDataCheckUniqueness({
+                    dictType: 'px_article_type',
+                    dictValue: value
+                }).then(res => {
+                    if (res.data > 0) {
+                        callback(new Error('文章类型键值不能重复'));
+                    } else {
+                        callback();
                     }
                 });
-                if (flag) {
-                    callback(new Error('文章类型键值不能重复'));
-                } else {
-                    callback();
-                }
             };
             return {
                 // 遮罩层

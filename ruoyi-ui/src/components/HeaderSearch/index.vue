@@ -8,11 +8,11 @@
       filterable
       default-first-option
       remote
-      placeholder="Search"
+      placeholder="输入关键字"
       class="header-search-select"
       @change="change"
     >
-      <el-option v-for="option in options" :key="option.item.path" :value="option.item" :label="option.item.title.join(' > ')" />
+      <el-option v-for="option in options" :key="option.id" :value="option.id" :label="option.title + ' > '" />
     </el-select>
   </div>
 </template>
@@ -20,8 +20,10 @@
 <script>
 // fuse is a lightweight fuzzy-search module
 // make search results more in line with expectations
-import Fuse from 'fuse.js/dist/fuse.min.js'
-import path from 'path'
+import Fuse from 'fuse.js/dist/fuse.min.js';
+import path from 'path';
+import { listArticle } from "@/api/px/admin/blog/article";
+
 
 export default {
   name: 'HeaderSearch',
@@ -69,15 +71,15 @@ export default {
       this.options = []
       this.show = false
     },
-    change(val) {
-      if(this.ishttp(val.path)) {
-        // http(s):// 路径新窗口打开
-        window.open(val.path, "_blank");
-      } else {
-        this.$router.push(val.path)
-      }
-      this.search = ''
-      this.options = []
+    change(value) {
+        this.$router.push({
+            name: '/articleedit',
+            params: {
+                id: value
+            }
+        });
+      this.search = '';
+      this.options = [];
       this.$nextTick(() => {
         this.show = false
       })
@@ -135,7 +137,10 @@ export default {
     },
     querySearch(query) {
       if (query !== '') {
-        this.options = this.fuse.search(query)
+          listArticle({search: query}).then(response => {
+              console.log('文章列表', response);
+              this.options = response.rows;
+          });
       } else {
         this.options = []
       }

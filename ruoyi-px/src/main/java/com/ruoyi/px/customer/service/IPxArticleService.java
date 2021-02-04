@@ -1,6 +1,7 @@
 package com.ruoyi.px.customer.service;
 
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.vo.PxArticleVo;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public interface IPxArticleService {
      * @param pxArticle 文章
      * @return 文章集合
      */
-    public List<PxArticle> selectPxArticleList(PxArticle pxArticle);
+    public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle);
 
 
     /**

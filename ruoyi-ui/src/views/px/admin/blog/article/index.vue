@@ -76,7 +76,11 @@
         </template>
       </el-table-column>
       <el-table-column class-name="article-title" label="文章标题" align="center" prop="title" />
-      <el-table-column label="文章内容" align="center" prop="richText" />
+      <el-table-column label="文章内容" align="center">
+        <template slot-scope="scope">
+            <div class="" v-html="scope.row.richText"></div>
+        </template>
+      </el-table-column>
       <el-table-column label="文章分类" align="center" prop="type" :formatter="typeFormat" />
       <el-table-column label="创建人" align="center" prop="nickName" />
       <el-table-column label="创建时间" align="center" prop="createTime" />
