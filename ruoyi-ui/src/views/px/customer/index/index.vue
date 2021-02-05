@@ -56,7 +56,7 @@ import { getTimeDifference } from '@/assets/js/public.js';
                 navList: [
                     {name: '首页', isSelected: true, path: 'homepage'},
                     {name: '文章', isSelected: false, path: 'articlelist'},
-                    {name: '相册', isSelected: false, path: ''},
+                    {name: '相册', isSelected: false, path: 'album'},
                     {name: '留言板', isSelected: false, path: 'messageboard'}
                 ],
                 //相恋时间

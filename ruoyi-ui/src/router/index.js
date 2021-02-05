@@ -53,6 +53,16 @@ export const constantRoutes = [
             path: '/messageboard',
             name: 'messageboard',
             component: () => import('@/views/px/customer/index/messageboard/index')
+        },
+        {
+            path: '/album',
+            name: 'album',
+            component: () => import('@/views/px/customer/index/album/index')
+        },
+        {
+            path: '/photo',
+            name: 'photo',
+            component: () => import('@/views/px/customer/index/album/photo/index')
         }
     ]
   },
