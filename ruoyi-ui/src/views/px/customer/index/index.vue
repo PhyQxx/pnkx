@@ -82,16 +82,46 @@ import { getTimeDifference } from '@/assets/js/public.js';
                 this.loveTime = getTimeDifference('2016-09-30 22:22:22');
             }, 1000);
         },
+        watch: {
+            $route: {
+                handler(val, oldVal) {
+                    switch (val.name) {
+                        case 'homepage':
+                            this.navList[0].isSelected = true;
+                            this.navList[1].isSelected = false;
+                            this.navList[2].isSelected = false;
+                            this.navList[3].isSelected = false;
+                            break;
+                        case 'articlelist':
+                            this.navList[0].isSelected = false;
+                            this.navList[1].isSelected = true;
+                            this.navList[2].isSelected = false;
+                            this.navList[3].isSelected = false;
+                            break;
+                        case 'album':
+                            this.navList[0].isSelected = false;
+                            this.navList[1].isSelected = false;
+                            this.navList[2].isSelected = true;
+                            this.navList[3].isSelected = false;
+                            break;
+                        case 'messageboard':
+                            this.navList[0].isSelected = false;
+                            this.navList[1].isSelected = false;
+                            this.navList[2].isSelected = false;
+                            this.navList[3].isSelected = true;
+                            break;
+                    }
+                },
+                deep: true
+            }
+        },
         methods: {
             /**
              * 选择导航
              */
             selectNav(nav) {
                 this.navList.forEach(element => {
-                    element.isSelected = false;
-                    if (element.name === nav.name) {
-                        element.isSelected = true
-                    }
+                    element.isSelected = element.name === nav.name;
                 });
                 this.$router.push({name: nav.path})
             },

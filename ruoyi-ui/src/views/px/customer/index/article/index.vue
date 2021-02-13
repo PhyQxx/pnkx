@@ -212,6 +212,7 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
                                     //头像的URL
                                     authorHeader: '',
                             };
+                            this.textNumber = 500;
                             this.$refs.leaveMessage.innerHTML = '';
                         }
                     })
