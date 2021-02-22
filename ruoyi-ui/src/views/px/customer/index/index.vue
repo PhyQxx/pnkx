@@ -139,10 +139,11 @@ import { getTimeDifference } from '@/assets/js/public.js';
     }
     .nav{
         background:  url("../../../../assets/images/nav-bg.png") no-repeat;
+        background-size: 100% 100%;
         display: flex;
         justify-content: space-around;
         align-items: center;
-        margin: 0 28rem;
+        margin: 0 20%;
         height: 5rem;
         padding: 0 4rem 2rem 2rem;
         .nav-one{
@@ -169,7 +170,7 @@ import { getTimeDifference } from '@/assets/js/public.js';
 
     }
     .top{
-        margin: 0 28rem;
+        margin: 0 20%;
         background-image: url("../../../../assets/images/header-bg.jpg");
         background-repeat: no-repeat;
         background-size: 100% 50%;
@@ -198,14 +199,14 @@ import { getTimeDifference } from '@/assets/js/public.js';
         }
     }
     .middle{
-        margin: 0 28rem;
+        margin: 0 20%;
         background-image: url("../../../../assets/images/conent-bg.png");
         background-repeat: repeat;
         background-size: 100%;
         min-height: 30rem;
     }
     .footer{
-        margin: 0 28rem;
+        margin: 0 20%;
         background-image: url("../../../../assets/images/footer-bg.jpg");
         background-repeat: no-repeat;
         background-size: 100% 50%;

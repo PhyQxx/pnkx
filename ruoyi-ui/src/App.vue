@@ -6,7 +6,12 @@
 
 <script>
 export default  {
-  name:  'App'
+  name:  'App',
+    mounted() {
+        let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
+        let html = document.documentElement;
+        html.style.fontSize = htmlWidth/150 + 'px';
+    }
 }
 </script>
 

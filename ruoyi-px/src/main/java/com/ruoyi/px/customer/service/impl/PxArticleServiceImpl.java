@@ -5,11 +5,13 @@ import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
 import com.ruoyi.px.customer.mapper.PxArticleMapper;
 import com.ruoyi.px.customer.service.IPxArticleService;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -26,6 +28,8 @@ public class PxArticleServiceImpl implements IPxArticleService {
     PxArticleMapper pxArticleMapper;
     @Resource
     private PxAdminArticleMapper pxAdminArticleMapper;
+    @Resource
+    private RedisTemplate redisTemplate;
 
     /**
      * 查询文章
@@ -48,7 +52,16 @@ public class PxArticleServiceImpl implements IPxArticleService {
     @Override
     public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle)
     {
-        return pxAdminArticleMapper.selectPxArticleList(pxArticle);
+        String key = "pxArticleList" + pxArticle.toString().substring(pxArticle.toString().indexOf("[") + 1, pxArticle.toString().indexOf("]"));
+        ValueOperations<String, List<PxArticleVo>> operations = redisTemplate.opsForValue();
+        boolean hasKey = redisTemplate.hasKey(key);
+        if (hasKey) {
+            List<PxArticleVo> result= operations.get(key);
+            return result;
+        }
+        List<PxArticleVo> result = pxAdminArticleMapper.selectPxArticleList(pxArticle);
+        operations.set(key, result);
+        return result;
     }
 
     /**
