@@ -65,6 +65,15 @@ Vue.use(Element, {
 
 Vue.config.productionTip = false
 
+const _hmt = _hmt || [];
+window._hmt = _hmt; // 必须把_hmt挂载到window下，否则找不到
+(function () {
+    const hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?5e056ee0dfd2935db3b7b9853aac15cd";
+    const s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+})();
+
 new Vue({
   el: '#app',
   router,
