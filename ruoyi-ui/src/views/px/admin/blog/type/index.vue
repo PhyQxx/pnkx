@@ -156,29 +156,37 @@
         data() {
             //文章类型名称校验规则
             const dictLabelValidate = (rule, value, callback) => {
-                dictDataCheckUniqueness({
-                    dictType: 'px_article_type',
-                    dictLabel: value
-                }).then(res => {
-                    if (res.data > 0) {
-                        callback(new Error('文章类型名称不能重复'));
-                    } else {
-                        callback();
-                    }
-                });
+                if (this.form.dictCode === undefined || this.form.dictCode === '') {
+                    dictDataCheckUniqueness({
+                        dictType: 'px_article_type',
+                        dictLabel: value
+                    }).then(res => {
+                        if (res.data > 0) {
+                            callback(new Error('文章类型名称不能重复'));
+                        } else {
+                            callback();
+                        }
+                    });
+                } else {
+                    callback();
+                }
             };
             //文章类型键值校验规则
             const dictValueValidate = (rule, value, callback) => {
-                dictDataCheckUniqueness({
-                    dictType: 'px_article_type',
-                    dictValue: value
-                }).then(res => {
-                    if (res.data > 0) {
-                        callback(new Error('文章类型键值不能重复'));
-                    } else {
-                        callback();
-                    }
-                });
+                if (this.form.dictCode === undefined || this.form.dictCode === '') {
+                    dictDataCheckUniqueness({
+                        dictType: 'px_article_type',
+                        dictValue: value
+                    }).then(res => {
+                        if (res.data > 0) {
+                            callback(new Error('文章类型键值不能重复'));
+                        } else {
+                            callback();
+                        }
+                    });
+                } else {
+                    callback();
+                }
             };
             return {
                 // 遮罩层

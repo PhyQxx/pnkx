@@ -52,16 +52,17 @@ public class PxArticleServiceImpl implements IPxArticleService {
     @Override
     public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle)
     {
+
+        /*使用redis缓存
         String key = "pxArticleList" + pxArticle.toString().substring(pxArticle.toString().indexOf("[") + 1, pxArticle.toString().indexOf("]"));
         ValueOperations<String, List<PxArticleVo>> operations = redisTemplate.opsForValue();
         boolean hasKey = redisTemplate.hasKey(key);
         if (hasKey) {
-            List<PxArticleVo> result= operations.get(key);
-            return result;
+            return operations.get(key);
         }
         List<PxArticleVo> result = pxAdminArticleMapper.selectPxArticleList(pxArticle);
-        operations.set(key, result);
-        return result;
+        operations.set(key, result, 3, TimeUnit.SECONDS);*/
+        return pxAdminArticleMapper.selectPxArticleList(pxArticle);
     }
 
     /**

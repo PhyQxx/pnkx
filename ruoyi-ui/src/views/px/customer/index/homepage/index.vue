@@ -1,81 +1,118 @@
 <template>
-    <div class="page" v-loading="loading">
-        <div class="phy" v-if="this.phyArticleList.length < 1">
-            <div class="no-data">暂无内容</div>
-        </div>
-        <div class="phy" v-if="this.phyArticleList.length > 0">
-            <div class="first">
-                <div class="cursor-pointer" @click="goToArticlePage(phyArticleList[0])">
-                    <div class="first-title">{{phyArticleList[0].title}}</div>
-                    <div class="first-content" v-html="phyArticleList[0].richText"></div>
-                </div>
-                <div class="first-footer">
-                    <div class="footer-one">
-                        <i class="el-icon-male"></i>
-                        <div class="author margin-right">{{phyArticleList[0].nickName}}</div>
-                    </div>
-                    <div class="footer-one">
-                        <i class="el-icon-date"></i>
-                        <div class="create-time margin-right">{{phyArticleList[0].createTime}}</div>
-                    </div>
-                    <div class="footer-one">
-                        <i class="el-icon-magic-stick"></i>
-                        <div class="type margin-right">{{phyArticleList[0].typeName}}</div>
-                    </div>
-                    <div class="footer-one">
-                        <i class="el-icon-present"></i>
-                        <div class="message-number">{{phyArticleList[0].leaveMessageNumber}}枚留言</div>
-                    </div>
-                </div>
+    <div class="page">
+        <div class="phy-box" v-loading="phyLoading">
+            <div class="phy" v-if="this.phyArticleList.length < 1">
+                <div class="no-data">暂无内容</div>
             </div>
-            <div class="article" v-for="article in phyArticleList.slice(1)" :key="article.id" @click="goToArticlePage(article)">
-                <i class="el-icon-male"></i>
-                <div class="title cursor-pointer">{{article.title}}</div>
-            </div>
-        </div>
-        <div class="qxx" v-if="this.qxxArticleList.length < 1">
-            <div class="no-data">暂无内容</div>
-        </div>
-        <div class="qxx" v-if="this.qxxArticleList.length > 0">
-            <div class="first">
-                <div class="cursor-pointer"  @click="goToArticlePage(qxxArticleList[0])">
-                    <div class="first-title cursor-pointer">{{qxxArticleList[0].title}}</div>
-                    <div class="first-content" v-html="qxxArticleList[0].richText"></div>
-                </div>
-                <div class="first-footer">
-                    <div class="footer-one">
-                        <i class="el-icon-female"></i>
-                        <div class="author margin-right">{{qxxArticleList[0].nickName}}</div>
+            <div class="phy" v-if="this.phyArticleList.length > 0">
+                <div class="first">
+                    <div class="cursor-pointer" @click="goToArticlePage(phyArticleList[0])">
+                        <div class="first-title">{{phyArticleList[0].title}}</div>
+                        <div class="first-content" v-html="phyArticleList[0].richText"></div>
                     </div>
-                    <div class="footer-one">
-                        <i class="el-icon-date"></i>
-                        <div class="create-time margin-right">{{qxxArticleList[0].createTime}}</div>
-                    </div>
-                    <div class="footer-one">
-                        <i class="el-icon-magic-stick"></i>
-                        <div class="type margin-right">{{qxxArticleList[0].typeName}}</div>
-                    </div>
-                    <div class="footer-one">
-                        <i class="el-icon-present"></i>
-                        <div class="message-number">{{qxxArticleList[0].leaveMessageNumber}}枚留言</div>
+                    <div class="first-footer">
+                        <div class="footer-one">
+                            <i class="el-icon-male"></i>
+                            <div class="author margin-right">{{phyArticleList[0].nickName}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-date"></i>
+                            <div class="create-time margin-right">{{phyArticleList[0].createTime}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-magic-stick"></i>
+                            <div class="type margin-right">{{phyArticleList[0].typeName}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-present"></i>
+                            <div class="message-number">{{phyArticleList[0].leaveMessageNumber || 0}}枚留言</div>
+                        </div>
                     </div>
                 </div>
+                <div class="article" v-for="article in phyArticleList.slice(1)" :key="article.id" @click="goToArticlePage(article)">
+                    <i class="el-icon-male"></i>
+                    <div class="title cursor-pointer">{{article.title}}</div>
+                </div>
+                <pagination
+                    class="pagination"
+                    v-show="phyTotal>0"
+                    :total="phyTotal"
+                    :page.sync="phyParams.pageNum"
+                    :limit.sync="phyParams.pageSize"
+                    layout="total, prev, pager, next"
+                    @pagination="getPhyList"
+                />
             </div>
-            <div class="article" v-for="article in qxxArticleList.slice(1)" :key="article.id"  @click="goToArticlePage(article)">
-                <i class="el-icon-female"></i>
-                <div class="title cursor-pointer">{{article.title}}</div>
+        </div>
+        <div class="qxx-box" v-loading="qxxLoading">
+            <div class="qxx" v-if="this.qxxArticleList.length < 1">
+                <div class="no-data">暂无内容</div>
+            </div>
+            <div class="qxx" v-if="this.qxxArticleList.length > 0">
+                <div class="first">
+                    <div class="cursor-pointer"  @click="goToArticlePage(qxxArticleList[0])">
+                        <div class="first-title cursor-pointer">{{qxxArticleList[0].title}}</div>
+                        <div class="first-content" v-html="qxxArticleList[0].richText"></div>
+                    </div>
+                    <div class="first-footer">
+                        <div class="footer-one">
+                            <i class="el-icon-female"></i>
+                            <div class="author margin-right">{{qxxArticleList[0].nickName}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-date"></i>
+                            <div class="create-time margin-right">{{qxxArticleList[0].createTime}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-magic-stick"></i>
+                            <div class="type margin-right">{{qxxArticleList[0].typeName}}</div>
+                        </div>
+                        <div class="footer-one">
+                            <i class="el-icon-present"></i>
+                            <div class="message-number">{{qxxArticleList[0].leaveMessageNumber || 0}}枚留言</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="article" v-for="article in qxxArticleList.slice(1)" :key="article.id"  @click="goToArticlePage(article)">
+                    <i class="el-icon-female"></i>
+                    <div class="title cursor-pointer">{{article.title}}</div>
+                </div>
+                <pagination
+                    class="pagination"
+                    v-show="qxxTotal>0"
+                    :total="qxxTotal"
+                    :page.sync="qxxParams.pageNum"
+                    :limit.sync="qxxParams.pageSize"
+                    layout="total, prev, pager, next"
+                    @pagination="getQxxList"
+                />
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import { getArticleList } from '@/api/px/customer/article.js';
+import { listArticle } from '@/api/px/customer/article.js';
     export default {
         data() {
             return {
+                // 总条数
+                phyTotal: 0,
+                qxxTotal: 0,
+                // 查询参数
+                phyParams: {
+                    pageNum: 1,
+                    pageSize: 10,
+                    createBy: '1',
+                },
+                qxxParams: {
+                    pageNum: 1,
+                    pageSize: 10,
+                    createBy: '2',
+                },
                 //遮罩层
-                loading: true,
+                phyLoading: true,
+                qxxLoading: true,
                 //phy文章列表
                 phyArticleList: [],
                 //qxx文章列表
@@ -83,7 +120,8 @@ import { getArticleList } from '@/api/px/customer/article.js';
             }
         },
         mounted () {
-            this.getArticleList();
+            this.getPhyList();
+            this.getQxxList();
         },
         methods: {
             /**
@@ -97,18 +135,23 @@ import { getArticleList } from '@/api/px/customer/article.js';
             /**
              * 获取文章列表
              */
-            getArticleList() {
-                getArticleList({}).then(res => {
-                    console.log('文章列表', res);
-                    res.data.forEach(item => {
-                        if (item.createBy === '1') {
-                            this.phyArticleList.push(item)
-                        } else if (item.createBy === '2') {
-                            this.qxxArticleList.push(item)
-                        }
-                    });
-                    this.loading = false;
-                })
+            getPhyList() {
+                this.phyLoading = true;
+                listArticle(this.phyParams).then(response => {
+                    console.log('文章列表', response);
+                    this.phyArticleList = response.rows;
+                    this.phyTotal = response.total;
+                    this.phyLoading = false;
+                });
+            },
+            getQxxList() {
+                this.qxxLoading = true;
+                listArticle(this.qxxParams).then(response => {
+                    console.log('文章列表', response);
+                    this.qxxArticleList = response.rows;
+                    this.qxxTotal = response.total;
+                    this.qxxLoading = false;
+                });
             },
         },
     }
@@ -121,6 +164,12 @@ import { getArticleList } from '@/api/px/customer/article.js';
 .page{
     display: flex;
     background-color: #fff;
+    .phy-box{
+        width: 50%;
+    }
+    .qxx-box{
+        width: 50%;
+    }
     .no-data{
         text-align: center;
         padding: 2rem 1rem;
@@ -165,7 +214,6 @@ import { getArticleList } from '@/api/px/customer/article.js';
     .phy{
         flex: 1;
         padding: 1rem;
-        width: 50%;
         .no-data{
             color: #33ccff;
         }
@@ -231,7 +279,6 @@ import { getArticleList } from '@/api/px/customer/article.js';
     .qxx{
         flex: 1;
         padding: 1rem;
-        width: 50%;
         .no-data{
             color: #FF399A;
         }

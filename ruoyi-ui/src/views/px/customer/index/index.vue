@@ -200,6 +200,7 @@ import { getTimeDifference } from '@/assets/js/public.js';
     }
     .middle{
         margin: 0 20%;
+        padding: 1rem 0 4rem 0;
         background-image: url("../../../../assets/images/conent-bg.png");
         background-repeat: repeat;
         background-size: 100%;
