@@ -78,7 +78,7 @@
                 </div>
             </div>
         </div>
-        <div class="message-board">
+        <div v-loading="messageLoading" class="message-board">
             <div class="message-board-left">
                 <div class="message-board-left-top">
                     <div class="message-logo"></div>
@@ -201,6 +201,7 @@
                 } else if (this.messageForm.authorMailbox === 'authorMailbox') {
                     this.$message.warning('请留下您的邮箱')
                 } else {
+                    this.messageLoading = true;
                     console.log('留言内容', this.messageForm);
                     addMessage(this.messageForm).then(res => {
                         console.log('留言结果', res);
