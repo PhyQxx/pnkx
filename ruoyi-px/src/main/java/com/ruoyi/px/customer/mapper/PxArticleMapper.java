@@ -51,4 +51,18 @@ public interface PxArticleMapper {
      * @return
      */
     List<Map<String, Object>> getArticleTypeList(Map<String, Object> params);
+
+    /**
+     * 更新访问次数
+     * @param articleId
+     * @return
+     */
+    int updateVisits(String articleId);
+
+    /**
+     * 更新访客表
+     * @param articleId
+     * @return
+     */
+    int insertVisits(String articleId);
 }

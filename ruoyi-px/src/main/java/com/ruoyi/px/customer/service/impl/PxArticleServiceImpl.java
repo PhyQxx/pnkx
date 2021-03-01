@@ -72,6 +72,12 @@ public class PxArticleServiceImpl implements IPxArticleService {
      */
     @Override
     public List<Map<String, Object>> getArticleList(Map<String, Object> params) {
+        if (params.get("articleId") != null) {
+            /*文章访问次数更新*/
+            pxArticleMapper.updateVisits((String) params.get("articleId"));
+            /*更新访客表*/
+            pxArticleMapper.insertVisits((String) params.get("articleId"));
+        }
         return pxArticleMapper.getArticleList(params);
     }
 

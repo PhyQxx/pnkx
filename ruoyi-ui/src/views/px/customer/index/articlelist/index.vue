@@ -27,6 +27,9 @@
         </el-form>
 
         <div class="article-list" v-loading="loading">
+            <div class="no-data" v-if="articleList.length === 0">
+                暂无数据
+            </div>
             <div class="article-one" v-for="article in articleList" :key="article.id">
                 <i class="el-icon-cherry article-icon"></i>
                 <div class="title pointer" @click="goToArticlePage(article)">{{article.title}}</div>
@@ -74,7 +77,7 @@
                     pageSize: 10,
                     title: null,
                     richText: null,
-                    type: null,
+                    type: this.$route.params.code,
                     createBy: null,
                     createTime: null,
                 },
@@ -146,6 +149,11 @@
         overflow: hidden;
     }
     .article-list{
+        .no-data{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         .article-one{
             display: flex;
             align-items: center;

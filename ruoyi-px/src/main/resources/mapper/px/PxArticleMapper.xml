@@ -9,6 +9,16 @@
             ( now(), #{articleId}, #{content}, #{authorName}, #{authorMailbox}, #{authorHeader}, #{messageBoard} )
     </insert>
 
+    <!--更新访客表-->
+    <insert id="insertVisits" parameterType="string">
+        insert into px_visits (article_id, create_time) values (#{articleId}, now())
+    </insert>
+
+    <!--更新访问次数-->
+    <update id="updateVisits" parameterType="string">
+        update px_article set visits = visits + 1 where id = #{articleId}
+    </update>
+
     <!--获取文章列表-->
     <select id="getArticleList" resultType="map" parameterType="map">
         SELECT

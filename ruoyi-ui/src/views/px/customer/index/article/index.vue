@@ -124,7 +124,10 @@
                         <i class="el-icon-s-grid"></i>
                         <div class="article-type-label-name">文章分类</div>
                     </div>
-                    <div class="article-type-one" v-for="articleType in articleTypeList" :key='articleType.id'>
+                    <div class="article-type-one"
+                         @click="goToArticleType(articleType)"
+                         v-for="articleType in articleTypeList"
+                         :key='articleType.id'>
                         <i class="el-icon-star-on"></i>
                         <div class="article-type-name">{{articleType.name}}</div>
                         <div class="article-type-number">（{{articleType.number}}）</div>
@@ -180,6 +183,17 @@ import { getArticleList, getArticleTypeNumber, getLeaveMessageByArticleId, addMe
             this.getLeaveMessage();
         },
         methods: {
+            /**
+             * 跳转文章分类
+             */
+            goToArticleType(articleType) {
+                this.$router.push({
+                    name: 'articlelist',
+                    params: {
+                        code: articleType.code
+                        }
+                })
+            },
             /**
              * 新增留言
              */
