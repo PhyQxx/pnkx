@@ -9,7 +9,7 @@
           <div class="card-panel-text">
             访客
           </div>
-          <count-to :start-val="0" :end-val="102400" :duration="2600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="statistics.visitsNumber" :duration="2600" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -22,7 +22,7 @@
           <div class="card-panel-text">
             留言
           </div>
-          <count-to :start-val="0" :end-val="81212" :duration="3000" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="statistics.messageNumber" :duration="3000" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -35,7 +35,7 @@
           <div class="card-panel-text">
             文章
           </div>
-          <count-to :start-val="0" :end-val="9280" :duration="3200" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="statistics.articleNumber" :duration="3200" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -48,7 +48,7 @@
           <div class="card-panel-text">
             图片
           </div>
-          <count-to :start-val="0" :end-val="13600" :duration="3600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="statistics.photoNumber" :duration="3600" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -57,12 +57,35 @@
 
 <script>
 import CountTo from 'vue-count-to'
+import { getStatistics } from '@/api/px/customer/statistics'
 
 export default {
   components: {
     CountTo
   },
-  methods: {
+    data() {
+        return {
+            statistics: {
+                visitsNumber: 0,
+                messageNumber: 0,
+                articleNumber: 0,
+                photoNumber: 0
+            }
+        }
+    },
+    mounted() {
+      this.getStatisticsData()
+    },
+    methods: {
+      /**
+       * 获取统计数据
+       * @param type
+       */
+      getStatisticsData() {
+          getStatistics({}).then(res => {
+              this.statistics = res.data;
+          })
+      },
     handleSetLineChartData(type) {
       this.$emit('handleSetLineChartData', type)
     }

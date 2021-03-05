@@ -6,8 +6,17 @@ import request from '@/utils/customer-request'
  */
 export function getStatistics(params) {
     return request({
-        url: '/customer/getStatistics',
+        url: '/admin/statistics/getStatistics',
         method: 'post',
-        data: params
+    })
+}
+
+/**
+ * 获取统计数据
+ */
+export function getLineChart(params) {
+    return request({
+        url: '/admin/statistics/getLineChart',
+        method: 'post',
     })
 }

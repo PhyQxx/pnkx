@@ -12,6 +12,10 @@ public class PxArticleVo extends PxArticle {
     @Excel(name = "昵称")
     private String nickName;
 
+    /** 留言数量 */
+    @Excel(name = "留言数量")
+    private String leaveMessageNumber;
+
     /** 搜索内容 */
     private String search;
 
@@ -29,5 +33,13 @@ public class PxArticleVo extends PxArticle {
 
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    public String getLeaveMessageNumber() {
+        return leaveMessageNumber;
+    }
+
+    public void setLeaveMessageNumber(String leaveMessageNumber) {
+        this.leaveMessageNumber = leaveMessageNumber;
     }
 }

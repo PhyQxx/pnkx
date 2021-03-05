@@ -1,4 +1,4 @@
-package com.ruoyi.px.customer.mapper;
+package com.ruoyi.px.admin.service;
 
 import com.ruoyi.domain.po.PxPhoto;
 
@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 统计Mapper接口
+ * 统计Service接口
  *
  * @author ruoyi
  * @date 2021-02-05
  */
-public interface PxStatisticsMapper
+public interface IPxAdminStatisticsService
 {
 
     /**
@@ -20,4 +20,11 @@ public interface PxStatisticsMapper
      * @return
      */
     Map<String, Object> getStatistics(Map<String, Object> params);
+
+    /**
+     * 获取折线数据数据
+     * @param params
+     * @return
+     */
+    Map<String, Object> getLineChart(Map<String, Object> params);
 }

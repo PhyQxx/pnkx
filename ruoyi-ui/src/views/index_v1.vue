@@ -35,23 +35,24 @@ import LineChart from './dashboard/LineChart'
 import RaddarChart from './dashboard/RaddarChart'
 import PieChart from './dashboard/PieChart'
 import BarChart from './dashboard/BarChart'
+import { getLineChart } from '@/api/px/customer/statistics'
 
 const lineChartData = {
     visitor: {
-    phyData: [100, 120, 161, 134, 105, 160, 165],
-    qxxData: [120, 82, 91, 154, 162, 140, 145]
+    phyData: [0, 0, 0, 0, 0, 0, 0],
+    qxxData: [0, 0, 0, 0, 0, 0, 0]
   },
   messages: {
-    phyData: [200, 192, 120, 144, 160, 130, 140],
-    qxxData: [180, 160, 151, 106, 145, 150, 130]
+      phyData: [0, 0, 0, 0, 0, 0, 0],
+      qxxData: [0, 0, 0, 0, 0, 0, 0]
   },
   article: {
-    phyData: [80, 100, 121, 104, 105, 90, 100],
-    qxxData: [120, 90, 100, 138, 142, 130, 130]
+      phyData: [0, 0, 0, 0, 0, 0, 0],
+      qxxData: [0, 0, 0, 0, 0, 0, 0]
   },
   picture: {
-    phyData: [130, 140, 141, 142, 145, 150, 160],
-    qxxData: [120, 82, 91, 154, 162, 140, 130]
+      phyData: [0, 0, 0, 0, 0, 0, 0],
+      qxxData: [0, 0, 0, 0, 0, 0, 0]
   }
 };
 
@@ -69,7 +70,19 @@ export default {
       lineChartData: lineChartData.visitor
     }
   },
-  methods: {
+    mounted() {
+      this.getLineChart();
+    },
+    methods: {
+      /**
+       * 获取折线图数据
+       * @param type
+       */
+      getLineChart() {
+          getLineChart({}).then(res => {
+              console.log(res)
+          })
+      },
     handleSetLineChartData(type) {
       this.lineChartData = lineChartData[type]
     }
