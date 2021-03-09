@@ -4,7 +4,7 @@
     <panel-group @handleSetLineChartData="handleSetLineChartData" />
 
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart :chart-data="lineChartData" />
+      <line-chart :chart-data="lineChartOne" />
     </el-row>
 
     <!--<el-row :gutter="32">
@@ -37,25 +37,6 @@ import PieChart from './dashboard/PieChart'
 import BarChart from './dashboard/BarChart'
 import { getLineChart } from '@/api/px/customer/statistics'
 
-const lineChartData = {
-    visitor: {
-    phyData: [0, 0, 0, 0, 0, 0, 0],
-    qxxData: [0, 0, 0, 0, 0, 0, 0]
-  },
-  messages: {
-      phyData: [0, 0, 0, 0, 0, 0, 0],
-      qxxData: [0, 0, 0, 0, 0, 0, 0]
-  },
-  article: {
-      phyData: [0, 0, 0, 0, 0, 0, 0],
-      qxxData: [0, 0, 0, 0, 0, 0, 0]
-  },
-  picture: {
-      phyData: [0, 0, 0, 0, 0, 0, 0],
-      qxxData: [0, 0, 0, 0, 0, 0, 0]
-  }
-};
-
 export default {
   name: 'Index',
   components: {
@@ -67,11 +48,30 @@ export default {
   },
   data() {
     return {
-      lineChartData: lineChartData.visitor
+        lineChartData: {
+            visitor: {
+                phyData: [0, 0, 0, 0, 0, 0, 0],
+                qxxData: [0, 0, 0, 0, 0, 0, 0]
+            },
+            messages: {
+                phyData: [0, 0, 0, 0, 0, 0, 0],
+                qxxData: [0, 0, 0, 0, 0, 0, 0]
+            },
+            article: {
+                phyData: [0, 0, 0, 0, 0, 0, 0],
+                qxxData: [0, 0, 0, 0, 0, 0, 0]
+            },
+            picture: {
+                phyData: [0, 0, 0, 0, 0, 0, 0],
+                qxxData: [0, 0, 0, 0, 0, 0, 0]
+            }
+        },
+        lineChartOne: {}
     }
   },
     mounted() {
       this.getLineChart();
+        this.lineChartOne = this.lineChartData.visitor;
     },
     methods: {
       /**
@@ -80,11 +80,75 @@ export default {
        */
       getLineChart() {
           getLineChart({}).then(res => {
-              console.log(res)
+              console.log(res);
+              this.lineChartData.visitor.phyData = [
+                  res.data.visitorPhy[0].monday,
+                  res.data.visitorPhy[0].tuesday,
+                  res.data.visitorPhy[0].wednesday,
+                  res.data.visitorPhy[0].thursday,
+                  res.data.visitorPhy[0].friday,
+                  res.data.visitorPhy[0].saturday,
+                  res.data.visitorPhy[0].sunday];
+              this.lineChartData.visitor.qxxData = [
+                  res.data.visitorQxx[0].monday,
+                  res.data.visitorQxx[0].tuesday,
+                  res.data.visitorQxx[0].wednesday,
+                  res.data.visitorQxx[0].thursday,
+                  res.data.visitorQxx[0].friday,
+                  res.data.visitorQxx[0].saturday,
+                  res.data.visitorQxx[0].sunday];
+              this.lineChartData.messages.phyData = [
+                  res.data.messagesPhy[0].monday,
+                  res.data.messagesPhy[0].tuesday,
+                  res.data.messagesPhy[0].wednesday,
+                  res.data.messagesPhy[0].thursday,
+                  res.data.messagesPhy[0].friday,
+                  res.data.messagesPhy[0].saturday,
+                  res.data.messagesPhy[0].sunday];
+              this.lineChartData.messages.qxxData = [
+                  res.data.messagesQxx[0].monday,
+                  res.data.messagesQxx[0].tuesday,
+                  res.data.messagesQxx[0].wednesday,
+                  res.data.messagesQxx[0].thursday,
+                  res.data.messagesQxx[0].friday,
+                  res.data.messagesQxx[0].saturday,
+                  res.data.messagesQxx[0].sunday];
+              this.lineChartData.article.phyData = [
+                  res.data.articlePhy[0].monday,
+                  res.data.articlePhy[0].tuesday,
+                  res.data.articlePhy[0].wednesday,
+                  res.data.articlePhy[0].thursday,
+                  res.data.articlePhy[0].friday,
+                  res.data.articlePhy[0].saturday,
+                  res.data.articlePhy[0].sunday];
+              this.lineChartData.article.qxxData = [
+                  res.data.articleQxx[0].monday,
+                  res.data.articleQxx[0].tuesday,
+                  res.data.articleQxx[0].wednesday,
+                  res.data.articleQxx[0].thursday,
+                  res.data.articleQxx[0].friday,
+                  res.data.articleQxx[0].saturday,
+                  res.data.articleQxx[0].sunday];
+              this.lineChartData.picture.phyData = [
+                  res.data.pictureQxx[0].monday,
+                  res.data.pictureQxx[0].tuesday,
+                  res.data.pictureQxx[0].wednesday,
+                  res.data.pictureQxx[0].thursday,
+                  res.data.pictureQxx[0].friday,
+                  res.data.pictureQxx[0].saturday,
+                  res.data.pictureQxx[0].sunday];
+              this.lineChartData.picture.qxxData = [
+                  res.data.pictureQxx[0].monday,
+                  res.data.pictureQxx[0].tuesday,
+                  res.data.pictureQxx[0].wednesday,
+                  res.data.pictureQxx[0].thursday,
+                  res.data.pictureQxx[0].friday,
+                  res.data.pictureQxx[0].saturday,
+                  res.data.pictureQxx[0].sunday];
           })
       },
     handleSetLineChartData(type) {
-      this.lineChartData = lineChartData[type]
+      this.lineChartOne = this.lineChartData[type]
     }
   }
 }

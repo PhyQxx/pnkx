@@ -2,6 +2,9 @@ package com.ruoyi.web.controller.px.admin;
 
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.px.admin.service.IPxAdminStatisticsService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +24,9 @@ public class PxAdminStatisticsController extends BaseController
 {
     @Resource
     private IPxAdminStatisticsService pxStatisticsService;
+
+    @Resource
+    private TokenService tokenService;
 
     /**
      * 获取统计数据

@@ -96,44 +96,234 @@
     </select>
 
     <!--获取线形图数据(留言量)-->
-    <select id="getMessageNumberLineChart" resultType="map">
+    <select id="getMessageNumberLineChart" resultType="map" parameterType="map">
         SELECT
-            count(*),
-            date_format(create_time, '%w' )
-        FROM
-            px_leave_message
-        WHERE
-            YEARWEEK(create_time) = YEARWEEK( now( ) )
-        GROUP BY date_format(create_time, '%w' )
-        ORDER BY date_format(create_time, '%w' )
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 1
+                  AND a.create_by = #{createBy}
+            ) monday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 2
+                  AND a.create_by = #{createBy}
+            ) tuesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 3
+                  AND a.create_by = #{createBy}
+            ) wednesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 4
+                  AND a.create_by = #{createBy}
+            ) thursday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 5
+                  AND a.create_by = #{createBy}
+            ) friday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) )
+                  AND date_format( v.create_time, '%w' ) = 6
+                  AND a.create_by = #{createBy}
+            ) saturday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_leave_message v
+                        LEFT JOIN px_article a ON v.article_id = a.id
+                WHERE
+                    YEARWEEK( v.create_time ) = YEARWEEK( now( ) ) + 1
+                  AND date_format( v.create_time, '%w' ) = 0
+                  AND a.create_by = #{createBy}
+            ) sunday
     </select>
 
     <!--获取线形图数据(文章量)-->
-    <select id="getArticleLineChart" resultType="map">
-
+    <select id="getArticleLineChart" resultType="map" parameterType="map">
         SELECT
-            count(*),
-            date_format(create_time, '%w' )
-        FROM
-            px_article
-        WHERE
-            YEARWEEK(create_time) = YEARWEEK( now( ) )
-          and create_by = '1'
-        GROUP BY date_format(create_time, '%w' )
-        ORDER BY date_format(create_time, '%w' )
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 1
+                  AND create_by = #{createBy}
+            ) monday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 2
+                  AND create_by = #{createBy}
+            ) tuesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 3
+                  AND create_by = #{createBy}
+            ) wednesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 4
+                  AND create_by = #{createBy}
+            ) thursday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 5
+                  AND create_by = #{createBy}
+            ) friday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 6
+                  AND create_by = #{createBy}
+            ) saturday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_article
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) ) + 1
+                  AND date_format( create_time, '%w' ) = 0
+                  AND create_by = '1'
+            ) sunday
     </select>
 
     <!--获取线形图数据(照片量)-->
-    <select id="getPhotoNumberLineChart" resultType="map">
+    <select id="getPhotoNumberLineChart" resultType="map" parameterType="map">
         SELECT
-            count(*),
-            date_format(create_time, '%w' )
-        FROM
-            px_photo
-        WHERE
-            YEARWEEK(create_time) = YEARWEEK( now( ) )
-          and create_by = '1'
-        GROUP BY date_format(create_time, '%w' )
-        ORDER BY date_format(create_time, '%w' )
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 1
+                  AND create_by = #{createBy}
+            ) monday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 2
+                  AND create_by = #{createBy}
+            ) tuesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 3
+                  AND create_by = #{createBy}
+            ) wednesday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 4
+                  AND create_by = #{createBy}
+            ) thursday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 5
+                  AND create_by = #{createBy}
+            ) friday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) )
+                  AND date_format( create_time, '%w' ) = 6
+                  AND create_by = #{createBy}
+            ) saturday,
+            (
+                SELECT
+                    count( * )
+                FROM
+                    px_photo
+                WHERE
+                    YEARWEEK( create_time ) = YEARWEEK( now( ) ) + 1
+                  AND date_format( create_time, '%w' ) = 0
+                  AND create_by = '1'
+            ) sunday
     </select>
 </mapper>

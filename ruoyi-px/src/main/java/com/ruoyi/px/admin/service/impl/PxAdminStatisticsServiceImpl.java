@@ -32,10 +32,16 @@ public class PxAdminStatisticsServiceImpl implements IPxAdminStatisticsService
     @Override
     public Map<String, Object> getLineChart(Map<String, Object> params) {
         Map<String, Object> result = new HashMap<>();
-        result.put("visitsNumberLineChart", pxAdminStatisticsMapper.getVisitsNumberLineChart(params));
-        result.put("messageNumberLineChart", pxAdminStatisticsMapper.getMessageNumberLineChart(params));
-        result.put("articleLineChart", pxAdminStatisticsMapper.getArticleLineChart(params));
-        result.put("photoNumberLineChart", pxAdminStatisticsMapper.getPhotoNumberLineChart(params));
+        params.put("createBy", "1");
+        result.put("visitorPhy", pxAdminStatisticsMapper.getVisitsNumberLineChart(params));
+        result.put("messagesPhy", pxAdminStatisticsMapper.getMessageNumberLineChart(params));
+        result.put("articlePhy", pxAdminStatisticsMapper.getArticleLineChart(params));
+        result.put("picturePhy", pxAdminStatisticsMapper.getPhotoNumberLineChart(params));
+        params.put("createBy", "2");
+        result.put("visitorQxx", pxAdminStatisticsMapper.getVisitsNumberLineChart(params));
+        result.put("messagesQxx", pxAdminStatisticsMapper.getMessageNumberLineChart(params));
+        result.put("articleQxx", pxAdminStatisticsMapper.getArticleLineChart(params));
+        result.put("pictureQxx", pxAdminStatisticsMapper.getPhotoNumberLineChart(params));
         return result;
     }
 }
