@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="index-page">
         <div class="nav-box">
             <div class="nav theme-pink">
             <div class="nav-one pointer" :class="nav.isSelected ? 'nav-selected' : ''"
@@ -130,7 +130,8 @@ import { getTimeDifference } from '@/assets/js/public.js';
 </script>
 
 <style lang="scss" scoped>
-.page{
+.index-page{
+    background-color: #bfe7fa!important;
     .nav-box{
         background-color: #bfe7fa;
         position: sticky;
