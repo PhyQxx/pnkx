@@ -28,6 +28,14 @@
                     </div>
                 </div>
             </div>
+            <pagination
+                class="pagination"
+                v-show="total>0"
+                :total="total"
+                :page.sync="queryParams.pageNum"
+                :limit.sync="queryParams.pageSize"
+                @pagination="getLeaveMessage"
+            />
         </div>
         <div v-loading="loading" class="message-board">
             <div class="message-board-left">
@@ -79,7 +87,7 @@
 </template>
 
 <script>
-    import { getLeaveMessageByArticleId, addMessage } from '@/api/px/customer/article.js';
+    import { getMessageList, addMessage } from '@/api/px/customer/article.js';
 
     export default {
         name: "index",
@@ -108,6 +116,14 @@
                     //是否是留言板留言
                     messageBoard: '1',
                 },
+                // 总条数
+                total: 0,
+                //参数
+                queryParams: {
+                    pageNum: 1,
+                    pageSize: 10,
+                    messageBoard: '1'
+                },
             }
         },
         mounted() {
@@ -118,9 +134,11 @@
              * 获取留言
              */
             getLeaveMessage() {
-                getLeaveMessageByArticleId({messageBoard: '1'}).then(res => {
+                this.loading = true;
+                getMessageList(this.queryParams).then(res => {
                     console.log('留言列表', res);
-                    this.leaveMessageList = res.data;
+                    this.leaveMessageList = res.rows;
+                    this.total = res.total;
                     this.loading = false;
                 })
             },
@@ -203,6 +221,7 @@
     .message-board-page{
         padding: 1rem;
         .message{
+            padding-bottom: 1rem;
             .message-label{
                 font-size: 0.9rem;
                 font-weight: bold;

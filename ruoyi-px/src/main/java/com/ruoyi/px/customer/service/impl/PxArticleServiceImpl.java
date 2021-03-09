@@ -1,17 +1,17 @@
 package com.ruoyi.px.customer.service.impl;
 
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.po.PxLeaveMessage;
 import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.mapper.PxAdminArticleMapper;
 import com.ruoyi.px.customer.mapper.PxArticleMapper;
+import com.ruoyi.px.customer.mapper.PxLeaveMessageMapper;
 import com.ruoyi.px.customer.service.IPxArticleService;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -28,6 +28,8 @@ public class PxArticleServiceImpl implements IPxArticleService {
     PxArticleMapper pxArticleMapper;
     @Resource
     private PxAdminArticleMapper pxAdminArticleMapper;
+    @Resource
+    private PxLeaveMessageMapper pxLeaveMessageMapper;
     @Resource
     private RedisTemplate redisTemplate;
 
@@ -119,5 +121,17 @@ public class PxArticleServiceImpl implements IPxArticleService {
     @Override
     public Object getArticleTypeList(Map<String, Object> params) {
         return pxArticleMapper.getArticleTypeList(params);
+    }
+
+    /**
+     * 查询留言列表
+     *
+     * @param pxLeaveMessage 留言
+     * @return 留言
+     */
+    @Override
+    public List<PxLeaveMessage> selectPxLeaveMessageList(PxLeaveMessage pxLeaveMessage)
+    {
+        return pxLeaveMessageMapper.selectPxLeaveMessageList(pxLeaveMessage);
     }
 }

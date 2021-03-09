@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.px.customer.mapper.PxLeaveMessageMapper">
+
+    <resultMap type="PxLeaveMessage" id="PxLeaveMessageResult">
+        <result property="id"    column="id"    />
+        <result property="version"    column="version"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="articleId"    column="article_id"    />
+        <result property="content"    column="content"    />
+        <result property="authorName"    column="author_name"    />
+        <result property="authorMailbox"    column="author_mailbox"    />
+        <result property="authorHeader"    column="author_header"    />
+        <result property="messageBoard"    column="message_board"    />
+    </resultMap>
+
+    <sql id="selectPxLeaveMessageVo">
+        select id, version, create_by, create_time, update_by, update_time, article_id, content, author_name, author_mailbox, author_header, message_board from px_leave_message
+    </sql>
+
+    <select id="selectPxLeaveMessageList" parameterType="PxLeaveMessage" resultMap="PxLeaveMessageResult">
+        <include refid="selectPxLeaveMessageVo"/>
+        <where>
+            <if test="version != null  and version != ''"> and version = #{version}</if>
+            <if test="articleId != null  and articleId != ''"> and article_id = #{articleId}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="authorName != null  and authorName != ''"> and author_name like concat('%', #{authorName}, '%')</if>
+            <if test="authorMailbox != null  and authorMailbox != ''"> and author_mailbox = #{authorMailbox}</if>
+            <if test="authorHeader != null  and authorHeader != ''"> and author_header = #{authorHeader}</if>
+            <if test="messageBoard != null  and messageBoard != ''"> and message_board = #{messageBoard}</if>
+        </where>
+    </select>
+
+    <select id="selectPxLeaveMessageById" parameterType="Long" resultMap="PxLeaveMessageResult">
+        <include refid="selectPxLeaveMessageVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxLeaveMessage" parameterType="PxLeaveMessage" useGeneratedKeys="true" keyProperty="id">
+        insert into px_leave_message
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="articleId != null">article_id,</if>
+            <if test="content != null">content,</if>
+            <if test="authorName != null">author_name,</if>
+            <if test="authorMailbox != null">author_mailbox,</if>
+            <if test="authorHeader != null">author_header,</if>
+            <if test="messageBoard != null">message_board,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="articleId != null">#{articleId},</if>
+            <if test="content != null">#{content},</if>
+            <if test="authorName != null">#{authorName},</if>
+            <if test="authorMailbox != null">#{authorMailbox},</if>
+            <if test="authorHeader != null">#{authorHeader},</if>
+            <if test="messageBoard != null">#{messageBoard},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxLeaveMessage" parameterType="PxLeaveMessage">
+        update px_leave_message
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="articleId != null">article_id = #{articleId},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="authorName != null">author_name = #{authorName},</if>
+            <if test="authorMailbox != null">author_mailbox = #{authorMailbox},</if>
+            <if test="authorHeader != null">author_header = #{authorHeader},</if>
+            <if test="messageBoard != null">message_board = #{messageBoard},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxLeaveMessageById" parameterType="Long">
+        delete from px_leave_message where id = #{id}
+    </delete>
+
+    <delete id="deletePxLeaveMessageByIds" parameterType="String">
+        delete from px_leave_message where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

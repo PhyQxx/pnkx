@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.px.curtomer;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.domain.po.PxLeaveMessage;
 import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.core.controller.BaseController;
@@ -10,6 +11,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.domain.po.PxArticle;
 import com.ruoyi.px.customer.service.impl.PxArticleServiceImpl;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -102,4 +104,16 @@ public class PxArticleController extends BaseController {
     public AjaxResult getArticleTypeList(@RequestBody Map<String, Object> params) {
         return AjaxResult.success("获取文章类型列表成功", pxArticleService.getArticleTypeList(params));
     }
+
+    /**
+     * 查询留言列表
+     */
+    @GetMapping("/getMessageList")
+    public TableDataInfo list(PxLeaveMessage pxLeaveMessage)
+    {
+        startPage();
+        List<PxLeaveMessage> list = pxArticleService.selectPxLeaveMessageList(pxLeaveMessage);
+        return getDataTable(list);
+    }
+
 }

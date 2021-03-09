@@ -71,3 +71,12 @@ export function getArticle(id) {
         method: 'get'
     })
 }
+
+//获取留言板内容
+export function getMessageList(query) {
+    return request({
+        url: '/customer/getMessageList',
+        method: 'get',
+        params: query
+    })
+}

@@ -1,6 +1,7 @@
 package com.ruoyi.px.customer.service;
 
 import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.po.PxLeaveMessage;
 import com.ruoyi.domain.vo.PxArticleVo;
 
 import java.util.List;
@@ -67,4 +68,12 @@ public interface IPxArticleService {
      * @return
      */
     Object getArticleTypeList(Map<String, Object> params);
+
+    /**
+     * 查询留言列表
+     *
+     * @param pxLeaveMessage 留言
+     * @return 留言集合
+     */
+    public List<PxLeaveMessage> selectPxLeaveMessageList(PxLeaveMessage pxLeaveMessage);
 }
