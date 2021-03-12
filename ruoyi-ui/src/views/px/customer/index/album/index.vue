@@ -38,7 +38,6 @@
              */
             getAlbumList() {
                 getAlbumList({}).then(res => {
-                    console.log('获取相册列表', res);
                     this.albumList = res.data;
                     this.loading = false;
                 })

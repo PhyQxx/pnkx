@@ -95,7 +95,6 @@ import messageBoard from '@/components/MessageBoard/index'
              */
             getArticleById() {
                 getArticleList({articleId: this.articleId}).then(res => {
-                    console.log('文章', res);
                     this.article = res.data[0];
                     this.getArticleTypeNumber();
                     this.loading = false;
@@ -117,7 +116,6 @@ import messageBoard from '@/components/MessageBoard/index'
              */
             getArticleTypeNumber() {
                 getArticleTypeNumber({createBy: this.article.createBy}).then(res => {
-                    console.log('文章分类分组数据', res);
                     this.articleTypeList = res.data;
                 })
             }

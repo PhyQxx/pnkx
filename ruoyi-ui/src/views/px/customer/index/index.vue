@@ -7,12 +7,22 @@
                                                 :key="nav.name"
                                                 @click="selectNav(nav)">{{nav.name}}</div>
             <div class="search">
-                <el-input
-                    placeholder="搜一搜"
-                    suffix-icon="el-icon-search"
+                <el-select
                     v-model="keyCode"
-                    size="mini">
-                </el-input>
+                    filterable
+                    remote
+                    placeholder="搜一搜"
+                    :remote-method="remoteMethod"
+                    @change="changArticle(keyCode)"
+                    @focus="initArticleList"
+                    :loading="loading">
+                    <el-option
+                        v-for="item in articleList"
+                        :key="item.id"
+                        :label="item.title"
+                        :value="item.id">
+                    </el-option>
+                </el-select>
             </div>
         </div>
         </div>
@@ -45,6 +55,8 @@
 
 <script>
 import { getTimeDifference } from '@/assets/js/public.js';
+import { listArticle } from '@/api/px/customer/article';
+
     export default {
         components: {
         },
@@ -52,6 +64,10 @@ import { getTimeDifference } from '@/assets/js/public.js';
             return {
                 //搜索关键字
                 keyCode: '',
+                //远程搜索加载
+                loading: true,
+                //文章列表
+                articleList: [],
                 //导航栏功能
                 navList: [
                     {name: '首页', isSelected: true, path: 'homepage'},
@@ -116,6 +132,33 @@ import { getTimeDifference } from '@/assets/js/public.js';
             }
         },
         methods: {
+            /**
+             * 选中文章
+             */
+            changArticle(id) {
+                sessionStorage.setItem('articleId', id);
+                this.$router.push({name: 'article'});
+            },
+            /**
+             * 初始化搜索内容
+             */
+            initArticleList() {
+                this.loading = true;
+                listArticle({pageNum: 1, pageSize: 10,}).then(response => {
+                    this.articleList = response.rows;
+                    this.loading = false;
+                });
+            },
+            /**
+             * 搜索方法
+             */
+            remoteMethod(value) {
+                this.loading = true;
+                listArticle({title: value}).then(response => {
+                    this.articleList = response.rows;
+                    this.loading = false;
+                });
+            },
             /**
              * 选择导航
              */

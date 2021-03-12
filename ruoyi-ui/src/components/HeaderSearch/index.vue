@@ -138,7 +138,6 @@ export default {
     querySearch(query) {
       if (query !== '') {
           listArticle({search: query}).then(response => {
-              console.log('文章列表', response);
               this.options = response.rows;
           });
       } else {

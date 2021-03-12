@@ -103,13 +103,11 @@
             goToArticlePage(article) {
                 sessionStorage.setItem('articleId', article.id);
                 this.$router.push({name: 'article'});
-                console.log(this.$route);
             },
             /** 查询文章列表 */
             getList() {
                 this.loading = true;
                 listArticle(this.queryParams).then(response => {
-                    console.log('文章列表', response);
                     this.articleList = response.rows;
                     this.total = response.total;
                     this.loading = false;

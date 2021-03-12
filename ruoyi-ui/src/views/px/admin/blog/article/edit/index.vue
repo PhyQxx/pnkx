@@ -74,7 +74,6 @@
              */
             getArticle(id) {
                 getArticle(id).then(res => {
-                    console.log('文章内容', res);
                     this.article = res.data;
                 });
             },
@@ -83,7 +82,6 @@
              */
             getDictList() {
                 getDicts('px_article_type').then(res => {
-                    console.log('文章类型列表', res);
                     this.typeOptions = res.data;
                 })
             },

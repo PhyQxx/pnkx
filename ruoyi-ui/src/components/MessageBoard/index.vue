@@ -183,9 +183,7 @@
                     this.$message.warning('请留下您的邮箱')
                 } else {
                     this.loading = true;
-                    console.log('留言内容', this.messageForm);
                     addMessage(this.messageForm).then(res => {
-                        console.log('留言结果', res);
                         if (res.data === 1) {
                             this.$message.success('留言成功');
                             this.getLeaveMessage();

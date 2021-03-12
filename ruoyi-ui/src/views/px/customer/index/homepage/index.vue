@@ -130,7 +130,6 @@ import { listArticle } from '@/api/px/customer/article.js';
             goToArticlePage(article) {
                 sessionStorage.setItem('articleId', article.id);
                 this.$router.push({name: 'article'});
-                console.log(this.$route);
             },
             /**
              * 获取文章列表
@@ -138,7 +137,6 @@ import { listArticle } from '@/api/px/customer/article.js';
             getPhyList() {
                 this.phyLoading = true;
                 listArticle(this.phyParams).then(response => {
-                    console.log('文章列表', response);
                     this.phyArticleList = response.rows;
                     this.phyTotal = response.total;
                     this.phyLoading = false;
@@ -147,7 +145,6 @@ import { listArticle } from '@/api/px/customer/article.js';
             getQxxList() {
                 this.qxxLoading = true;
                 listArticle(this.qxxParams).then(response => {
-                    console.log('文章列表', response);
                     this.qxxArticleList = response.rows;
                     this.qxxTotal = response.total;
                     this.qxxLoading = false;

@@ -35,7 +35,6 @@
         mounted() {
             this.getDictList();
             this.getNotice();
-            console.log(this.parent)
         },
         methods: {
             /**

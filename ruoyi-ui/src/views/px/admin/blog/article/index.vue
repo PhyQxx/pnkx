@@ -180,7 +180,6 @@
       getList() {
         this.loading = true;
         listArticle(this.queryParams).then(response => {
-            console.log('文章列表', response);
           this.articleList = response.rows;
           this.total = response.total;
           this.loading = false;
