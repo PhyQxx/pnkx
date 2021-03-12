@@ -49,78 +49,80 @@
             @pagination="getList"
         />
 
-        <div v-loading="messageLoading" class="message">
-            <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
-                还没有童鞋留言，快来留言吧！
+        <div class="message-all" v-loading="messageLoading">
+            <div class="message">
+                <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
+                    还没有童鞋留言，快来留言吧！
+                </div>
+                <div class="message-label" v-if="leaveMessageList.length > 0">已经有{{leaveMessageList.length}}位童鞋留言了，还不来盖楼！</div>
+                <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id'>
+                    <div class="message-left">
+                        <div class="header-photo">
+                            <el-image
+                                class="header-picture"
+                                :src="leaveMessage.authorHeader"
+                                fit="scale-down">
+                            </el-image>
+                        </div>
+                        <div class="author-name">
+                            {{leaveMessage.authorName}}
+                        </div>
+                    </div>
+                    <div class="message-right">
+                        <div class="message-right-top">
+                            <div class="leave-message-content" v-html="leaveMessage.content"></div>
+                            <div class="floor">{{index+1}}F</div>
+                        </div>
+                        <div class="leave-message-time">
+                            {{leaveMessage.createTime}}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="message-label" v-if="leaveMessageList.length > 0">已经有{{leaveMessageList.length}}位童鞋留言了，还不来盖楼！</div>
-            <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id'>
-                <div class="message-left">
-                    <div class="header-photo">
+            <div class="message-board">
+                <div class="message-board-left">
+                    <div class="message-board-left-top">
+                        <div class="message-logo"></div>
+                        <div class="message-text">
+                            <div class="text-left">To：</div>
+                            <div class="text-right">pei你看雪</div>
+                        </div>
+                    </div>
+                    <div class="message-board-left-bottom">
+                        <div class="textarea"   :contenteditable='inputFlag'
+                             ref="leaveMessage"
+                             @input="leaveMessageChange($event)"></div>
+                        <div class="tips">您还可以输入<span class="text-number">{{textNumber}}</span>字</div>
+                    </div>
+                </div>
+                <div class="message-board-right">
+                    <div class="your-header">
                         <el-image
                             class="header-picture"
-                            :src="leaveMessage.authorHeader"
+                            :src="messageForm.authorHeader"
                             fit="scale-down">
+                            <div slot="error" class="image-slot">
+                                请上传头像
+                            </div>
                         </el-image>
+                        <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"></i>
+                        <input v-if="!messageForm.authorHeader" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
                     </div>
-                    <div class="author-name">
-                        {{leaveMessage.authorName}}
-                    </div>
-                </div>
-                <div class="message-right">
-                    <div class="message-right-top">
-                        <div class="leave-message-content" v-html="leaveMessage.content"></div>
-                        <div class="floor">{{index+1}}F</div>
-                    </div>
-                    <div class="leave-message-time">
-                        {{leaveMessage.createTime}}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div v-loading="messageLoading" class="message-board">
-            <div class="message-board-left">
-                <div class="message-board-left-top">
-                    <div class="message-logo"></div>
-                    <div class="message-text">
-                        <div class="text-left">To：</div>
-                        <div class="text-right">pei你看雪</div>
-                    </div>
-                </div>
-                <div class="message-board-left-bottom">
-                    <div class="textarea"   :contenteditable='inputFlag'
-                         ref="leaveMessage"
-                         @input="leaveMessageChange($event)"></div>
-                    <div class="tips">您还可以输入<span class="text-number">{{textNumber}}</span>字</div>
-                </div>
-            </div>
-            <div class="message-board-right">
-                <div class="your-header">
-                    <el-image
-                        class="header-picture"
-                        :src="messageForm.authorHeader"
-                        fit="scale-down">
-                        <div slot="error" class="image-slot">
-                            请上传头像
+                    <div class="customer-name">
+                        <div class="label">您的姓名：</div>
+                        <div class="name">
+                            <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"></el-input>
                         </div>
-                    </el-image>
-                    <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"></i>
-                    <input v-if="!messageForm.authorHeader" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
-                </div>
-                <div class="customer-name">
-                    <div class="label">您的姓名：</div>
-                    <div class="name">
-                        <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"></el-input>
                     </div>
-                </div>
-                <div class="customer-mail">
-                    <div class="label">您的邮箱： </div>
-                    <div class="name">
-                        <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"></el-input>
+                    <div class="customer-mail">
+                        <div class="label">您的邮箱： </div>
+                        <div class="name">
+                            <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"></el-input>
+                        </div>
                     </div>
-                </div>
-                <div class="button">
-                    <el-button type="primary" @click="addMessage">提交</el-button>
+                    <div class="button">
+                        <el-button type="primary" @click="addMessage">提交</el-button>
+                    </div>
                 </div>
             </div>
         </div>

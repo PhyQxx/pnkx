@@ -3,31 +3,46 @@
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.SysNoticeMapper">
-    
-    <resultMap type="SysNotice" id="SysNoticeResult">
+
+    <resultMap type="com.ruoyi.system.domain.vo.SysNoticeVo" id="SysNoticeResult">
         <result property="noticeId"       column="notice_id"       />
         <result property="noticeTitle"    column="notice_title"    />
         <result property="noticeType"     column="notice_type"     />
         <result property="noticeContent"  column="notice_content"  />
         <result property="status"         column="status"          />
         <result property="createBy"       column="create_by"       />
+        <result property="author"       column="nick_name"       />
         <result property="createTime"     column="create_time"     />
         <result property="updateBy"       column="update_by"       />
         <result property="updateTime"     column="update_time"     />
         <result property="remark"         column="remark"          />
     </resultMap>
-    
+
+    <resultMap type="com.ruoyi.system.domain.SysNoticeRead" id="SysNoticeReadResult">
+        <result property="id"    column="id"    />
+        <result property="noticeId"    column="notice_id"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
     <sql id="selectNoticeVo">
-        select notice_id, notice_title, notice_type, cast(notice_content as char) as notice_content, status, create_by, create_time, update_by, update_time, remark 
-		from sys_notice
+        select notice_id, notice_title, notice_type, cast(notice_content as char) as notice_content, n.status, n.create_by, nick_name, n.create_time, n.update_by, n.update_time, n.remark
+		from sys_notice n left join sys_user u on n.create_by = u.user_id
     </sql>
-    
+
+    <sql id="selectSysNoticeReadVo">
+        select id, notice_id, create_by, create_time, update_by, update_time, remark from sys_notice_read
+    </sql>
+
     <select id="selectNoticeById" parameterType="Long" resultMap="SysNoticeResult">
         <include refid="selectNoticeVo"/>
         where notice_id = #{noticeId}
     </select>
-    
-    <select id="selectNoticeList" parameterType="SysNotice" resultMap="SysNoticeResult">
+
+    <select id="selectNoticeList" parameterType="com.ruoyi.system.domain.SysNotice" resultMap="SysNoticeResult">
         <include refid="selectNoticeVo"/>
         <where>
 			<if test="noticeTitle != null and noticeTitle != ''">
@@ -41,8 +56,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			</if>
 		</where>
     </select>
-    
-    <insert id="insertNotice" parameterType="SysNotice">
+
+    <!--获取未读通知公告-->
+    <select id="getUnreadNoticeList" resultMap="SysNoticeResult" parameterType="com.ruoyi.system.domain.SysNoticeRead">
+        SELECT
+            *
+        FROM
+            `sys_notice`
+        WHERE
+                notice_id NOT IN ( SELECT notice_id FROM sys_notice_read WHERE create_by = #{createBy} )
+    </select>
+
+    <!--按条件查询已读通知-->
+    <select id="selectNoticeRead"  resultMap="SysNoticeReadResult" parameterType="com.ruoyi.system.domain.SysNoticeRead">
+        <include refid="selectSysNoticeReadVo"/>
+        <where>
+            <if test="id != null "> and id = #{id}</if>
+            <if test="noticeId != null "> and notice_id = #{noticeId}</if>
+        </where>
+    </select>
+
+    <insert id="insertNotice" parameterType="com.ruoyi.system.domain.SysNotice" useGeneratedKeys="true" keyProperty="noticeId">
         insert into sys_notice (
 			<if test="noticeTitle != null and noticeTitle != '' ">notice_title, </if>
 			<if test="noticeType != null and noticeType != '' ">notice_type, </if>
@@ -61,9 +95,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			sysdate()
 		)
     </insert>
-	 
-    <update id="updateNotice" parameterType="SysNotice">
-        update sys_notice 
+
+    <!--新增已读记录-->
+    <insert id="insertNoticeRead" parameterType="com.ruoyi.system.domain.SysNoticeRead">
+        insert into sys_notice_read (
+        <if test="id != null and id != '' ">id, </if>
+        <if test="noticeId != null and noticeId != '' ">notice_id, </if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="createBy != null and createBy != ''">create_by,</if>
+        create_time
+        )values(
+        <if test="id != null and id != ''">#{id}, </if>
+        <if test="noticeId != null and noticeId != ''">#{noticeId}, </if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="createBy != null and createBy != ''">#{createBy},</if>
+        sysdate()
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="com.ruoyi.system.domain.SysNotice">
+        update sys_notice
         <set>
             <if test="noticeTitle != null and noticeTitle != ''">notice_title = #{noticeTitle}, </if>
             <if test="noticeType != null and noticeType != ''">notice_type = #{noticeType}, </if>
@@ -74,16 +125,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </set>
         where notice_id = #{noticeId}
     </update>
-	
+
     <delete id="deleteNoticeById" parameterType="Long">
         delete from sys_notice where notice_id = #{noticeId}
     </delete>
-    
+
     <delete id="deleteNoticeByIds" parameterType="Long">
-        delete from sys_notice where notice_id in 
+        delete from sys_notice where notice_id in
         <foreach item="noticeId" collection="array" open="(" separator="," close=")">
             #{noticeId}
         </foreach>
     </delete>
-    
+
 </mapper>

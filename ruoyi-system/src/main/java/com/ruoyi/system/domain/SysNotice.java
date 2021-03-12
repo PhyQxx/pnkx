@@ -8,7 +8,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 通知公告表 sys_notice
- * 
+ *
  * @author ruoyi
  */
 public class SysNotice extends BaseEntity
@@ -84,7 +84,7 @@ public class SysNotice extends BaseEntity
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
+        return new ToStringBuilder("")
             .append("noticeId", getNoticeId())
             .append("noticeTitle", getNoticeTitle())
             .append("noticeType", getNoticeType())

@@ -1,6 +1,13 @@
 package com.ruoyi.web.controller.system;
 
 import java.util.List;
+
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.utils.ServletUtils;
+import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.system.domain.SysNoticeRead;
+import com.ruoyi.system.domain.vo.SysNoticeVo;
+import com.ruoyi.web.core.websocket.WebSocket;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -21,9 +28,11 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.SysNotice;
 import com.ruoyi.system.service.ISysNoticeService;
 
+import javax.annotation.Resource;
+
 /**
  * 公告 信息操作处理
- * 
+ *
  * @author ruoyi
  */
 @RestController
@@ -32,6 +41,10 @@ public class SysNoticeController extends BaseController
 {
     @Autowired
     private ISysNoticeService noticeService;
+    @Resource
+    WebSocket webSocket;
+    @Resource
+    TokenService tokenService;
 
     /**
      * 获取通知公告列表
@@ -41,8 +54,19 @@ public class SysNoticeController extends BaseController
     public TableDataInfo list(SysNotice notice)
     {
         startPage();
-        List<SysNotice> list = noticeService.selectNoticeList(notice);
+        List<SysNoticeVo> list = noticeService.selectNoticeList(notice);
         return getDataTable(list);
+    }
+
+    /**
+     * 查询通知公告未读读列表
+     */
+    @GetMapping("/getUnreadNoticeList")
+    public List<SysNotice> getUnreadNoticeList(SysNoticeRead sysNoticeRead)
+    {
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+        sysNoticeRead.setCreateBy(String.valueOf(loginUser.getUser().getUserId()));
+        return noticeService.getUnreadNoticeList(sysNoticeRead);
     }
 
     /**
@@ -63,8 +87,10 @@ public class SysNoticeController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody SysNotice notice)
     {
-        notice.setCreateBy(SecurityUtils.getUsername());
-        return toAjax(noticeService.insertNotice(notice));
+        notice.setCreateBy(String.valueOf(SecurityUtils.getLoginUser().getUser().getUserId()));
+        int sysNotice = noticeService.insertNotice(notice);
+        webSocket.sendAllMessage("{\"noticeId\": \"" + notice.getNoticeId() + "\", \"noticeType\": \"" + notice.getNoticeType() + "\", \"noticeTitle\": \"" + notice.getNoticeTitle() + "\"}");
+        return toAjax(sysNotice);
     }
 
     /**

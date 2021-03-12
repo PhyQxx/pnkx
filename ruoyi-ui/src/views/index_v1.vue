@@ -4,7 +4,7 @@
     <panel-group @handleSetLineChartData="handleSetLineChartData" />
 
     <el-row style="background:#fff;padding:16px 16px 0;margin-bottom:32px;">
-      <line-chart :chart-data="lineChartOne" />
+      <line-chart :chartData="lineChartOne" />
     </el-row>
 
     <!--<el-row :gutter="32">
@@ -80,7 +80,6 @@ export default {
        */
       getLineChart() {
           getLineChart({}).then(res => {
-              console.log(res);
               this.lineChartData.visitor.phyData = [
                   res.data.visitorPhy[0].monday,
                   res.data.visitorPhy[0].tuesday,
@@ -130,13 +129,13 @@ export default {
                   res.data.articleQxx[0].saturday,
                   res.data.articleQxx[0].sunday];
               this.lineChartData.picture.phyData = [
-                  res.data.pictureQxx[0].monday,
-                  res.data.pictureQxx[0].tuesday,
-                  res.data.pictureQxx[0].wednesday,
-                  res.data.pictureQxx[0].thursday,
-                  res.data.pictureQxx[0].friday,
-                  res.data.pictureQxx[0].saturday,
-                  res.data.pictureQxx[0].sunday];
+                  res.data.picturePhy[0].monday,
+                  res.data.picturePhy[0].tuesday,
+                  res.data.picturePhy[0].wednesday,
+                  res.data.picturePhy[0].thursday,
+                  res.data.picturePhy[0].friday,
+                  res.data.picturePhy[0].saturday,
+                  res.data.picturePhy[0].sunday];
               this.lineChartData.picture.qxxData = [
                   res.data.pictureQxx[0].monday,
                   res.data.pictureQxx[0].tuesday,

@@ -55,6 +55,12 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
+        <!--引入websocket依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- 核心模块-->
         <dependency>
             <groupId>com.ruoyi</groupId>

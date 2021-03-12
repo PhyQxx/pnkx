@@ -1,7 +1,7 @@
 <template>
     <div class="album" v-loading="loading">
         <div class="album-one pointer" v-for="item in albumList" :key="item.id">
-            <div class="box" @click="goToPhotoList(item)">
+            <div class="transition-box box" @click="goToPhotoList(item)">
                 <el-image
                     class="album-cover"
                     :src="item.photo"
@@ -72,6 +72,7 @@
         align-items: center;
         flex-flow: column wrap;
         justify-content: center;
+        margin: 0 0 2rem 0;
         .box{
             display: flex;
             align-items: center;

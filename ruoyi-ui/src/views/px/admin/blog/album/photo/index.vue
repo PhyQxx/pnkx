@@ -116,39 +116,41 @@
 
         <!-- 添加或修改相册对话框 -->
         <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-            <el-form ref="form" :model="form" :rules="rules" label-width="8rem">
-                <el-form-item label="图片名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入图片名称" />
-                </el-form-item>
-                <el-form-item label="图片Base64码" prop="photoBase64">
-                    <div class="photo">
-                        <el-image
-                            v-if="form.photoBase64"
-                            class="header-picture"
-                            :src="form.photoBase64"
-                            fit="scale-down">
-                        </el-image>
-                        <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="form.photoBase64"></i>
-                        <input v-if="!form.photoBase64" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
-                    </div>
-                </el-form-item>
-                <el-form-item label="所属相册" prop="type">
-                    <el-select v-model="form.type" placeholder="请选择所属相册">
-                        <el-option
-                            v-for="dict in typeOptions"
-                            :key="dict.dictValue"
-                            :label="dict.dictLabel"
-                            :value="dict.dictValue"
-                        ></el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="备注" prop="remark">
-                    <el-input v-model="form.remark" placeholder="请输入备注" />
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button type="primary" @click="submitForm">确 定</el-button>
-                <el-button @click="cancel">取 消</el-button>
+            <div class="dialog" v-loading="dialogLoading">
+                <el-form ref="form" :model="form" :rules="rules" label-width="8rem">
+                    <el-form-item label="图片名称" prop="name">
+                        <el-input v-model="form.name" placeholder="请输入图片名称" />
+                    </el-form-item>
+                    <el-form-item label="图片Base64码" prop="photoBase64">
+                        <div class="photo">
+                            <el-image
+                                v-if="form.photoBase64"
+                                class="header-picture"
+                                :src="form.photoBase64"
+                                fit="scale-down">
+                            </el-image>
+                            <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="form.photoBase64"></i>
+                            <input v-if="!form.photoBase64" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
+                        </div>
+                    </el-form-item>
+                    <el-form-item label="所属相册" prop="type">
+                        <el-select v-model="form.type" placeholder="请选择所属相册">
+                            <el-option
+                                v-for="dict in typeOptions"
+                                :key="dict.dictValue"
+                                :label="dict.dictLabel"
+                                :value="dict.dictValue"
+                            ></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="备注" prop="remark">
+                        <el-input v-model="form.remark" placeholder="请输入备注" />
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button type="primary" @click="submitForm">确 定</el-button>
+                    <el-button @click="cancel">取 消</el-button>
+                </div>
             </div>
         </el-dialog>
     </div>
@@ -165,6 +167,7 @@
             return {
                 // 遮罩层
                 loading: true,
+                dialogLoading: false,
                 // 选中数组
                 ids: [],
                 // 非单个禁用
@@ -306,17 +309,20 @@
             },
             /** 提交按钮 */
             submitForm() {
+                this.dialogLoading = true;
                 this.$refs["form"].validate(valid => {
                     if (valid) {
                         if (this.form.id != null) {
                             updatePhoto(this.form).then(response => {
                                 this.msgSuccess("修改成功");
+                                this.dialogLoading = false;
                                 this.open = false;
                                 this.getList();
                             });
                         } else {
                             addPhoto(this.form).then(response => {
                                 this.msgSuccess("新增成功");
+                                this.dialogLoading = false;
                                 this.open = false;
                                 this.getList();
                             });
@@ -400,5 +406,9 @@
                 height: 100%;
             }
         }
+    }
+    .dialog-footer{
+        display: flex;
+        justify-content: flex-end;
     }
 </style>

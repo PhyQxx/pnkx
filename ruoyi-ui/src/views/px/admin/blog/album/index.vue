@@ -160,29 +160,37 @@
         data() {
             //相册名称名称校验规则
             const dictLabelValidate = (rule, value, callback) => {
-                dictDataCheckUniqueness({
-                    dictType: 'px_album_name',
-                    dictLabel: value
-                }).then(res => {
-                    if (res.data > 0) {
-                        callback(new Error('相册名称名称不能重复'));
-                    } else {
-                        callback();
-                    }
-                });
+                if (this.form.dictCode === undefined || this.form.dictCode === '') {
+                    dictDataCheckUniqueness({
+                        dictType: 'px_album_name',
+                        dictLabel: value
+                    }).then(res => {
+                        if (res.data > 0) {
+                            callback(new Error('相册名称名称不能重复'));
+                        } else {
+                            callback();
+                        }
+                    });
+                } else {
+                    callback();
+                }
             };
             //相册名称键值校验规则
             const dictValueValidate = (rule, value, callback) => {
-                dictDataCheckUniqueness({
-                    dictType: 'px_album_name',
-                    dictValue: value
-                }).then(res => {
-                    if (res.data > 0) {
-                        callback(new Error('相册名称键值不能重复'));
+                    if (this.form.dictCode === undefined || this.form.dictCode === '') {
+                        dictDataCheckUniqueness({
+                            dictType: 'px_album_name',
+                            dictValue: value
+                        }).then(res => {
+                            if (res.data > 0) {
+                                callback(new Error('相册名称键值不能重复'));
+                            } else {
+                                callback();
+                            }
+                        });
                     } else {
                         callback();
                     }
-                });
             };
             return {
                 // 遮罩层

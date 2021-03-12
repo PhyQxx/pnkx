@@ -42,3 +42,11 @@ export function delNotice(noticeId) {
     method: 'delete'
   })
 }
+
+// 获取未读通知公告
+export function getUnreadNoticeList() {
+  return request({
+    url: '/system/notice/getUnreadNoticeList',
+    method: 'get'
+  })
+}

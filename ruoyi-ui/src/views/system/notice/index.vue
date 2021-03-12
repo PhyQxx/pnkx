@@ -73,13 +73,20 @@
 
     <el-table v-loading="loading" :data="noticeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="序号" align="center" prop="noticeId" width="100" />
+        <el-table-column label="序号" align="center" width="100" >
+            <template slot-scope="scope">
+                <span>{{ scope.$index + 1 }}</span>
+            </template>
+        </el-table-column>
       <el-table-column
         label="公告标题"
         align="center"
-        prop="noticeTitle"
         :show-overflow-tooltip="true"
-      />
+      >
+          <template slot-scope="scope">
+              <span class="notice-title" @click="toNoticeDetails(scope.row)">{{ scope.row.noticeTitle }}</span>
+          </template>
+      </el-table-column>
       <el-table-column
         label="公告类型"
         align="center"
@@ -94,7 +101,7 @@
         :formatter="statusFormat"
         width="100"
       />
-      <el-table-column label="创建者" align="center" prop="createBy" width="100" />
+      <el-table-column label="创建者" align="center" prop="author" width="100" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="100">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
@@ -239,6 +246,17 @@ export default {
     });
   },
   methods: {
+      /**
+       * 跳转到通知详情页面
+       */
+      toNoticeDetails(row) {
+          this.$router.push({
+              path: 'noticedetail',
+              query: {
+                  noticeId: row.noticeId
+              }
+          })
+      },
     /** 查询公告列表 */
     getList() {
       this.loading = true;
@@ -284,9 +302,9 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.noticeId)
-      this.single = selection.length!=1
-      this.multiple = !selection.length
+      this.ids = selection.map(item => item.noticeId);
+      this.single = selection.length!==1;
+      this.multiple = !selection.length;
     },
     /** 新增按钮操作 */
     handleAdd() {
@@ -326,8 +344,8 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const noticeIds = row.noticeId || this.ids
-      this.$confirm('是否确认删除公告编号为"' + noticeIds + '"的数据项?', "警告", {
+      const noticeIds = row.noticeId || this.ids;
+      this.$confirm('是否确认选中的通知公告?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
@@ -341,3 +359,11 @@ export default {
   }
 };
 </script>
+<style lang="scss" scoped>
+    .notice-title{
+        cursor: pointer;
+    }
+    .notice-title:hover{
+        color: #00afff;
+    }
+</style>
