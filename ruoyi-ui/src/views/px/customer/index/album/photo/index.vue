@@ -49,122 +49,21 @@
             @pagination="getList"
         />
 
-        <div class="message-all" v-loading="messageLoading">
-            <div class="message">
-                <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
-                    还没有童鞋留言，快来留言吧！
-                </div>
-                <div class="message-label" v-if="leaveMessageList.length > 0">已经有{{leaveMessageList.length}}位童鞋留言了，还不来盖楼！</div>
-                <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id'>
-                    <div class="message-left">
-                        <div class="header-photo">
-                            <el-image
-                                class="header-picture"
-                                :src="leaveMessage.authorHeader"
-                                fit="scale-down">
-                            </el-image>
-                        </div>
-                        <div class="author-name">
-                            {{leaveMessage.authorName}}
-                        </div>
-                    </div>
-                    <div class="message-right">
-                        <div class="message-right-top">
-                            <div class="leave-message-content" v-html="leaveMessage.content"></div>
-                            <div class="floor">{{index+1}}F</div>
-                        </div>
-                        <div class="leave-message-time">
-                            {{leaveMessage.createTime}}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="message-board">
-                <div class="message-board-left">
-                    <div class="message-board-left-top">
-                        <div class="message-logo"></div>
-                        <div class="message-text">
-                            <div class="text-left">To：</div>
-                            <div class="text-right">pei你看雪</div>
-                        </div>
-                    </div>
-                    <div class="message-board-left-bottom">
-                        <div class="textarea"   :contenteditable='inputFlag'
-                             ref="leaveMessage"
-                             @input="leaveMessageChange($event)"></div>
-                        <div class="tips">您还可以输入<span class="text-number">{{textNumber}}</span>字</div>
-                    </div>
-                </div>
-                <div class="message-board-right">
-                    <div class="your-header">
-                        <el-image
-                            class="header-picture"
-                            :src="messageForm.authorHeader"
-                            fit="scale-down">
-                            <div slot="error" class="image-slot">
-                                请上传头像
-                            </div>
-                        </el-image>
-                        <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"></i>
-                        <input v-if="!messageForm.authorHeader" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
-                    </div>
-                    <div class="customer-name">
-                        <div class="label">您的姓名：</div>
-                        <div class="name">
-                            <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"></el-input>
-                        </div>
-                    </div>
-                    <div class="customer-mail">
-                        <div class="label">您的邮箱： </div>
-                        <div class="name">
-                            <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"></el-input>
-                        </div>
-                    </div>
-                    <div class="button">
-                        <el-button type="primary" @click="addMessage">提交</el-button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <message-board messageType="3" :articleId="$route.query.type"/>
     </div>
 </template>
 
 <script>
     import { listPhoto } from "@/api/px/customer/photo";
-    import { getLeaveMessageByArticleId, addMessage } from '@/api/px/customer/article.js';
-
+    import messageBoard from '@/components/MessageBoard/index'
 
     export default {
         name: "Photo",
         components: {
+            messageBoard
         },
         data() {
             return {
-                //留言板遮罩
-                messageLoading: true,
-                //留言列表
-                leaveMessageList: [],
-                //留言内容最大长度
-                textMaxNumber: 500,
-                //留言内容长度
-                textNumber: 500,
-                //输入标志
-                inputFlag: true,
-                //留言表单
-                messageForm: {
-                    //文章ID
-                    articleId: this.$route.query.type,
-                    //留言内容
-                    content: '',
-                    //游客姓名
-                    authorName: '',
-                    //游客邮箱
-                    authorMailbox: '',
-                    //头像的URL
-                    authorHeader: '',
-                    //留言类型
-                    messageBoard: '3',
-                },
                 // 遮罩层
                 loading: true,
                 // 总条数
@@ -186,93 +85,11 @@
         },
         created() {
             this.getList();
-            this.getLeaveMessage();
         },
         methods: {
             /**
-             * 新增留言
+             * 查询相册列表
              */
-            addMessage() {
-                this.messageForm.content = this.$refs.leaveMessage.innerHTML;
-                if (this.messageForm.content === '') {
-                    this.$message.warning('请输入留言内容')
-                } else if (this.messageForm.authorHeader === '') {
-                    this.$message.warning('请上传头像')
-                } else if (this.messageForm.authorName === '') {
-                    this.$message.warning('请留下您的姓名')
-                } else if (this.messageForm.authorMailbox === 'authorMailbox') {
-                    this.$message.warning('请留下您的邮箱')
-                } else {
-                    this.messageLoading = true;
-                    console.log('留言内容', this.messageForm);
-                    addMessage(this.messageForm).then(res => {
-                        console.log('留言结果', res);
-                        if (res.data === 1) {
-                            this.$message.success('留言成功');
-                            this.getLeaveMessage();
-                            this.messageForm = {
-                                //文章ID
-                                articleId: '',
-                                //留言内容
-                                content: '',
-                                //游客姓名
-                                authorName: '',
-                                //游客邮箱
-                                authorMailbox: '',
-                                //头像的URL
-                                authorHeader: '',
-                            };
-                            this.textNumber = 500;
-                            this.$refs.leaveMessage.innerHTML = '';
-                        }
-                    })
-                }
-            },
-            /**
-             * 删除头像
-             */
-            deleteHeader() {
-                this.messageForm.authorHeader = '';
-            },
-            blobToDataURL(blob,cb) {
-                let reader = new FileReader();
-                reader.onload = function (evt) {
-                    let base64 = evt.target.result;
-                    cb(base64)
-                };
-                reader.readAsDataURL(blob);
-            },
-            /**
-             * 上传头像
-             */
-            uploadHeader(e) {
-                if(e.target.files[0]){
-                    let url = URL.createObjectURL(e.target.files[0]);
-                    let base64 = this.blobToDataURL(e.target.files[0], (base64Url) => {
-                        this.messageForm.authorHeader = base64Url;
-                    })
-                }
-            },
-            /**
-             * 监听留言板
-             */
-            leaveMessageChange(e) {
-                this.textNumber = this.textMaxNumber - e.target.innerText.length;
-                if ((this.textMaxNumber - e.target.innerText.length < 1)) {
-                    this.inputFlag = false
-                }
-            },
-            /**
-             * 获取留言
-             */
-            getLeaveMessage() {
-                getLeaveMessageByArticleId({articleId: this.messageForm.articleId, messageBoard: '3'}).then(res => {
-                    console.log('留言列表', res);
-                    this.leaveMessageList = res.data;
-                    this.messageLoading = false;
-                })
-            },
-            /** 查询相册列表 */
             getList() {
                 this.loading = true;
                 listPhoto(this.queryParams).then(response => {
