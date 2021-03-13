@@ -126,6 +126,8 @@
                 inputFlag: true,
                 //留言表单
                 messageForm: {
+                    //文章或相册ID
+                    articleId: this.articleId,
                     //留言内容
                     content: '',
                     //游客姓名

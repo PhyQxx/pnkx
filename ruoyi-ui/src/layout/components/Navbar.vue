@@ -202,7 +202,7 @@ export default {
           // WebSocket
           getUserProfile().then(response => {
               if ('WebSocket' in window) {
-                  this.websocket = new WebSocket(`ws://localhost:8068/websocket/' + ${response.data.userId}`);
+                  this.websocket = new WebSocket(`ws://${process.env.VUE_APP_BACK}/websocket/${response.data.userId}`);
                   // 连接错误
                   this.websocket.onerror = this.setErrorMessage;
                   // 连接成功
