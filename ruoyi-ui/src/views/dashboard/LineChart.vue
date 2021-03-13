@@ -40,7 +40,11 @@ export default {
     chartData: {
       deep: true,
       handler(val) {
-        this.setOptions(val)
+        try {
+            this.setOptions(val)
+        } catch (e) {
+            console.log('加载折线图异常：' + e)
+        }
       }
     }
   },

@@ -59,3 +59,12 @@ export function exportData(query) {
     params: query
   })
 }
+
+// 校验字典项标签、键值唯一性
+export function dictDataCheckUniqueness(query) {
+    return request({
+        url: '/admin/dictDataCheckUniqueness',
+        method: 'post',
+        params: query
+    })
+}

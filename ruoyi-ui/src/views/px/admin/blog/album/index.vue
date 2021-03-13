@@ -153,7 +153,8 @@
 
 <script>
     import { getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-    import { listData, dictDataCheckUniqueness } from "@/api/px/admin/blog/type";
+    import { dictDataCheckUniqueness } from "@/api/system/dict/data";
+    import { listPhoto } from "@/api/px/admin/blog/photo.js";
 
     export default {
         name: "Data",
@@ -264,7 +265,7 @@
             /** 查询相册名称数据列表 */
             getList() {
                 this.loading = true;
-                listData(this.queryParams).then(response => {
+                listPhoto(this.queryParams).then(response => {
                     this.dataList = response.rows;
                     this.total = response.total;
                     this.loading = false;

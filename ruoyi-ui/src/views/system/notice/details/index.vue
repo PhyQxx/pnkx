@@ -49,7 +49,7 @@
                         }
                     });
                 } catch (e) {
-                    console.log('异常：' + e)
+                    console.log('字典项翻译异常：' + e)
                 }
                 return label
             },

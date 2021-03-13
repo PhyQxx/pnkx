@@ -94,7 +94,7 @@ export default {
       notice() {
           return {
               number: this.number,
-              id: this.noticeArr[this.number].noticeId,
+              id: this.noticeArr && this.noticeArr[this.number].noticeId,
               typeValue: this.dictValueToTagType(this.noticeArr[this.number].noticeType),
               typeLabel: this.getDictOne(this.noticeArr[this.number].noticeType, this.typeOptions),
               title: this.noticeArr[this.number].noticeTitle,
@@ -170,7 +170,7 @@ export default {
                   }
               });
           } catch (e) {
-              console.log('异常：' + e)
+              console.log('字典项翻译异常：' + e)
           }
           return label
       },
@@ -202,7 +202,7 @@ export default {
           // WebSocket
           getUserProfile().then(response => {
               if ('WebSocket' in window) {
-                  this.websocket = new WebSocket('ws://192.168.20.218:8068/websocket/' + response.data.userId);
+                  this.websocket = new WebSocket(`ws://localhost:8068/websocket/' + ${response.data.userId}`);
                   // 连接错误
                   this.websocket.onerror = this.setErrorMessage;
                   // 连接成功
@@ -225,7 +225,6 @@ export default {
           console.log('WebSocket连接成功    状态码：' + this.websocket.readyState)
       },
       setOnmessageMessage (event) {
-          console.log(event.data);
           // 根据服务器推送的消息做自己的业务处理
           this.noticeArr.push(JSON.parse(event.data))
       },

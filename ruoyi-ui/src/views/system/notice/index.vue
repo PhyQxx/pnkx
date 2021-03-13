@@ -114,6 +114,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
+            v-if="scope.row.createBy === userInfo.userId.toString()"
             v-hasPermi="['system:notice:edit']"
           >修改</el-button>
           <el-button
@@ -121,6 +122,7 @@
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
+            v-if="scope.row.createBy === userInfo.userId.toString()"
             v-hasPermi="['system:notice:remove']"
           >删除</el-button>
         </template>
@@ -184,6 +186,7 @@
 
 <script>
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, exportNotice } from "@/api/system/notice";
+import { getUserProfile } from "@/api/system/user";
 import Editor from '@/components/Editor';
 
 export default {
@@ -193,6 +196,10 @@ export default {
   },
   data() {
     return {
+        //用户信息
+        userInfo: {
+            userId: 0
+        },
       // 遮罩层
       loading: true,
       // 选中数组
@@ -237,6 +244,7 @@ export default {
     };
   },
   created() {
+    this.getUserProfile();
     this.getList();
     this.getDicts("sys_notice_status").then(response => {
       this.statusOptions = response.data;
@@ -246,6 +254,14 @@ export default {
     });
   },
   methods: {
+      /**
+       * 获取个人信息
+       */
+      getUserProfile() {
+          getUserProfile().then(res => {
+              this.userInfo = res.user || res.data;
+          })
+      },
       /**
        * 跳转到通知详情页面
        */
