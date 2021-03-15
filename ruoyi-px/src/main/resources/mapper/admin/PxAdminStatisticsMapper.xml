@@ -326,4 +326,32 @@
                   AND create_by = '1'
             ) sunday
     </select>
+
+    <!--获取文章饼型图数据-->
+    <select id="getArticlePieData" resultType="map" parameterType="map">
+        SELECT
+            count( * ) value,
+            d.dict_label name
+        FROM
+            px_article a
+                LEFT JOIN sys_dict_data d ON a.type = d.dict_value
+                AND d.dict_type = 'px_article_type'
+        GROUP BY
+            a.type,
+            d.dict_label
+    </select>
+
+    <!--获取图片饼型图数据-->
+    <select id="getPicturePieData" resultType="map" parameterType="map">
+        SELECT
+            count( * ) value,
+            d.dict_label name
+        FROM
+            px_photo a
+                LEFT JOIN sys_dict_data d ON a.type = d.dict_value
+                AND d.dict_type = 'px_album_name'
+        GROUP BY
+            a.type,
+            d.dict_label
+    </select>
 </mapper>

@@ -1,5 +1,8 @@
 package com.ruoyi.px.admin.service.impl;
 
+import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.px.admin.mapper.PxAdminStatisticsMapper;
 import com.ruoyi.px.admin.service.IPxAdminStatisticsService;
@@ -42,6 +45,9 @@ public class PxAdminStatisticsServiceImpl implements IPxAdminStatisticsService
         result.put("messagesQxx", pxAdminStatisticsMapper.getMessageNumberLineChart(params));
         result.put("articleQxx", pxAdminStatisticsMapper.getArticleLineChart(params));
         result.put("pictureQxx", pxAdminStatisticsMapper.getPhotoNumberLineChart(params));
+        params.put("createBy", SecurityUtils.getLoginUser().getUser().getUserId());
+        result.put("articlePieData", pxAdminStatisticsMapper.getArticlePieData(params));
+        result.put("picturePieData", pxAdminStatisticsMapper.getPicturePieData(params));
         return result;
     }
 }

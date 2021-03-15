@@ -9,6 +9,7 @@
             <div class="search">
                 <el-select
                     v-model="keyCode"
+                    size="mini"
                     filterable
                     remote
                     placeholder="搜一搜"
@@ -36,7 +37,39 @@
         </div>
 
         <div class="middle">
-            <router-view></router-view>
+            <router-view ref="routerView"/>
+        </div>
+        <div class="middle">
+            <div class="hot-box">
+                <div class="hot-box-left">
+                    <el-tabs class="hot-tabs" tab-position="left">
+                        <el-tab-pane label="最热">
+                            <div class="hot-content">
+                                <div class="one-article" @click="changArticle(item.id)" v-for="item in hotArticleList" :key="item.id">
+                                    <i class="el-icon-wind-power"/>
+                                    <div class="text">{{item.title}}</div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                        <el-tab-pane label="随机">
+                            <div class="random-content">
+                                <div class="one-article" @click="changArticle(item.id)" v-for="item in randomArticleList" :key="item.id">
+                                    <i class="el-icon-wind-power"/>
+                                    <div class="text">{{item.title}}</div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                        <el-tab-pane label="标签">
+                            <div class="tags-content">
+                                <div class="random-tags">
+                                    <tags :name="item.dictLabel" v-for="item in tagsList"/>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
+                </div>
+                <div class="hot-box-right"></div>
+            </div>
         </div>
         <div class="footer">
             <div class="text">
@@ -55,10 +88,13 @@
 
 <script>
 import { getTimeDifference } from '@/assets/js/public.js';
-import { listArticle } from '@/api/px/customer/article';
+import { listArticle, getHotArticle } from '@/api/px/customer/article';
+import Tags from '@/components/Tag/index'
+import { getArticleTypeList } from '@/api/px/customer/article';
 
     export default {
         components: {
+            Tags
         },
         data() {
             return {
@@ -87,7 +123,13 @@ import { listArticle } from '@/api/px/customer/article';
                     name: '《pei你看雪》',
                     frame: 'Vue',
                     author: '裴浩宇'
-                }
+                },
+                //最热文章
+                hotArticleList: [],
+                //随机文章
+                randomArticleList: [],
+                //随机标签
+                tagsList: [],
             }
         },
         mounted () {
@@ -97,6 +139,9 @@ import { listArticle } from '@/api/px/customer/article';
             setInterval(() => {
                 this.loveTime = getTimeDifference('2016-09-30 22:22:22');
             }, 1000);
+            this.getHotArticle();
+            this.getRandomArticle();
+            this.getRandomTags();
         },
         watch: {
             $route: {
@@ -129,15 +174,71 @@ import { listArticle } from '@/api/px/customer/article';
                     }
                 },
                 deep: true
+            },
+            tagsList(list) {
+                if (list.length < 20) {
+                    this.tagsList = list;
+                } else {
+                    this.tagsList = list.slice((Math.random()*(list.length-21)), 20)
+                }
             }
         },
         methods: {
             /**
+             * 获取随机标签
+             */
+            getRandomTags() {
+                getArticleTypeList({dictType: 'px_article_type'}).then(res => {
+                    if (res.data) {
+                        res.data.forEach(item => {
+                            this.tagsList.push({
+                                type: 'article',
+                                dictLabel: item.dictLabel,
+                                dictValue: item.dictLabel,
+                            })
+                        })
+                    }
+                });
+                getArticleTypeList({dictType: 'px_album_name'}).then(res => {
+                    if (res.data) {
+                        res.data.forEach(item => {
+                            this.tagsList.push({
+                                type: 'album',
+                                dictLabel: item.dictLabel,
+                                dictValue: item.dictValue,
+                            })
+                        })
+                    }
+                });
+
+            },
+            /**
+             * 获取随机文章
+             */
+            getRandomArticle() {
+                listArticle({pageNum: Math.ceil(Math.random()*100), pageSize: 5,}).then(response => {
+                    this.randomArticleList = response.rows;
+                });
+            },
+            /**
+             * 获取最热文章
+             */
+            getHotArticle() {
+                getHotArticle().then(res => {
+                    this.hotArticleList = res.data;
+                })
+            },
+            /**
              * 选中文章
              */
             changArticle(id) {
-                sessionStorage.setItem('articleId', id);
-                this.$router.push({name: 'article'});
+                if (this.$route.path === '/article') {
+                    sessionStorage.setItem('articleId', id);
+                    this.$refs.routerView.getArticleById(id);
+                } else {
+                    sessionStorage.setItem('articleId', id);
+                    this.$router.push({name: 'article'});
+                }
             },
             /**
              * 初始化搜索内容
@@ -173,6 +274,12 @@ import { listArticle } from '@/api/px/customer/article';
 </script>
 
 <style lang="scss" scoped>
+    ::v-deep .el-input--medium .el-input__inner{
+        color: #00afff!important;
+    }
+    ::v-deep .el-select{
+        color: #00afff!important;
+    }
 .index-page{
     background-color: #bfe7fa!important;
     .nav-box{
@@ -244,11 +351,65 @@ import { listArticle } from '@/api/px/customer/article';
     }
     .middle{
         margin: 0 20%;
-        padding: 1rem 0 4rem 0;
+        padding: 1rem 0;
         background-image: url("../../../../assets/images/conent-bg.png");
         background-repeat: repeat;
         background-size: 100%;
-        min-height: 30rem;
+        .hot-box{
+            min-height: 10rem;
+            .hot-box-left{
+                width: 50%;
+                .hot-tabs{
+                    .hot-content, .random-content{
+                        height: 10rem;
+                        display: flex;
+                        flex-flow: column;
+                        justify-content: space-between;
+                        padding: 0.5rem;
+                        .one-article{
+                            display: flex;
+                            align-items: center;
+                            padding: 0 1rem;
+                            width: 20rem;
+                            border: 1px solid rgba(0, 255, 255, 0.4);
+                            border-radius: 5px;
+                            cursor: pointer;
+                            i{
+                                margin-right: 0.5rem;
+                                color: #FF399A;
+                            }
+                            .text{
+                                color: #3399FF;
+                            }
+                        }
+                        .one-article:hover{
+                            background-color: rgba(255, 57, 154, 0.8);
+                            i{
+                                color: #FFF;
+                            }
+                            .text{
+                                color: #FFF;
+                            }
+                        }
+                    }
+                    .tags-content{
+                        display: flex;
+                        flex-flow: column;
+                        justify-content: center;
+                        align-items: center;
+                        height: 10rem;
+                        .random-tags{
+                            display: flex;
+                            flex-flow: wrap;
+                        }
+                    }
+                }
+            }
+            .hot-box-right{
+                width: 50%;
+
+            }
+        }
     }
     .footer{
         margin: 0 20%;

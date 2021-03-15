@@ -1,10 +1,10 @@
 <template>
     <div class="page">
         <div class="phy-box" v-loading="phyLoading">
-            <div class="phy" v-if="this.phyArticleList.length < 1">
+            <div class="phy" v-if="phyArticleList.length < 1">
                 <div class="no-data">暂无内容</div>
             </div>
-            <div class="phy" v-if="this.phyArticleList.length > 0">
+            <div class="phy" v-if="phyArticleList.length > 0">
                 <div class="first">
                     <div class="cursor-pointer" @click="goToArticlePage(phyArticleList[0])">
                         <div class="first-title">{{phyArticleList[0].title}}</div>
@@ -29,10 +29,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="article" v-for="article in phyArticleList.slice(1)" :key="article.id" @click="goToArticlePage(article)">
-                    <i class="el-icon-male"></i>
-                    <div class="title cursor-pointer">{{article.title}}</div>
-                </div>
+                <el-collapse v-model="activeNames" @change="handleChange">
+                    <el-collapse-item class="article" :name="article.id"  v-for="article in phyArticleList.slice(1)" :key="article.id">
+                        <template slot="title">
+                            <i class="el-icon-male"/>
+                            <div class="title cursor-pointer">{{article.title}}</div>
+                        </template>
+                        <div class="article-text">
+                            <div class="article-text-box" v-html="article.richText"></div>
+                        </div>
+                        <div class="content-more"><el-button size="mini" type="primary" @click="goToArticlePage(article)">详情</el-button></div>
+                    </el-collapse-item>
+                </el-collapse>
                 <pagination
                     class="pagination"
                     v-show="phyTotal>0"
@@ -45,10 +53,10 @@
             </div>
         </div>
         <div class="qxx-box" v-loading="qxxLoading">
-            <div class="qxx" v-if="this.qxxArticleList.length < 1">
+            <div class="qxx" v-if="qxxArticleList.length < 1">
                 <div class="no-data">暂无内容</div>
             </div>
-            <div class="qxx" v-if="this.qxxArticleList.length > 0">
+            <div class="qxx" v-if="qxxArticleList.length > 0">
                 <div class="first">
                     <div class="cursor-pointer"  @click="goToArticlePage(qxxArticleList[0])">
                         <div class="first-title cursor-pointer">{{qxxArticleList[0].title}}</div>
@@ -73,10 +81,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="article" v-for="article in qxxArticleList.slice(1)" :key="article.id"  @click="goToArticlePage(article)">
-                    <i class="el-icon-female"></i>
-                    <div class="title cursor-pointer">{{article.title}}</div>
-                </div>
+                <el-collapse v-model="activeNames" @change="handleChange">
+                    <el-collapse-item class="article" :name="article.id"  v-for="article in qxxArticleList.slice(1)" :key="article.id">
+                        <template slot="title">
+                            <i class="el-icon-male"/>
+                            <div class="title cursor-pointer">{{article.title}}</div>
+                        </template>
+                        <div class="article-text">
+                            <div class="article-text-box" v-html="article.richText"></div>
+                        </div>
+                        <div class="content-more"><el-button size="mini" type="primary" @click="goToArticlePage(article)">详情</el-button></div>
+                    </el-collapse-item>
+                </el-collapse>
                 <pagination
                     class="pagination"
                     v-show="qxxTotal>0"
@@ -96,6 +112,8 @@ import { listArticle } from '@/api/px/customer/article.js';
     export default {
         data() {
             return {
+                //当前打开的页面
+                activeNames: [],
                 // 总条数
                 phyTotal: 0,
                 qxxTotal: 0,
@@ -124,6 +142,12 @@ import { listArticle } from '@/api/px/customer/article.js';
             this.getQxxList();
         },
         methods: {
+            /**
+             * 选择文章展开内容
+             */
+            handleChange(val) {
+                console.log(val);
+            },
             /**
              * 跳转文章详情
              */
@@ -158,9 +182,11 @@ import { listArticle } from '@/api/px/customer/article.js';
 .margin-right{
     margin-right: 0.5rem;
 }
+.article-text-box{
+    pointer-events: none;
+}
 .page{
     display: flex;
-    background-color: #fff;
     .phy-box{
         width: 50%;
     }
@@ -210,7 +236,7 @@ import { listArticle } from '@/api/px/customer/article.js';
     }
     .phy{
         flex: 1;
-        padding: 1rem;
+        padding: 1rem 1rem 1rem 3rem;
         .no-data{
             color: #33ccff;
         }
@@ -242,10 +268,16 @@ import { listArticle } from '@/api/px/customer/article.js';
             }
         }
         .article{
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #ccc;
-            padding: 0.5rem 0 0.2rem 0;
+            .article-text{
+                border-radius: 5px;
+                border: 1px solid #33ccff;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                .article-text-box{
+                    height: 8rem;
+                    overflow: hidden;
+                }
+            }
             i{
                 color: #33ccff;
                 margin-right: 0.5rem;
@@ -271,11 +303,15 @@ import { listArticle } from '@/api/px/customer/article.js';
                     text-shadow: 0.15em 0.15em 0.15em #6ED3FF
                 }
             }
+            .content-more{
+                display: flex;
+                justify-content: flex-end;
+            }
         }
     }
     .qxx{
         flex: 1;
-        padding: 1rem;
+        padding: 1rem 3rem 1rem 1rem;
         .no-data{
             color: #FF399A;
         }
@@ -307,10 +343,16 @@ import { listArticle } from '@/api/px/customer/article.js';
             }
         }
         .article{
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #ccc;
-            padding: 0.5rem 0 0.2rem 0;
+            .article-text{
+                border-radius: 5px;
+                border: 1px solid #FF47A1;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                .article-text-box{
+                    height: 8rem;
+                    overflow: hidden;
+                }
+            }
             i{
                 color: #FF47A1;
                 margin-right: 0.5rem;
@@ -335,6 +377,10 @@ import { listArticle } from '@/api/px/customer/article.js';
                     padding-left: 2rem;
                     text-shadow: 0.15em 0.15em 0.15em #FF399A
                 }
+            }
+            .content-more{
+                display: flex;
+                justify-content: flex-end;
             }
         }
     }

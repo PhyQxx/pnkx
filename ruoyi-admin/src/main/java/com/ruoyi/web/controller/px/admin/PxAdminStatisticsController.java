@@ -39,7 +39,7 @@ public class PxAdminStatisticsController extends BaseController
     }
 
     /**
-     * 获取折线图数据
+     * 获取统计数据
      * @return
      */
     @PostMapping(value = "/getLineChart")

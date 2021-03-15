@@ -7,23 +7,18 @@
       <line-chart :chartData="lineChartOne" />
     </el-row>
 
-    <!--<el-row :gutter="32">
+    <el-row :gutter="32">
+        <el-col :xs="24" :sm="24" :lg="8">
+            <div class="chart-wrapper">
+                <pie-chart title="文章分类" :data="articlePieData"/>
+            </div>
+        </el-col>
       <el-col :xs="24" :sm="24" :lg="8">
         <div class="chart-wrapper">
-          <raddar-chart />
+            <pie-chart title="图片分类" :data="picturePieData"/>
         </div>
       </el-col>
-      <el-col :xs="24" :sm="24" :lg="8">
-        <div class="chart-wrapper">
-          <pie-chart />
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="24" :lg="8">
-        <div class="chart-wrapper">
-          <bar-chart />
-        </div>
-      </el-col>
-    </el-row>-->
+    </el-row>
 
 
   </div>
@@ -48,6 +43,7 @@ export default {
   },
   data() {
     return {
+        //总统计
         lineChartData: {
             visitor: {
                 phyData: [0, 0, 0, 0, 0, 0, 0],
@@ -66,7 +62,12 @@ export default {
                 qxxData: [0, 0, 0, 0, 0, 0, 0]
             }
         },
-        lineChartOne: {}
+        //当前折线图
+        lineChartOne: {},
+        //文章分类饼形图数据
+        articlePieData: [],
+        //图片分类饼形图数据
+        picturePieData: [],
     }
   },
     mounted() {
@@ -144,6 +145,8 @@ export default {
                   res.data.pictureQxx[0].friday,
                   res.data.pictureQxx[0].saturday,
                   res.data.pictureQxx[0].sunday];
+              this.articlePieData = res.data.articlePieData;
+              this.picturePieData = res.data.picturePieData;
           })
       },
     handleSetLineChartData(type) {

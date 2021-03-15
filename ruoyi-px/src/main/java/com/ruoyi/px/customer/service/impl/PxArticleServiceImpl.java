@@ -114,7 +114,7 @@ public class PxArticleServiceImpl implements IPxArticleService {
     }
 
     /**
-     * 获取文章类型列表
+     * 根据字典项type获取列表
      * @param params
      * @return
      */
@@ -133,5 +133,14 @@ public class PxArticleServiceImpl implements IPxArticleService {
     public List<PxLeaveMessage> selectPxLeaveMessageList(PxLeaveMessage pxLeaveMessage)
     {
         return pxLeaveMessageMapper.selectPxLeaveMessageList(pxLeaveMessage);
+    }
+
+    /**
+     * 获取首页最热文章
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getHotArticle() {
+        return pxArticleMapper.getHotArticle();
     }
 }

@@ -23,7 +23,7 @@ export function getArticleTypeNumber(params) {
 }
 
 /**
- * 获取文章分类列表
+ * 根据字典项type获取列表
  */
 export function getArticleTypeList(params) {
     return request({
@@ -78,5 +78,13 @@ export function getMessageList(query) {
         url: '/customer/getMessageList',
         method: 'get',
         params: query
+    })
+}
+
+//获取最热文章
+export function getHotArticle() {
+    return request({
+        url: '/customer/getHotArticle',
+        method: 'get',
     })
 }

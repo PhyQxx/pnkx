@@ -82,7 +82,7 @@
         </if>
     </select>
 
-    <!--获取文章类型列表-->
+    <!--根据字典项type获取列表-->
     <select id="getArticleTypeList" resultType="java.util.Map">
         SELECT
             dict_value dictValue,
@@ -91,5 +91,17 @@
             sys_dict_data
         WHERE
             dict_type = #{dictType}
+    </select>
+
+    <!--获取最热文章-->
+    <select id="getHotArticle" resultType="map">
+        SELECT
+            a.id,
+            title,
+            (select count(*) from px_visits where article_id = a.id) visitsNumber
+        FROM
+            px_article a
+        ORDER BY visitsNumber desc
+        limit 5
     </select>
 </mapper>

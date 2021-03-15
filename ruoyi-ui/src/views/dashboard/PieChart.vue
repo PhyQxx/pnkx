@@ -10,9 +10,17 @@ import resize from './mixins/resize'
 export default {
   mixins: [resize],
   props: {
+      data: {
+        type: Array,
+        default: []
+      },
     className: {
       type: String,
       default: 'chart'
+    },
+      title: {
+      type: String,
+      default: '标题'
     },
     width: {
       type: String,
@@ -28,6 +36,11 @@ export default {
       chart: null
     }
   },
+    watch: {
+        data() {
+            this.initChart()
+        }
+    },
   mounted() {
     this.$nextTick(() => {
       this.initChart()
@@ -43,8 +56,11 @@ export default {
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
-
       this.chart.setOption({
+          title: {
+              text: this.title,
+              left: 'left'
+          },
         tooltip: {
           trigger: 'item',
           formatter: '{a} <br/>{b} : {c} ({d}%)'
@@ -56,18 +72,12 @@ export default {
         },
         series: [
           {
-            name: 'WEEKLY WRITE ARTICLES',
+            name: this.title,
             type: 'pie',
             roseType: 'radius',
             radius: [15, 95],
-            center: ['50%', '38%'],
-            data: [
-              { value: 320, name: 'Industries' },
-              { value: 240, name: 'Technology' },
-              { value: 149, name: 'Forex' },
-              { value: 100, name: 'Gold' },
-              { value: 59, name: 'Forecasts' }
-            ],
+            center: ['50%', '50%'],
+            data: this.data,
             animationEasing: 'cubicInOut',
             animationDuration: 2600
           }

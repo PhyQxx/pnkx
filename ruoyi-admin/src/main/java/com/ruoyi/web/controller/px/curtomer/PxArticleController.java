@@ -96,13 +96,13 @@ public class PxArticleController extends BaseController {
     }
 
     /**
-     * 获取文章分类列表
+     * 根据字典项type获取列表
      * @param params
      * @return
      */
     @RequestMapping("/getArticleTypeList")
     public AjaxResult getArticleTypeList(@RequestBody Map<String, Object> params) {
-        return AjaxResult.success("获取文章类型列表成功", pxArticleService.getArticleTypeList(params));
+        return AjaxResult.success("根据字典项type获取列表列表成功", pxArticleService.getArticleTypeList(params));
     }
 
     /**
@@ -114,6 +114,15 @@ public class PxArticleController extends BaseController {
         startPage();
         List<PxLeaveMessage> list = pxArticleService.selectPxLeaveMessageList(pxLeaveMessage);
         return getDataTable(list);
+    }
+
+    /**
+     * 获取首页最热文章
+     * @return
+     */
+    @GetMapping("/getHotArticle")
+    public AjaxResult getHotArticle() {
+        return AjaxResult.success("获取首页最文章成功", pxArticleService.getHotArticle());
     }
 
 }

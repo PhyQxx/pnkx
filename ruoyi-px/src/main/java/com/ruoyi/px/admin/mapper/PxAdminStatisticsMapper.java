@@ -48,4 +48,18 @@ public interface PxAdminStatisticsMapper
      * @return
      */
     List<Map<String, Object>> getPhotoNumberLineChart(Map<String, Object> params);
+
+    /**
+     * 获取文章饼型图数据
+     * @param params
+     * @return
+     */
+    List<Map<String, Object>> getArticlePieData(Map<String, Object> params);
+
+    /**
+     * 获取图片饼形图数据
+     * @param params
+     * @return
+     */
+    List<Map<String, Object>> getPicturePieData(Map<String, Object> params);
 }

@@ -76,4 +76,10 @@ public interface IPxArticleService {
      * @return 留言集合
      */
     public List<PxLeaveMessage> selectPxLeaveMessageList(PxLeaveMessage pxLeaveMessage);
+
+    /**
+     * 获取首页最热、随机文章
+     * @return
+     */
+    List<Map<String, Object>> getHotArticle();
 }

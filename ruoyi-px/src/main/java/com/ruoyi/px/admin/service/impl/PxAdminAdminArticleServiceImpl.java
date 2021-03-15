@@ -49,7 +49,7 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     @Override
     public List<PxArticleVo> selectPxArticleList(PxArticle pxArticle)
     {
-        LoginUser loginUser=tokenService.getLoginUser(ServletUtils.getRequest());
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
         pxArticle.setCreateBy(loginUser.getUser().getUserId().toString());
         return pxAdminArticleMapper.selectPxArticleList(pxArticle);
     }

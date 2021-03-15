@@ -75,6 +75,7 @@ import messageBoard from '@/components/MessageBoard/index'
         },
         data() {
             let articleId = sessionStorage.getItem('articleId');
+            sessionStorage.removeItem('articleId');
             return {
                 //遮罩层
                 loading: true,
@@ -93,8 +94,9 @@ import messageBoard from '@/components/MessageBoard/index'
             /**
              * 根据ID获取文章
              */
-            getArticleById() {
-                getArticleList({articleId: this.articleId}).then(res => {
+            getArticleById(id) {
+                this.loading = true;
+                getArticleList({articleId: id || this.articleId}).then(res => {
                     this.article = res.data[0];
                     this.getArticleTypeNumber();
                     this.loading = false;

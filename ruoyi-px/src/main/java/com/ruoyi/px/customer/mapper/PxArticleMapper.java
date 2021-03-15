@@ -1,5 +1,6 @@
 package com.ruoyi.px.customer.mapper;
 
+import com.ruoyi.domain.po.PxArticle;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public interface PxArticleMapper {
 
 
     /**
-     * 获取文章类型列表
+     * 根据字典项type获取列表
      * @param params
      * @return
      */
@@ -65,4 +66,10 @@ public interface PxArticleMapper {
      * @return
      */
     int insertVisits(String articleId);
+
+    /**
+     * 获取首页最热文章列表
+     * @return
+     */
+    List<Map<String, Object>> getHotArticle();
 }
