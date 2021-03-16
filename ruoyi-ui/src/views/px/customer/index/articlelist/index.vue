@@ -31,7 +31,7 @@
                 暂无数据
             </div>
             <div class="article-one" v-for="article in articleList" :key="article.id">
-                <i class="el-icon-cherry article-icon"></i>
+                <i class="el-icon-cherry article-icon"/>
                 <div class="title pointer" @click="goToArticlePage(article)">{{article.title}}</div>
                 By
                 <div class="author pointer">{{article.nickName}}</div>

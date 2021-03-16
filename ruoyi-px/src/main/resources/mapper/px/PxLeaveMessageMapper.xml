@@ -34,6 +34,7 @@
             <if test="authorHeader != null  and authorHeader != ''"> and author_header = #{authorHeader}</if>
             <if test="messageBoard != null  and messageBoard != ''"> and message_board = #{messageBoard}</if>
         </where>
+        order by create_time desc
     </select>
 
     <select id="selectPxLeaveMessageById" parameterType="Long" resultMap="PxLeaveMessageResult">

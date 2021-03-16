@@ -80,6 +80,7 @@
         <if test="messageBoard != '' and messageBoard != null">
             and message_board = #{messageBoard}
         </if>
+        order by create_time desc
     </select>
 
     <!--根据字典项type获取列表-->
@@ -102,6 +103,6 @@
         FROM
             px_article a
         ORDER BY visitsNumber desc
-        limit 5
+        limit 10
     </select>
 </mapper>

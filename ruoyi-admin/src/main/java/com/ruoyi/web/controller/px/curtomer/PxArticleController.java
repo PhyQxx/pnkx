@@ -4,6 +4,7 @@ import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.domain.po.PxLeaveMessage;
+import com.ruoyi.domain.po.PxPhoto;
 import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.core.controller.BaseController;
@@ -51,8 +52,10 @@ public class PxArticleController extends BaseController {
      * @return 文章分类分组数据
      */
     @RequestMapping("/getArticleTypeNumber")
-    public AjaxResult getArticleTypeNumber(@RequestBody Map<String, Object> params) {
-        return AjaxResult.success("获取文章列表成功", pxArticleService.getArticleTypeNumber(params));
+    public TableDataInfo getArticleTypeNumber(@RequestBody Map<String, Object> params) {
+        startPage();
+        List<Map<String, Object>> list = pxArticleService.getArticleTypeNumber(params);
+        return getDataTable(list);
     }
 
     /**

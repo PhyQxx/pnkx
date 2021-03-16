@@ -66,13 +66,13 @@ service.interceptors.response.use(res => {
       })*/
     } else if (code === 500) {
       Message({
-        message: msg,
+        message: '网络异常，请稍候再试',
         type: 'error'
       })
       return Promise.reject(new Error(msg))
     } else if (code !== 200) {
       Notification.error({
-        title: msg
+        title: '网络异常，请刷新当前页面'
       })
       return Promise.reject('error')
     } else {
@@ -82,17 +82,17 @@ service.interceptors.response.use(res => {
   error => {
     console.log('err' + error)
     let { message } = error;
-    if (message == "Network Error") {
-      message = "后端接口连接异常";
+    if (message === "Network Error") {
+      message = "网络异常，请刷新当前页面";
     }
     else if (message.includes("timeout")) {
-      message = "系统接口请求超时";
+      message = "请求超时，请刷新当前页面";
     }
     else if (message.includes("Request failed with status code")) {
-      message = "系统接口" + message.substr(message.length - 3) + "异常";
+      message = "网络异常，请刷新当前页面";
     }
     Message({
-      message: message,
+      message: '请求超时，请刷新当前页面',
       type: 'error',
       duration: 5 * 1000
     })

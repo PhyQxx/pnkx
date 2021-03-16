@@ -3,7 +3,7 @@
         <div class="top">
             <div class="label">位置：</div>
             <el-breadcrumb separator-class="el-icon-arrow-right">
-                <el-breadcrumb-item :to="{ path: '/homepage' }"><i class="el-icon-collection-tag"></i>首页</el-breadcrumb-item>
+                <el-breadcrumb-item :to="{ path: '/homepage' }"><i class="el-icon-collection-tag"/>首页</el-breadcrumb-item>
                 <el-breadcrumb-item>{{article.typeName}}</el-breadcrumb-item>
                 <el-breadcrumb-item>{{article.title}}</el-breadcrumb-item>
             </el-breadcrumb>
@@ -16,19 +16,19 @@
                     </div>
                     <div class="article-info">
                         <div class="footer-one">
-                            <i :class="article.createBy === '1' ? 'el-icon-male' : 'el-icon-female'"></i>
+                            <i :class="article.createBy === '1' ? 'el-icon-male' : 'el-icon-female'"/>
                             <div class="author margin-right">{{article.nickName}}</div>
                         </div>
                         <div class="footer-one">
-                            <i class="el-icon-date"></i>
+                            <i class="el-icon-date"/>
                             <div class="create-time margin-right">{{article.createTime}}</div>
                         </div>
                         <div class="footer-one">
-                            <i class="el-icon-magic-stick"></i>
+                            <i class="el-icon-magic-stick"/>
                             <div class="type margin-right">{{article.typeName}}</div>
                         </div>
                         <div class="footer-one">
-                            <i class="el-icon-present"></i>
+                            <i class="el-icon-present"/>
                             <div class="message-number">{{article.leaveMessageNumber}}枚留言</div>
                         </div>
                     </div>
@@ -118,7 +118,7 @@ import messageBoard from '@/components/MessageBoard/index'
              */
             getArticleTypeNumber() {
                 getArticleTypeNumber({createBy: this.article.createBy}).then(res => {
-                    this.articleTypeList = res.data;
+                    this.articleTypeList = res.rows;
                 })
             }
         },

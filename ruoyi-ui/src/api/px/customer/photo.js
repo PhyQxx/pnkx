@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@/utils/customer-request'
 
 // 查询相册列表
 export function listPhoto(query) {

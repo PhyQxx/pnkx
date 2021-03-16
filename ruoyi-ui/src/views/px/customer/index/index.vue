@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="middle">
+        <div class="middle middle-homepage">
             <router-view ref="routerView"/>
         </div>
         <div class="middle">
@@ -62,13 +62,67 @@
                         <el-tab-pane label="标签">
                             <div class="tags-content">
                                 <div class="random-tags">
-                                    <tags :name="item.dictLabel" v-for="item in tagsList"/>
+                                    <div @click="tagsToPage(item)"  v-for="item in tagsList" class="tags">
+                                        <tags :name="item.dictLabel"/>
+                                    </div>
                                 </div>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
-                <div class="hot-box-right"></div>
+                <div class="hot-box-middle">
+                    <div class="new-message">
+                        <div class="new-message-title">
+                            <div class="logo"></div>
+                            <div class="new-message-label">最新留言</div>
+                        </div>
+                        <div class="new-message-list">
+                            <div class="new-message-one" @click="changArticle(leaveMessage.articleId)" v-for="leaveMessage in newLeaveMessageList">
+                                <div class="message-left">
+                                    <div class="header-photo">
+                                        <el-image
+                                            class="header-picture"
+                                            :src="leaveMessage.authorHeader"
+                                            fit="scale-down">
+                                        </el-image>
+                                    </div>
+                                </div>
+                                <div class="message-right">
+                                    <div class="message-right-top">
+                                        <div class="leave-message-content" v-html="leaveMessage.content"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hot-box-right">
+                    <div class="article-type">
+                        <div class="article-type-title">
+                            <div class="logo"></div>
+                            <div class="article-type-label">文章分类</div>
+                        </div>
+                        <div class="article-type-list">
+                            <div class="article-type-one"
+                                 @click="goToArticleType(articleType)"
+                                 v-for="articleType in articleTypeList"
+                                 :key='articleType.id'>
+                                <i class="el-icon-star-on"/>
+                                <div class="article-type-name">{{articleType.name}}</div>
+                                <div class="article-type-number">（{{articleType.number}}）</div>
+                            </div>
+                        </div>
+                        <el-pagination
+                            small
+                            layout="prev, pager, next"
+                            v-show="articleTypeTotal>9"
+                            :page.sync="articleTypeParams.pageNum"
+                            :limit.sync="articleTypeParams.pageSize"
+                            @pagination="getArticleTypeNumber"
+                            :total="articleTypeTotal">
+                        </el-pagination>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="footer">
@@ -83,14 +137,23 @@
                 <div class="author">{{pageInfo.author}}</div>
             </div>
         </div>
+        <div class="suspension">
+            <div class="author-info">
+                <div class="we-chat">微信</div>
+                <div class="qq">QQ</div>
+            </div>
+            <div class="to-top" @click="toTop">
+                <span class="to-top-text">返回</span>
+                <span class="to-top-text">顶部</span>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
-import { getTimeDifference } from '@/assets/js/public.js';
-import { listArticle, getHotArticle } from '@/api/px/customer/article';
+import { getTimeDifference, scrollAnimation } from '@/assets/js/public.js';
+import { listArticle, getHotArticle, getArticleTypeList, getMessageList, getArticleTypeNumber } from '@/api/px/customer/article';
 import Tags from '@/components/Tag/index'
-import { getArticleTypeList } from '@/api/px/customer/article';
 
     export default {
         components: {
@@ -130,6 +193,17 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                 randomArticleList: [],
                 //随机标签
                 tagsList: [],
+                //最新留言
+                newLeaveMessageList: [],
+                //文章分类列表
+                articleTypeList: [],
+                //文章分类条数
+                articleTypeTotal: 0,
+                //文章分类分页参数
+                articleTypeParams: {
+                    pageNum: 1,
+                    pageSize: 10
+                }
             }
         },
         mounted () {
@@ -142,6 +216,8 @@ import { getArticleTypeList } from '@/api/px/customer/article';
             this.getHotArticle();
             this.getRandomArticle();
             this.getRandomTags();
+            this.getMessageList();
+            this.getArticleTypeNumber();
         },
         watch: {
             $route: {
@@ -185,6 +261,70 @@ import { getArticleTypeList } from '@/api/px/customer/article';
         },
         methods: {
             /**
+             * 返回顶部
+             */
+            toTop() {
+                const currentY = document.documentElement.scrollTop || document.body.scrollTop;
+                scrollAnimation(currentY, 0);
+            },
+            /**
+             * 跳转文章分类
+             */
+            goToArticleType(articleType) {
+                if (this.$route.path === '/articlelist') {
+                    this.$children[2].queryParams.type = articleType.code;
+                    this.$children[2].getList();
+                } else {
+                    this.$router.push({
+                        name: 'articlelist',
+                        params: {
+                            code: articleType.code
+                        }
+                    });
+                }
+                window.scrollTo(0,0);
+            },
+            /**
+             * 获取文章分类
+             */
+            getArticleTypeNumber() {
+                getArticleTypeNumber(this.articleTypeParams).then(res => {
+                    this.articleTypeList = res.rows;
+                    this.articleTypeTotal = res.total;
+                })
+            },
+            /**
+             * 获取最新留言
+             */
+            getMessageList() {
+                getMessageList({
+                    pageNum: 1,
+                    pageSize: 5,
+                }).then(res => {
+                    this.newLeaveMessageList = res.rows;
+                })
+            },
+            /**
+             * 随机标签跳转
+             */
+            tagsToPage(item) {
+                if (item.type === 'article') {
+                    this.$router.push({
+                        name: 'articlelist',
+                        params: {
+                            code: item.dictValue
+                        }
+                    })
+                } else if (item.type === 'album') {
+                    this.$router.push({
+                        name: 'photo',
+                        params: {
+                            type: item.dictValue
+                        }
+                    })
+                }
+            },
+            /**
              * 获取随机标签
              */
             getRandomTags() {
@@ -194,7 +334,7 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                             this.tagsList.push({
                                 type: 'article',
                                 dictLabel: item.dictLabel,
-                                dictValue: item.dictLabel,
+                                dictValue: item.dictValue,
                             })
                         })
                     }
@@ -216,7 +356,7 @@ import { getArticleTypeList } from '@/api/px/customer/article';
              * 获取随机文章
              */
             getRandomArticle() {
-                listArticle({pageNum: Math.ceil(Math.random()*100), pageSize: 5,}).then(response => {
+                listArticle({pageNum: Math.ceil(Math.random()*100), pageSize: 10,}).then(response => {
                     this.randomArticleList = response.rows;
                 });
             },
@@ -239,6 +379,7 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                     sessionStorage.setItem('articleId', id);
                     this.$router.push({name: 'article'});
                 }
+                window.scrollTo(0,0);
             },
             /**
              * 初始化搜索内容
@@ -356,12 +497,27 @@ import { getArticleTypeList } from '@/api/px/customer/article';
         background-repeat: repeat;
         background-size: 100%;
         .hot-box{
-            min-height: 10rem;
+            min-height: 14rem;
+            display: flex;
             .hot-box-left{
-                width: 50%;
+                width: 33%;
+                padding: 1rem 2rem 1rem 1rem;
                 .hot-tabs{
-                    .hot-content, .random-content{
+                    display: flex;
+                    align-items: center;
+                    height: 100%;
+                    ::v-deep .el-tabs__header{
                         height: 10rem;
+                    }
+                    ::v-deep .el-tabs__content{
+                        width: 100%;
+                        height: 100%;
+                        .el-tab-pane{
+                            height: 100%;
+                        }
+                    }
+                    .hot-content, .random-content{
+                        min-height: 14rem;
                         display: flex;
                         flex-flow: column;
                         justify-content: space-between;
@@ -370,8 +526,8 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                             display: flex;
                             align-items: center;
                             padding: 0 1rem;
-                            width: 20rem;
-                            border: 1px solid rgba(0, 255, 255, 0.4);
+                            margin: 0.5rem 0;
+                            border: 1px solid rgba(0, 255, 255, 0.6);
                             border-radius: 5px;
                             cursor: pointer;
                             i{
@@ -380,6 +536,9 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                             }
                             .text{
                                 color: #3399FF;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
                             }
                         }
                         .one-article:hover{
@@ -397,7 +556,7 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                         flex-flow: column;
                         justify-content: center;
                         align-items: center;
-                        height: 10rem;
+                        height: 100%;
                         .random-tags{
                             display: flex;
                             flex-flow: wrap;
@@ -405,11 +564,146 @@ import { getArticleTypeList } from '@/api/px/customer/article';
                     }
                 }
             }
-            .hot-box-right{
-                width: 50%;
+            .hot-box-middle{
+                width: 33%;
+                padding: 0 1rem;
+                .new-message{
+                    .new-message-title{
+                        display: flex;
+                        align-items: center;
+                        .logo{
+                            background-image: url('../../../../assets/images/new-message.png');
+                            width: 2rem;
+                            height: 2rem;
+                            background-size: 100% 100%;
+                            background-position: center;
+                            margin-right: 1rem;
+                        }
+                        .new-message-label{
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                            color: #00afff;
+                        }
+                    }
+                    .new-message-list{
+                        .new-message-one{
+                            display: flex;
+                            align-items: center;
+                            padding: 1rem 1rem 1rem 0;
+                            cursor: pointer;
+                            .message-left{
+                                margin-right: 1rem;
+                                width: 4rem;
+                                display: flex;
+                                flex-flow: column;
+                                align-items: center;
+                                .header-photo{
+                                    width: 3rem;
+                                    height: 3rem;
+                                    border-radius: 50%;
+                                    overflow: hidden;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    img{
+                                        width: 100%;
+                                        height: 100%;
+                                    }
+                                }
+                            }
+                            .message-right{
+                                width: calc(100% - 5rem);
+                                background: #C6F1FD;
+                                padding: 1rem;
+                                border-radius: 10px;
+                                .message-right-top{
+                                    display: flex;
+                                    justify-content: space-between;
+                                    .leave-message-content{
+                                        width: calc(100% - 5rem);
+                                        font-size: 0.9rem;
+                                        color: rgb(34, 32, 32);
+                                    }
+                                    .floor{
+                                        font-size: 1.2rem;
+                                        width: 5rem;
+                                        display: flex;
+                                        justify-content: flex-end;
+                                    }
+                                }
+                            }
+                            .message-right:before{
+                                position: absolute;
+                                content: "";
+                                width: 0;
+                                height: 0;
+                                border-top: 0.8rem solid transparent;
+                                border-right: 1rem solid #C6F1FD;
+                                border-bottom: 0.8rem solid transparent;
+                                margin: -0.1rem 0 0 -2rem;
+                            }
+                        }
+                    }
 
+                }
+            }
+            .hot-box-right{
+                width: 33%;
+                padding-left: 1rem;
+                .article-type{
+                    .article-type-title{
+                        display: flex;
+                        align-items: center;
+                        .logo{
+                            background-image: url('../../../../assets/images/article-type.png');
+                            width: 2rem;
+                            height: 2rem;
+                            background-size: 100% 100%;
+                            background-position: center;
+                            margin-right: 1rem;
+                        }
+                        .article-type-label{
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                            color: #00afff;
+                        }
+                    }
+                    .article-type-list{
+                        padding: 1rem;
+                        .article-type-one{
+                            cursor: pointer;
+                            display: flex;
+                            margin-top: 0.5rem;
+                            align-items: center;
+                            i{
+                                color: #FF399A;
+                            }
+                            .article-type-name{
+                                margin: 0 0 0 0.5rem;
+                                font-size: 0.9rem;
+                                color: #999;
+                            }
+                            .article-type-number{
+                                font-size: 0.9rem;
+                            }
+                        }
+                        .article-type-one:hover{
+                            .article-type-name ,.article-type-number{
+                                color: #33ccff!important;
+                                text-decoration: underline #33ccff;
+                            }
+                        }
+                    }
+                }
+                .el-pagination{
+                    display: flex;
+                    justify-content: flex-end;
+                }
             }
         }
+    }
+    .middle-homepage{
+        min-height: 40rem;
     }
     .footer{
         margin: 0 20%;
@@ -438,6 +732,74 @@ import { getArticleTypeList } from '@/api/px/customer/article';
             }
             .by{
                 margin: 0 0.2rem;
+            }
+        }
+    }
+    .suspension{
+        position: fixed;
+        bottom: 10%;
+        right: calc(20% - 6rem);
+        .we-chat, .qq{
+            display: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.2rem 0 0 6rem;
+            position: fixed;
+            width: 10rem;
+            height: 10rem;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            background-position: center;
+            cursor: pointer;
+            border-radius: 1rem;
+            bottom: calc(10% + 8rem);
+        }
+        .we-chat{
+            color: #FFFFFF;
+            background-image: url('../../../../assets/images/we-chat.jpg');
+            right: calc(20% - 16rem);
+        }
+        .qq{
+            color: #555555;
+            background-image: url('../../../../assets/images/qq-info.jpg');
+            right: calc(20% - 26.2rem);
+        }
+        .author-info, .to-top{
+            width: 4rem;
+            height: 4rem;
+            background-repeat: no-repeat;
+            background-size: 78% 78%;
+            background-position: center;
+            border: 2px solid #FFFFFF;
+            border-radius: 50%;
+            background-color: #bfe7fa;
+            cursor: pointer;
+        }
+        .author-info{
+            background-image: url('../../../../assets/images/author-info.png');
+        }
+        .author-info:hover{
+            .we-chat, .qq{
+                display: flex;
+            }
+        }
+        .to-top{
+            margin-top: 0.2rem;
+            background-image: url('../../../../assets/images/to-top.png');
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            .to-top-text{
+                color: #FFFFFF;
+                display: none;
+            }
+        }
+        .to-top:hover{
+            background-color: #FFFFFF;
+            .to-top-text{
+                color: #bfe7fa;
+                display: inline-block;
             }
         }
     }

@@ -24,9 +24,9 @@
                 return (0.5+Math.random()) + 'rem'
             },
             randomPosition() {
-                let height = Math.random()*10 - 5;
-                let width = Math.random()*20 - 10;
-                return `${height*14}px 0 0 ${width*16}px`
+                let height = Math.random()*20 - 10;
+                let width = Math.random()*14 - 10;
+                return `${height*10}px 0 0 ${width*10}px`
             }
         }
 
