@@ -68,4 +68,11 @@ public interface PxAdminArticleMapper
      * @return
      */
     Integer dictDataCheckUniqueness(SysDictData dictData);
+
+    /**
+     * 查询文章列表不包含内容
+     * @param pxArticle
+     * @return
+     */
+    List<PxArticleVo> selectPxArticleNotContent(PxArticleVo pxArticle);
 }

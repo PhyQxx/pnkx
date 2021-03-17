@@ -185,6 +185,9 @@ import { listArticle } from '@/api/px/customer/article.js';
 .article-text-box{
     pointer-events: none;
 }
+::v-deep .el-collapse-item__content{
+    padding-bottom: 1rem;
+}
 .page{
     display: flex;
     .phy-box{
@@ -213,7 +216,7 @@ import { listArticle } from '@/api/px/customer/article.js';
         .first-content{
             padding: 1rem;
             font-size: 0.9rem;
-            height: 8rem;
+            height: 8.4rem;
             overflow: hidden;
             display: -webkit-box;
             -webkit-box-orient: vertical;
@@ -274,8 +277,11 @@ import { listArticle } from '@/api/px/customer/article.js';
                 padding: 1rem;
                 margin-bottom: 1rem;
                 .article-text-box{
-                    height: 8rem;
+                    height: 7rem;
                     overflow: hidden;
+                    display: -webkit-box;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 4;
                 }
             }
             i{
@@ -349,8 +355,11 @@ import { listArticle } from '@/api/px/customer/article.js';
                 padding: 1rem;
                 margin-bottom: 1rem;
                 .article-text-box{
-                    height: 8rem;
+                    height: 7rem;
                     overflow: hidden;
+                    display: -webkit-box;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 4;
                 }
             }
             i{

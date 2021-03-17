@@ -1,23 +1,17 @@
 package com.ruoyi.web.controller.px.curtomer;
 
-import com.ruoyi.common.core.domain.entity.SysDictData;
-import com.ruoyi.common.core.domain.model.LoginUser;
-import com.ruoyi.common.utils.ServletUtils;
-import com.ruoyi.domain.po.PxLeaveMessage;
-import com.ruoyi.domain.po.PxPhoto;
-import com.ruoyi.domain.vo.PxArticleVo;
-import com.ruoyi.px.admin.service.IPxAdminArticleService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
-import com.ruoyi.domain.po.PxArticle;
+import com.ruoyi.domain.po.PxLeaveMessage;
+import com.ruoyi.domain.vo.PxArticleVo;
 import com.ruoyi.px.customer.service.impl.PxArticleServiceImpl;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import org.jsoup.Jsoup;
 
 /**
  * <p>
@@ -33,8 +27,6 @@ public class PxArticleController extends BaseController {
 
     @Resource
     private PxArticleServiceImpl pxArticleService;
-    @Resource
-    private IPxAdminArticleService iPxAdminArticleService;
 
     /**
      * 获取文章列表
@@ -86,6 +78,20 @@ public class PxArticleController extends BaseController {
     {
         startPage();
         List<PxArticleVo> list = pxArticleService.selectPxArticleList(pxArticle);
+        list.forEach(article -> {
+            article.setRichText(Jsoup.parse(article.getRichText()).text());
+        });
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询文章列表不包括内容
+     */
+    @GetMapping("/listNotContent")
+    public TableDataInfo listNotContent(PxArticleVo pxArticle)
+    {
+        startPage();
+        List<PxArticleVo> list = pxArticleService.selectPxArticleNotContentList(pxArticle);
         return getDataTable(list);
     }
 
@@ -128,4 +134,27 @@ public class PxArticleController extends BaseController {
         return AjaxResult.success("获取首页最文章成功", pxArticleService.getHotArticle());
     }
 
+
+    /**
+     * 去除文章的图片内容方法
+     * @param body
+     * @param str1
+     * @param str2
+     * @return
+     */
+    public String subRangeString(String body, String str1, String str2) {
+        while (true) {
+            int index1 = body.indexOf(str1);
+            if (index1 != -1) {
+                int index2 = body.indexOf(str2, index1);
+                if (index2 != -1) {
+                    body = body.substring(0, index1) + body.substring(index2 +    str2.length(), body.length());
+                }else {
+                    return body;
+                }
+            }else {
+                return body;
+            }
+        }
+    }
 }

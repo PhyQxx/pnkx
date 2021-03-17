@@ -64,6 +64,15 @@ export function listArticle(query) {
     })
 }
 
+// 查询文章列表不包括内容
+export function listArticleNotContent(query) {
+    return request({
+        url: '/customer/listNotContent',
+        method: 'get',
+        params: query
+    })
+}
+
 // 查询文章详细
 export function getArticle(id) {
     return request({

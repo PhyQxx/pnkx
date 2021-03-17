@@ -59,17 +59,7 @@
                     v-hasPermi="['system:dict:remove']"
                 >删除</el-button>
             </el-col>
-            <el-col :span="1.5">
-                <el-button
-                    type="warning"
-                    plain
-                    icon="el-icon-download"
-                    size="mini"
-                    @click="handleExport"
-                    v-hasPermi="['system:dict:export']"
-                >导出</el-button>
-            </el-col>
-            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
         </el-row>
 
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
@@ -136,11 +126,11 @@
                     </el-radio-group>
                 </el-form-item>
                 <el-form-item label="备注" prop="remark">
-                    <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
+                    <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"/>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button type="primary" @click="submitForm">确 定</el-button>
+                <el-button :loading="confirmLoading" type="primary" @click="submitForm">确 定</el-button>
                 <el-button @click="cancel">取 消</el-button>
             </div>
         </el-dialog>
@@ -148,8 +138,8 @@
 </template>
 
 <script>
-    import { getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-    import { listData, dictDataCheckUniqueness } from "@/api/px/admin/blog/type";
+    import { dictDataCheckUniqueness, getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
+    import { listData } from "@/api/px/admin/blog/type";
 
     export default {
         name: "Data",
@@ -236,7 +226,9 @@
                     dictSort: [
                         { required: true, message: "文章类型顺序不能为空", trigger: "blur" }
                     ]
-                }
+                },
+                //表单提交按钮加载
+                confirmLoading: false
             };
         },
         created() {
@@ -312,16 +304,19 @@
             },
             /** 提交按钮 */
             submitForm: function() {
+                this.confirmLoading = true;
                 this.$refs["form"].validate(valid => {
                     if (valid) {
-                        if (this.form.dictCode != undefined) {
+                        if (this.form.dictCode !== undefined) {
                             updateData(this.form).then(response => {
+                                this.confirmLoading = false;
                                 this.msgSuccess("修改成功");
                                 this.open = false;
                                 this.getList();
                             });
                         } else {
                             addData(this.form).then(response => {
+                                this.confirmLoading = false;
                                 this.msgSuccess("新增成功");
                                 this.open = false;
                                 this.getList();

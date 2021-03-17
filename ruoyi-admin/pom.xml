@@ -85,6 +85,13 @@
             <artifactId>ruoyi-px</artifactId>
         </dependency>
 
+        <!--html代码转字符串-->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.10.3</version>
+        </dependency>
+
     </dependencies>
 
     <build>

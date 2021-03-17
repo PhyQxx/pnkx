@@ -56,6 +56,17 @@ public class PxAdminArticleController extends BaseController
     }
 
     /**
+     * 查询文章列表不包含内容
+     */
+    @GetMapping("/listArticleNotContent")
+    public TableDataInfo listArticleNotContent(PxArticleVo pxArticle)
+    {
+        startPage();
+        List<PxArticleVo> list = pxAdminArticleService.selectPxArticleNotContent(pxArticle);
+        return getDataTable(list);
+    }
+
+    /**
      * 导出文章列表
      */
     @Log(title = "文章", businessType = BusinessType.EXPORT)

@@ -143,4 +143,14 @@ public class PxArticleServiceImpl implements IPxArticleService {
     public List<Map<String, Object>> getHotArticle() {
         return pxArticleMapper.getHotArticle();
     }
+
+    /**
+     * 查询文章列表不包括内容
+     * @param pxArticle
+     * @return
+     */
+    @Override
+    public List<PxArticleVo> selectPxArticleNotContentList(PxArticleVo pxArticle) {
+        return pxAdminArticleMapper.selectPxArticleNotContent(pxArticle);
+    }
 }

@@ -152,7 +152,7 @@
 
 <script>
 import { getTimeDifference, scrollAnimation } from '@/assets/js/public.js';
-import { listArticle, getHotArticle, getArticleTypeList, getMessageList, getArticleTypeNumber } from '@/api/px/customer/article';
+import { listArticleNotContent, getHotArticle, getArticleTypeList, getMessageList, getArticleTypeNumber } from '@/api/px/customer/article';
 import Tags from '@/components/Tag/index'
 
     export default {
@@ -177,7 +177,7 @@ import Tags from '@/components/Tag/index'
                 //相恋时间
                 loveTime: '1314天1小时3分钟14秒',
                 //图片地址
-                url: require('@/assets/images/px.png'),
+                url: require('@/assets/images/px.jpg'),
                 //爱情宣言
                 loveDeclaration: '陪伴是最长情的告白',
                 //页面信息
@@ -308,14 +308,28 @@ import Tags from '@/components/Tag/index'
              * 随机标签跳转
              */
             tagsToPage(item) {
-                console.log(item)
-                if (this.$route.path === '/articlelist' || this.$route.path === '/photo') {
+
+                if (this.$route.path === '/articlelist' && item.type === 'album') {
+                    this.$router.push({
+                        name: 'photo',
+                        params: {
+                            type: item.dictValue
+                        }
+                    })
+                } else if (this.$route.path === '/articlelist' && item.type === 'article') {
                     this.$children[2].queryParams.type = item.dictValue;
                     this.$children[2].getList();
-                    if (this.$route.path === '/photo') {
-                        this.$children[2].$children[2].queryParams.articleId = item.dictValue;
-                        this.$children[2].$children[2].getLeaveMessage();
-                    }
+                    window.scrollTo(0,0);
+                } else if (this.$route.path === '/photo' && item.type === 'article') {
+                    this.$router.push({
+                        name: 'articlelist',
+                        params: {
+                            code: item.dictValue
+                        }
+                    })
+                } else if (this.$route.path === '/photo' && item.type === 'album') {
+                    this.$children[2].$children[2].queryParams.articleId = item.dictValue;
+                    this.$children[2].$children[2].getLeaveMessage();
                     window.scrollTo(0,0);
                 } else {
                     if (item.type === 'article') {
@@ -367,7 +381,7 @@ import Tags from '@/components/Tag/index'
              * 获取随机文章
              */
             getRandomArticle() {
-                listArticle({pageNum: Math.ceil(Math.random()*100), pageSize: 10,}).then(response => {
+                listArticleNotContent({pageNum: Math.ceil(Math.random()*100), pageSize: 10,}).then(response => {
                     this.randomArticleList = response.rows;
                 });
             },
@@ -397,7 +411,7 @@ import Tags from '@/components/Tag/index'
              */
             initArticleList() {
                 this.loading = true;
-                listArticle({pageNum: 1, pageSize: 10,}).then(response => {
+                listArticleNotContent({pageNum: 1, pageSize: 10,}).then(response => {
                     this.articleList = response.rows;
                     this.loading = false;
                 });
@@ -407,7 +421,7 @@ import Tags from '@/components/Tag/index'
              */
             remoteMethod(value) {
                 this.loading = true;
-                listArticle({title: value}).then(response => {
+                listArticleNotContent({title: value}).then(response => {
                     this.articleList = response.rows;
                     this.loading = false;
                 });
@@ -807,10 +821,10 @@ import Tags from '@/components/Tag/index'
             }
         }
         .to-top:hover{
-            background-color: #FFFFFF;
+            background-color: #FFFFFF!important;
             .to-top-text{
-                color: #bfe7fa;
-                display: inline-block;
+                color: #bfe7fa!important;
+                display: flex;
             }
         }
     }

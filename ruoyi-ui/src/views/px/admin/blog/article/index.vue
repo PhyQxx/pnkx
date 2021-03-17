@@ -65,7 +65,7 @@
           @click="handleExport"
         >导出</el-button>
       </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+        <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
     </el-row>
 
     <el-table v-loading="loading" :data="articleList" @selection-change="handleSelectionChange">
@@ -76,11 +76,6 @@
         </template>
       </el-table-column>
       <el-table-column class-name="article-title" label="文章标题" align="center" prop="title" />
-      <el-table-column label="文章内容" align="center">
-        <template slot-scope="scope">
-            <div class="" v-html="scope.row.richText"></div>
-        </template>
-      </el-table-column>
       <el-table-column label="文章分类" align="center" prop="type" :formatter="typeFormat" />
       <el-table-column label="创建人" align="center" prop="nickName" />
       <el-table-column label="创建时间" align="center" prop="createTime" />
@@ -276,7 +271,6 @@
 </script>
 <style lang="scss" scoped>
   .app-container ::v-deep .el-table .cell{
-    max-height: 3rem;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;

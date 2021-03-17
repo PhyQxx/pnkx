@@ -3,8 +3,13 @@
         <div class="top">
             <div class="label">位置：</div>
             <el-breadcrumb separator-class="el-icon-arrow-right">
-                <el-breadcrumb-item :to="{ path: '/homepage' }"><i class="el-icon-collection-tag"/>首页</el-breadcrumb-item>
-                <el-breadcrumb-item>{{article.typeName}}</el-breadcrumb-item>
+                <el-breadcrumb-item class="pointer" :to="{ path: '/homepage' }"><i class="el-icon-collection-tag"/>首页</el-breadcrumb-item>
+                <el-breadcrumb-item class="pointer" :to="{
+                    name: 'articlelist',
+                    params: {
+                        code: article.typeCode
+                        }
+                }">{{article.typeName}}</el-breadcrumb-item>
                 <el-breadcrumb-item>{{article.title}}</el-breadcrumb-item>
             </el-breadcrumb>
         </div>
@@ -23,18 +28,18 @@
                             <i class="el-icon-date"/>
                             <div class="create-time margin-right">{{article.createTime}}</div>
                         </div>
-                        <div class="footer-one">
+                        <div class="footer-one pointer theme-blue-text" @click="goToArticleType(article.typeCode)">
                             <i class="el-icon-magic-stick"/>
                             <div class="type margin-right">{{article.typeName}}</div>
                         </div>
-                        <div class="footer-one">
+                        <div class="footer-one" @click="goToMessage">
                             <i class="el-icon-present"/>
                             <div class="message-number">{{article.leaveMessageNumber}}枚留言</div>
                         </div>
                     </div>
                     <div class="article-content" v-html="article.richText"></div>
                     <div :class="article.createBy === '1' ? 'phy-hr' : 'qxx-hr'"></div>
-                    <message-board messageType="0" :articleId="articleId"/>
+                    <message-board id="messageBoard" messageType="0" :articleId="articleId"/>
                 </div>
             </div>
             <div class="bottom-right">
@@ -75,7 +80,6 @@ import messageBoard from '@/components/MessageBoard/index'
         },
         data() {
             let articleId = sessionStorage.getItem('articleId');
-            sessionStorage.removeItem('articleId');
             return {
                 //遮罩层
                 loading: true,
@@ -91,6 +95,12 @@ import messageBoard from '@/components/MessageBoard/index'
             this.getArticleById();
         },
         methods: {
+            /**
+             * 移到留言位置
+             */
+            goToMessage() {
+                document.getElementById("messageBoard").scrollIntoView();
+            },
             /**
              * 根据ID获取文章
              */
@@ -122,15 +132,22 @@ import messageBoard from '@/components/MessageBoard/index'
                 })
             }
         },
+        destroyed() {
+            sessionStorage.removeItem('articleId');
+        }
     }
 </script>
 
 <style lang="scss" scoped>
+
 .page{
     padding: 1rem;
     .top{
         display: flex;
         align-items: center;
+        ::v-deep .el-breadcrumb__inner{
+            cursor: pointer!important;
+        }
     }
     .bottom{
         display: flex;

@@ -1,7 +1,7 @@
 import Vue from 'vue'
 
 import Cookies from 'js-cookie'
-
+import '@/assets/styles/public.css'
 import Element from 'element-ui'
 import './assets/styles/element-variables.scss'
 

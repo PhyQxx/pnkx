@@ -82,4 +82,11 @@ public interface IPxArticleService {
      * @return
      */
     List<Map<String, Object>> getHotArticle();
+
+    /**
+     * 查询文章列表不包括内容
+     * @param pxArticle
+     * @return
+     */
+    List<PxArticleVo> selectPxArticleNotContentList(PxArticleVo pxArticle);
 }

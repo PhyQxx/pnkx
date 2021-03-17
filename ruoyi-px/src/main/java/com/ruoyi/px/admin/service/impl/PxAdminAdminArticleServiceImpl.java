@@ -117,4 +117,16 @@ public class PxAdminAdminArticleServiceImpl implements IPxAdminArticleService
     public Integer dictDataCheckUniqueness(SysDictData dictData) {
         return pxAdminArticleMapper.dictDataCheckUniqueness(dictData);
     }
+
+    /**
+     *  查询文章列表不包含内容
+     * @param pxArticle
+     * @return
+     */
+    @Override
+    public List<PxArticleVo> selectPxArticleNotContent(PxArticleVo pxArticle) {
+        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
+        pxArticle.setCreateBy(loginUser.getUser().getUserId().toString());
+        return pxAdminArticleMapper.selectPxArticleNotContent(pxArticle);
+    }
 }

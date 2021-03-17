@@ -27,9 +27,7 @@
         </el-form>
 
         <div class="article-list" v-loading="loading">
-            <div class="no-data" v-if="articleList.length === 0">
-                暂无数据
-            </div>
+            <no-data text="暂无此类型文章" v-if="articleList.length === 0"/>
             <div class="article-one" v-for="article in articleList" :key="article.id">
                 <i class="el-icon-cherry article-icon"/>
                 <div class="title pointer" @click="goToArticlePage(article)">{{article.title}}</div>
@@ -53,7 +51,7 @@
 </template>
 
 <script>
-    import { listArticle, getArticleTypeList } from '@/api/px/customer/article';
+    import { listArticleNotContent, getArticleTypeList } from '@/api/px/customer/article';
 
     export default {
         name: "Article",
@@ -107,7 +105,7 @@
             /** 查询文章列表 */
             getList() {
                 this.loading = true;
-                listArticle(this.queryParams).then(response => {
+                listArticleNotContent(this.queryParams).then(response => {
                     this.articleList = response.rows;
                     this.total = response.total;
                     this.loading = false;

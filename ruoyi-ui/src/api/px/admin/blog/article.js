@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 查询文章列表不包含内容
+export function listArticleNotContent(query) {
+    return request({
+        url: '/admin/listNotContent',
+        method: 'get',
+        params: query
+    })
+}
+
 // 查询文章列表
 export function listArticle(query) {
   return request({
