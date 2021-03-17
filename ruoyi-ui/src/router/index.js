@@ -163,5 +163,11 @@ export const constantRoutes = [
 
 export default new Router({
   mode: 'hash', // 去掉url中的#
-  routes: constantRoutes
+  routes: constantRoutes,
+    scrollBehavior(to, form, savedPosition) {
+      return {
+          x: 0,
+          y: 0
+      }
+    }
 })

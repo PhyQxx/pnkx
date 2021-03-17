@@ -69,8 +69,10 @@
                     v-hasPermi="['system:dict:export']"
                 >导出</el-button>
             </el-col>
-            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
         </el-row>
+
+        <no-data text="暂无留言" v-if="dataList.length === 0"/>
 
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" align="center" />
@@ -140,7 +142,7 @@
                     </el-radio-group>
                 </el-form-item>
                 <el-form-item label="备注" prop="remark">
-                    <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
+                    <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"/>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -152,8 +154,7 @@
 </template>
 
 <script>
-    import { getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
-    import { dictDataCheckUniqueness } from "@/api/system/dict/data";
+    import { dictDataCheckUniqueness, getDicts, getData, delData, addData, updateData, exportData } from "@/api/system/dict/data";
     import { listPhoto } from "@/api/px/admin/blog/photo.js";
 
     export default {
@@ -265,9 +266,9 @@
             /** 查询相册名称数据列表 */
             getList() {
                 this.loading = true;
-                listPhoto(this.queryParams).then(response => {
-                    this.dataList = response.rows;
-                    this.total = response.total;
+                getDicts('px_album_name').then(response => {
+                    this.dataList = response.data;
+                    this.total = response.data.length;
                     this.loading = false;
                 });
             },
@@ -312,14 +313,14 @@
             },
             // 多选框选中数据
             handleSelectionChange(selection) {
-                this.ids = selection.map(item => item.dictCode)
-                this.single = selection.length!=1
+                this.ids = selection.map(item => item.dictCode);
+                this.single = selection.length!==1;
                 this.multiple = !selection.length
             },
             /** 修改按钮操作 */
             handleUpdate(row) {
                 this.reset();
-                const dictCode = row.dictCode || this.ids
+                const dictCode = row.dictCode || this.ids;
                 getData(dictCode).then(response => {
                     this.form = response.data;
                     this.open = true;
@@ -330,7 +331,7 @@
             submitForm: function() {
                 this.$refs["form"].validate(valid => {
                     if (valid) {
-                        if (this.form.dictCode != undefined) {
+                        if (this.form.dictCode !== undefined) {
                             updateData(this.form).then(response => {
                                 this.msgSuccess("修改成功");
                                 this.open = false;

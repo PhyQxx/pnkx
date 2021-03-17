@@ -68,9 +68,9 @@
                     v-hasPermi="['system:photo:remove']"
                 >删除</el-button>
             </el-col>
-            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+            <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
         </el-row>
-
+        <no-data text="暂无留言" v-if="photoList.length === 0"/>
         <el-table v-loading="loading" :data="photoList" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" align="center" />
             <el-table-column label="图片名称" align="center" prop="name" />
@@ -129,7 +129,7 @@
                                 :src="form.photoBase64"
                                 fit="scale-down">
                             </el-image>
-                            <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="form.photoBase64"></i>
+                            <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="form.photoBase64"/>
                             <input v-if="!form.photoBase64" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
                         </div>
                     </el-form-item>
@@ -140,7 +140,7 @@
                                 :key="dict.dictValue"
                                 :label="dict.dictLabel"
                                 :value="dict.dictValue"
-                            ></el-option>
+                            />
                         </el-select>
                     </el-form-item>
                     <el-form-item label="备注" prop="remark">
@@ -158,6 +158,7 @@
 
 <script>
     import { listPhoto, getPhoto, delPhoto, addPhoto, updatePhoto, exportPhoto } from "@/api/px/admin/blog/photo";
+    import { compressImage } from '@/utils/compressImage'
 
     export default {
         name: "Photo",
@@ -204,6 +205,11 @@
                     type: [
                         {required: true, message: "请选择所属相册", trigger: "change"}
                     ]
+                },
+                config: {
+                    width: 100, // 压缩后图片的宽
+                    height: 100, // 压缩后图片的高
+                    quality: 0.8 // 压缩后图片的清晰度，取值0-1，值越小，所绘制出的图像越模糊
                 }
             };
         },
@@ -227,10 +233,12 @@
              */
             uploadHeader(e) {
                 if(e.target.files[0]){
-                    let url = URL.createObjectURL(e.target.files[0]);
-                    let base64 = this.blobToDataURL(e.target.files[0], (base64Url) => {
-                        this.form.photoBase64 = base64Url;
-                    })
+                    compressImage(e.target.files[0], this.config)
+                        .then(result => { // result 为压缩后二进制文件
+                            this.blobToDataURL(result, (base64Url) => {
+                                this.form.photoBase64 = base64Url;
+                            })
+                        });
                 }
             },
             /**

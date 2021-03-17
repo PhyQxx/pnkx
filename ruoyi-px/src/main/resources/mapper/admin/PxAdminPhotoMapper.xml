@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.px.admin.mapper.PxAdminPhotoMapper">
 
-    <resultMap type="PxPhoto" id="PxPhotoResult">
+    <resultMap type="com.ruoyi.domain.po.PxPhoto" id="PxPhotoResult">
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
         <result property="photoBase64"    column="photo_base64"    />
@@ -22,7 +22,7 @@
         select id, name, photo_base64, photo_address, type, version, create_by, create_time, update_by, update_time, remark from px_photo
     </sql>
 
-    <select id="selectPxPhotoList" parameterType="PxPhoto" resultMap="PxPhotoResult">
+    <select id="selectPxPhotoList" parameterType="com.ruoyi.domain.po.PxPhoto" resultMap="PxPhotoResult">
         <include refid="selectPxPhotoVo"/>
         <where>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
@@ -37,7 +37,7 @@
         where id = #{id}
     </select>
 
-    <insert id="insertPxPhoto" parameterType="PxPhoto">
+    <insert id="insertPxPhoto" parameterType="com.ruoyi.domain.po.PxPhoto">
         insert into px_photo
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -67,7 +67,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxPhoto" parameterType="PxPhoto">
+    <update id="updatePxPhoto" parameterType="com.ruoyi.domain.po.PxPhoto">
         update px_photo
         <trim prefix="SET" suffixOverrides=",">
             <if test="name != null">name = #{name},</if>

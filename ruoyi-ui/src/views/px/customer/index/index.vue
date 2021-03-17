@@ -274,6 +274,7 @@ import Tags from '@/components/Tag/index'
                 if (this.$route.path === '/articlelist') {
                     this.$children[2].queryParams.type = articleType.code;
                     this.$children[2].getList();
+                    window.scrollTo(0,0);
                 } else {
                     this.$router.push({
                         name: 'articlelist',
@@ -282,7 +283,6 @@ import Tags from '@/components/Tag/index'
                         }
                     });
                 }
-                window.scrollTo(0,0);
             },
             /**
              * 获取文章分类
@@ -308,20 +308,31 @@ import Tags from '@/components/Tag/index'
              * 随机标签跳转
              */
             tagsToPage(item) {
-                if (item.type === 'article') {
-                    this.$router.push({
-                        name: 'articlelist',
-                        params: {
-                            code: item.dictValue
-                        }
-                    })
-                } else if (item.type === 'album') {
-                    this.$router.push({
-                        name: 'photo',
-                        params: {
-                            type: item.dictValue
-                        }
-                    })
+                console.log(item)
+                if (this.$route.path === '/articlelist' || this.$route.path === '/photo') {
+                    this.$children[2].queryParams.type = item.dictValue;
+                    this.$children[2].getList();
+                    if (this.$route.path === '/photo') {
+                        this.$children[2].$children[2].queryParams.articleId = item.dictValue;
+                        this.$children[2].$children[2].getLeaveMessage();
+                    }
+                    window.scrollTo(0,0);
+                } else {
+                    if (item.type === 'article') {
+                        this.$router.push({
+                            name: 'articlelist',
+                            params: {
+                                code: item.dictValue
+                            }
+                        })
+                    } else if (item.type === 'album') {
+                        this.$router.push({
+                            name: 'photo',
+                            params: {
+                                type: item.dictValue
+                            }
+                        })
+                    }
                 }
             },
             /**
@@ -375,11 +386,11 @@ import Tags from '@/components/Tag/index'
                 if (this.$route.path === '/article') {
                     sessionStorage.setItem('articleId', id);
                     this.$refs.routerView.getArticleById(id);
+                    window.scrollTo(0,0);
                 } else {
                     sessionStorage.setItem('articleId', id);
                     this.$router.push({name: 'article'});
                 }
-                window.scrollTo(0,0);
             },
             /**
              * 初始化搜索内容

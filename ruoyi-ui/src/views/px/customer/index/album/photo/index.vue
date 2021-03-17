@@ -49,7 +49,7 @@
             @pagination="getList"
         />
 
-        <message-board messageType="3" :articleId="$route.query.type"/>
+        <message-board messageType="3" :articleId="queryParams.type"/>
     </div>
 </template>
 

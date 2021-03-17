@@ -20,6 +20,11 @@ import { parseTime, resetForm, addDateRange, selectDictLabel, selectDictLabels, 
 import Pagination from "@/components/Pagination";
 // 自定义表格工具扩展
 import RightToolbar from "@/components/RightToolbar"
+/**
+ * 自定义全局组件
+ */
+import noData from '@/components/NoData/index'
+Vue.component("noData", noData);
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts

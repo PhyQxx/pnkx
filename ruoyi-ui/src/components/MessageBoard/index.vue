@@ -1,6 +1,7 @@
 <template>
     <div class="message-all" v-loading="loading">
         <div class="message">
+            <no-data text="暂无留言" v-if="leaveMessageList.length === 0"/>
             <div class="no-leave-message message-label" v-if="leaveMessageList.length === 0">
                 还没有童鞋留言，快来留言吧！
             </div>
@@ -21,7 +22,7 @@
                 <div class="message-right">
                     <div class="message-right-top">
                         <div class="leave-message-content" v-html="leaveMessage.content"></div>
-                        <div class="floor">{{index+1}}F</div>
+                        <div class="floor">{{leaveMessageList.length - index}}F</div>
                     </div>
                     <div class="leave-message-time">
                         {{leaveMessage.createTime}}
@@ -90,6 +91,7 @@
 <script>
     import { addMessage, getMessageList, getLeaveMessageByArticleId } from '@/api/px/customer/article.js';
     import { compressImage } from '@/utils/compressImage'
+
     export default {
         name: "index",
         props: {
