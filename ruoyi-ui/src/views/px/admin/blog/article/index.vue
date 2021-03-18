@@ -113,7 +113,7 @@
   import { listArticle, getArticle, delArticle, addArticle, updateArticle, exportArticle } from "@/api/px/admin/blog/article";
 
   export default {
-    name: "Article",
+    name: "Articlemanager",
     components: {
     },
     data() {
@@ -224,15 +224,13 @@
       },
       /** 新增按钮操作 */
       handleAdd() {
-          this.$router.push({name: '/articleedit'})
+          this.$router.push({path: 'articleedit'})
       },
       /** 修改按钮操作 */
       handleUpdate(row) {
+          sessionStorage.setItem('articleId', row.id);
         this.$router.push({
-                name: '/articleedit',
-                params: {
-                    id: row.id
-                }
+                path: 'articleedit',
             })
       },
       /** 提交按钮 */

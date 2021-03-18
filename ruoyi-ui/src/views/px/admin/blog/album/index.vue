@@ -158,7 +158,7 @@
     import { listPhoto } from "@/api/px/admin/blog/photo.js";
 
     export default {
-        name: "Data",
+        name: "Adminalbum",
         data() {
             //相册名称名称校验规则
             const dictLabelValidate = (rule, value, callback) => {

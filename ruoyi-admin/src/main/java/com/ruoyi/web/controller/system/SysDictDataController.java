@@ -27,7 +27,7 @@ import com.ruoyi.system.service.ISysDictTypeService;
 
 /**
  * 数据字典信息
- * 
+ *
  * @author ruoyi
  */
 @RestController
@@ -76,6 +76,20 @@ public class SysDictDataController extends BaseController
     public AjaxResult dictType(@PathVariable String dictType)
     {
         List<SysDictData> data = dictTypeService.selectDictDataByType(dictType);
+        if (StringUtils.isNull(data))
+        {
+            data = new ArrayList<SysDictData>();
+        }
+        return AjaxResult.success(data);
+    }
+
+    /**
+     * 根据字典类型查询字典数据信息（当前登陆人所创建的字典项）
+     */
+    @GetMapping(value = "/typeByLogin/{dictType}")
+    public AjaxResult dictTypeByLogin(@PathVariable String dictType)
+    {
+        List<SysDictData> data = dictTypeService.selectDictTypeByLogin(dictType);
         if (StringUtils.isNull(data))
         {
             data = new ArrayList<SysDictData>();

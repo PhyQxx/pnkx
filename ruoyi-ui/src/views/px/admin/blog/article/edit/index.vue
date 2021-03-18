@@ -1,11 +1,11 @@
 <template>
-    <div class="edit-page">
+    <div class="edit-page" v-loading="loading">
         <el-form ref="article" :model="article" :rules="rules" label-width="80px">
             <el-form-item label="文章标题" prop="title">
                 <el-input v-model="article.title" placeholder="请输入文章标题" />
             </el-form-item>
             <el-form-item label="文章内容" prop="richText">
-                <editor ref="editor" v-model="article.richText" :value="article.richText" :minHeight="300"></editor>
+                <editor ref="editor" v-model="article.richText" :value="article.richText" :minHeight="300"/>
             </el-form-item>
             <el-form-item label="文章分类" prop="type">
                 <el-select v-model="article.type" placeholder="请选择文章分类">
@@ -14,7 +14,7 @@
                         :key="dict.dictValue"
                         :label="dict.dictLabel"
                         :value="dict.dictValue"
-                    ></el-option>
+                    />
                 </el-select>
             </el-form-item>
             <el-form-item label="备注" prop="remark">
@@ -29,16 +29,18 @@
 </template>
 
 <script>
-    import { getDicts } from "@/api/system/dict/data";
+    import { getDictsByLogin } from "@/api/system/dict/data";
     import { getArticle, addArticle, updateArticle } from "@/api/px/admin/blog/article";
     import editor from '@/components/Editor/index.vue'
     export default {
-        name: "edit",
+        name: "Articleedit",
         components: {
             editor
         },
         data() {
             return {
+                //全局加载框
+                loading: true,
                 //文章类型列表
                 typeOptions: [],
                 //文章表单
@@ -64,8 +66,8 @@
         },
         mounted() {
             this.getDictList();
-            if (this.$route.params.id) {
-                this.getArticle(this.$route.params.id);
+            if (sessionStorage.getItem('articleId')) {
+                this.getArticle(sessionStorage.getItem('articleId'));
             }
         },
         methods: {
@@ -73,15 +75,17 @@
              * 获取文章内容
              */
             getArticle(id) {
+                this.loading = true;
                 getArticle(id).then(res => {
                     this.article = res.data;
+                    this.loading = false;
                 });
             },
             /**
              * 获取文章类型列表
              */
             getDictList() {
-                getDicts('px_article_type').then(res => {
+                getDictsByLogin('px_article_type').then(res => {
                     this.typeOptions = res.data;
                 })
             },
@@ -115,6 +119,9 @@
             cancel() {
 
             }
+        },
+        destroyed() {
+            sessionStorage.removeItem('articleId')
         }
     }
 </script>

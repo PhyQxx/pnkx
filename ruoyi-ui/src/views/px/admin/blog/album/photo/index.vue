@@ -161,7 +161,7 @@
     import { compressImage } from '@/utils/compressImage'
 
     export default {
-        name: "Photo",
+        name: "Adminphoto",
         components: {
         },
         data() {

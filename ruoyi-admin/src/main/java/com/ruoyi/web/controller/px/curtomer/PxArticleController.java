@@ -134,27 +134,4 @@ public class PxArticleController extends BaseController {
         return AjaxResult.success("获取首页最文章成功", pxArticleService.getHotArticle());
     }
 
-
-    /**
-     * 去除文章的图片内容方法
-     * @param body
-     * @param str1
-     * @param str2
-     * @return
-     */
-    public String subRangeString(String body, String str1, String str2) {
-        while (true) {
-            int index1 = body.indexOf(str1);
-            if (index1 != -1) {
-                int index2 = body.indexOf(str2, index1);
-                if (index2 != -1) {
-                    body = body.substring(0, index1) + body.substring(index2 +    str2.length(), body.length());
-                }else {
-                    return body;
-                }
-            }else {
-                return body;
-            }
-        }
-    }
 }

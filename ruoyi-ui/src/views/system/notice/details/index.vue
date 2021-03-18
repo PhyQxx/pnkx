@@ -15,7 +15,7 @@
     import { getDicts } from "@/api/system/dict/data";
 
     export default {
-        name: "index",
+        name: "Noticedetails",
         data() {
             return {
                 //通知ID

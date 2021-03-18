@@ -142,7 +142,7 @@
     import { listData } from "@/api/px/admin/blog/type";
 
     export default {
-        name: "Data",
+        name: "Articletype",
         data() {
             //文章类型名称校验规则
             const dictLabelValidate = (rule, value, callback) => {

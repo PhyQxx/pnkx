@@ -18,6 +18,9 @@ public class PxLeaveMessage extends BaseEntity
     /** $column.columnComment */
     private Long id;
 
+    /** 回复ID*/
+    private Long replyId;
+
     /** 版本号 */
     @Excel(name = "版本号")
     private String version;
@@ -119,21 +122,26 @@ public class PxLeaveMessage extends BaseEntity
         return messageBoard;
     }
 
+    public Long getReplyId() {
+        return replyId;
+    }
+
+    public void setReplyId(Long replyId) {
+        this.replyId = replyId;
+    }
+
     @Override
     public String toString() {
-        return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-                .append("id", getId())
-                .append("version", getVersion())
-                .append("createBy", getCreateBy())
-                .append("createTime", getCreateTime())
-                .append("updateBy", getUpdateBy())
-                .append("updateTime", getUpdateTime())
-                .append("articleId", getArticleId())
-                .append("content", getContent())
-                .append("authorName", getAuthorName())
-                .append("authorMailbox", getAuthorMailbox())
-                .append("authorHeader", getAuthorHeader())
-                .append("messageBoard", getMessageBoard())
-                .toString();
+        return "PxLeaveMessage{" +
+                "id=" + id +
+                ", replyId=" + replyId +
+                ", version='" + version + '\'' +
+                ", articleId='" + articleId + '\'' +
+                ", content='" + content + '\'' +
+                ", authorName='" + authorName + '\'' +
+                ", authorMailbox='" + authorMailbox + '\'' +
+                ", authorHeader='" + authorHeader + '\'' +
+                ", messageBoard='" + messageBoard + '\'' +
+                '}';
     }
 }

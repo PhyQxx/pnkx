@@ -4,9 +4,9 @@
 
     <!--新增留言-->
     <insert id="addMessage" parameterType="map">
-        INSERT INTO px_leave_message ( create_time, article_id, content, author_name, author_mailbox, author_header, message_board )
+        INSERT INTO px_leave_message ( create_time, article_id, reply_id, content, author_name, author_mailbox, author_header, message_board )
         VALUES
-            ( now(), #{articleId}, #{content}, #{authorName}, #{authorMailbox}, #{authorHeader}, #{messageBoard} )
+            ( now(), #{articleId}, #{reply_id}, #{content}, #{authorName}, #{authorMailbox}, #{authorHeader}, #{messageBoard} )
     </insert>
 
     <!--更新访客表-->
@@ -64,10 +64,11 @@
     </select>
 
     <!--根据id获取文章留言列表数据-->
-    <select id="getLeaveMessageByArticleId" resultType="java.util.Map">
+    <select id="getLeaveMessageByArticleId" parameterType="map" resultType="map">
         select
             id,
             article_id articleId,
+            reply_id replyId,
             author_header authorHeader,
             author_mailbox authorMailbox,
             author_name authorName,

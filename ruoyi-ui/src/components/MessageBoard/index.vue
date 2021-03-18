@@ -6,7 +6,7 @@
                 还没有童鞋留言，快来留言吧！
             </div>
             <div class="message-label" v-if="leaveMessageList.length > 0">已经有{{leaveMessageList.length}}位童鞋留言了，还不来盖楼！</div>
-            <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id'>
+            <div class="leave-message" v-for="(leaveMessage, index) in leaveMessageList" :key='leaveMessage.id' :id="leaveMessage.id">
                 <div class="message-left">
                     <div class="header-photo">
                         <el-image
@@ -21,8 +21,17 @@
                 </div>
                 <div class="message-right">
                     <div class="message-right-top">
+                        <div class="reply-box">
+                            <div class="reply-name" v-if="leaveMessage.replyId">回复：<span>{{leaveMessage.authorName}}</span>
+                                <span class="reply-floor">{{replyMessage.index + 1 + 'F'}}</span>
+                                <span class="reply-delete" @click="deleteReply()"><i class="el-icon-circle-close"/></span>
+                            </div>
+                        </div>
                         <div class="leave-message-content" v-html="leaveMessage.content"></div>
-                        <div class="floor">{{leaveMessageList.length - index}}F</div>
+                        <div class="floor">
+                            <span class="reply" @click="reply(leaveMessage, index)">回复</span>
+                            <span>{{leaveMessageList.length - index}}F</span>
+                        </div>
                     </div>
                     <div class="leave-message-time">
                         {{leaveMessage.createTime}}
@@ -48,6 +57,12 @@
                     </div>
                 </div>
                 <div class="message-board-left-bottom">
+                    <div class="reply-box">
+                        <div class="reply-name" v-if="messageForm.replyId">回复：<span>{{replyMessage.authorName}}</span>
+                            <span class="reply-floor">{{replyMessage.index + 1 + 'F'}}</span>
+                            <span class="reply-delete" @click="deleteReply()"><i class="el-icon-circle-close"/></span>
+                        </div>
+                    </div>
                     <div class="textarea"   :contenteditable='inputFlag'
                          ref="leaveMessage"
                          @input="leaveMessageChange($event)"></div>
@@ -64,19 +79,19 @@
                             请上传头像
                         </div>
                     </el-image>
-                    <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"></i>
+                    <i @click="deleteHeader" class="el-icon-circle-close close-icon" v-if="messageForm.authorHeader"/>
                     <input v-if="!messageForm.authorHeader" type="file" id="headerPhoto" capture="camera" accept="image/*" @change="uploadHeader($event)"/>
                 </div>
                 <div class="customer-name">
                     <div class="label">您的姓名：</div>
                     <div class="name">
-                        <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"></el-input>
+                        <el-input v-model="messageForm.authorName" placeholder="请输入您的姓名"/>
                     </div>
                 </div>
                 <div class="customer-mail">
                     <div class="label">您的邮箱： </div>
                     <div class="name">
-                        <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"></el-input>
+                        <el-input v-model="messageForm.authorMailbox" placeholder="请输入您的邮箱"/>
                     </div>
                 </div>
                 <div class="button">
@@ -89,8 +104,8 @@
 </template>
 
 <script>
-    import { addMessage, getMessageList, getLeaveMessageByArticleId } from '@/api/px/customer/article.js';
-    import { compressImage } from '@/utils/compressImage'
+    import {addMessage, getLeaveMessageByArticleId, getMessageList} from '@/api/px/customer/article.js';
+    import {compressImage} from '@/utils/compressImage'
 
     export default {
         name: "index",
@@ -130,6 +145,8 @@
                 messageForm: {
                     //文章或相册ID
                     articleId: this.articleId,
+                    //回复ID
+                    replyId: '',
                     //留言内容
                     content: '',
                     //游客姓名
@@ -145,13 +162,48 @@
                     width: 100, // 压缩后图片的宽
                     height: 100, // 压缩后图片的高
                     quality: 1 // 压缩后图片的清晰度，取值0-1，值越小，所绘制出的图像越模糊
+                },
+                //当前回复留言
+                replyMessage: {
+                    id: '',
+                    authorName: '',
+                    index: ''
                 }
             }
         },
         mounted() {
             this.getLeaveMessage();
+            if (sessionStorage.getItem('messageForm')) {
+                let header = JSON.parse(sessionStorage.getItem('messageForm')).authorHeader;
+                let authorName = JSON.parse(sessionStorage.getItem('messageForm')).authorName;
+                let authorMailbox = JSON.parse(sessionStorage.getItem('messageForm')).authorMailbox;
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.messageForm.authorHeader = header;
+                    }, 500);
+                    this.messageForm.authorName = authorName;
+                    this.messageForm.authorMailbox = authorMailbox;
+                })
+            }
         },
         methods: {
+            getMessageById(id) {
+
+            },
+            /**
+             * 取消回复
+             */
+            deleteReply() {
+                this.messageForm.replyId = '';
+            },
+            /**
+             * 回复留言
+             */
+            reply(message, index) {
+                this.messageForm.replyId = message.id;
+                this.replyMessage.authorName = message.authorName;
+                this.replyMessage.index = this.leaveMessageList.length - index;
+            },
             /**
              * 获取留言板留言
              */
@@ -191,16 +243,8 @@
                         if (res.data === 1) {
                             this.$message.success('留言成功');
                             this.getLeaveMessage();
-                            this.messageForm = {
-                                //留言内容
-                                content: '',
-                                //游客姓名
-                                authorName: '',
-                                //游客邮箱
-                                authorMailbox: '',
-                                //头像的URL
-                                authorHeader: '',
-                            };
+                            sessionStorage.setItem('messageForm', JSON.stringify(this.messageForm));
+                            this.messageForm.content = '';
                             this.textNumber = 500;
                             this.$refs.leaveMessage.innerHTML = '';
                         }
@@ -305,6 +349,16 @@
                             width: 5rem;
                             display: flex;
                             justify-content: flex-end;
+                            align-items: center;
+                            .reply{
+                                margin-right: 1rem;
+                                color: #999;
+                                cursor: pointer;
+                                font-size: 1rem;
+                            }
+                            .reply:hover{
+                                color: #00afff;
+                            }
                         }
                     }
                     .leave-message-time{
@@ -333,7 +387,6 @@
             border: 3px dashed #ACEBFF;
             background-color: #fdfdfd;
             border-radius: 10px;
-            box-shadow: 0 0 0.8rem #ccc;
             height: 300px;
             box-shadow: inset 0 0 1rem #0CF;
             display: flex;
@@ -363,6 +416,30 @@
                     }
                 }
                 .message-board-left-bottom{
+                    .reply-box{
+                        height: 2rem;
+                        cursor: pointer;
+                        .reply-name{
+                            span{
+                                color: #00afff;
+                            }
+                            .reply-delete{
+                                display: none;
+                                margin-left: 1rem;
+                            }
+                            .reply-floor{
+                                font-size: 1rem;
+                                color: #999999;
+                                margin-left: 1rem;
+                            }
+                        }
+                    }
+                    .reply-box:hover{
+                        .reply-delete{
+                            display: inline-block;
+                            color: red;
+                        }
+                    }
                     .textarea{
                         width: 100%;
                         height: 10rem;
