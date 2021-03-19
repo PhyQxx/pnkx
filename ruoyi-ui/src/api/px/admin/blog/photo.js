@@ -38,7 +38,7 @@ export function updatePhoto(data) {
 // 删除相册
 export function delPhoto(id) {
     return request({
-        url: '/system/photo/' + id,
+        url: '/admin/photo/' + id,
         method: 'delete'
     })
 }

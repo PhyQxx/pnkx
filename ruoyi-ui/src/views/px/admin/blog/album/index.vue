@@ -72,8 +72,6 @@
             <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
         </el-row>
 
-        <no-data text="暂无留言" v-if="dataList.length === 0"/>
-
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" align="center" />
             <el-table-column label="相册名称" align="center">
@@ -257,7 +255,7 @@
              */
             goToPhoto(album) {
                 this.$router.push({
-                    path: '/admin/photo',
+                    path: 'adminphoto',
                     query: {
                         type: album.dictValue
                     }

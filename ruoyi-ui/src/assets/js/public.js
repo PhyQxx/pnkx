@@ -35,6 +35,7 @@ const getTimeDifference = function(d1) {
 };
 export { getTimeDifference }
 
+//滚动动画
 const scrollAnimation = function (currentY, targetY) {
 // 获取当前位置方法
     // const currentY = document.documentElement.scrollTop || document.body.scrollTop

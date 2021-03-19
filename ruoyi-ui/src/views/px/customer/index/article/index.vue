@@ -32,7 +32,7 @@
                             <i class="el-icon-magic-stick"/>
                             <div class="type margin-right">{{article.typeName}}</div>
                         </div>
-                        <div class="footer-one" @click="goToMessage">
+                        <div class="footer-one pointer" @click="goToMessage">
                             <i class="el-icon-present"/>
                             <div class="message-number">{{article.leaveMessageNumber}}枚留言</div>
                         </div>
@@ -73,6 +73,8 @@
 <script>
 import { getArticleList, getArticleTypeNumber } from '@/api/px/customer/article.js';
 import messageBoard from '@/components/MessageBoard/index'
+import { scrollAnimation } from '@/assets/js/public.js';
+
 
     export default {
         components: {
@@ -99,7 +101,8 @@ import messageBoard from '@/components/MessageBoard/index'
              * 移到留言位置
              */
             goToMessage() {
-                document.getElementById("messageBoard").scrollIntoView();
+                let currentY = document.getElementById("messageBoard").offsetTop;
+                scrollAnimation(0, currentY - 100)
             },
             /**
              * 根据ID获取文章
@@ -133,7 +136,7 @@ import messageBoard from '@/components/MessageBoard/index'
             }
         },
         destroyed() {
-            sessionStorage.removeItem('articleId');
+            // sessionStorage.removeItem('articleId');
         }
     }
 </script>

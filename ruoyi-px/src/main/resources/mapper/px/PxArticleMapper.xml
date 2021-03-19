@@ -6,7 +6,7 @@
     <insert id="addMessage" parameterType="map">
         INSERT INTO px_leave_message ( create_time, article_id, reply_id, content, author_name, author_mailbox, author_header, message_board )
         VALUES
-            ( now(), #{articleId}, #{reply_id}, #{content}, #{authorName}, #{authorMailbox}, #{authorHeader}, #{messageBoard} )
+            ( now(), #{articleId}, #{replyId}, #{content}, #{authorName}, #{authorMailbox}, #{authorHeader}, #{messageBoard} )
     </insert>
 
     <!--更新访客表-->

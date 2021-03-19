@@ -70,7 +70,6 @@
             </el-col>
             <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"/>
         </el-row>
-        <no-data text="暂无留言" v-if="photoList.length === 0"/>
         <el-table v-loading="loading" :data="photoList" @selection-change="handleSelectionChange">
             <el-table-column type="selection" width="55" align="center" />
             <el-table-column label="图片名称" align="center" prop="name" />
@@ -207,9 +206,8 @@
                     ]
                 },
                 config: {
-                    width: 400, // 压缩后图片的宽
-                    height: 400, // 压缩后图片的高
-                    quality: 0.8 // 压缩后图片的清晰度，取值0-1，值越小，所绘制出的图像越模糊
+                    proportion: 0.4,
+                    quality: 0.8
                 }
             };
         },

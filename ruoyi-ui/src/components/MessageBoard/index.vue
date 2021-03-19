@@ -21,13 +21,14 @@
                 </div>
                 <div class="message-right">
                     <div class="message-right-top">
-                        <div class="reply-box">
-                            <div class="reply-name" v-if="leaveMessage.replyId">回复：<span>{{leaveMessage.authorName}}</span>
-                                <span class="reply-floor">{{replyMessage.index + 1 + 'F'}}</span>
-                                <span class="reply-delete" @click="deleteReply()"><i class="el-icon-circle-close"/></span>
+                        <div class="message-content">
+                            <div class="reply-box">
+                                <div class="reply-name" @click="goToMessage(leaveMessage.id, leaveMessage.replyId)" v-if="leaveMessage.replyId">回复：<span>{{getMessageById(leaveMessage.replyId).authorName}}</span>
+                                    <span class="reply-floor">{{getMessageById(leaveMessage.replyId).index + 1 + 'F'}}</span>
+                                </div>
                             </div>
+                            <div class="leave-message-content" v-html="leaveMessage.content"></div>
                         </div>
-                        <div class="leave-message-content" v-html="leaveMessage.content"></div>
                         <div class="floor">
                             <span class="reply" @click="reply(leaveMessage, index)">回复</span>
                             <span>{{leaveMessageList.length - index}}F</span>
@@ -58,8 +59,8 @@
                 </div>
                 <div class="message-board-left-bottom">
                     <div class="reply-box">
-                        <div class="reply-name" v-if="messageForm.replyId">回复：<span>{{replyMessage.authorName}}</span>
-                            <span class="reply-floor">{{replyMessage.index + 1 + 'F'}}</span>
+                        <div class="reply-name" v-if="messageForm.replyId">回复：<span>{{replyMessage && replyMessage.authorName}}</span>
+                            <span class="reply-floor">{{replyMessage && replyMessage.index + 1 + 'F'}}</span>
                             <span class="reply-delete" @click="deleteReply()"><i class="el-icon-circle-close"/></span>
                         </div>
                     </div>
@@ -104,8 +105,9 @@
 </template>
 
 <script>
-    import {addMessage, getLeaveMessageByArticleId, getMessageList} from '@/api/px/customer/article.js';
-    import {compressImage} from '@/utils/compressImage'
+    import { addMessage, getLeaveMessageByArticleId, getMessageList } from '@/api/px/customer/article.js';
+    import { compressImage } from '@/utils/compressImage'
+    import { scrollAnimation } from '@/assets/js/public.js';
 
     export default {
         name: "index",
@@ -159,8 +161,8 @@
                     messageBoard: this.messageType,
                 },
                 config: {
-                    width: 100, // 压缩后图片的宽
-                    height: 100, // 压缩后图片的高
+                    width: 64, // 压缩后图片的宽
+                    height: 64, // 压缩后图片的高
                     quality: 1 // 压缩后图片的清晰度，取值0-1，值越小，所绘制出的图像越模糊
                 },
                 //当前回复留言
@@ -187,8 +189,26 @@
             }
         },
         methods: {
+            /**
+             * 移到回复留言
+             */
+            goToMessage(id, replyId) {
+                const startY = document.getElementById(id).offsetTop;
+                const endY = document.getElementById(replyId).offsetTop;
+                scrollAnimation(startY, endY - 100);
+            },
+            /**
+             * 根据回复ID返回回复留言内容
+             */
             getMessageById(id) {
-
+                let messageRes = {};
+                this.leaveMessageList.forEach((message, index) => {
+                    if (message.id === id) {
+                        messageRes = message;
+                        messageRes.index = this.leaveMessageList.length - index - 1;
+                    }
+                });
+                return messageRes
             },
             /**
              * 取消回复
@@ -302,7 +322,6 @@
             }
             .leave-message{
                 display: flex;
-                align-items: center;
                 padding: 1rem;
                 align-items: flex-start;
                 .message-left{
@@ -339,8 +358,15 @@
                     .message-right-top{
                         display: flex;
                         justify-content: space-between;
+                        .reply-box{
+                            .reply-name{
+                                color: #249cff;
+                                .reply-floor{
+                                    margin-left: 0.5rem;
+                                }
+                            }
+                        }
                         .leave-message-content{
-                            width: calc(100% - 5rem);
                             font-size: 0.9rem;
                             color: rgb(34, 32, 32);
                         }

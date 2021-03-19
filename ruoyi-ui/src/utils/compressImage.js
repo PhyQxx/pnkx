@@ -1,11 +1,6 @@
 // 压缩图片
 // eslint-disable-next-line no-unused-vars
 export function compressImage (file, config) {
-    // eslint-disable-next-line no-unused-vars
-    let src;
-    // eslint-disable-next-line no-unused-vars
-    let files;
-    // let fileSize = parseFloat(parseInt(file['size']) / 1024 / 1024).toFixed(2)
     const read = new FileReader();
     read.readAsDataURL(file);
     return new Promise(function (resolve, reject) {
@@ -14,8 +9,8 @@ export function compressImage (file, config) {
             img.src = e.target.result;
             img.onload = function () {
                 // 默认按比例压缩
-                let w = config.width;
-                let h = config.height;
+                let w = config.width || img.width * config.proportion;
+                let h = config.height || img.height * config.proportion;
                 // 生成canvas
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');

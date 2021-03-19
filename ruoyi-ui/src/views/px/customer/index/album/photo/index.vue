@@ -178,16 +178,19 @@
                 .message-right-top{
                     display: flex;
                     justify-content: space-between;
-                    .leave-message-content{
-                        width: calc(100% - 5rem);
-                        font-size: 0.9rem;
-                        color: rgb(34, 32, 32);
-                    }
-                    .floor{
-                        font-size: 1.2rem;
-                        width: 5rem;
+                    .message-content{
                         display: flex;
-                        justify-content: flex-end;
+                        flex-flow: column;
+                        .leave-message-content{
+                            font-size: 0.9rem;
+                            color: rgb(34, 32, 32);
+                        }
+                        .floor{
+                            font-size: 1.2rem;
+                            width: 5rem;
+                            display: flex;
+                            justify-content: flex-end;
+                        }
                     }
                 }
                 .leave-message-time{
