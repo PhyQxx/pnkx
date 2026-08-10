@@ -130,6 +130,14 @@ pnpm build       # 构建
 
 ![文章列表](docs/screenshots/home-articles.png)
 
+### 友链
+
+![友链](docs/screenshots/link.png)
+
+### 留言板
+
+![留言板](docs/screenshots/message.png)
+
 ### 移动端
 
 移动端基于 uniapp 开发，支持 App、小程序与 H5：
