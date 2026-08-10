@@ -1,0 +1,4 @@
+pages:
+  artifact: dist
+  script:
+    - echo 'Nothing to do...'

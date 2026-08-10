@@ -1,0 +1,4 @@
+# Spring配置
+spring:
+  resources:
+    static-locations: classpath:/template/

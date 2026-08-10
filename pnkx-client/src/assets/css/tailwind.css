@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: YSHST;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/优设好身体.woff2);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: MiSans;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/MiSans.woff2);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: HYTMR;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/HYTangMeiRen55W.woff2);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: LXGW;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/霞鹜文楷.woff2);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: TTQHB;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/甜甜圈海报字体.woff2);
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Consolas_1;
+  src: url(https://sourcebucket.s3.bitiful.net/fonts/Consolas.woff2);
+  font-display: swap;
+}
+
+body,
+html {
+  cursor: url(https://ftp.pnkx.top:8/ftp/pnkx/images/x1.cur), auto;
+  /* @apply font-sans; */
+  font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB',
+    'Heiti SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+}
+
+html.light {
+  @apply text-v-fontcolor bg-v-background;
+}
+
+html.dark {
+  @apply text-v-fontcolor-dark bg-v-background-dark;
+}
+
+img {
+  display: inline-block;
+}
+
+#waifu-tips {
+  color: black;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  @apply h-[6px] w-[6px] bg-gray-200 dark:bg-[#202124];
+}
+::-webkit-scrollbar-track {
+  @apply bg-gray-200 dark:bg-[#202124];
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-orange-400 dark:bg-indigo-500;
+}
+
+/* 单行省略号 */
+.single-line-ellipsis {
+  word-break: break-all;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 超二行省略号 */
+.multiline-two-ellipsis {
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* 超三行省略号 */
+.multiline-ellipsis {
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}

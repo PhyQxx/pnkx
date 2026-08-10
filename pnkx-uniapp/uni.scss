@@ -1,0 +1,249 @@
+/**
+ * Pnkx Design System - Design Tokens
+ * "Pei你看雪" Modern Mobile Design System
+ */
+
+/* ============================
+   Primary Colors（主色）
+   ============================ */
+$primary: #6C9EFF;
+$primary-light: #A8C8FF;
+$primary-lighter: #D6E4FF;
+$primary-dark: #4A7ADB;
+$primary-darker: #3B68B8;
+
+/* ============================
+   Functional Colors（功能色）
+   ============================ */
+$success: #4ADE80;
+$success-light: #BBF7D0;
+$success-dark: #22C55E;
+
+$warning: #FBBF24;
+$warning-light: #FDE68A;
+$warning-dark: #F59E0B;
+
+$danger: #FF6B6B;
+$danger-light: #FECACA;
+$danger-dark: #EF4444;
+
+$info: #6C9EFF;
+
+/* ============================
+   Feature Colors（功能模块色）
+   ============================ */
+$bookkeeping: #6C9EFF;
+$bookkeeping-light: #D6E4FF;
+
+$diary: #A78BFA;
+$diary-light: #DDD6FE;
+
+$todo: #34D399;
+$todo-light: #A7F3D0;
+
+$menstruation: #F472B6;
+$menstruation-light: #FBCFE8;
+
+$commemoration: #FB923C;
+$commemoration-light: #FED7AA;
+
+$card: #F472B6;
+$card-light: #FBCFE8;
+
+$note: #60A5FA;
+$note-light: #BFDBFE;
+
+$book: #818CF8;
+$book-light: #C7D2FE;
+
+/* ============================
+   Neutral Colors（中性色）
+   ============================ */
+$gray-50: #FAFBFC;
+$gray-100: #F4F6F9;
+$gray-200: #E8ECF1;
+$gray-300: #D1D8E0;
+$gray-400: #9BA8B7;
+$gray-500: #6B7B8D;
+$gray-600: #4A5568;
+$gray-700: #2D3748;
+$gray-800: #1A202C;
+
+/* ============================
+   Legacy Theme Colors（兼容旧色）
+   ============================ */
+$theme-blue: $primary;
+$theme-red: $danger;
+$theme-yellow: $warning;
+$theme-green: $success;
+$theme-dark-green: #027A79;
+$theme-gray: $gray-100;
+$theme-white: #FFFFFF;
+$theme-pink: $menstruation;
+
+/* Bookkeeping Colors */
+$theme-bookkeeping-red: #FF6B6B;
+$theme-bookkeeping-green: #4ADE80;
+$theme-bookkeeping-gray: $gray-400;
+$theme-bookkeeping-bg-color-blue: rgba(108, 158, 255, 0.12);
+
+/* ============================
+   Text Colors（文字色）
+   ============================ */
+$text-primary: $gray-800;
+$text-secondary: $gray-600;
+$text-tertiary: $gray-400;
+$text-placeholder: $gray-400;
+$text-disabled: $gray-300;
+$text-inverse: #FFFFFF;
+
+/* ============================
+   Background Colors（背景色）
+   ============================ */
+$bg-page: $gray-100;
+$bg-card: #FFFFFF;
+$bg-elevated: #FFFFFF;
+$bg-hover: $gray-50;
+$bg-mask: rgba(0, 0, 0, 0.5);
+$bg-menu: rgba(108, 158, 255, 0.08);
+
+/* ============================
+   Border Colors（边框色）
+   ============================ */
+$border-color: $gray-200;
+$border-light: $gray-100;
+
+/* ============================
+   Typography（排版）
+   ============================ */
+$font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+
+$font-display: 40rpx;
+$font-h1: 36rpx;
+$font-h2: 32rpx;
+$font-h3: 30rpx;
+$font-body: 28rpx;
+$font-caption: 24rpx;
+$font-small: 22rpx;
+$font-mini: 20rpx;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+/* ============================
+   Spacing（间距）
+   ============================ */
+$spacing-2xs: 4rpx;
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+$spacing-2xl: 64rpx;
+$spacing-3xl: 96rpx;
+
+$page-padding: 32rpx;
+$section-gap: 24rpx;
+
+/* ============================
+   Border Radius（圆角）
+   ============================ */
+$radius-xs: 4rpx;
+$radius-sm: 8rpx;
+$radius-md: 12rpx;
+$radius-lg: 16rpx;
+$radius-xl: 24rpx;
+$radius-2xl: 32rpx;
+$radius-full: 999rpx;
+
+/* ============================
+   Shadows（阴影）
+   ============================ */
+$shadow-xs: 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
+$shadow-sm: 0 2rpx 8rpx rgba(108, 158, 255, 0.08);
+$shadow-md: 0 8rpx 24rpx rgba(108, 158, 255, 0.12);
+$shadow-lg: 0 16rpx 48rpx rgba(108, 158, 255, 0.16);
+$shadow-card: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+$shadow-float: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+
+/* ============================
+   Transitions（动效）
+   ============================ */
+$duration-fast: 150ms;
+$duration-normal: 250ms;
+$duration-slow: 400ms;
+
+$ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$ease-in: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+$ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+/* ============================
+   Z-Index（层级）
+   ============================ */
+$z-base: 1;
+$z-card: 10;
+$z-sticky: 100;
+$z-fixed: 1000;
+$z-modal: 2000;
+$z-toast: 3000;
+
+/* ============================
+   Uni-app Overrides
+   ============================ */
+$uni-color-primary: $primary;
+$uni-color-success: $success;
+$uni-color-warning: $warning;
+$uni-color-error: $danger;
+
+$uni-text-color: $text-primary;
+$uni-text-color-inverse: $text-inverse;
+$uni-text-color-grey: $text-tertiary;
+$uni-text-color-dark-grey: $text-secondary;
+$uni-text-color-placeholder: $text-placeholder;
+$uni-text-color-disable: $text-disabled;
+
+$uni-bg-color: $bg-card;
+$uni-bg-color-grey: $bg-page;
+$uni-bg-color-hover: $bg-hover;
+$uni-bg-color-mask: $bg-mask;
+$uni-bg-color-menu: $bg-menu;
+
+$uni-border-color: $border-color;
+
+$uni-font-size-sm: 12px;
+$uni-font-size-base: 14px;
+$uni-font-size-lg: 16px;
+
+$uni-img-size-sm: 20px;
+$uni-img-size-base: 26px;
+$uni-img-size-lg: 40px;
+
+$uni-border-radius-sm: 2px;
+$uni-border-radius-base: 6px;
+$uni-border-radius-lg: 12px;
+$uni-border-radius-circle: 50%;
+
+$uni-spacing-row-sm: 5px;
+$uni-spacing-row-base: 10px;
+$uni-spacing-row-lg: 15px;
+
+$uni-spacing-col-sm: 4px;
+$uni-spacing-col-base: 8px;
+$uni-spacing-col-lg: 12px;
+
+$uni-opacity-disabled: 0.3;
+
+$uni-color-title: $gray-800;
+$uni-font-size-title: 20px;
+$uni-color-subtitle: $text-secondary;
+$uni-font-size-subtitle: 26px;
+$uni-color-paragraph: $text-secondary;
+$uni-font-size-paragraph: 15px;

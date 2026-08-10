@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.system.mapper.SysNoticeMapper">
+
+    <resultMap type="com.pnkx.system.domain.vo.SysNoticeVo" id="SysNoticeResult">
+        <result property="noticeId" column="notice_id"/>
+        <result property="noticeTitle" column="notice_title"/>
+        <result property="noticeType" column="notice_type"/>
+        <result property="noticeContent" column="notice_content"/>
+        <result property="contentMd" column="content_md"/>
+        <result property="cover" column="cover"/>
+        <result property="read" column="read"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="author" column="nick_name"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <resultMap type="com.pnkx.system.domain.SysNoticeRead" id="SysNoticeReadResult">
+        <result property="id" column="id"/>
+        <result property="noticeId" column="notice_id"/>
+        <result property="ip" column="ip"/>
+        <result property="location" column="location"/>
+        <result property="country" column="country"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectNoticeVo">
+        select notice_id,
+               notice_title,
+               notice_type,
+               cast(notice_content as char) as notice_content,
+               content_md,
+               n.status,
+               (select sum(1) from sys_notice_read r where n.notice_id = r.notice_id) `read`,
+               n.cover,
+               n.create_by,
+               nick_name,
+               n.create_time,
+               n.update_by,
+               n.update_time,
+               n.remark
+        from sys_notice n
+                 left join sys_user u on n.create_by = u.user_id
+    </sql>
+
+    <sql id="selectSysNoticeReadVo">
+        select id, notice_id,
+               ip,
+               location,
+               country,
+               province,
+               city,
+               nick_name,
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark
+        from sys_notice_read r
+                 left join sys_user u on r.create_by = u.user_id
+    </sql>
+
+    <select id="selectNoticeById" parameterType="Long" resultMap="SysNoticeResult">
+        <include refid="selectNoticeVo"/>
+        where notice_id = #{noticeId}
+    </select>
+
+    <select id="selectNoticeList" parameterType="com.pnkx.system.domain.SysNotice" resultMap="SysNoticeResult">
+        <include refid="selectNoticeVo"/>
+        <where>
+            <if test="noticeTitle != null and noticeTitle != ''">
+                AND notice_title like concat('%', #{noticeTitle}, '%')
+            </if>
+            <if test="noticeType != null and noticeType != ''">
+                AND notice_type = #{noticeType}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by like concat('%', #{createBy}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!--获取未读通知公告-->
+    <select id="getUnreadNoticeList" resultMap="SysNoticeResult" parameterType="com.pnkx.system.domain.SysNoticeRead">
+        SELECT *
+        FROM `sys_notice`
+        WHERE notice_id NOT IN (SELECT notice_id FROM sys_notice_read WHERE create_by = #{createBy})
+    </select>
+
+    <!--按条件查询已读通知-->
+    <select id="selectNoticeRead" resultMap="SysNoticeReadResult" parameterType="com.pnkx.system.domain.SysNoticeRead">
+        <include refid="selectSysNoticeReadVo"/>
+        <where>
+            <if test="id != null ">and id = #{id}</if>
+            <if test="noticeId != null ">and notice_id = #{noticeId}</if>
+        </where>
+    </select>
+
+    <insert id="insertNotice" parameterType="com.pnkx.system.domain.SysNotice" useGeneratedKeys="true"
+            keyProperty="noticeId">
+        insert into sys_notice (
+        <if test="noticeTitle != null and noticeTitle != '' ">notice_title,</if>
+        <if test="noticeType != null and noticeType != '' ">notice_type,</if>
+        <if test="noticeContent != null and noticeContent != '' ">notice_content,</if>
+        <if test="contentMd != null and contentMd != '' ">content_md,</if>
+        <if test="cover != null and cover != '' ">cover,</if>
+        <if test="status != null and status != '' ">status,</if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="createBy != null and createBy != ''">create_by,</if>
+        create_time
+        )values(
+        <if test="noticeTitle != null and noticeTitle != ''">#{noticeTitle},</if>
+        <if test="noticeType != null and noticeType != ''">#{noticeType},</if>
+        <if test="noticeContent != null and noticeContent != ''">#{noticeContent},</if>
+        <if test="contentMd != null and contentMd != ''">#{contentMd},</if>
+        <if test="cover != null and cover != ''">#{cover},</if>
+        <if test="status != null and status != ''">#{status},</if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="createBy != null and createBy != ''">#{createBy},</if>
+        sysdate()
+        )
+    </insert>
+
+    <!--新增已读记录-->
+    <insert id="insertNoticeRead" parameterType="com.pnkx.system.domain.SysNoticeRead">
+        insert into sys_notice_read (
+        <if test="id != null and id != '' ">id,</if>
+        <if test="noticeId != null and noticeId != '' ">notice_id,</if>
+        <if test="ip != null">ip,</if>
+        <if test="location != null">location,</if>
+        <if test="country != null">country,</if>
+        <if test="province != null">province,</if>
+        <if test="city != null">city,</if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="createBy != null and createBy != ''">create_by,</if>
+        create_time
+        )values(
+        <if test="id != null and id != ''">#{id},</if>
+        <if test="noticeId != null and noticeId != ''">#{noticeId},</if>
+        <if test="ip != null">#{ip},</if>
+        <if test="location != null">#{location},</if>
+        <if test="country != null">#{country},</if>
+        <if test="province != null">#{province},</if>
+        <if test="city != null">#{city},</if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="createBy != null and createBy != ''">#{createBy},</if>
+        sysdate()
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="com.pnkx.system.domain.SysNotice">
+        update sys_notice
+        <set>
+            <if test="noticeTitle != null and noticeTitle != ''">notice_title = #{noticeTitle},</if>
+            <if test="noticeType != null and noticeType != ''">notice_type = #{noticeType},</if>
+            <if test="noticeContent != null">notice_content = #{noticeContent},</if>
+            <if test="contentMd != null">content_md = #{contentMd},</if>
+            <if test="cover != null and cover != ''">cover = #{cover},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null and remark != ''">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where notice_id = #{noticeId}
+    </update>
+
+    <delete id="deleteNoticeById" parameterType="Long">
+        delete
+        from sys_notice
+        where notice_id = #{noticeId}
+    </delete>
+
+    <delete id="deleteNoticeByIds" parameterType="Long">
+        delete from sys_notice where notice_id in
+        <foreach item="noticeId" collection="array" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </delete>
+
+</mapper>

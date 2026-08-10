@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxLoversCardMapper">
+
+    <resultMap type="PxLoversCard" id="PxLoversCardResult">
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="describe" column="describe"/>
+        <result property="logo" column="logo"/>
+        <result property="thumbnail" column="thumbnail"/>
+        <result property="money" column="money"/>
+        <result property="number" column="number"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxLoversCardVo">
+        select id,
+               title,
+               `describe`,
+               logo,
+               thumbnail,
+               money,
+               `number`,
+               del_flag,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_lovers_card
+    </sql>
+
+    <select id="selectPxLoversCardList" parameterType="PxLoversCard" resultMap="PxLoversCardResult">
+        <include refid="selectPxLoversCardVo"/>
+        <where>
+            <if test="title != null  and title != ''">
+                and title = #{title}
+            </if>
+            <if test="describe != null  and describe != ''">
+                and `describe` = #{describe}
+            </if>
+            <if test="logo != null  and logo != ''">
+                and logo = #{logo}
+            </if>
+            <if test="version != null  and version != ''">
+                and version = #{version}
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxLoversCardById" parameterType="Long"
+            resultMap="PxLoversCardResult">
+        <include refid="selectPxLoversCardVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxLoversCard" parameterType="PxLoversCard" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_lovers_card
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,
+            </if>
+            <if test="describe != null">`describe`,
+            </if>
+            <if test="logo != null">logo,
+            </if>
+             <if test="thumbnail != null">thumbnail,
+            </if>
+            <if test="money != null">money,
+            </if>
+            <if test="number != null">`number`,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},
+            </if>
+            <if test="describe != null">#{describe},
+            </if>
+            <if test="logo != null">#{logo},
+            </if>
+            <if test="thumbnail != null">#{thumbnail},
+            </if>
+            <if test="money != null">#{money},
+            </if>
+            <if test="number != null">#{number},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxLoversCard" parameterType="PxLoversCard">
+        update px_lovers_card
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title =
+                #{title},
+            </if>
+            <if test="describe != null">`describe` =
+                #{describe},
+            </if>
+            <if test="logo != null">logo =
+                #{logo},
+            </if>
+            <if test="thumbnail != null">thumbnail =
+                #{thumbnail},
+            </if>
+            <if test="money != null">money =
+                #{money},
+            </if>
+            <if test="number != null">`number` =
+                #{number},
+            </if>
+            <if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxLoversCardById" parameterType="Long">
+        delete
+        from px_lovers_card
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxLoversCardByIds" parameterType="String">
+        delete from px_lovers_card where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxWallpaperFolderMapper">
+
+    <resultMap type="PxWallpaperFolder" id="PxWallpaperFolderResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="cover" column="cover"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="order" column="order"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="enabled" column="enabled"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="wallpaperCount" column="wallpaper_count"/>
+    </resultMap>
+
+    <sql id="selectPxWallpaperFolderVo">
+        select id,
+               name,
+               cover,
+               parent_id,
+               `order`,
+               del_flag,
+               enabled,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_wallpaper_folder
+    </sql>
+
+    <select id="selectPxWallpaperFolderList" parameterType="PxWallpaperFolder"
+            resultMap="PxWallpaperFolderResult">
+        with recursive folder_tree as (
+            -- 递归获取每个文件夹的所有子文件夹（包括自己）
+            -- 根节点保留全部（含停用），递归时排除停用的子文件夹，使停用子文件夹不计入数量
+            select id as root_id, id as sub_id
+            from px_wallpaper_folder
+            where del_flag = 0
+            union all
+            select ft.root_id, f.id as sub_id
+            from px_wallpaper_folder f
+                     inner join folder_tree ft on f.parent_id = ft.sub_id
+            where f.del_flag = 0
+              and f.enabled = 1
+        )
+        select f.id,
+               f.name,
+               coalesce(nullif(f.cover, ''),
+                        (select coalesce(nullif(w.thumbnail, ''), w.url)
+                         from folder_tree ft2
+                                  inner join px_wallpaper w on ft2.sub_id = w.folder and w.del_flag = 0
+                         where ft2.root_id = f.id
+                         order by isnull(w.`order`) || w.`order` = '', w.`order`, w.update_time desc
+                         limit 1)) as cover,
+               f.parent_id,
+               f.`order`,
+               f.del_flag,
+               f.enabled,
+               f.version,
+               f.create_by,
+               f.create_time,
+               f.update_by,
+               f.update_time,
+               f.remark,
+               coalesce(wps.cnt, 0) as wallpaper_count
+        from px_wallpaper_folder f
+        left join (
+            select root_id, count(*) as cnt
+            from folder_tree ft
+                     inner join px_wallpaper w on ft.sub_id = w.folder and w.del_flag = 0
+            group by root_id
+        ) wps on f.id = wps.root_id
+        <where>
+            f.del_flag = 0
+            <if test="name != null and name != ''">
+                and f.name like concat('%', #{name}, '%')
+            </if>
+            <if test="parentId != null">
+                and f.parent_id = #{parentId}
+            </if>
+            <if test="enabled != null">
+                and f.enabled = #{enabled}
+            </if>
+            <if test="version != null and version != ''">
+                and f.version = #{version}
+            </if>
+        </where>
+        ORDER BY isnull(f.`order`) || f.`order` = '', f.`order`, f.update_time DESC
+    </select>
+
+    <!--
+        轻量分页查询（后台表格用）。
+        不使用 with recursive CTE，避免 PageHelper（MySQL 方言）对 CTE 拦截分页不稳定。
+        封面取文件夹自有 cover；壁纸数量按 folder 直接统计本文件夹下的壁纸。
+    -->
+    <select id="selectPxWallpaperFolderPage" parameterType="PxWallpaperFolder"
+            resultMap="PxWallpaperFolderResult">
+        select f.id,
+               f.name,
+               coalesce(nullif(f.cover, ''), wc.first_cover) as cover,
+               f.parent_id,
+               f.`order`,
+               f.del_flag,
+               f.enabled,
+               f.version,
+               f.create_by,
+               f.create_time,
+               f.update_by,
+               f.update_time,
+               f.remark,
+               coalesce(wc.cnt, 0)                          as wallpaper_count
+        from px_wallpaper_folder f
+        left join (
+            select w.folder                                                  as fid,
+                   count(*)                                                  as cnt,
+                   (select coalesce(nullif(w2.thumbnail, ''), w2.url)
+                    from px_wallpaper w2
+                    where w2.folder = w.folder and w2.del_flag = 0
+                    order by isnull(w2.`order`) || w2.`order` = '', w2.`order`, w2.update_time desc
+                    limit 1)                                                 as first_cover
+            from px_wallpaper w
+            where w.del_flag = 0
+            group by w.folder
+        ) wc on wc.fid = f.id
+        <where>
+            f.del_flag = 0
+            <if test="name != null and name != ''">
+                and f.name like concat('%', #{name}, '%')
+            </if>
+            <if test="parentId != null">
+                and f.parent_id = #{parentId}
+            </if>
+            <if test="enabled != null">
+                and f.enabled = #{enabled}
+            </if>
+            <if test="version != null and version != ''">
+                and f.version = #{version}
+            </if>
+        </where>
+        ORDER BY isnull(f.`order`) || f.`order` = '', f.`order`, f.update_time DESC
+    </select>
+
+    <select id="selectPxWallpaperFolderById" parameterType="Long"
+            resultMap="PxWallpaperFolderResult">
+        with recursive folder_tree as (
+            select id as root_id, id as sub_id
+            from px_wallpaper_folder
+            where id = #{id} and del_flag = 0
+            union all
+            select ft.root_id, f.id as sub_id
+            from px_wallpaper_folder f
+                     inner join folder_tree ft on f.parent_id = ft.sub_id
+            where f.del_flag = 0
+              and f.enabled = 1
+        )
+        select f.id,
+               f.name,
+               coalesce(nullif(f.cover, ''),
+                        (select coalesce(nullif(w.thumbnail, ''), w.url)
+                         from folder_tree ft2
+                                  inner join px_wallpaper w on ft2.sub_id = w.folder and w.del_flag = 0
+                         where ft2.root_id = f.id
+                         order by isnull(w.`order`) || w.`order` = '', w.`order`, w.update_time desc
+                         limit 1)) as cover,
+               f.parent_id,
+               f.`order`,
+               f.del_flag,
+               f.enabled,
+               f.version,
+               f.create_by,
+               f.create_time,
+               f.update_by,
+               f.update_time,
+               f.remark,
+               coalesce(wps.cnt, 0) as wallpaper_count
+        from px_wallpaper_folder f
+        left join (
+            select root_id, count(*) as cnt
+            from folder_tree ft
+                     inner join px_wallpaper w on ft.sub_id = w.folder and w.del_flag = 0
+            group by root_id
+        ) wps on f.id = wps.root_id
+        where f.id = #{id}
+    </select>
+
+    <insert id="insertPxWallpaperFolder" parameterType="PxWallpaperFolder"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into px_wallpaper_folder
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="cover != null">cover,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="order != null">`order`,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="enabled != null">enabled,</if>
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="cover != null">#{cover},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="order != null">#{order},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="enabled != null">#{enabled},</if>
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxWallpaperFolder" parameterType="PxWallpaperFolder">
+        update px_wallpaper_folder
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="cover != null">cover = #{cover},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="order != null">`order` = #{order},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxWallpaperFolderById" parameterType="Long">
+        update px_wallpaper_folder
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxWallpaperFolderByIds" parameterType="String">
+        update px_wallpaper_folder set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--
+        递归查询所有「未启用」文件夹及其全部后代文件夹 id。
+        从 enabled = 0 的文件夹出发，沿 parent_id 向下递归，
+        得到的集合即为移动端需要整体隐藏的文件夹子树。
+    -->
+    <select id="selectDisabledFolderSubtreeIds" resultType="Long">
+        with recursive disabled_subtree as (
+            select id
+            from px_wallpaper_folder
+            where del_flag = 0 and enabled = 0
+            union all
+            select f.id
+            from px_wallpaper_folder f
+                     inner join disabled_subtree ds on f.parent_id = ds.id
+            where f.del_flag = 0
+        )
+        select id from disabled_subtree
+    </select>
+</mapper>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxToDoMapper">
+
+    <resultMap type="com.pnkx.domain.po.PxToDo" id="PxToDoResult">
+        <result property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="performer" column="performer"/>
+        <result property="planStartTime" column="plan_start_time"/>
+        <result property="planEndTime" column="plan_end_time"/>
+        <result property="status" column="status"/>
+        <result property="label" column="label"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="finishBy" column="finish_by"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="remark" column="remark"/>
+        <result property="priority" column="priority"/>
+        <result property="kanbanStatus" column="kanban_status"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="sortOrder" column="sort_order"/>
+    </resultMap>
+
+    <sql id="selectPxToDoVo">
+        select id,
+               content,
+               performer,
+               plan_start_time,
+               plan_end_time,
+               status,
+               label,
+               version,
+               client_uuid,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               finish_by,
+               finish_time,
+               remark,
+               priority,
+               kanban_status,
+               parent_id,
+               sort_order
+        from px_to_do
+    </sql>
+
+    <select id="selectPxToDoList" parameterType="com.pnkx.domain.po.PxToDo" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        <where>
+            <if test="searchValue != null  and searchValue != ''">and (content like concat('%', #{searchValue}, '%') or remark like concat('%', #{searchValue}, '%') or label like concat('%', #{searchValue}, '%'))</if>
+            <if test="content != null  and content != ''">and content = #{content}</if>
+            <if test="performer != null  and performer != ''">and performer like concat('%', #{performer}, '%')</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="planStartTime != null  and planStartTime != ''">and plan_start_time &lt;= #{planStartTime}</if>
+            <if test="planEndTime != null  and planEndTime != ''"> and plan_end_time &gt;= #{planEndTime}</if>
+            <if test="status != null">and status = #{status}</if>
+            <if test="label != null  and label != ''">and label like concat('%', #{label}, '%')</if>
+            <if test="version != null  and version != ''">and version = #{version}</if>
+            <if test="finishBy != null  and finishBy != ''">and finish_by = #{finishBy}</if>
+            <if test="finishTime != null  and finishTime != ''">and finish_time = #{finishTime}</if>
+            <if test="kanbanStatus != null">and kanban_status = #{kanbanStatus}</if>
+            <if test="priority != null">and priority = #{priority}</if>
+            <!-- parent_id 默认只查顶级任务（0 或 NULL），除非显式指定 -->
+            <if test="parentId != null">and parent_id = #{parentId}</if>
+            <if test="parentId == null">and (parent_id = 0 or parent_id is null)</if>
+            <if test="params != null and params.date != null">
+                and (
+                plan_start_time &lt;= #{params.endDate} AND plan_end_time &gt;= #{params.startDate}
+                )
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by finish_time desc
+    </select>
+
+    <!-- 看板查询：按 kanban_status 分组返回（含数据权限），排除子任务 -->
+    <select id="selectKanbanList" parameterType="com.pnkx.domain.po.PxToDo" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        <where>
+            (parent_id = 0 or parent_id is null)
+            <if test="performer != null and performer != ''">and performer like concat('%', #{performer}, '%')</if>
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+            <!-- 数据权限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by kanban_status asc, sort_order asc, create_time desc
+    </select>
+
+    <!-- 子任务查询 -->
+    <select id="selectSubTasks" parameterType="Long" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        where parent_id = #{parentId}
+        order by sort_order asc, create_time asc
+    </select>
+
+    <!-- 批量更新看板状态+排序（拖拽用） -->
+    <update id="updateKanbanSort">
+        update px_to_do
+        set kanban_status = #{kanbanStatus}, sort_order = #{sortOrder}
+        where id = #{id}
+    </update>
+
+    <select id="selectPxToDoById" parameterType="Long" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        where id = #{id}
+    </select>
+
+    <!--获取待办事项标签列表（params 携带数据权限）-->
+    <select id="getLabelList" parameterType="com.pnkx.domain.po.PxToDo" resultType="string">
+        select DISTINCT label from px_to_do
+        where label is not null and label != ''
+        <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+        <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+            and create_by in
+            <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                #{uid}
+            </foreach>
+        </if>
+    </select>
+
+    <insert id="insertPxToDo" parameterType="com.pnkx.domain.po.PxToDo" useGeneratedKeys="true" keyProperty="id">
+        insert into px_to_do
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="content != null">content,</if>
+            <if test="performer != null">performer,</if>
+            <if test="planStartTime != null">plan_start_time,</if>
+            <if test="planEndTime != null">plan_end_time,</if>
+            <if test="status != null">status,</if>
+            <if test="label != null">label,</if>
+            <if test="version != null">version,</if>
+            <if test="clientUuid != null">client_uuid,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="finishBy != null">finish_by,</if>
+            <if test="finishTime != null">finish_time,</if>
+            <if test="priority != null">priority,</if>
+            <if test="kanbanStatus != null">kanban_status,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="content != null">#{content},</if>
+            <if test="performer != null">#{performer},</if>
+            <if test="planStartTime != null">#{planStartTime},</if>
+            <if test="planEndTime != null">#{planEndTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="label != null">#{label},</if>
+            <if test="version != null">#{version},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="finishBy != null">#{finishBy},</if>
+            <if test="finishTime != null">#{finishTime},</if>
+            <if test="priority != null">#{priority},</if>
+            <if test="kanbanStatus != null">#{kanbanStatus},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxToDo" parameterType="com.pnkx.domain.po.PxToDo">
+        update px_to_do
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="content != null">content = #{content},</if>
+            <if test="performer != null">performer = #{performer},</if>
+            <if test="planStartTime != null">plan_start_time = #{planStartTime},</if>
+            <if test="planEndTime != null">plan_end_time = #{planEndTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="label != null">label = #{label},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="finishBy != null">finish_by = #{finishBy},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="kanbanStatus != null">kanban_status = #{kanbanStatus},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxToDoById" parameterType="Long">
+        delete
+        from px_to_do
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxToDoByIds" parameterType="String">
+        delete from px_to_do where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据客户端唯一标识查询（幂等去重） -->
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        where client_uuid = #{clientUuid} limit 1
+    </select>
+
+    <!-- 增量查询（离线同步用） -->
+    <select id="selectIncremental" resultMap="PxToDoResult">
+        <include refid="selectPxToDoVo"/>
+        where create_by = #{createBy}
+        and COALESCE(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by COALESCE(update_time, create_time) asc
+        limit #{offset}, #{limit}
+    </select>
+</mapper>

@@ -1,0 +1,78 @@
+/**
+ * Light Theme - 亮色主题变量
+ * 
+ * 此文件补充 design-tokens.scss 中的亮色模式变量
+ * 主要用于 Element UI 主题变量覆盖
+ */
+
+// ============================================
+// Element UI 亮色主题变量覆盖
+// ============================================
+
+// 基础颜色
+$--color-primary: #0ea5e9;  // sky-500
+$--color-primary-light-1: #38bdf8;
+$--color-primary-light-2: #7dd3fc;
+$--color-primary-light-3: #bae6fd;
+$--color-primary-light-4: #e0f2fe;
+$--color-primary-light-5: #f0f9ff;
+$--color-primary-light-6: #0284c7;
+$--color-primary-light-7: #0369a1;
+$--color-primary-light-8: #075985;
+$--color-primary-light-9: #f0f9ff;
+
+// 功能色
+$--color-success: #22c55e;
+$--color-success-light: #86efac;
+$--color-success-lighter: #bbf7d0;
+$--color-success-extra-light: #dcfce7;
+
+$--color-warning: #f59e0b;
+$--color-warning-light: #fcd34d;
+$--color-warning-lighter: #fde68a;
+$--color-warning-extra-light: #fef3c7;
+
+$--color-danger: #ef4444;
+$--color-danger-light: #fca5a5;
+$--color-danger-lighter: #fecaca;
+$--color-danger-extra-light: #fee2e2;
+
+$--color-info: #0ea5e9;
+$--color-info-light: #7dd3fc;
+$--color-info-lighter: #bae6fd;
+$--color-info-extra-light: #e0f2fe;
+
+// 文字颜色
+$--color-text-primary: #0f172a;      // slate-900
+$--color-text-regular: #475569;      // slate-600
+$--color-text-secondary: #64748b;    // slate-500
+$--color-text-placeholder: #94a3b8;  // slate-400
+
+// 边框颜色
+$--border-color-base: #e2e8f0;       // slate-200
+$--border-color-light: #cbd5e1;      // slate-300
+$--border-color-lighter: #e2e8f0;    // slate-200
+$--border-color-extra-light: #f1f5f9; // slate-100
+
+// 背景颜色
+$--background-color-base: #f8fafc;   // slate-50
+$--background-color-light: #ffffff;
+$--background-color-lighter: #f1f5f9; // slate-100
+
+// 填充色
+$--fill-base: #ffffff;
+
+// ============================================
+// 导出供 JS 使用
+// ============================================
+:export {
+  colorPrimary: $--color-primary;
+  colorSuccess: $--color-success;
+  colorWarning: $--color-warning;
+  colorDanger: $--color-danger;
+  colorInfo: $--color-info;
+  colorTextPrimary: $--color-text-primary;
+  colorTextRegular: $--color-text-regular;
+  borderColorBase: $--border-color-base;
+  backgroundColorBase: $--background-color-base;
+}

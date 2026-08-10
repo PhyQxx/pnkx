@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxCommemorationDayMapper">
+
+    <resultMap type="PxCommemorationDay" id="PxCommemorationDayResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="icon" column="icon"/>
+        <result property="date" column="date"/>
+        <result property="repeat" column="repeat"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxCommemorationDayVo">
+        select id,
+               name,
+               icon, date, `repeat`, order_num, del_flag, version, client_uuid, create_by, create_time, update_by, update_time, remark
+        from px_commemoration_day
+    </sql>
+
+    <select id="selectPxCommemorationDayList" parameterType="PxCommemorationDay" resultMap="PxCommemorationDayResult">
+        <include refid="selectPxCommemorationDayVo"/>
+        <where>
+            <if test="name != null  and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="date != null">
+                and ( `repeat` = 1 and date_format(date,'%m') in ( date_format(#{date},'%m'),
+                date_format(DATE_SUB(#{date}, INTERVAL 1 MONTH),'%m'),
+                date_format(DATE_SUB(#{date}, INTERVAL -1 MONTH),'%m')
+                ))or (`repeat` = 0 and date_format(date,'%Y-%m') in ( date_format(#{date},'%Y-%m'),
+                date_format(DATE_SUB(#{date}, INTERVAL 1 MONTH),'%Y-%m'),
+                date_format(DATE_SUB(#{date}, INTERVAL -1 MONTH),'%Y-%m')
+                ))
+            </if>
+            <if test="orderNum != null ">and order_num = #{orderNum}</if>
+            <if test="version != null  and version != ''">and version = #{version}</if>
+            and del_flag = '0'
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxCommemorationDayById" parameterType="Long" resultMap="PxCommemorationDayResult">
+        <include refid="selectPxCommemorationDayVo"/>
+        where id = #{id}
+    </select>
+
+    <!--APP首页查询纪念日列表-->
+    <select id="getCommemorationDayList" resultType="com.pnkx.domain.po.PxCommemorationDay">
+        select id,
+        name,
+        icon, date, `repeat`, order_num, del_flag, version, create_by, create_time, update_by, update_time, remark
+        from px_commemoration_day
+        where
+            ( `repeat` = 1 AND TIMESTAMPDIFF( DAY, now(), CONCAT( LEFT ( now(), 4 ), RIGHT ( date, 15 ))) &lt; 30
+                AND TIMESTAMPDIFF( DAY, now(), CONCAT( LEFT ( now(), 4 ), RIGHT ( date, 15 ))) &gt; -1
+                )
+            OR (
+            `repeat` = 0
+            AND TIMESTAMPDIFF( DAY, now(), date ) &lt; 30 AND TIMESTAMPDIFF( DAY, now(), date )  &gt; -1)
+            and del_flag = '0'
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+    </select>
+
+    <insert id="insertPxCommemorationDay" parameterType="PxCommemorationDay" useGeneratedKeys="true" keyProperty="id">
+        insert into px_commemoration_day
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="icon != null">icon,</if>
+            <if test="date != null">date,</if>
+            <if test="repeat != null">`repeat`,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="icon != null">#{icon},</if>
+            <if test="date != null">#{date},</if>
+            <if test="repeat != null">#{repeat},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxCommemorationDay" parameterType="PxCommemorationDay">
+        update px_commemoration_day
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="date != null">date = #{date},</if>
+            <if test="repeat != null">`repeat` = #{repeat},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxCommemorationDayById" parameterType="Long">
+        update px_commemoration_day
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxCommemorationDayByIds" parameterType="String">
+        update px_commemoration_day set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据客户端唯一标识查询（幂等去重） -->
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxCommemorationDayResult">
+        <include refid="selectPxCommemorationDayVo"/>
+        where client_uuid = #{clientUuid} limit 1
+    </select>
+
+    <!-- 增量查询（离线同步用，包含软删除记录以便客户端同步删除） -->
+    <select id="selectIncremental" resultMap="PxCommemorationDayResult">
+        <include refid="selectPxCommemorationDayVo"/>
+        where create_by = #{createBy}
+        and COALESCE(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by COALESCE(update_time, create_time) asc
+        limit #{offset}, #{limit}
+    </select>
+</mapper>

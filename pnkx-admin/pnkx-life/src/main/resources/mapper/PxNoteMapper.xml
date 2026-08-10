@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxNoteMapper">
+
+    <resultMap type="PxNote" id="PxNoteResult">
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="richText" column="rich_text"/>
+        <result property="folder" column="folder"/>
+        <result property="order" column="order"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxNoteVo">
+        select id,
+               title,
+               content,
+               rich_text,
+               folder,
+               `order`,
+               del_flag,
+               version,
+               client_uuid,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_note
+    </sql>
+
+    <select id="selectPxNoteList" parameterType="PxNote" resultMap="PxNoteResult">
+        select id,
+        title,
+        LEFT(regexp_replace(content, '&lt;[^>]+>', ''), 300) content,
+        folder,
+        `order`,
+        del_flag,
+        version,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        remark
+        from px_note
+        <where>
+            del_flag = 0
+            <if test="folder != null">
+                and folder = #{folder}
+            </if>
+            <if test="title != null and title != ''">
+                and (title like concat('%', #{title}, '%') or content like concat('%', #{title}, '%'))
+            </if>
+            <if test="version != null  and version != ''">
+                and version = #{version}
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY isnull(`order`) || `order`='' ,`order`,
+        update_time DESC
+    </select>
+
+    <select id="selectPxNoteById" parameterType="Long"
+            resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxNote" parameterType="PxNote" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_note
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,
+            </if>
+            <if test="content != null">content,
+            </if>
+            <if test="richText != null">rich_text,
+            </if>
+            <if test="folder != null">folder,
+            </if>
+            <if test="order != null">`order`,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},
+            </if>
+            <if test="content != null">#{content},
+            </if>
+            <if test="richText != null">#{richText},
+            </if>
+            <if test="folder != null">#{folder},
+            </if>
+            <if test="order != null">#{order},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxNote" parameterType="PxNote">
+        update px_note
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title =
+                #{title},
+            </if>
+            <if test="content != null">content =
+                #{content},
+            </if>
+            <if test="richText != null">rich_text =
+                #{richText},
+            </if>
+            <if test="folder != null">folder =
+                #{folder},
+            </if>
+            <if test="order != null">`order` =
+                #{order},
+            </if>
+            <if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxNoteById" parameterType="Long">
+        update px_note
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxNoteByIds" parameterType="String">
+        update px_note set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据客户端唯一标识查询（幂等去重） -->
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where client_uuid = #{clientUuid} limit 1
+    </select>
+
+    <!-- 增量查询（离线同步用，包含软删除记录以便客户端同步删除） -->
+    <select id="selectIncremental" resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where create_by = #{createBy}
+        and COALESCE(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by COALESCE(update_time, create_time) asc
+        limit #{offset}, #{limit}
+    </select>
+
+    <select id="searchAiNotes" resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where del_flag = 0
+          and create_by = #{createBy}
+        <if test="folder != null">
+          and folder = #{folder}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (title like concat('%', #{keyword}, '%') or content like concat('%', #{keyword}, '%'))
+        </if>
+        order by update_time desc
+        limit #{limit}
+    </select>
+</mapper>

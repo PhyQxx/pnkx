@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxAiOperationLogMapper">
+
+    <resultMap type="com.pnkx.domain.po.PxAiOperationLog" id="PxAiOperationLogResult">
+        <result property="id" column="id"/>
+        <result property="requestId" column="request_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="question" column="question"/>
+        <result property="intent" column="intent"/>
+        <result property="confidence" column="confidence"/>
+        <result property="modelId" column="model_id"/>
+        <result property="modelKey" column="model_key"/>
+        <result property="isStream" column="is_stream"/>
+        <result property="isWrite" column="is_write"/>
+        <result property="writeStatus" column="write_status"/>
+        <result property="parsedJson" column="parsed_json"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="durationMs" column="duration_ms"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxAiOperationLogVo">
+        select id, request_id, user_id, question, intent, confidence, model_id, model_key, is_stream, is_write, write_status, parsed_json, error_msg, duration_ms, create_by, create_time, update_by, update_time, remark from px_ai_operation_log
+    </sql>
+
+    <select id="selectPxAiOperationLogList" parameterType="com.pnkx.domain.po.PxAiOperationLog" resultMap="PxAiOperationLogResult">
+        <include refid="selectPxAiOperationLogVo"/>
+        <where>
+            <if test="requestId != null  and requestId != ''"> and request_id = #{requestId}</if>
+            <if test="userId != null  and userId != ''"> and user_id = #{userId}</if>
+            <if test="intent != null  and intent != ''"> and intent = #{intent}</if>
+            <if test="writeStatus != null  and writeStatus != ''"> and write_status = #{writeStatus}</if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectPxAiOperationLogById" parameterType="Long" resultMap="PxAiOperationLogResult">
+        <include refid="selectPxAiOperationLogVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectPxAiOperationLogByRequestId" parameterType="String" resultMap="PxAiOperationLogResult">
+        <include refid="selectPxAiOperationLogVo"/>
+        where request_id = #{requestId}
+    </select>
+
+    <insert id="insertPxAiOperationLog" parameterType="com.pnkx.domain.po.PxAiOperationLog" useGeneratedKeys="true" keyProperty="id">
+        insert into px_ai_operation_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="requestId != null and requestId != ''">request_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="question != null">question,</if>
+            <if test="intent != null">intent,</if>
+            <if test="confidence != null">confidence,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="modelKey != null">model_key,</if>
+            <if test="isStream != null">is_stream,</if>
+            <if test="isWrite != null">is_write,</if>
+            <if test="writeStatus != null">write_status,</if>
+            <if test="parsedJson != null">parsed_json,</if>
+            <if test="errorMsg != null">error_msg,</if>
+            <if test="durationMs != null">duration_ms,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="requestId != null and requestId != ''">#{requestId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="question != null">#{question},</if>
+            <if test="intent != null">#{intent},</if>
+            <if test="confidence != null">#{confidence},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="modelKey != null">#{modelKey},</if>
+            <if test="isStream != null">#{isStream},</if>
+            <if test="isWrite != null">#{isWrite},</if>
+            <if test="writeStatus != null">#{writeStatus},</if>
+            <if test="parsedJson != null">#{parsedJson},</if>
+            <if test="errorMsg != null">#{errorMsg},</if>
+            <if test="durationMs != null">#{durationMs},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxAiOperationLog" parameterType="com.pnkx.domain.po.PxAiOperationLog">
+        update px_ai_operation_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="requestId != null and requestId != ''">request_id = #{requestId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="question != null">question = #{question},</if>
+            <if test="intent != null">intent = #{intent},</if>
+            <if test="confidence != null">confidence = #{confidence},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="modelKey != null">model_key = #{modelKey},</if>
+            <if test="isStream != null">is_stream = #{isStream},</if>
+            <if test="isWrite != null">is_write = #{isWrite},</if>
+            <if test="writeStatus != null">write_status = #{writeStatus},</if>
+            <if test="parsedJson != null">parsed_json = #{parsedJson},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="durationMs != null">duration_ms = #{durationMs},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="updatePxAiOperationLogByRequestId" parameterType="com.pnkx.domain.po.PxAiOperationLog">
+        update px_ai_operation_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="intent != null">intent = #{intent},</if>
+            <if test="confidence != null">confidence = #{confidence},</if>
+            <if test="isWrite != null">is_write = #{isWrite},</if>
+            <if test="writeStatus != null">write_status = #{writeStatus},</if>
+            <if test="parsedJson != null">parsed_json = #{parsedJson},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="durationMs != null">duration_ms = #{durationMs},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where request_id = #{requestId}
+    </update>
+
+    <delete id="deletePxAiOperationLogById" parameterType="Long">
+        delete from px_ai_operation_log where id = #{id}
+    </delete>
+
+    <delete id="deletePxAiOperationLogByIds" parameterType="Long">
+        delete from px_ai_operation_log where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectIntentDistribution" resultType="java.util.Map">
+        select intent as name, count(*) as value
+        from px_ai_operation_log
+        <where>
+            <if test="beginTime != null and beginTime != ''">and create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and create_time &lt;= #{endTime}</if>
+        </where>
+        group by intent order by value desc
+    </select>
+
+    <select id="selectAvgConfidence" resultType="java.util.Map">
+        select avg(confidence) as avgConfidence
+        from px_ai_operation_log
+        <where>
+            <if test="beginTime != null and beginTime != ''">and create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and create_time &lt;= #{endTime}</if>
+            and confidence is not null
+        </where>
+    </select>
+
+    <select id="selectAvgDuration" resultType="java.util.Map">
+        select avg(duration_ms) as avgDuration
+        from px_ai_operation_log
+        <where>
+            <if test="beginTime != null and beginTime != ''">and create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and create_time &lt;= #{endTime}</if>
+            and duration_ms is not null
+        </where>
+    </select>
+
+    <select id="selectDailyCounts" resultType="java.util.Map">
+        select date_format(create_time, '%Y-%m-%d') as date, count(*) as count
+        from px_ai_operation_log
+        <where>
+            <if test="beginTime != null and beginTime != ''">and create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and create_time &lt;= #{endTime}</if>
+        </where>
+        group by date_format(create_time, '%Y-%m-%d')
+        order by date
+    </select>
+
+    <select id="selectTotalCalls" resultType="long">
+        select count(*) from px_ai_operation_log
+        <where>
+            <if test="beginTime != null and beginTime != ''">and create_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and create_time &lt;= #{endTime}</if>
+        </where>
+    </select>
+</mapper>

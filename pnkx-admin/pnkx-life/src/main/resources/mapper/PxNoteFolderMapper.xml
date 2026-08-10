@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxNoteFolderMapper">
+
+    <resultMap type="PxNoteFolder" id="PxNoteFolderResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="password" column="password"/>
+        <result property="order" column="order"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="noteCount" column="note_count"/>
+    </resultMap>
+
+    <sql id="selectPxNoteFolderVo">
+        select id,
+               name,
+               parent_id,
+               password,
+               `order`,
+               del_flag,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_note_folder
+    </sql>
+
+    <select id="selectPxNoteFolderList" parameterType="PxNoteFolder" resultMap="PxNoteFolderResult">
+        with recursive folder_tree as (
+            -- 递归获取每个文件夹的所有子文件夹（包括自己）
+            select id as root_id, id as sub_id
+            from px_note_folder
+            where del_flag = 0
+            union all
+            select ft.root_id, f.id as sub_id
+            from px_note_folder f
+            inner join folder_tree ft on f.parent_id = ft.sub_id
+            where f.del_flag = 0
+        )
+        select f.id,
+               f.name,
+               f.parent_id,
+               f.password,
+               f.`order`,
+               f.del_flag,
+               f.version,
+               f.create_by,
+               f.create_time,
+               f.update_by,
+               f.update_time,
+               f.remark,
+               coalesce(notes.cnt, 0) as note_count
+        from px_note_folder f
+        left join (
+            select root_id, count(*) as cnt
+            from folder_tree ft
+            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0
+            group by root_id
+        ) notes on f.id = notes.root_id
+        <where>
+            f.del_flag = 0
+            <if test="name != null  and name != ''">
+                and f.name like concat('%', #{name}, '%')
+            </if>
+            <if test="parentId != null ">
+                and f.parent_id = #{parentId}
+            </if>
+            <if test="password != null  and password != ''">
+                and f.password = #{password}
+            </if>
+            <if test="version != null  and version != ''">
+                and f.version = #{version}
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and f.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY isnull(f.`order`) || f.`order`='' , f.`order`, f.update_time DESC
+    </select>
+
+    <select id="selectPxNoteFolderById" parameterType="Long"
+            resultMap="PxNoteFolderResult">
+        with recursive folder_tree as (
+            select id as root_id, id as sub_id
+            from px_note_folder
+            where id = #{id} and del_flag = 0
+            union all
+            select ft.root_id, f.id as sub_id
+            from px_note_folder f
+            inner join folder_tree ft on f.parent_id = ft.sub_id
+            where f.del_flag = 0
+        )
+        select f.id,
+               f.name,
+               f.parent_id,
+               f.password,
+               f.`order`,
+               f.del_flag,
+               f.version,
+               f.create_by,
+               f.create_time,
+               f.update_by,
+               f.update_time,
+               f.remark,
+               coalesce(notes.cnt, 0) as note_count
+        from px_note_folder f
+        left join (
+            select root_id, count(*) as cnt
+            from folder_tree ft
+            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0
+            group by root_id
+        ) notes on f.id = notes.root_id
+        where f.id = #{id}
+    </select>
+
+    <insert id="insertPxNoteFolder" parameterType="PxNoteFolder" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_note_folder
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,
+            </if>
+            <if test="parentId != null">parent_id,
+            </if>
+            <if test="password != null">password,
+            </if>
+            <if test="order != null">`order`,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},
+            </if>
+            <if test="parentId != null">#{parentId},
+            </if>
+            <if test="password != null">#{password},
+            </if>
+            <if test="order != null">#{order},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxNoteFolder" parameterType="PxNoteFolder">
+        update px_note_folder
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name =
+                #{name},
+            </if>
+            <if test="parentId != null">parent_id =
+                #{parentId},
+            </if>
+            <if test="password != null">password =
+                #{password},
+            </if>
+            <if test="order != null">`order` =
+                #{order},
+            </if><if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxNoteFolderById" parameterType="Long">
+        update px_note_folder
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxNoteFolderByIds" parameterType="String">
+        update px_note_folder set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

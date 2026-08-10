@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookkeepingRecordModelMapper">
+
+    <resultMap type="com.pnkx.domain.po.PxBookkeepingRecordModel" id="PxBookkeepingRecordModelResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="version" column="version"/>
+        <result property="account" column="account"/>
+        <result property="otherAccount" column="other_account"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="type" column="type"/>
+        <result property="money" column="money"/>
+        <result property="payTime" column="pay_time"/>
+        <association property="typeObject" javaType="com.pnkx.domain.po.PxBookkeepingClassification">
+            <result property="id" column="type_id"/>
+            <result property="typeIcon" column="type_icon"/>
+            <result property="typeParentId" column="type_parent_id"/>
+            <result property="typeName" column="type_name"/>
+            <result property="typeDifference" column="type_difference"/>
+        </association>
+        <association property="accountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+            <result property="id" column="account_id"/>
+            <result property="accountName" column="account_name"/>
+            <result property="accountIcon" column="account_icon"/>
+            <result property="accountType" column="account_type"/>
+        </association>
+        <association property="otherAccountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+            <result property="id" column="other_account_id"/>
+            <result property="accountName" column="other_account_name"/>
+            <result property="accountIcon" column="other_account_icon"/>
+            <result property="accountType" column="other_account_type"/>
+        </association>
+    </resultMap>
+
+    <sql id="selectPxBookkeepingRecordModelVo">
+        SELECT r.id,
+               r.name,
+               r.version,
+               r.account,
+               a.id            account_id,
+               a.account_name,
+               a.account_icon,
+               a.account_type,
+               r.other_account,
+               oa.id           other_account_id,
+               oa.account_name other_account_name,
+               oa.account_icon other_account_icon,
+               oa.account_type other_account_type,
+               r.type,
+               c.id            type_id,
+               c.type_parent_id,
+               c.type_icon,
+               c.type_name,
+               c.type_difference,
+               r.create_by,
+               r.create_time,
+               r.update_by,
+               r.update_time,
+               r.remark,
+               r.pay_time,
+               r.money
+        FROM px_bookkeeping_record_model r
+                 LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+                 LEFT JOIN px_bookkeeping_account a ON r.account = a.id
+                 LEFT JOIN px_bookkeeping_account oa ON r.other_account = oa.id
+    </sql>
+
+    <select id="selectPxBookkeepingRecordModelList" parameterType="PxBookkeepingRecordModel"
+            resultMap="PxBookkeepingRecordModelResult">
+        <include refid="selectPxBookkeepingRecordModelVo"/>
+        <where>
+            r.del_flag = 0
+            <if test="payTime != null">and LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )</if>
+            <if test="account != null ">and (r.account = #{account} or r.other_account = #{account})</if>
+            /* version作为查询当天记录参数 */
+            <if test="version != null  and version != ''">and LEFT( r.pay_time, 10 ) = LEFT(
+                now(), 10 )
+            </if>
+            <if test="type != null  and type != ''">and r.type = #{type}</if>
+            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and r.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <select id="selectPxBookkeepingRecordModelById" parameterType="Long" resultMap="PxBookkeepingRecordModelResult">
+        <include refid="selectPxBookkeepingRecordModelVo"/>
+        where r.id = #{id} and r.del_flag = 0
+    </select>
+
+    <insert id="insertPxBookkeepingRecordModel" parameterType="PxBookkeepingRecordModel" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_bookkeeping_record_model
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="version != null">version,</if>
+            <if test="account != null">account,</if>
+            <if test="otherAccount != null">other_account,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+            <if test="type != null">type,</if>
+            <if test="money != null">money,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="version != null">#{version},</if>
+            <if test="account != null">#{account},</if>
+            <if test="otherAccount != null">#{otherAccount},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="type != null">#{type},</if>
+            <if test="money != null">#{money},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxBookkeepingRecordModel" parameterType="PxBookkeepingRecordModel">
+        update px_bookkeeping_record_model
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="account != null">account = #{account},</if>
+            <if test="otherAccount != null">other_account = #{otherAccount},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="money != null">money = #{money},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxBookkeepingRecordModelById" parameterType="Long">
+        update px_bookkeeping_record_model
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxBookkeepingRecordModelByIds" parameterType="Long">
+        update px_bookkeeping_record_model set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

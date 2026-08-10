@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxRecipeIngredientMapper">
+
+    <resultMap type="PxRecipeIngredient" id="PxRecipeIngredientResult">
+        <result property="id" column="id"/>
+        <result property="recipeId" column="recipe_id"/>
+        <result property="name" column="name"/>
+        <result property="quantity" column="quantity"/>
+        <result property="classificationId" column="classification_id"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectPxRecipeIngredientVo">
+        select id,
+               recipe_id,
+               name,
+               quantity, classification_id, del_flag
+        from px_recipe_ingredient
+    </sql>
+
+    <select id="selectPxRecipeIngredientById" parameterType="Long" resultMap="PxRecipeIngredientResult">
+        <include refid="selectPxRecipeIngredientVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 根据菜谱ID查询食材列表 -->
+    <select id="selectByRecipeId" resultMap="PxRecipeIngredientResult">
+        <include refid="selectPxRecipeIngredientVo"/>
+        where recipe_id = #{recipeId}
+        and del_flag = '0'
+    </select>
+
+    <insert id="insertPxRecipeIngredient" parameterType="PxRecipeIngredient" useGeneratedKeys="true" keyProperty="id">
+        insert into px_recipe_ingredient
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="recipeId != null">recipe_id,</if>
+            <if test="name != null">name,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="classificationId != null">classification_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="recipeId != null">#{recipeId},</if>
+            <if test="name != null">#{name},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="classificationId != null">#{classificationId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据菜谱ID物理删除食材（该表无审计字段，物理删除） -->
+    <delete id="deleteByRecipeId">
+        delete from px_recipe_ingredient
+        where recipe_id = #{recipeId}
+    </delete>
+
+</mapper>

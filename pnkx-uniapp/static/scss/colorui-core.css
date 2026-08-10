@@ -1,0 +1,182 @@
+/*
+ * ColorUI 精简版 - 仅包含主包必需样式
+ * 原版: ColorUi for uniApp v2.1.6
+ */
+
+/* ==================
+         基础初始化
+  ==================== */
+view,
+scroll-view,
+swiper,
+button,
+input,
+textarea,
+label,
+navigator,
+image {
+    box-sizing: border-box;
+}
+
+.round {
+    border-radius: 5000upx;
+}
+
+.radius {
+    border-radius: 6upx;
+}
+
+image {
+    max-width: 100%;
+    display: inline-block;
+    position: relative;
+    z-index: 0;
+}
+
+/* ==================
+         布局工具
+  ==================== */
+.flex {
+    display: flex;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.block {
+    display: block;
+}
+
+/* ==================
+         尺寸工具
+  ==================== */
+.lg {
+    font-size: 32upx;
+}
+
+.xl {
+    font-size: 40upx;
+}
+
+/* ==================
+         按钮
+  ==================== */
+.cu-btn {
+    position: relative;
+    border: 0upx;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 30upx;
+    font-size: 28upx;
+    height: 64upx;
+    line-height: 64upx;
+    border-radius: 8upx;
+    background-color: #f0f0f0;
+    color: #333333;
+}
+
+.cu-btn::after {
+    display: none;
+}
+
+.cu-btn:not([class*="bg-"]) {
+    background-color: #f0f0f0;
+}
+
+.cu-btn.lg {
+    font-size: 32upx;
+    height: 80upx;
+}
+
+/* ==================
+         头像
+  ==================== */
+.cu-avatar {
+    font-variant: small-caps;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    background-color: #ccc;
+    color: #ffffff;
+    white-space: nowrap;
+    position: relative;
+    width: 64upx;
+    height: 64upx;
+    background-size: cover;
+    background-position: center;
+    vertical-align: middle;
+    font-size: 1.6em;
+}
+
+.cu-avatar.sm {
+    width: 48upx;
+    height: 48upx;
+    font-size: 1.2em;
+}
+
+.cu-avatar.lg {
+    width: 96upx;
+    height: 96upx;
+    font-size: 2em;
+}
+
+.cu-avatar.xl {
+    width: 128upx;
+    height: 128upx;
+    font-size: 2.4em;
+}
+
+.cu-avatar .avatar-text {
+    font-size: 0.4em;
+}
+
+/* ==================
+         背景色
+  ==================== */
+.bg-blue {
+    background-color: #0081ff;
+    color: #ffffff;
+}
+
+.bg-white {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+/* ==================
+         文本
+  ==================== */
+.text-sm {
+    font-size: 24upx;
+}
+
+.text-bold {
+    font-weight: bold;
+}
+
+.text-gray,
+.text-grey {
+    color: #8799a3;
+}
+
+/* ==================
+         图标字体
+  ==================== */
+@font-face {
+    font-family: "iconfont";
+    src: url('https://at.alicdn.com/t/font_1742779_xk5l4g1bph9.ttf') format('truetype');
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

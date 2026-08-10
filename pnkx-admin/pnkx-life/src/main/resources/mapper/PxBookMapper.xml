@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookMapper">
+    <resultMap id="BookResult" type="PxBook">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="author" column="author"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="chapterCount" column="chapter_count"/>
+        <result property="firstChapterId" column="first_chapter_id"/>
+        <result property="lastReadChapterId" column="last_read_chapter_id"/>
+        <result property="lastReadChapterName" column="last_read_chapter_name"/>
+        <result property="lastReadTime" column="last_read_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="bookColumns">
+        select b.id, b.title, b.author, b.description, b.status, b.del_flag,
+               b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               lr.id last_read_chapter_id, lr.chapter_name last_read_chapter_name, b.last_read_time,
+               (select fc.id from px_book_chapter fc where fc.book_id = b.id and fc.create_by = b.create_by
+                    and fc.del_flag = '0' order by fc.chapter_no asc, fc.id asc limit 1) first_chapter_id,
+               (select count(1) from px_book_chapter c where c.book_id = b.id and c.del_flag = '0') chapter_count
+        from px_book b
+        left join px_book_chapter lr on lr.id = b.last_read_chapter_id
+            and lr.book_id = b.id and lr.create_by = b.create_by and lr.del_flag = '0'
+    </sql>
+
+    <select id="selectBookList" parameterType="PxBook" resultMap="BookResult">
+        <include refid="bookColumns"/>
+        <where>
+            b.del_flag = '0'
+            and b.create_by = #{createBy}
+            <if test="title != null and title != ''">and b.title like concat('%', #{title}, '%')</if>
+            <if test="author != null and author != ''">and b.author like concat('%', #{author}, '%')</if>
+            <if test="status != null and status != ''">and b.status = #{status}</if>
+        </where>
+        order by b.update_time desc, b.id desc
+    </select>
+
+    <select id="selectBookById" resultMap="BookResult">
+        <include refid="bookColumns"/>
+        where b.id = #{id} and b.create_by = #{userId} and b.del_flag = '0'
+    </select>
+
+    <insert id="insertBook" parameterType="PxBook" useGeneratedKeys="true" keyProperty="id">
+        insert into px_book(title, author, description, status, del_flag, create_by, create_time, remark)
+        values(#{title}, #{author}, #{description}, #{status}, '0', #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateBook" parameterType="PxBook">
+        update px_book
+        set title = #{title}, author = #{author}, description = #{description}, status = #{status},
+            update_by = #{updateBy}, update_time = #{updateTime}, remark = #{remark}
+        where id = #{id} and create_by = #{updateBy} and del_flag = '0'
+    </update>
+
+    <update id="deleteBooks">
+        update px_book set del_flag = '1', update_by = #{userId}, update_time = now()
+        where create_by = #{userId} and del_flag = '0' and id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <update id="updateReadingProgress">
+        update px_book b
+        join px_book_chapter c on c.id = #{chapterId} and c.book_id = b.id
+            and c.create_by = #{userId} and c.del_flag = '0'
+        set b.last_read_chapter_id = c.id, b.last_read_time = now()
+        where b.create_by = #{userId} and b.del_flag = '0'
+    </update>
+</mapper>

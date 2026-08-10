@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxCustomReplyContentMapper">
+
+    <resultMap type="PxCustomReplyContent" id="PxCustomReplyContentResult">
+        <result property="id" column="id"/>
+        <result property="ruleId" column="rule_id"/>
+        <result property="content" column="content"/>
+        <result property="weight" column="weight"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createAt" column="create_at"/>
+        <result property="updateAt" column="update_at"/>
+    </resultMap>
+
+    <sql id="selectPxCustomReplyContentVo">
+        select id, rule_id, content, weight, deleted, create_at, update_at from px_custom_reply_content
+    </sql>
+
+    <select id="selectPxCustomReplyContentById" parameterType="Long" resultMap="PxCustomReplyContentResult">
+        <include refid="selectPxCustomReplyContentVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <select id="selectPxCustomReplyContentByRuleId" parameterType="Long" resultMap="PxCustomReplyContentResult">
+        <include refid="selectPxCustomReplyContentVo"/>
+        where rule_id = #{ruleId} and deleted = 0
+        order by weight desc, id asc
+    </select>
+
+    <insert id="insertPxCustomReplyContent" parameterType="PxCustomReplyContent" useGeneratedKeys="true" keyProperty="id">
+        insert into px_custom_reply_content
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleId != null">rule_id,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="weight != null">weight,</if>
+            <if test="deleted != null">deleted,</if>
+            <if test="createAt != null">create_at,</if>
+            <if test="updateAt != null">update_at,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleId != null">#{ruleId},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="weight != null">#{weight},</if>
+            <if test="deleted != null">#{deleted},</if>
+            <if test="createAt != null">#{createAt},</if>
+            <if test="updateAt != null">#{updateAt},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxCustomReplyContent" parameterType="PxCustomReplyContent">
+        update px_custom_reply_content
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleId != null">rule_id = #{ruleId},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="weight != null">weight = #{weight},</if>
+            <if test="deleted != null">deleted = #{deleted},</if>
+            <if test="createAt != null">create_at = #{createAt},</if>
+            <if test="updateAt != null">update_at = #{updateAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxCustomReplyContentById" parameterType="Long">
+        delete from px_custom_reply_content where id = #{id}
+    </delete>
+
+    <delete id="deletePxCustomReplyContentByRuleId" parameterType="Long">
+        delete from px_custom_reply_content where rule_id = #{ruleId}
+    </delete>
+
+    <delete id="deletePxCustomReplyContentByIds" parameterType="Long">
+        delete from px_custom_reply_content where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

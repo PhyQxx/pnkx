@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxShoppingItemMapper">
+
+    <resultMap type="PxShoppingItem" id="PxShoppingItemResult">
+        <result property="id" column="id"/>
+        <result property="listId" column="list_id"/>
+        <result property="name" column="name"/>
+        <result property="quantity" column="quantity"/>
+        <result property="classificationId" column="classification_id"/>
+        <result property="checked" column="checked"/>
+        <result property="addedFromMeal" column="added_from_meal"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxShoppingItemVo">
+        select id,
+               list_id,
+               name,
+               quantity, classification_id, checked, added_from_meal, sort_order, version, client_uuid, del_flag, create_by, create_time, update_by, update_time, remark
+        from px_shopping_item
+    </sql>
+
+    <select id="selectPxShoppingItemList" parameterType="PxShoppingItem" resultMap="PxShoppingItemResult">
+        <include refid="selectPxShoppingItemVo"/>
+        <where>
+            <if test="listId != null ">and list_id = #{listId}</if>
+            <if test="name != null  and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="checked != null ">and checked = #{checked}</if>
+            and del_flag = '0'
+        </where>
+        order by sort_order asc, create_time desc
+    </select>
+
+    <select id="selectPxShoppingItemById" parameterType="Long" resultMap="PxShoppingItemResult">
+        <include refid="selectPxShoppingItemVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxShoppingItem" parameterType="PxShoppingItem" useGeneratedKeys="true" keyProperty="id">
+        insert into px_shopping_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="listId != null">list_id,</if>
+            <if test="name != null">name,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="classificationId != null">classification_id,</if>
+            <if test="checked != null">checked,</if>
+            <if test="addedFromMeal != null">added_from_meal,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="clientUuid != null">client_uuid,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="listId != null">#{listId},</if>
+            <if test="name != null">#{name},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="classificationId != null">#{classificationId},</if>
+            <if test="checked != null">#{checked},</if>
+            <if test="addedFromMeal != null">#{addedFromMeal},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        insert into px_shopping_item
+        (list_id, name, quantity, classification_id, checked, added_from_meal, sort_order, del_flag, version, client_uuid, create_by, create_time, update_by, update_time, remark)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.listId}, #{item.name}, #{item.quantity}, #{item.classificationId}, #{item.checked},
+             #{item.addedFromMeal}, #{item.sortOrder}, #{item.delFlag}, #{item.version}, #{item.clientUuid},
+             #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
+        </foreach>
+    </insert>
+
+    <update id="updatePxShoppingItem" parameterType="PxShoppingItem">
+        update px_shopping_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="listId != null">list_id = #{listId},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="classificationId != null">classification_id = #{classificationId},</if>
+            <if test="checked != null">checked = #{checked},</if>
+            <if test="addedFromMeal != null">added_from_meal = #{addedFromMeal},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="clientUuid != null">client_uuid = #{clientUuid},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxShoppingItemById" parameterType="Long">
+        update px_shopping_item
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxShoppingItemByIds" parameterType="String">
+        update px_shopping_item set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 软删除某个清单下的全部条目 -->
+    <delete id="deleteByListId">
+        update px_shopping_item
+        set del_flag = 1
+        where list_id = #{listId}
+    </delete>
+
+    <!-- 清除已勾选条目（软删除） -->
+    <delete id="clearChecked">
+        update px_shopping_item
+        set del_flag = 1
+        where list_id = #{listId} and checked = 1
+    </delete>
+
+</mapper>

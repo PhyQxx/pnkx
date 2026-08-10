@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxCustomReplyRuleMapper">
+
+    <resultMap type="PxCustomReplyRule" id="PxCustomReplyRuleResult">
+        <result property="id" column="id"/>
+        <result property="ruleName" column="rule_name"/>
+        <result property="keywords" column="keywords"/>
+        <result property="enabled" column="enabled"/>
+        <result property="exactMatch" column="exact_match"/>
+        <result property="priority" column="priority"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createAt" column="create_at"/>
+        <result property="updateAt" column="update_at"/>
+    </resultMap>
+
+    <sql id="selectPxCustomReplyRuleVo">
+        select id, rule_name, keywords, enabled, exact_match, priority, deleted, create_at, update_at        from px_custom_reply_rule
+    </sql>
+
+    <select id="selectPxCustomReplyRuleList" parameterType="PxCustomReplyRule" resultMap="PxCustomReplyRuleResult">
+        <include refid="selectPxCustomReplyRuleVo"/>
+        <where>
+            <if test="ruleName != null  and ruleName != ''">
+                and rule_name like concat('%', #{ruleName}, '%')
+            </if>
+            <if test="keywords != null  and keywords != ''">
+                and keywords = #{keywords}
+            </if>
+            <if test="enabled != null ">
+                and enabled = #{enabled}
+            </if>
+            <if test="exactMatch != null ">
+                and exact_match = #{exactMatch}
+            </if>
+            <if test="priority != null ">
+                and priority = #{priority}
+            </if>
+            <if test="deleted != null ">
+                and deleted = #{deleted}
+            </if>
+            <if test="createAt != null ">
+                and create_at = #{createAt}
+            </if>
+            <if test="updateAt != null ">
+                and update_at = #{updateAt}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxCustomReplyRuleById" parameterType="Long"
+            resultMap="PxCustomReplyRuleResult">
+        <include refid="selectPxCustomReplyRuleVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxCustomReplyRule" parameterType="PxCustomReplyRule" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_custom_reply_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name,
+            </if>
+            <if test="keywords != null">keywords,
+            </if>
+            <if test="enabled != null">enabled,
+            </if>
+            <if test="exactMatch != null">exact_match,
+            </if>
+            <if test="priority != null">priority,
+            </if>
+            <if test="deleted != null">deleted,
+            </if>
+            <if test="createAt != null">create_at,
+            </if>
+            <if test="updateAt != null">update_at,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">#{ruleName},
+            </if>
+            <if test="keywords != null">#{keywords},
+            </if>
+            <if test="replyContent != null">#{replyContent},
+            </if>
+            <if test="enabled != null">#{enabled},
+            </if>
+            <if test="exactMatch != null">#{exactMatch},
+            </if>
+            <if test="priority != null">#{priority},
+            </if>
+            <if test="deleted != null">#{deleted},
+            </if>
+            <if test="createAt != null">#{createAt},
+            </if>
+            <if test="updateAt != null">#{updateAt},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxCustomReplyRule" parameterType="PxCustomReplyRule">
+        update px_custom_reply_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleName != null and ruleName != ''">rule_name =
+                #{ruleName},
+            </if>
+            <if test="keywords != null">keywords =
+                #{keywords},
+            </if>
+            <if test="enabled != null">enabled =
+                #{enabled},
+            </if>
+            <if test="exactMatch != null">exact_match =
+                #{exactMatch},
+            </if>
+            <if test="priority != null">priority =
+                #{priority},
+            </if>
+            <if test="deleted != null">deleted =
+                #{deleted},
+            </if>
+            <if test="createAt != null">create_at =
+                #{createAt},
+            </if>
+            <if test="updateAt != null">update_at =
+                #{updateAt},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxCustomReplyRuleById" parameterType="Long">
+        delete
+        from px_custom_reply_rule where id = #{id}
+    </delete>
+
+    <delete id="deletePxCustomReplyRuleByIds" parameterType="String">
+        delete from px_custom_reply_rule where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

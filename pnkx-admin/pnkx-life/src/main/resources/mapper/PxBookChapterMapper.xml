@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookChapterMapper">
+    <resultMap id="ChapterResult" type="PxBookChapter">
+        <id property="id" column="id"/>
+        <result property="bookId" column="book_id"/>
+        <result property="bookTitle" column="book_title"/>
+        <result property="chapterName" column="chapter_name"/>
+        <result property="chapterNo" column="chapter_no"/>
+        <result property="content" column="content"/>
+        <result property="wordCount" column="word_count"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="chapterColumns">
+        select c.id, c.book_id, b.title book_title, c.chapter_name, c.chapter_no, c.content,
+               char_length(replace(replace(replace(replace(coalesce(c.content, ''), ' ', ''), char(10), ''), char(13), ''), char(9), '')) word_count,
+               c.del_flag,
+               c.create_by, c.create_time, c.update_by, c.update_time, c.remark
+        from px_book_chapter c
+        join px_book b on b.id = c.book_id and b.del_flag = '0'
+    </sql>
+
+    <select id="selectChapterList" parameterType="PxBookChapter" resultMap="ChapterResult">
+        <include refid="chapterColumns"/>
+        <where>
+            c.del_flag = '0' and c.create_by = #{createBy}
+            <if test="bookId != null">and c.book_id = #{bookId}</if>
+            <if test="chapterName != null and chapterName != ''">and c.chapter_name like concat('%', #{chapterName}, '%')</if>
+        </where>
+        order by c.chapter_no asc, c.id asc
+    </select>
+
+    <select id="selectChapterById" resultMap="ChapterResult">
+        <include refid="chapterColumns"/>
+        where c.id = #{id} and c.create_by = #{userId} and c.del_flag = '0'
+    </select>
+
+    <select id="selectPreviousChapter" resultMap="ChapterResult">
+        <include refid="chapterColumns"/>
+        where c.book_id = #{chapter.bookId} and c.create_by = #{userId} and c.del_flag = '0'
+          and (c.chapter_no &lt; #{chapter.chapterNo} or (c.chapter_no = #{chapter.chapterNo} and c.id &lt; #{chapter.id}))
+        order by c.chapter_no desc, c.id desc limit 1
+    </select>
+
+    <select id="selectNextChapter" resultMap="ChapterResult">
+        <include refid="chapterColumns"/>
+        where c.book_id = #{chapter.bookId} and c.create_by = #{userId} and c.del_flag = '0'
+          and (c.chapter_no &gt; #{chapter.chapterNo} or (c.chapter_no = #{chapter.chapterNo} and c.id &gt; #{chapter.id}))
+        order by c.chapter_no asc, c.id asc limit 1
+    </select>
+
+    <insert id="insertChapter" parameterType="PxBookChapter" useGeneratedKeys="true" keyProperty="id">
+        insert into px_book_chapter(book_id, chapter_name, chapter_no, content, del_flag, create_by, create_time, remark)
+        select #{bookId}, #{chapterName}, #{chapterNo}, #{content}, '0', #{createBy}, #{createTime}, #{remark}
+        from px_book b where b.id = #{bookId} and b.create_by = #{createBy} and b.del_flag = '0'
+    </insert>
+
+    <update id="updateChapter" parameterType="PxBookChapter">
+        update px_book_chapter c
+        join px_book b on b.id = c.book_id and b.create_by = #{updateBy} and b.del_flag = '0'
+        set c.chapter_name = #{chapterName}, c.chapter_no = #{chapterNo}, c.content = #{content},
+            c.update_by = #{updateBy}, c.update_time = #{updateTime}, c.remark = #{remark}
+        where c.id = #{id} and c.create_by = #{updateBy} and c.del_flag = '0'
+    </update>
+
+    <update id="deleteChapters">
+        update px_book_chapter set del_flag = '1', update_by = #{userId}, update_time = now()
+        where create_by = #{userId} and del_flag = '0' and id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <update id="deleteByBookIds">
+        update px_book_chapter set del_flag = '1', update_by = #{userId}, update_time = now()
+        where create_by = #{userId} and del_flag = '0' and book_id in
+        <foreach collection="bookIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+</mapper>

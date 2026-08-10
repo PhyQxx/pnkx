@@ -1,0 +1,27 @@
+/**
+* Element Plus theme customization
+**/
+
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #1890ff,
+    ),
+    'success': (
+      'base': #13ce66,
+    ),
+    'warning': (
+      'base': #ffba00,
+    ),
+    'danger': (
+      'base': #ff4949,
+    ),
+  ),
+);
+
+$theme-blue: #5A8DEE;
+$theme-red: #CD594B;
+$theme-yellow: #F8CE5E;
+$theme-green: #4B9E65;
+
+

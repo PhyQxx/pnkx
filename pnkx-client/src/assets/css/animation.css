@@ -1,0 +1,546 @@
+/* 动画类名 */
+.tik-tok-shake:hover {
+  -webkit-animation: TikTokShake 0.5s linear infinite;
+  animation: TikTokShake 0.5s linear infinite;
+}
+
+.heart {
+  animation: heartbit 0.5s alternate infinite;
+}
+
+.shake-lr {
+  -webkit-animation: shake-lr 0.7s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+  animation: shake-lr 0.7s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+}
+
+.shake-horizontal {
+  -webkit-animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+  animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+}
+
+.shake-vertical {
+  -webkit-animation: shake-vertical 0.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+  animation: shake-vertical 0.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) both;
+}
+
+.vibrate-1 {
+  -webkit-animation: vibrate-1 0.3s linear infinite both;
+  animation: vibrate-1 0.3s linear infinite both;
+}
+
+/* 浮现 */
+.emergence {
+  -webkit-animation: main 0.3s linear;
+  animation: main 0.3s linear;
+}
+
+/* 跳动 */
+@keyframes heartbit {
+  0% {
+    transform: scale(0.8);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 向下滑入 */
+@keyframes slideBottomIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@-webkit-keyframes slideBottomIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUpIn {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@-webkit-keyframes slideUpIn {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* TikTok文字抖动效果 */
+@keyframes TikTokShake {
+  0%,
+  100% {
+    text-shadow: -1.5px -1.5px 0 #0ff, 1.5px 1.5px 0 #f00;
+  }
+  25% {
+    text-shadow: 1.5px 1.5px 0 #0ff, -1.5px -1.5px 0 #f00;
+  }
+  50% {
+    text-shadow: 1.5px -1.5px 0 #0ff, 1.5px -1.5px 0 #f00;
+  }
+  75% {
+    text-shadow: -1.5px 1.5px 0 #0ff, -1.5px 1.5px 0 #f00;
+  }
+}
+@-webkit-keyframes TikTokShake {
+  0%,
+  100% {
+    text-shadow: -1.5px -1.5px 0 #0ff, 1.5px 1.5px 0 #f00;
+  }
+  25% {
+    text-shadow: 1.5px 1.5px 0 #0ff, -1.5px -1.5px 0 #f00;
+  }
+  50% {
+    text-shadow: 1.5px -1.5px 0 #0ff, 1.5px -1.5px 0 #f00;
+  }
+  75% {
+    text-shadow: -1.5px 1.5px 0 #0ff, -1.5px 1.5px 0 #f00;
+  }
+}
+
+/* 缓慢的跳动 */
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(10px);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+@-webkit-keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(10px);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/**
+ * ----------------------------------------
+ * animation shake-lr
+ * ----------------------------------------
+ */
+@-webkit-keyframes shake-lr {
+  0%,
+  100% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+    -webkit-transform-origin: 50% 50%;
+    transform-origin: 50% 50%;
+  }
+  10% {
+    -webkit-transform: rotate(8deg);
+    transform: rotate(8deg);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: rotate(-10deg);
+    transform: rotate(-10deg);
+  }
+  30%,
+  50%,
+  70% {
+    -webkit-transform: rotate(10deg);
+    transform: rotate(10deg);
+  }
+  80% {
+    -webkit-transform: rotate(-8deg);
+    transform: rotate(-8deg);
+  }
+  90% {
+    -webkit-transform: rotate(8deg);
+    transform: rotate(8deg);
+  }
+}
+@keyframes shake-lr {
+  0%,
+  100% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+    -webkit-transform-origin: 50% 50%;
+    transform-origin: 50% 50%;
+  }
+  10% {
+    -webkit-transform: rotate(8deg);
+    transform: rotate(8deg);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: rotate(-10deg);
+    transform: rotate(-10deg);
+  }
+  30%,
+  50%,
+  70% {
+    -webkit-transform: rotate(10deg);
+    transform: rotate(10deg);
+  }
+  80% {
+    -webkit-transform: rotate(-8deg);
+    transform: rotate(-8deg);
+  }
+  90% {
+    -webkit-transform: rotate(8deg);
+    transform: rotate(8deg);
+  }
+}
+
+/**
+ * ----------------------------------------
+ * animation shake-horizontal
+ * ----------------------------------------
+ */
+@-webkit-keyframes shake-horizontal {
+  0%,
+  100% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70% {
+    -webkit-transform: translateX(-5px);
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: translateX(5px);
+    transform: translateX(5px);
+  }
+  80% {
+    -webkit-transform: translateX(4px);
+    transform: translateX(4px);
+  }
+  90% {
+    -webkit-transform: translateX(-4px);
+    transform: translateX(-4px);
+  }
+}
+@keyframes shake-horizontal {
+  0%,
+  100% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70% {
+    -webkit-transform: translateX(-5px);
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: translateX(5px);
+    transform: translateX(5px);
+  }
+  80% {
+    -webkit-transform: translateX(4px);
+    transform: translateX(4px);
+  }
+  90% {
+    -webkit-transform: translateX(-4px);
+    transform: translateX(-4px);
+  }
+}
+
+/**
+ * ----------------------------------------
+ * animation shake-vertical
+ * ----------------------------------------
+ */
+@-webkit-keyframes shake-vertical {
+  0%,
+  100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+  10%,
+  30%,
+  50%,
+  70% {
+    -webkit-transform: translateY(-4px);
+    transform: translateY(-4px);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: translateY(4px);
+    transform: translateY(4px);
+  }
+  80% {
+    -webkit-transform: translateY(3.2px);
+    transform: translateY(3.2px);
+  }
+  90% {
+    -webkit-transform: translateY(-3.2px);
+    transform: translateY(-3.2px);
+  }
+}
+@keyframes shake-vertical {
+  0%,
+  100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+  10%,
+  30%,
+  50%,
+  70% {
+    -webkit-transform: translateY(-4px);
+    transform: translateY(-4px);
+  }
+  20%,
+  40%,
+  60% {
+    -webkit-transform: translateY(4px);
+    transform: translateY(4px);
+  }
+  80% {
+    -webkit-transform: translateY(3.2px);
+    transform: translateY(3.2px);
+  }
+  90% {
+    -webkit-transform: translateY(-3.2px);
+    transform: translateY(-3.2px);
+  }
+}
+
+/**
+ * ----------------------------------------
+ * animation vibrate-1
+ * ----------------------------------------
+ */
+@-webkit-keyframes vibrate-1 {
+  0% {
+    -webkit-transform: translate(0);
+    transform: translate(0);
+  }
+  20% {
+    -webkit-transform: translate(-2px, 2px);
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    -webkit-transform: translate(-2px, -2px);
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    -webkit-transform: translate(2px, 2px);
+    transform: translate(2px, 2px);
+  }
+  80% {
+    -webkit-transform: translate(2px, -2px);
+    transform: translate(2px, -2px);
+  }
+  100% {
+    -webkit-transform: translate(0);
+    transform: translate(0);
+  }
+}
+@keyframes vibrate-1 {
+  0% {
+    -webkit-transform: translate(0);
+    transform: translate(0);
+  }
+  20% {
+    -webkit-transform: translate(-2px, 2px);
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    -webkit-transform: translate(-2px, -2px);
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    -webkit-transform: translate(2px, 2px);
+    transform: translate(2px, 2px);
+  }
+  80% {
+    -webkit-transform: translate(2px, -2px);
+    transform: translate(2px, -2px);
+  }
+  100% {
+    -webkit-transform: translate(0);
+    transform: translate(0);
+  }
+}
+
+@keyframes header {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes main {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@-webkit-keyframes jumping {
+  0% {
+    transform: scale(1) translateY(0) rotateX(0deg);
+    box-shadow: 0 0 0 transparent;
+  }
+
+  to {
+    transform: scale(1.2) translateY(-25px) rotateX(45deg);
+    background: #d82e16;
+    box-shadow: 0 25px 40px #d82e16;
+  }
+}
+
+@keyframes jumping {
+  0% {
+    transform: scale(1) translateY(0) rotateX(0deg);
+    box-shadow: 0 0 0 transparent;
+  }
+
+  to {
+    transform: scale(1.2) translateY(-25px) rotateX(45deg);
+    background: #d82e16;
+    box-shadow: 0 25px 40px #d82e16;
+  }
+}
+
+/* 波浪动画 */
+@keyframes move-forever {
+  0% {
+    transform: translate3d(-90px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(85px, 0, 0);
+  }
+}
+
+/* 首图动画 */
+@keyframes home-bg {
+  0% {
+    filter: blur(50px);
+    opacity: 0;
+    transform: scale(1.3);
+  }
+
+  100% {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* animate.css */
+@keyframes swing {
+  20% {
+    transform: rotate3d(0, 0, 1, 15deg);
+  }
+
+  40% {
+    transform: rotate3d(0, 0, 1, -10deg);
+  }
+
+  60% {
+    transform: rotate3d(0, 0, 1, 5deg);
+  }
+
+  80% {
+    transform: rotate3d(0, 0, 1, -5deg);
+  }
+
+  to {
+    transform: rotate3d(0, 0, 1, 0deg);
+  }
+}
+
+@keyframes backInDown {
+  0% {
+    transform: translateY(-1200px) scale(0.7);
+    opacity: 0.7;
+  }
+
+  80% {
+    transform: translateY(0px) scale(0.7);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes my-bounce {
+  from,
+  20%,
+  53%,
+  to {
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    transform: translate3d(0, 0, 0);
+  }
+
+  40%,
+  43% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -30px, 0) scaleY(1.1);
+  }
+
+  70% {
+    animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    transform: translate3d(0, -15px, 0) scaleY(1.05);
+  }
+
+  80% {
+    transition-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    transform: translate3d(0, 0, 0) scaleY(0.95);
+  }
+
+  90% {
+    transform: translate3d(0, -4px, 0) scaleY(1.02);
+  }
+}

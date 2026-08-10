@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.system.mapper.SysEmailMapper">
+
+    <resultMap type="SysEmail" id="SysEmailResult">
+        <result property="id" column="id"/>
+        <result property="sendId" column="send_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="receiverEmail" column="receiver_email"/>
+        <result property="ccId" column="cc_id"/>
+        <result property="ccEmail" column="cc_email"/>
+        <result property="subject" column="subject"/>
+        <result property="content" column="content"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectSysEmailVo">
+        select id,
+               send_id,
+               receiver_id,
+               receiver_email,
+               cc_id,
+               cc_email,
+               subject,
+               content,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from sys_email
+    </sql>
+
+    <select id="selectSysEmailList" parameterType="SysEmail" resultMap="SysEmailResult">
+        select id,
+        send_id,
+        receiver_id,
+        receiver_email,
+        cc_id,
+        cc_email,
+        subject,
+        version,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        remark
+        from sys_email
+        <where>
+            <if test="sendId != null ">and send_id = #{sendId}</if>
+            <if test="receiverId != null ">and receiver_id = #{receiverId}</if>
+            <if test="receiverEmail != null  and receiverEmail != ''">and receiver_email = #{receiverEmail}</if>
+            <if test="ccId != null ">and cc_id = #{ccId}</if>
+            <if test="ccEmail != null  and ccEmail != ''">and cc_email = #{ccEmail}</if>
+            <if test="subject != null  and subject != ''">and subject = #{subject}</if>
+            <if test="content != null ">and content = #{content}</if>
+            <if test="version != null  and version != ''">and version = #{version}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectSysEmailById" parameterType="Long" resultMap="SysEmailResult">
+        <include refid="selectSysEmailVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSysEmail" parameterType="SysEmail" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_email
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sendId != null">send_id,</if>
+            <if test="receiverId != null">receiver_id,</if>
+            <if test="receiverEmail != null">receiver_email,</if>
+            <if test="ccId != null">cc_id,</if>
+            <if test="ccEmail != null">cc_email,</if>
+            <if test="subject != null">subject,</if>
+            <if test="content != null">content,</if>
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sendId != null">#{sendId},</if>
+            <if test="receiverId != null">#{receiverId},</if>
+            <if test="receiverEmail != null">#{receiverEmail},</if>
+            <if test="ccId != null">#{ccId},</if>
+            <if test="ccEmail != null">#{ccEmail},</if>
+            <if test="subject != null">#{subject},</if>
+            <if test="content != null">#{content},</if>
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSysEmail" parameterType="SysEmail">
+        update sys_email
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sendId != null">send_id = #{sendId},</if>
+            <if test="receiverId != null">receiver_id = #{receiverId},</if>
+            <if test="receiverEmail != null">receiver_email = #{receiverEmail},</if>
+            <if test="ccId != null">cc_id = #{ccId},</if>
+            <if test="ccEmail != null">cc_email = #{ccEmail},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysEmailById" parameterType="Long">
+        delete
+        from sys_email
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteSysEmailByIds" parameterType="String">
+        delete from sys_email where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

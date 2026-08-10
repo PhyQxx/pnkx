@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxLikeRecordMapper">
+
+    <resultMap type="PxLikeRecord" id="PxLikeRecordResult">
+        <result property="id" column="id"/>
+        <result property="itemId" column="item_id"/>
+        <result property="type" column="type"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="itemName" column="item_name"/>
+        <result property="itemThumbnail" column="item_thumbnail"/>
+        <result property="itemUrl" column="item_url"/>
+        <result property="createByName" column="create_by_name"/>
+    </resultMap>
+
+    <sql id="selectPxLikeRecordVo">
+        select id, item_id, type, del_flag, version, create_by, create_time, update_by, update_time, remark, item_name, item_thumbnail
+        from px_like_record
+    </sql>
+
+    <select id="selectPxLikeRecordList" parameterType="PxLikeRecord" resultMap="PxLikeRecordResult">
+        <include refid="selectPxLikeRecordVo"/>
+        <where>
+            <if test="itemId != null ">
+                and item_id = #{itemId}
+            </if>
+            <if test="type != null  and type != ''">
+                and type = #{type}
+            </if>
+            <if test="version != null  and version != ''">
+                and version = #{version}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxLikeRecord" parameterType="Long"
+            resultMap="PxLikeRecordResult">
+        <include refid="selectPxLikeRecordVo"/>
+        <where>
+            <if test="itemId != null ">
+                and item_id = #{itemId}
+            </if>
+            <if test="type != null  and type != ''">
+                and type = #{type}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <insert id="insertPxLikeRecord" parameterType="PxLikeRecord" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_like_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="itemId != null">item_id,
+            </if>
+            <if test="type != null">type,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+            <if test="itemName != null">item_name,
+            </if>
+            <if test="itemThumbnail != null">item_thumbnail,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="itemId != null">#{itemId},
+            </if>
+            <if test="type != null">#{type},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+            <if test="itemName != null">#{itemName},
+            </if>
+            <if test="itemThumbnail != null">#{itemThumbnail},
+            </if>
+        </trim>
+    </insert>
+
+    <delete id="deletePxLikeRecordById" parameterType="Long">
+        delete
+        from px_like_record where id = #{id}
+    </delete>
+
+    <!-- 按内容+用户精确查询（create_by 参与过滤） -->
+    <select id="selectLikeByUser" parameterType="PxLikeRecord" resultMap="PxLikeRecordResult">
+        <include refid="selectPxLikeRecordVo"/>
+        <where>
+            item_id = #{itemId}
+            and type = #{type}
+            and create_by = #{createBy}
+        </where>
+        limit 1
+    </select>
+
+    <!-- 按内容+用户精确删除 -->
+    <delete id="deleteLikeByUser" parameterType="PxLikeRecord">
+        delete from px_like_record
+        where item_id = #{itemId} and type = #{type} and create_by = #{createBy}
+    </delete>
+
+    <!-- 管理端：查询记录列表（按 type 过滤，可选按 create_by 过滤，COALESCE 兜底旧数据）
+         用户名三段兜底：真实昵称 → 虚拟用户友好名 → 原始 create_by -->
+    <select id="selectRecordListWithWallpaper" parameterType="PxLikeRecord" resultMap="PxLikeRecordResult">
+        select r.id, r.item_id, r.type, r.del_flag, r.version,
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+               COALESCE(r.item_name, w.name)                            as item_name,
+               COALESCE(r.item_thumbnail, w.thumbnail, w.url)          as item_thumbnail,
+               COALESCE(w.url, w.thumbnail)                            as item_url,
+               COALESCE(u.nick_name,
+                        CASE WHEN r.create_by LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(r.create_by, 11))
+                             WHEN r.create_by IS NULL OR r.create_by = ''
+                             THEN '游客'
+                             END,
+                        r.create_by)                                   as create_by_name
+        from px_like_record r
+        left join px_wallpaper w on r.item_id = w.id
+        left join sys_user u on r.create_by = u.user_id
+        <where>
+            <if test="type != null and type != ''">
+                r.type = #{type}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and r.create_by = #{createBy}
+            </if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <!-- 管理端：操作记录中出现过的用户（按 type 过滤，用于用户筛选下拉）
+         不依赖 sys_user，覆盖真实用户与虚拟用户（fake_like_） -->
+    <select id="selectRecordUsers" parameterType="PxLikeRecord" resultType="map">
+        select t.create_by                                             as userId,
+               COALESCE(u.nick_name,
+                        CASE WHEN t.create_by LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(t.create_by, 11))
+                             ELSE t.create_by
+                             END)                                      as nickName
+        from (select distinct create_by from px_like_record
+              where create_by is not null and create_by != ''
+                and type = #{type}) t
+        left join sys_user u on t.create_by = u.user_id
+        order by nickName
+    </select>
+
+    <!-- 统计：按日期分组的壁纸点赞数量 -->
+    <select id="selectRecordStatsByDate" parameterType="map" resultType="map">
+        SELECT DATE_FORMAT(r.create_time, '%Y-%m-%d') AS date,
+               r.type,
+               COUNT(*) AS count
+        FROM px_like_record r
+        WHERE r.type = #{likeType}
+          AND r.create_time IS NOT NULL
+        <if test="beginTime != null">
+            AND r.create_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND r.create_time &lt;= #{endTime}
+        </if>
+        GROUP BY DATE_FORMAT(r.create_time, '%Y-%m-%d'), r.type
+        ORDER BY date
+    </select>
+
+    <!-- 统计：按文件夹分组的壁纸点赞数量 -->
+    <select id="selectRecordStatsByFolder" parameterType="map" resultType="map">
+        SELECT f.name AS folder_name,
+               r.type,
+               COUNT(*) AS count
+        FROM px_like_record r
+        INNER JOIN px_wallpaper w ON r.item_id = w.id
+        INNER JOIN px_wallpaper_folder f ON w.folder = f.id
+        WHERE r.type = #{likeType}
+        GROUP BY f.name, r.type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 我的记录列表（按 create_by + type 过滤，最新优先；COALESCE 兜底旧数据） -->
+    <select id="selectMyRecordList" parameterType="PxLikeRecord" resultMap="PxLikeRecordResult">
+        select r.id, r.item_id, r.type, r.del_flag, r.version,
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+               COALESCE(r.item_name, w.name)                            as item_name,
+               COALESCE(r.item_thumbnail, w.thumbnail, w.url)          as item_thumbnail,
+               COALESCE(w.url, w.thumbnail)                            as item_url
+        from px_like_record r
+        left join px_wallpaper w on r.item_id = w.id
+        <where>
+            r.create_by = #{createBy}
+            and r.type = #{type}
+        </where>
+        order by r.create_time desc
+    </select>
+</mapper>

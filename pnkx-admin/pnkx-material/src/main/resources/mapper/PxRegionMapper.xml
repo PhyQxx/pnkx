@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxRegionMapper">
+
+    <resultMap type="PxRegion" id="PxRegionResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="py" column="py"/>
+        <result property="ssdqdm" column="ssdqdm"/>
+        <result property="lb" column="lb"/>
+        <result property="yb" column="yb"/>
+        <result property="jlzt" column="jlzt"/>
+    </resultMap>
+
+    <sql id="selectPxRegionVo">
+        select id, name, py, ssdqdm, lb, yb, jlzt
+        from yy_dq_ybdmk
+    </sql>
+
+    <select id="getRegionList" parameterType="PxRegion" resultMap="PxRegionResult">
+        <include refid="selectPxRegionVo"/>
+        <where>
+            <if test="id != null ">
+                and id = #{id}
+            </if>
+            <if test="name != null  and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="py != null  and py != ''">
+                and py = #{py}
+            </if>
+            <if test="ssdqdm != null ">
+                and ssdqdm = #{ssdqdm}
+            </if>
+            <if test="lb != null ">
+                and lb = #{lb}
+            </if>
+            <if test="yb != null ">
+                and yb = #{yb}
+            </if>
+            <if test="jlzt != null ">
+                and jlzt = #{jlzt}
+            </if>
+        </where>
+    </select>
+</mapper>
