@@ -120,38 +120,48 @@ pnpm build       # 构建
 
 ## 功能截图
 
-> 以下截图均截取自在线站点 [pnkx.top](https://pnkx.top) 的真实页面，源文件位于 `docs/screenshots/`。
+> 以下截图均截取自真实运行页面（博客前台 [pnkx.top](https://pnkx.top) / 后台管理系统 / 移动端 H5），源文件位于 `docs/screenshots/`。
 
-### 博客首页 · Hero 横幅
+### 博客前台
+
+#### 首页 · Hero 横幅
 
 ![博客首页](docs/screenshots/home.png)
 
-### 博客首页 · 文章列表
+#### 首页 · 文章列表
 
 ![文章列表](docs/screenshots/home-articles.png)
 
-### 友链
+#### 友链
 
 ![友链](docs/screenshots/link.png)
 
-### 留言板
+#### 留言板
 
 ![留言板](docs/screenshots/message.png)
 
-### 移动端
+### 后台管理系统
 
-移动端基于 uniapp 开发，支持 App、小程序与 H5：
+#### 工作台（今日账单 · 数据概览）
+
+![后台工作台](docs/screenshots/admin-index.png)
+
+### 移动端（uniapp · H5）
+
+移动端基于 uniapp 开发，一套代码多端发布（App / 小程序 / H5）：
 
 <table>
   <tr>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-3ea20e447ac621a161e395fb53ccc683d84.png"/></td>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-a6f23cf9a371a30165e135eff6d9ae89a9d.png"/></td>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-ff5f62016bf6624c1ff27eee57499dccd44.png"/></td>
+    <td align="center">首页</td>
+    <td align="center">生活助手</td>
+    <td align="center">记账</td>
+    <td align="center">我的</td>
   </tr>
   <tr>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-b9a582fdb26ec69d407fabd044d2c8494df.png"/></td>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-96427ee08fca29d77934cfc8d1b1a637cef.png"/></td>
-    <td><img src="https://oscimg.oschina.net/oscnet/up-5fdadc582d24cccd7727030d397b63185a3.png"/></td>
+    <td><img src="docs/screenshots/app-home.png"/></td>
+    <td><img src="docs/screenshots/app-life.png"/></td>
+    <td><img src="docs/screenshots/app-bookkeeping.png"/></td>
+    <td><img src="docs/screenshots/app-mine.png"/></td>
   </tr>
 </table>
 
