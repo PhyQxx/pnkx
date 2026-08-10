@@ -120,31 +120,19 @@ pnpm build       # 构建
 
 ## 功能截图
 
-### 博客首页
+> 以下截图均截取自在线站点 [pnkx.top](https://pnkx.top) 的真实页面，源文件位于 `docs/screenshots/`。
 
-![博客首页](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/首页.jpg)
+### 博客首页 · Hero 横幅
 
-### 文章列表
+![博客首页](docs/screenshots/home.png)
 
-![文章列表](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/文章列表.jpg)
+### 博客首页 · 文章列表
 
-### 相册
-
-![相册](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/相册.jpg)
-
-### 友链
-
-![友链](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/友链.jpg)
-
-### 留言板
-
-![留言板](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/留言板.jpg)
-
-### 后台管理
-
-![后台管理](https://gitee.com/phyqxx/picture-warehouse/raw/master/pnkx/管理页面.jpg)
+![文章列表](docs/screenshots/home-articles.png)
 
 ### 移动端
+
+移动端基于 uniapp 开发，支持 App、小程序与 H5：
 
 <table>
   <tr>
