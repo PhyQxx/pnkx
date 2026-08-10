@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxWallpaperShareRewardRecordMapper">
+
+    <resultMap type="com.pnkx.domain.po.PxWallpaperShareRewardRecord" id="PxWallpaperShareRewardRecordResult">
+        <result property="id" column="id"/>
+        <result property="rewardCount" column="reward_count"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 统计某用户当日的分享奖励情况：分享次数 + 奖励下载次数总和 -->
+    <select id="getTodayShareReward" parameterType="String" resultType="java.util.Map">
+        select count(*)                                            as times,
+               coalesce(sum(reward_count), 0)                      as total
+        from px_wallpaper_share_reward_record
+        where create_by = #{userId}
+          and date(create_time) = curdate()
+    </select>
+
+    <!-- 新增一条分享奖励记录 -->
+    <insert id="insertShareReward" parameterType="com.pnkx.domain.po.PxWallpaperShareRewardRecord" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_wallpaper_share_reward_record(create_by, reward_count, create_time)
+        values (#{createBy}, #{rewardCount}, #{createTime})
+    </insert>
+
+</mapper>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxWallpaperMapper">
+
+    <resultMap type="PxWallpaper" id="PxWallpaperResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="url" column="url"/>
+        <result property="thumbnail" column="thumbnail"/>
+        <result property="folder" column="folder"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="width" column="width"/>
+        <result property="height" column="height"/>
+        <result property="order" column="order"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxWallpaperVo">
+        select w.id,
+               w.name,
+               w.url,
+               w.thumbnail,
+               w.folder,
+               (select count(1) from px_like_record lr where lr.item_id = w.id and lr.type = '3') as like_count,
+               w.width,
+               w.height,
+               w.`order`,
+               w.del_flag,
+               w.version,
+               w.create_by,
+               w.create_time,
+               w.update_by,
+               w.update_time,
+               w.remark
+        from px_wallpaper w
+    </sql>
+
+    <select id="selectPxWallpaperList" parameterType="PxWallpaper" resultMap="PxWallpaperResult">
+        select w.id,
+               w.name,
+               w.url,
+               w.thumbnail,
+               w.folder,
+               (select count(1) from px_like_record lr where lr.item_id = w.id and lr.type = '3') as like_count,
+               w.width,
+               w.height,
+               w.`order`,
+               w.del_flag,
+               w.version,
+               w.create_by,
+               w.create_time,
+               w.update_by,
+               w.update_time,
+               w.remark
+        from px_wallpaper w
+        <where>
+            w.del_flag = 0
+            <if test="folder != null">
+                and w.folder = #{folder}
+            </if>
+            <if test="name != null and name != ''">
+                and w.name like concat('%', #{name}, '%')
+            </if>
+            <if test="version != null and version != ''">
+                and w.version = #{version}
+            </if>
+            <if test="excludeFolderIds != null and excludeFolderIds.size() > 0">
+                and w.folder not in
+                <foreach item="fid" collection="excludeFolderIds" open="(" separator="," close=")">
+                    #{fid}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="sort == 'name'">w.name ASC</when>
+            <when test="sort == 'like'">like_count DESC, w.update_time DESC</when>
+            <otherwise>w.update_time DESC</otherwise>
+        </choose>
+    </select>
+
+    <select id="selectPxWallpaperById" parameterType="Long" resultMap="PxWallpaperResult">
+        <include refid="selectPxWallpaperVo"/>
+        where w.id = #{id}
+    </select>
+
+    <select id="selectPxWallpaperByIds" parameterType="String" resultMap="PxWallpaperResult">
+        select w.id, w.name, w.url, w.thumbnail, w.folder,
+               (select count(1) from px_like_record lr where lr.item_id = w.id and lr.type = '3') as like_count,
+               w.width, w.height, w.`order`, w.del_flag, w.version,
+               w.create_by, w.create_time, w.update_by, w.update_time, w.remark
+        from px_wallpaper w
+        where w.del_flag = 0
+        and w.id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY w.update_time DESC
+    </select>
+
+    <select id="selectPxWallpaperByFolderSubtree" parameterType="Long" resultMap="PxWallpaperResult">
+        with recursive folder_tree as (
+            select id as sub_id
+            from px_wallpaper_folder
+            where id = #{folderId} and del_flag = 0
+            union all
+            select f.id as sub_id
+            from px_wallpaper_folder f
+                     inner join folder_tree ft on f.parent_id = ft.sub_id
+            where f.del_flag = 0
+        )
+        select w.id, w.name, w.url, w.thumbnail, w.folder,
+               (select count(1) from px_like_record lr where lr.item_id = w.id and lr.type = '3') as like_count,
+               w.width, w.height, w.`order`,
+               w.del_flag, w.version, w.create_by, w.create_time, w.update_by, w.update_time, w.remark
+        from px_wallpaper w
+                 inner join folder_tree ft on w.folder = ft.sub_id
+        where w.del_flag = 0
+        ORDER BY w.update_time DESC
+    </select>
+
+    <insert id="insertPxWallpaper" parameterType="PxWallpaper" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_wallpaper
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="url != null">url,</if>
+            <if test="thumbnail != null">thumbnail,</if>
+            <if test="folder != null">folder,</if>
+            <if test="likeCount != null">like_count,</if>
+            <if test="width != null">width,</if>
+            <if test="height != null">height,</if>
+            <if test="order != null">`order`,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="url != null">#{url},</if>
+            <if test="thumbnail != null">#{thumbnail},</if>
+            <if test="folder != null">#{folder},</if>
+            <if test="likeCount != null">#{likeCount},</if>
+            <if test="width != null">#{width},</if>
+            <if test="height != null">#{height},</if>
+            <if test="order != null">#{order},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxWallpaper" parameterType="PxWallpaper">
+        update px_wallpaper
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="url != null">url = #{url},</if>
+            <if test="thumbnail != null">thumbnail = #{thumbnail},</if>
+            <if test="folder != null">folder = #{folder},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="width != null">width = #{width},</if>
+            <if test="height != null">height = #{height},</if>
+            <if test="order != null">`order` = #{order},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxWallpaperById" parameterType="Long">
+        update px_wallpaper
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxWallpaperByIds" parameterType="String">
+        update px_wallpaper set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 点赞数自增/自减，用 GREATEST 防止减到负数 -->
+    <update id="updateLikeCount">
+        update px_wallpaper
+        set like_count = GREATEST(0, like_count + #{delta})
+        where id = #{id}
+    </update>
+</mapper>

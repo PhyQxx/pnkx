@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxVideoMapper">
+    <resultMap type="PxVideo" id="PxVideoResult">
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="cover" column="cover"/>
+        <result property="url" column="url"/>
+        <result property="label" column="label"/>
+        <result property="type" column="type"/>
+        <result property="visits" column="visits"/>
+        <result property="videoLikeNumber" column="video_like_number"/>
+        <result property="leaveMessageNumber" column="leave_message_number"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxVideoVo">
+        select id,
+               title,
+               cover,
+               url,
+               label,
+               type,
+               visits,
+               (select count(1) from px_like_record where item_id = v.id) video_like_number,
+               (select count(*) from px_leave_message where article_id = v.id) leave_message_number,
+               del_flag,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_video v
+    </sql>
+
+    <select id="selectPxVideoList" parameterType="PxVideo" resultMap="PxVideoResult">
+        <include refid="selectPxVideoVo"/>
+        <where>
+            <if test="title != null  and title != ''">
+                and title like concat('%', #{title}, '%')
+            </if>
+            <if test="label != null  and label != ''">
+                and label = #{label}
+            </if>
+            <if test="type != null  and type != ''">
+                and type = #{type}
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectPxVideoById" parameterType="Long"
+            resultMap="PxVideoResult">
+        <include refid="selectPxVideoVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxVideo" parameterType="PxVideo" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_video
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,
+            </if>
+            <if test="cover != null">cover,
+            </if>
+            <if test="url != null">url,
+            </if>
+            <if test="label != null">label,
+            </if>
+            <if test="type != null">type,
+            </if>
+            <if test="visits != null">visits,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},
+            </if>
+            <if test="cover != null">#{cover},
+            </if>
+            <if test="url != null">#{url},
+            </if>
+            <if test="label != null">#{label},
+            </if>
+            <if test="type != null">#{type},
+            </if>
+            <if test="visits != null">#{visits},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxVideo" parameterType="PxVideo">
+        update px_video
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title =
+                #{title},
+            </if>
+            <if test="cover != null">cover =
+                #{cover},
+            </if>
+            <if test="url != null">url =
+                #{url},
+            </if>
+            <if test="label != null">label =
+                #{label},
+            </if>
+            <if test="type != null">type =
+                #{type},
+            </if>
+            <if test="visits != null">visits =
+                #{visits},
+            </if>
+            <if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <!--视频visit+1-->
+    <update id="visitVideo">
+        update px_video
+        set visits = visits + 1
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxVideoById" parameterType="Long">
+        delete
+        from px_video
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxVideoByIds" parameterType="String">
+        delete from px_video where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--获取视频事项标签列表-->
+    <select id="getLabelList" resultType="string">
+        select DISTINCT label
+        from px_video
+        where label is not null
+          and label != ''
+    </select>
+</mapper>

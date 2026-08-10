@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookkeepingStatisticsMapper">
+
+    <!--统计每月日消费折线图-->
+    <select id="getLineChartByDay" resultType="map" parameterType="com.pnkx.domain.po.PxBookkeepingRecord">
+        SELECT
+            date,
+            COALESCE( i.unmber, 0 ) inflowMoney,
+            COALESCE( o.unmber, 0 ) flowOutMoney
+        FROM
+            (
+            SELECT
+            adddate( date_add( LEFT(#{payTime}, 10 ), INTERVAL - DAY( LEFT(#{payTime}, 10 )) + 1 DAY ), numlist.id ) AS 'date'
+            FROM
+            (
+            SELECT
+            n1.i + n10.i * 10 + n100.i * 100 AS id
+            FROM
+            num n1
+            CROSS JOIN num AS n10
+            CROSS JOIN num AS n100
+            ) AS numlist
+            WHERE
+            adddate( date_add( LEFT(#{payTime}, 10 ), INTERVAL - DAY( LEFT(#{payTime}, 10 )) + 1 DAY ), numlist.id ) &lt;= date_add( date_add( LEFT(#{payTime}, 10 ), INTERVAL - DAY (LEFT(#{payTime}, 10 )) + 1 DAY ), INTERVAL 1 MONTH )
+            ) temp
+            LEFT JOIN (
+            SELECT
+            sum( cast(money as decimal(18, 2)) ) unmber,
+            LEFT ( pay_time, 10 ) AS udate
+            FROM
+            px_bookkeeping_record r
+            LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+            WHERE
+            c.type_difference = '0'
+            AND r.del_flag = 0
+            AND LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                AND r.create_by IN
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+            GROUP BY
+            udate
+            ) i
+        ON temp.date = i.udate
+            LEFT JOIN (
+            SELECT
+            sum( cast(money as decimal(18,2)) ) unmber,
+            LEFT ( pay_time, 10 ) AS udate
+            FROM
+            px_bookkeeping_record r
+            LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+            WHERE
+            c.type_difference = '1'
+            AND r.del_flag = 0
+            AND LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                AND r.create_by IN
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+            GROUP BY
+            udate
+            ) o ON temp.date = o.udate
+        ORDER BY
+            temp.date
+    </select>
+
+    <!--一级分类统计-->
+    <select id="getPrimaryStatistics" resultType="map" parameterType="map">
+        SELECT c.type_parent_id                     id,
+               p.type_icon                          icon,
+               p.type_name                          name,
+               sum(cast(r.money as decimal(18, 2))) value
+        FROM px_bookkeeping_record r
+                 LEFT JOIN px_bookkeeping_classification c
+                           ON r.type = c.id
+                 left join px_bookkeeping_classification p on c.type_parent_id = p.id
+        WHERE r.del_flag = 0
+          AND c.del_flag = 0
+          AND c.type_difference = #{typeDifference}
+          AND LEFT( pay_time
+                  , 7 ) = LEFT(#{date}
+                  , 7)
+          <if test="scopeAll != true and scopeUserIds != null">
+              AND r.create_by IN
+              <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                  #{uid}
+              </foreach>
+          </if>
+        GROUP BY c.type_parent_id
+    </select>
+
+    <!--二级分类统计-->
+    <select id="getSecondaryStatistics" resultType="map" parameterType="map">
+        SELECT c.id,
+               c.type_icon icon,
+               c.type_name name,
+               sum(cast(r.money as decimal(18, 2))) value
+        FROM
+            px_bookkeeping_record r
+            LEFT JOIN px_bookkeeping_classification c
+        ON r.type = c.id
+        WHERE
+            r.del_flag = 0
+          AND c.del_flag = 0
+          AND c.type_difference = #{typeDifference}
+          AND LEFT( pay_time
+            , 7 ) = LEFT(#{date}
+            , 7)
+          <if test="scopeAll != true and scopeUserIds != null">
+              AND r.create_by IN
+              <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                  #{uid}
+              </foreach>
+          </if>
+        GROUP BY
+            c.id
+    </select>
+
+    <!--账户统计-->
+    <select id="getAccountStatistics" resultType="map" parameterType="map">
+        SELECT a.id,
+               a.account_icon icon,
+               a.account_name name,
+               sum(cast(r.money as decimal(18, 2))) value
+        FROM
+            px_bookkeeping_record r
+            LEFT JOIN px_bookkeeping_account a
+        ON r.account = a.id
+            LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+        WHERE
+            r.del_flag = 0
+          AND a.del_flag = 0
+          AND c.del_flag = 0
+          AND c.type_difference = #{typeDifference}
+          AND LEFT( pay_time
+            , 7 ) = LEFT(#{date}
+            , 7)
+          <if test="scopeAll != true and scopeUserIds != null">
+              AND r.create_by IN
+              <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                  #{uid}
+              </foreach>
+          </if>
+        GROUP BY
+            a.id
+    </select>
+
+    <!--资产负债统计-->
+    <select id="getAssetsStatistics" parameterType="map" resultType="map">
+        SELECT id,
+               a.account_icon icon,
+               account_name   name,
+               (
+                                   COALESCE((
+                                                SELECT SUM(cast(money as decimal(18, 2)))
+                                                FROM px_bookkeeping_record r
+                                                         LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+                                                WHERE account = a.id
+                                                  AND c.type_difference = '0'
+                                                  AND r.del_flag = 0
+                                                  <if test="scopeAll != true and scopeUserIds != null">
+                                                      AND r.create_by IN
+                                                      <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                                                          #{uid}
+                                                      </foreach>
+                                                  </if>
+                                            ),
+                                            0
+                                       ) - COALESCE((
+                                                        SELECT SUM(cast(money as decimal(18, 2)))
+                                                        FROM px_bookkeeping_record r
+                                                                 LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+                                                        WHERE account = a.id
+                                                          AND c.type_difference = '1'
+                                                          AND r.del_flag = 0
+                                                          <if test="scopeAll != true and scopeUserIds != null">
+                                                              AND r.create_by IN
+                                                              <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                                                                  #{uid}
+                                                              </foreach>
+                                                          </if>
+                                                    ),
+                                                    0
+                                       ) + COALESCE((SELECT SUM(cast(money as decimal(18, 2)))
+                                                     FROM px_bookkeeping_record
+                                                     WHERE other_account = a.id
+                                                       AND type = 0
+                                                       AND del_flag = 0
+                                                       <if test="scopeAll != true and scopeUserIds != null">
+                                                           AND create_by IN
+                                                           <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                                                               #{uid}
+                                                           </foreach>
+                                                       </if>), 0) -
+                                   COALESCE((SELECT SUM(cast(money as decimal(18, 2)))
+                                             FROM px_bookkeeping_record
+                                             WHERE account = a.id
+                                               AND type = 0
+                                               AND del_flag = 0
+                                               <if test="scopeAll != true and scopeUserIds != null">
+                                                   AND create_by IN
+                                                   <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                                                       #{uid}
+                                                   </foreach>
+                                               </if>), 0) + COALESCE(
+                                           (SELECT SUM(cast(money as decimal(18, 2)))
+                                            FROM px_bookkeeping_record
+                                            WHERE account = a.id
+                                              AND type = 1
+                                              AND del_flag = 0
+                                              <if test="scopeAll != true and scopeUserIds != null">
+                                                  AND create_by IN
+                                                  <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                                                      #{uid}
+                                                  </foreach>
+                                              </if>), 0)) value
+        FROM
+            px_bookkeeping_account a
+        WHERE a.del_flag = 0
+    </select>
+
+    <!--月度统计-->
+    <select id="getMonthlyStatistics" resultType="map" parameterType="map">
+        SELECT r.id,
+            left( pay_time, 7) 'name',
+            sum(cast(money as decimal(18, 2))) 'value'
+        FROM
+            px_bookkeeping_record r left join px_bookkeeping_classification c
+        on r.type = c.id
+        WHERE
+            r.del_flag = 0
+          AND c.del_flag = 0
+          AND LEFT( pay_time
+            , 4 ) = LEFT(#{date}
+            , 4)
+          AND c.type_difference = #{typeDifference}
+          <if test="scopeAll != true and scopeUserIds != null">
+              AND r.create_by IN
+              <foreach collection="scopeUserIds" item="uid" open="(" separator="," close=")">
+                  #{uid}
+              </foreach>
+          </if>
+        GROUP BY
+            LEFT( pay_time, 7 )
+    </select>
+</mapper>

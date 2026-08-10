@@ -1,0 +1,21 @@
+.el-icon-compat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    color: inherit;
+    vertical-align: -0.125em;
+
+    > svg {
+        width: 1em;
+        height: 1em;
+        fill: currentColor;
+    }
+}
+
+.el-icon-compat--loading > svg {
+    animation: rotating 2s linear infinite;
+}
+

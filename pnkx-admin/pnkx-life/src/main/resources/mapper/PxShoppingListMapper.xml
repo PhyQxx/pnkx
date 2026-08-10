@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxShoppingListMapper">
+
+    <resultMap type="PxShoppingList" id="PxShoppingListResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="icon" column="icon"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxShoppingListVo">
+        select id,
+               name,
+               icon, order_num, version, client_uuid, del_flag, create_by, create_time, update_by, update_time, remark
+        from px_shopping_list
+    </sql>
+
+    <select id="selectPxShoppingListList" parameterType="PxShoppingList" resultMap="PxShoppingListResult">
+        <include refid="selectPxShoppingListVo"/>
+        <where>
+            <if test="name != null  and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="icon != null  and icon != ''">and icon = #{icon}</if>
+            <if test="orderNum != null ">and order_num = #{orderNum}</if>
+            and del_flag = '0'
+        </where>
+    </select>
+
+    <select id="selectPxShoppingListById" parameterType="Long" resultMap="PxShoppingListResult">
+        <include refid="selectPxShoppingListVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxShoppingList" parameterType="PxShoppingList" useGeneratedKeys="true" keyProperty="id">
+        insert into px_shopping_list
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="icon != null">icon,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="clientUuid != null">client_uuid,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="icon != null">#{icon},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxShoppingList" parameterType="PxShoppingList">
+        update px_shopping_list
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="clientUuid != null">client_uuid = #{clientUuid},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxShoppingListById" parameterType="Long">
+        update px_shopping_list
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxShoppingListByIds" parameterType="String">
+        update px_shopping_list set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

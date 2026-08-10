@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxVisitsMapper">
+
+    <resultMap type="PxVisits" id="PxVisitsResult">
+        <result property="id" column="id"/>
+        <result property="country" column="country"/>
+        <result property="ip" column="ip"/>
+        <result property="province" column="province"/>
+        <result property="version" column="version"/>
+        <result property="city" column="city"/>
+        <result property="createBy" column="create_by"/>
+        <result property="district" column="district"/>
+        <result property="createTime" column="create_time"/>
+        <result property="isp" column="isp"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="location" column="location"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxVisitsVo">
+        select id,
+               country,
+               ip,
+               province,
+               version,
+               city,
+               create_by,
+               district,
+               create_time,
+               isp,
+               update_by,
+               update_time,
+               location,
+               remark
+        from px_visits
+    </sql>
+
+    <select id="selectPxVisitsList" parameterType="PxVisits" resultMap="PxVisitsResult">
+        <include refid="selectPxVisitsVo"/>
+        <where>
+            <if test="country != null  and country != ''">and country like concat('%', #{country}, '%')</if>
+            <if test="ip != null  and ip != ''">and ip like concat('%', #{ip}, '%')</if>
+            <if test="province != null  and province != ''">and province like concat('%', #{province}, '%')</if>
+            <if test="version != null  and version != ''">and version = #{version}</if>
+            <if test="city != null  and city != ''">and city like concat('%', #{city}, '%')</if>
+            <if test="district != null  and district != ''">and district like concat('%', #{district}, '%')</if>
+            <if test="isp != null  and isp != ''">and isp like concat('%', #{isp}, '%')</if>
+            <if test="location != null  and location != ''">and location like concat('%', #{location}, '%')</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectPxVisitsById" parameterType="Long" resultMap="PxVisitsResult">
+        <include refid="selectPxVisitsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxVisits" parameterType="PxVisits" useGeneratedKeys="true" keyProperty="id">
+        insert into px_visits
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="country != null">country,</if>
+            <if test="ip != null">ip,</if>
+            <if test="province != null">province,</if>
+            <if test="version != null">version,</if>
+            <if test="city != null">city,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="district != null">district,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="isp != null">isp,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="location != null">location,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="country != null">#{country},</if>
+            <if test="ip != null">#{ip},</if>
+            <if test="province != null">#{province},</if>
+            <if test="version != null">#{version},</if>
+            <if test="city != null">#{city},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="district != null">#{district},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="isp != null">#{isp},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="location != null">#{location},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxVisits" parameterType="PxVisits">
+        update px_visits
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="country != null">country = #{country},</if>
+            <if test="ip != null">ip = #{ip},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="isp != null">isp = #{isp},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxVisitsById" parameterType="Long">
+        delete
+        from px_visits
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxVisitsByIds" parameterType="String">
+        delete from px_visits where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

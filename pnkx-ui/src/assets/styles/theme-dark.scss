@@ -1,0 +1,78 @@
+/**
+ * Dark Theme - 暗色主题变量
+ * 
+ * 此文件补充 design-tokens.scss 中的暗色模式变量
+ * 主要用于 Element UI 主题变量覆盖
+ */
+
+// ============================================
+// Element UI 暗色主题变量覆盖
+// ============================================
+
+// 基础颜色
+$--color-primary: #38bdf8;  // sky-400 (暗色模式下更亮)
+$--color-primary-light-1: #0ea5e9;
+$--color-primary-light-2: #0284c7;
+$--color-primary-light-3: #0369a1;
+$--color-primary-light-4: #075985;
+$--color-primary-light-5: #0c4a6e;
+$--color-primary-light-6: #082f49;
+$--color-primary-light-7: #f0f9ff;
+$--color-primary-light-8: #e0f2fe;
+$--color-primary-light-9: #1e293b;  // slate-800
+
+// 功能色
+$--color-success: #22c55e;
+$--color-success-light: #166534;
+$--color-success-lighter: #14532d;
+$--color-success-extra-light: #f0fdf4;
+
+$--color-warning: #f59e0b;
+$--color-warning-light: #92400e;
+$--color-warning-lighter: #78350f;
+$--color-warning-extra-light: #fffbeb;
+
+$--color-danger: #ef4444;
+$--color-danger-light: #991b1b;
+$--color-danger-lighter: #7f1d1d;
+$--color-danger-extra-light: #fef2f2;
+
+$--color-info: #38bdf8;
+$--color-info-light: #075985;
+$--color-info-lighter: #0c4a6e;
+$--color-info-extra-light: #f0f9ff;
+
+// 文字颜色
+$--color-text-primary: #f1f5f9;      // slate-100
+$--color-text-regular: #94a3b8;      // slate-400
+$--color-text-secondary: #64748b;    // slate-500
+$--color-text-placeholder: #475569;  // slate-600
+
+// 边框颜色
+$--border-color-base: #1e293b;       // slate-800
+$--border-color-light: #334155;      // slate-700
+$--border-color-lighter: #1e293b;    // slate-800
+$--border-color-extra-light: #0f172a; // slate-900
+
+// 背景颜色
+$--background-color-base: #0f172a;   // slate-900
+$--background-color-light: #1e293b;  // slate-800
+$--background-color-lighter: #334155; // slate-700
+
+// 填充色
+$--fill-base: #0f172a;
+
+// ============================================
+// 导出供 JS 使用
+// ============================================
+:export {
+  colorPrimary: $--color-primary;
+  colorSuccess: $--color-success;
+  colorWarning: $--color-warning;
+  colorDanger: $--color-danger;
+  colorInfo: $--color-info;
+  colorTextPrimary: $--color-text-primary;
+  colorTextRegular: $--color-text-regular;
+  borderColorBase: $--border-color-base;
+  backgroundColorBase: $--background-color-base;
+}

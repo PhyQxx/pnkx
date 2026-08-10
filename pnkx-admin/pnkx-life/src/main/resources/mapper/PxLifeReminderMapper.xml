@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxLifeReminderMapper">
+
+    <resultMap type="PxLifeReminder" id="PxLifeReminderResult">
+        <result property="id" column="id"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="sourceId" column="source_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="remindTime" column="remind_time"/>
+        <result property="leadMinutes" column="lead_minutes"/>
+        <result property="enabled" column="enabled"/>
+        <result property="lastTriggeredTime" column="last_triggered_time"/>
+        <result property="version" column="version"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxLifeReminderVo">
+        select id, source_type, source_id, user_id, remind_time, lead_minutes, enabled,
+               last_triggered_time, version, client_uuid, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from px_life_reminder
+    </sql>
+
+    <select id="selectPxLifeReminderList" parameterType="PxLifeReminder"
+            resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        <where>
+            del_flag = '0'
+            <if test="sourceType != null and sourceType != ''">and source_type = #{sourceType}</if>
+            <if test="sourceId != null">and source_id = #{sourceId}</if>
+            <if test="userId != null and userId != ''">and user_id = #{userId}</if>
+            <if test="enabled != null">and enabled = #{enabled}</if>
+            <if test="version != null and version != ''">and version = #{version}</if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by remind_time asc
+    </select>
+
+    <select id="selectPxLifeReminderById" parameterType="Long"
+            resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectBySource" resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        where source_type = #{sourceType}
+          and source_id = #{sourceId}
+          and user_id = #{userId}
+          and del_flag = '0'
+        limit 1
+    </select>
+
+    <!-- 扫描到期需要触发的提醒
+         条件：启用 + 未删除 + remind_time <= now + 上次未触发或触发时间早于本次提醒时间
+         + 来源事件未超过停止提醒天数（remind_time 在 now-stopDaysAfter 之后）
+    -->
+    <select id="selectDueReminders" resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        where enabled = 1
+          and del_flag = '0'
+          and remind_time &lt;= #{now}
+          and remind_time &gt;= DATE_SUB(#{now}, INTERVAL #{stopDaysAfter} DAY)
+          and (last_triggered_time is null or last_triggered_time &lt; remind_time)
+    </select>
+
+    <insert id="insertPxLifeReminder" parameterType="PxLifeReminder"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into px_life_reminder
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sourceType != null">source_type,</if>
+            <if test="sourceId != null">source_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="remindTime != null">remind_time,</if>
+            <if test="leadMinutes != null">lead_minutes,</if>
+            <if test="enabled != null">enabled,</if>
+            <if test="lastTriggeredTime != null">last_triggered_time,</if>
+            <if test="version != null">version,</if>
+            <if test="clientUuid != null">client_uuid,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sourceType != null">#{sourceType},</if>
+            <if test="sourceId != null">#{sourceId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="remindTime != null">#{remindTime},</if>
+            <if test="leadMinutes != null">#{leadMinutes},</if>
+            <if test="enabled != null">#{enabled},</if>
+            <if test="lastTriggeredTime != null">#{lastTriggeredTime},</if>
+            <if test="version != null">#{version},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxLifeReminder" parameterType="PxLifeReminder">
+        update px_life_reminder
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="sourceId != null">source_id = #{sourceId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="remindTime != null">remind_time = #{remindTime},</if>
+            <if test="leadMinutes != null">lead_minutes = #{leadMinutes},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            <if test="lastTriggeredTime != null">last_triggered_time = #{lastTriggeredTime},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="clientUuid != null">client_uuid = #{clientUuid},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="updateLastTriggeredTime">
+        update px_life_reminder
+        set last_triggered_time = #{time}
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxLifeReminderById" parameterType="Long">
+        update px_life_reminder
+        set del_flag = '1'
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxLifeReminderByIds" parameterType="String">
+        update px_life_reminder set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectByClientUuid" parameterType="String"
+            resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        where client_uuid = #{clientUuid} limit 1
+    </select>
+
+    <select id="selectIncremental" resultMap="PxLifeReminderResult">
+        <include refid="selectPxLifeReminderVo"/>
+        where create_by = #{createBy}
+        and COALESCE(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by COALESCE(update_time, create_time) asc
+        limit #{offset}, #{limit}
+    </select>
+</mapper>

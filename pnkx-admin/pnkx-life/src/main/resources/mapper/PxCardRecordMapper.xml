@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxCardRecordMapper">
+
+    <resultMap type="PxCardRecord" id="PxCardRecordResult">
+        <result property="id" column="id"/>
+        <result property="cardId" column="card_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="instructions" column="instructions"/>
+        <result property="confirm" column="confirm"/>
+        <result property="confirmTime" column="confirm_time"/>
+        <result property="score" column="score"/>
+        <result property="scoreTime" column="score_time"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxCardRecordVo">
+        select r.id,
+               c.title cardName,
+               u.nick_name userName,
+               r.card_id cardId,
+               r.user_id userId,
+               r.instructions,
+               r.confirm,
+               r.confirm_time confirmTime,
+               r.score,
+               r.score_time scoreTime,
+               r.del_flag delFlag,
+               r.version,
+               r.create_by createBy,
+               r.create_time createTime,
+               r.update_by updateBy,
+               r.update_time updateTime,
+               r.remark
+        from px_card_record r left join px_lovers_card c on r.card_id = c.id
+                              left join sys_user u on r.user_id = u.user_id
+    </sql>
+
+    <select id="selectPxCardRecordList" parameterType="com.pnkx.domain.vo.PxCardRecordVo" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+        <include refid="selectPxCardRecordVo"/>
+        <where>
+            <if test="cardName != null ">
+                and c.title like concat('%', #{cardName}, '%')
+            </if>
+            <if test="userId != null ">
+                and r.user_id = #{userId}
+            </if>
+            <if test="instructions != null  and instructions != ''">
+                and instructions = #{instructions}
+            </if>
+            <if test="version != null  and version != ''">
+                and r.version = #{version}
+            </if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and r.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <select id="selectPxCardRecordById" parameterType="Long"
+            resultType="com.pnkx.domain.vo.PxCardRecordVo">
+        <include refid="selectPxCardRecordVo"/>
+        where r.id = #{id}
+    </select>
+
+    <!--获取待处理的卡券-->
+    <select id="getToDoCard" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+        select r.id,
+               c.title cardName,
+               u.nick_name userName,
+               r.card_id cardId,
+               r.user_id userId,
+               r.instructions,
+               r.confirm,
+               r.confirm_time confirmTime,
+               r.score,
+               r.score_time scoreTime,
+               r.del_flag delFlag,
+               r.version,
+               r.create_by createBy,
+               r.create_time createTime,
+               r.update_by updateBy,
+               r.update_time updateTime,
+               r.remark
+        from px_card_record r left join px_lovers_card c on r.card_id = c.id
+                              left join sys_user u on r.user_id = u.user_id
+        where (r.user_id = #{userId} and confirm = 1 and r.score = 0) or (r.user_id != #{userId} and confirm = 0)
+        order by r.create_time desc
+    </select>
+
+    <insert id="insertPxCardRecord" parameterType="PxCardRecord" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_card_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="cardId != null">card_id,
+            </if>
+            <if test="userId != null">user_id,
+            </if>
+            <if test="instructions != null">instructions,
+            </if>
+            <if test="confirm != null">confirm,
+            </if>
+            <if test="confirmTime != null">confirm_time,
+            </if>
+            <if test="score != null">score,
+            </if>
+            <if test="scoreTime != null">score_time,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="cardId != null">#{cardId},
+            </if>
+            <if test="userId != null">#{userId},
+            </if>
+            <if test="instructions != null">#{instructions},
+            </if>
+            <if test="confirm != null">#{confirm},
+            </if>
+            <if test="confirmTime != null">#{confirmTime},
+            </if>
+            <if test="score != null">#{score},
+            </if>
+            <if test="scoreTime != null">#{scoreTime},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxCardRecord" parameterType="PxCardRecord">
+        update px_card_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="cardId != null">card_id =
+                #{cardId},
+            </if>
+            <if test="userId != null">user_id =
+                #{userId},
+            </if>
+            <if test="instructions != null">instructions =
+                #{instructions},
+            </if>
+            <if test="confirm != null">confirm =
+                #{confirm},
+            </if>
+            <if test="confirmTime != null">confirm_time =
+                #{confirmTime},
+            </if>
+            <if test="score != null">score =
+                #{score},
+            </if>
+            <if test="scoreTime != null">score_time =
+                #{scoreTime},
+            </if>
+            <if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxCardRecordById" parameterType="Long">
+        delete
+        from px_card_record
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxCardRecordByIds" parameterType="String">
+        delete from px_card_record where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

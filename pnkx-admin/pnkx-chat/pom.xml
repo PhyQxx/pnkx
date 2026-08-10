@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>pnkx</artifactId>
+        <groupId>com.pnkx</groupId>
+        <version>3.3.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>pnkx-chat</artifactId>
+
+    <description>
+        聊天模块
+    </description>
+
+    <dependencies>
+
+        <!-- AgentScope Java AI框架 -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope</artifactId>
+        </dependency>
+        <!-- OkHttp HTTP客户端（VoceChat Bot API调用）-->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>3.14.9</version>
+        </dependency>
+        <!-- 通用工具-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-common</artifactId>
+        </dependency>
+        <!-- 网关模块-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-framework</artifactId>
+        </dependency>
+        <!-- 系统模块（参数配置服务）-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-system</artifactId>
+        </dependency>
+        <!-- 生活模块（AI客户端）-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-life</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-blog</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

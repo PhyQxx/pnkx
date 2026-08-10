@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxCardUserMapper">
+
+    <resultMap type="PxCardUser" id="PxCardUserResult">
+        <result property="id" column="id"/>
+        <result property="cardId" column="card_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="cardNumber" column="card_number"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxCardUserVo">
+        select id,
+               card_id,
+               user_id,
+               card_number,
+               del_flag,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_card_user
+    </sql>
+
+    <select id="selectPxCardUserList" parameterType="PxCardUser" resultMap="PxCardUserResult">
+        <include refid="selectPxCardUserVo"/>
+        <where>
+            <if test="cardId != null ">
+                and card_id = #{cardId}
+            </if>
+            <if test="userId != null ">
+                and user_id = #{userId}
+            </if>
+            <if test="cardNumber != null ">
+                and card_number = #{cardNumber}
+            </if>
+            <if test="version != null  and version != ''">
+                and version = #{version}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxCardUserById" parameterType="Long"
+            resultMap="PxCardUserResult">
+        <include refid="selectPxCardUserVo"/>
+        where id = #{id}
+    </select>
+
+    <!--获取当前人的卡券-->
+    <select id="getCardByUserId" resultType="com.pnkx.domain.vo.PxLoversCardVo">
+        select p.id,
+               c.logo,
+               c.title,
+               c.`describe`,
+               p.card_id cardId,
+               p.user_id userId,
+               p.card_number cardNumber,
+               p.version,
+               c.money,
+               p.create_by createBy,
+               p.create_time createTime,
+               p.update_by updateBy,
+               p.update_time updateTime,
+               p.remark
+        from px_lovers_card c
+                 left join px_card_user p on c.id = p.card_id
+        where p.user_id = #{userId} and p.card_number > 0
+    </select>
+
+    <insert id="insertPxCardUser" parameterType="PxCardUser" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into px_card_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="cardId != null">card_id,
+            </if>
+            <if test="userId != null">user_id,
+            </if>
+            <if test="cardNumber != null">card_number,
+            </if>
+            <if test="delFlag != null">del_flag,
+            </if>
+            <if test="version != null">version,
+            </if>
+            <if test="createBy != null">create_by,
+            </if>
+            <if test="createTime != null">create_time,
+            </if>
+            <if test="updateBy != null">update_by,
+            </if>
+            <if test="updateTime != null">update_time,
+            </if>
+            <if test="remark != null">remark,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="cardId != null">#{cardId},
+            </if>
+            <if test="userId != null">#{userId},
+            </if>
+            <if test="cardNumber != null">#{cardNumber},
+            </if>
+            <if test="delFlag != null">#{delFlag},
+            </if>
+            <if test="version != null">#{version},
+            </if>
+            <if test="createBy != null">#{createBy},
+            </if>
+            <if test="createTime != null">#{createTime},
+            </if>
+            <if test="updateBy != null">#{updateBy},
+            </if>
+            <if test="updateTime != null">#{updateTime},
+            </if>
+            <if test="remark != null">#{remark},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updatePxCardUser" parameterType="PxCardUser">
+        update px_card_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="cardId != null">card_id =
+                #{cardId},
+            </if>
+            <if test="userId != null">user_id =
+                #{userId},
+            </if>
+            <if test="cardNumber != null">card_number =
+                #{cardNumber},
+            </if>
+            <if test="delFlag != null">del_flag =
+                #{delFlag},
+            </if>
+            <if test="version != null">version =
+                #{version},
+            </if>
+            <if test="createBy != null">create_by =
+                #{createBy},
+            </if>
+            <if test="createTime != null">create_time =
+                #{createTime},
+            </if>
+            <if test="updateBy != null">update_by =
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">update_time =
+                #{updateTime},
+            </if>
+            <if test="remark != null">remark =
+                #{remark},
+            </if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <!--使用卡券-->
+    <update id="useCard">
+        update px_card_user set card_number = card_number - 1 where card_id = #{cardId} and user_id = #{userId}
+     </update>
+
+    <!--定期发放卡券-->
+    <update id="regularGrantCard">
+        update px_card_user c set card_number = (card_number + (select number from px_lovers_card where id = c.card_id))
+    </update>
+
+    <delete id="deletePxCardUserById" parameterType="Long">
+        delete
+        from px_card_user
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxCardUserByIds" parameterType="String">
+        delete from px_card_user where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

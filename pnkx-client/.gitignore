@@ -1,0 +1,11 @@
+node_modules
+*.log*
+.nuxt
+.nitro
+.cache
+.output
+.output.zip
+.env
+.DS_Store
+dist
+/pnpm-lock.yaml

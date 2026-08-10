@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.system.mapper.SysAppVersionMapper">
+
+    <resultMap type="SysAppVersion" id="SysAppVersionResult">
+        <result property="id" column="id"/>
+        <result property="appType" column="app_type"/>
+        <result property="versionCode" column="version_code"/>
+        <result property="versionName" column="version_name"/>
+        <result property="updateType" column="update_type"/>
+        <result property="forceUpdate" column="force_update"/>
+        <result property="downloadUrl" column="download_url"/>
+        <result property="updateLog" column="update_log"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectSysAppVersionVo">
+        select id, app_type, version_code, version_name, update_type, force_update, download_url, update_log, status, create_time
+        from sys_app_version
+    </sql>
+
+    <!-- 获取特定平台最新生效版本 -->
+    <select id="selectLatestVersionByAppType" parameterType="String" resultMap="SysAppVersionResult">
+        <include refid="selectSysAppVersionVo"/>
+        where app_type = #{appType} and status = 1
+        order by version_code desc
+        limit 1
+    </select>
+
+    <select id="selectSysAppVersionList" parameterType="SysAppVersion" resultMap="SysAppVersionResult">
+        <include refid="selectSysAppVersionVo"/>
+        <where>
+            <if test="appType != null and appType != ''"> and app_type = #{appType} </if>
+            <if test="versionName != null and versionName != ''"> and version_name like concat('%', #{versionName}, '%') </if>
+            <if test="status != null"> and status = #{status} </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectSysAppVersionById" parameterType="Long" resultMap="SysAppVersionResult">
+        <include refid="selectSysAppVersionVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSysAppVersion" parameterType="SysAppVersion" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_app_version
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="appType != null">app_type,</if>
+            <if test="versionCode != null">version_code,</if>
+            <if test="versionName != null">version_name,</if>
+            <if test="updateType != null">update_type,</if>
+            <if test="forceUpdate != null">force_update,</if>
+            <if test="downloadUrl != null">download_url,</if>
+            <if test="updateLog != null">update_log,</if>
+            <if test="status != null">status,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="appType != null">#{appType},</if>
+            <if test="versionCode != null">#{versionCode},</if>
+            <if test="versionName != null">#{versionName},</if>
+            <if test="updateType != null">#{updateType},</if>
+            <if test="forceUpdate != null">#{forceUpdate},</if>
+            <if test="downloadUrl != null">#{downloadUrl},</if>
+            <if test="updateLog != null">#{updateLog},</if>
+            <if test="status != null">#{status},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateSysAppVersion" parameterType="SysAppVersion">
+        update sys_app_version
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="appType != null">app_type = #{appType},</if>
+            <if test="versionCode != null">version_code = #{versionCode},</if>
+            <if test="versionName != null">version_name = #{versionName},</if>
+            <if test="updateType != null">update_type = #{updateType},</if>
+            <if test="forceUpdate != null">force_update = #{forceUpdate},</if>
+            <if test="downloadUrl != null">download_url = #{downloadUrl},</if>
+            <if test="updateLog != null">update_log = #{updateLog},</if>
+            <if test="status != null">status = #{status},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysAppVersionByIds" parameterType="String">
+        delete from sys_app_version where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

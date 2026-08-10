@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxMessageMapper">
+
+    <!--新增留言-->
+    <insert id="addMessage" parameterType="com.pnkx.domain.po.PxLeaveMessage">
+        INSERT INTO px_leave_message
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="articleId != null">article_id,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="replyId != null">reply_id,</if>
+            <if test="replyUserId != null">reply_user_id,</if>
+            <if test="replyNickName != null">reply_nick_name,</if>
+            <if test="content != null">content,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="authorName != null">author_name,</if>
+            <if test="authorMailbox != null">author_mailbox,</if>
+            <if test="authorAddress != null">author_address,</if>
+            <if test="messageBoard != null">message_board,</if>
+            <if test="emailFlag != null">email_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="state != null">state,</if>
+            <if test="ip != null">ip,</if>
+            <if test="location != null">location,</if>
+            <if test="country != null">country,</if>
+            <if test="province != null">province,</if>
+            <if test="city != null">city,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="articleId != null">#{articleId},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="replyId != null">#{replyId},</if>
+            <if test="replyUserId != null">#{replyUserId},</if>
+            <if test="replyNickName != null">#{replyNickName},</if>
+            <if test="content != null">#{content},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="authorName != null">#{authorName},</if>
+            <if test="authorMailbox != null">#{authorMailbox},</if>
+            <if test="authorAddress != null">#{authorAddress},</if>
+            <if test="messageBoard != null">#{messageBoard},</if>
+            <if test="emailFlag != null">#{emailFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="state != null">#{state},</if>
+            <if test="ip != null">#{ip},</if>
+            <if test="location != null">#{location},</if>
+            <if test="country != null">#{country},</if>
+            <if test="province != null">#{province},</if>
+            <if test="city != null">#{city},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <resultMap type="com.pnkx.domain.po.PxLeaveMessage" id="PxLeaveMessageResult">
+        <result property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="replyId" column="reply_id"/>
+        <result property="replyUserId" column="reply_user_id"/>
+        <result property="replyNickName" column="reply_nick_name"/>
+        <result property="version" column="version"/>
+        <result property="emailFlag" column="email_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="articleId" column="article_id"/>
+        <result property="content" column="content"/>
+        <result property="likeNumber" column="like_number"/>
+        <result property="articleLikeNumber" column="article_like_number"/>
+        <result property="commentLikeNumber" column="comment_like_number"/>
+        <result property="replyNumber" column="reply_number"/>
+        <result property="ip" column="ip"/>
+        <result property="location" column="location"/>
+        <result property="country" column="country"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="articleTitle" column="articleTitle"/>
+        <result property="authorName" column="author_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="authorMailbox" column="author_mailbox"/>
+        <result property="authorAddress" column="author_address"/>
+        <result property="avatar" column="avatar"/>
+        <result property="messageBoard" column="message_board"/>
+        <result property="state" column="state"/>
+    </resultMap>
+
+    <sql id="selectPxLeaveMessageVo">
+        SELECT m.id,
+                        m.parent_id,
+                        m.reply_id,
+                        m.state,
+                        m.ip,
+                        m.location,
+                        m.country,
+                        m.province,
+                        m.city,
+                        m.version,
+                        m.create_by,
+                        m.create_time,
+                        m.update_by,
+                        m.update_time,
+                        article_id,
+                        title articleTitle,
+                        m.content,
+                        author_name,
+                        su1.nick_name,
+                        su2.nick_name reply_nick_name,
+                        author_mailbox,
+                        author_address,
+                        m.avatar,
+                        message_board,
+                        email_flag,
+                        (select count(1) from px_like_record where item_id = a.id) article_like_number,
+                        (select count(1) from px_like_record where item_id = m.id) comment_like_number,
+                        (select count(1) from px_leave_message where parent_id = m.id) reply_number
+        FROM px_leave_message m
+                 LEFT JOIN sys_user su1 ON m.create_by = su1.user_id
+                 LEFT JOIN sys_user su2 ON m.reply_user_id = su2.user_id
+                 LEFT JOIN px_article a ON m.article_id = a.id
+    </sql>
+
+    <select id="selectPxLeaveMessageList" parameterType="com.pnkx.domain.po.PxLeaveMessage"
+            resultMap="PxLeaveMessageResult">
+        <include refid="selectPxLeaveMessageVo"/>
+        <where>
+            <if test="version != null  and version != ''">and version = #{version}</if>
+            <if test="parentId != null  and parentId != ''">and parent_id = #{parentId}</if>
+            <if test="parentId == null">and parent_id is null</if>
+            <if test="articleId != null  and articleId != ''">and article_id = #{articleId}</if>
+            <if test="articleTitle != null  and articleTitle != ''">and a.title like concat('%', #{articleTitle}, '%')
+            </if>
+            <if test="content != null  and content != ''">and content = #{content}</if>
+            <if test="state != null and state != ''">and m.state = #{state}</if>
+            <if test="state == null">and m.state != '2'</if>
+            <if test="authorName != null  and authorName != ''">and author_name like concat('%', #{authorName}, '%')
+            </if>
+            <if test="authorAddress != null  and authorAddress != ''">and author_address = #{authorAddress}</if>
+            <if test="authorMailbox != null  and authorMailbox != ''">and author_mailbox = #{authorMailbox}</if>
+            <if test="messageBoard != null  and messageBoard != ''">and #{messageBoard} like
+                CONCAT('%',message_board,'%')
+            </if>
+            <if test="createBy == 0">and m.create_by is null</if>
+        </where>
+        order by m.create_time desc
+    </select>
+
+    <!-- 查询留言 -->
+    <select id="getMessageById" resultMap="PxLeaveMessageResult">
+        <include refid="selectPxLeaveMessageVo"/>
+        where m.id = #{id}
+    </select>
+
+    <update id="updatePxLeaveMessage" parameterType="com.pnkx.domain.po.PxLeaveMessage">
+        update px_leave_message
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="version != null">version = #{version},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="replyId != null">reply_id = #{replyId},</if>
+            <if test="replyUserId != null">reply_user_id = #{replyUserId},</if>
+            <if test="replyNickName != null">reply_nick_name = #{replyNickName},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="articleId != null">article_id = #{articleId},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="authorName != null">author_name = #{authorName},</if>
+            <if test="state != null">state = #{state},</if>
+            <if test="authorAddress != null">author_address = #{authorAddress},</if>
+            <if test="authorMailbox != null">author_mailbox = #{authorMailbox},</if>
+            <if test="messageBoard != null">message_board = #{messageBoard},</if>
+            <if test="emailFlag != null">email_flag = #{emailFlag},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+</mapper>

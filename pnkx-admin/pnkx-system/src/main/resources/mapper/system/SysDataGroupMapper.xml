@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.system.mapper.SysDataGroupMapper">
+
+    <resultMap type="com.pnkx.system.domain.SysDataGroup" id="SysDataGroupResult">
+        <result property="id" column="id"/>
+        <result property="groupName" column="group_name"/>
+        <result property="groupCode" column="group_code"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectDataGroupVo">
+        select id, group_name, group_code, status, remark, create_by, create_time, update_by, update_time
+        from px_data_group
+    </sql>
+
+    <select id="selectDataGroupList" parameterType="com.pnkx.system.domain.SysDataGroup"
+            resultMap="SysDataGroupResult">
+        <include refid="selectDataGroupVo"/>
+        <where>
+            <if test="groupName != null and groupName != ''">
+                and group_name like concat('%', #{groupName}, '%')
+            </if>
+            <if test="groupCode != null and groupCode != ''">
+                and group_code = #{groupCode}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectDataGroupById" parameterType="Long" resultMap="SysDataGroupResult">
+        <include refid="selectDataGroupVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertDataGroup" parameterType="com.pnkx.system.domain.SysDataGroup"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into px_data_group
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="groupName != null">group_name,</if>
+            <if test="groupCode != null">group_code,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="groupName != null">#{groupName},</if>
+            <if test="groupCode != null">#{groupCode},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateDataGroup" parameterType="com.pnkx.system.domain.SysDataGroup">
+        update px_data_group
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="groupName != null">group_name = #{groupName},</if>
+            <if test="groupCode != null">group_code = #{groupCode},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDataGroupById" parameterType="Long">
+        delete
+        from px_data_group
+        where id = #{id}
+    </delete>
+
+    <!-- 查询群组成员ID列表 -->
+    <select id="selectMemberUserIds" parameterType="Long" resultType="Long">
+        select user_id
+        from px_data_group_member
+        where group_id = #{groupId}
+    </select>
+
+    <!-- 批量新增群组成员 -->
+    <insert id="batchInsertMember" parameterType="java.util.List">
+        insert into px_data_group_member(group_id, user_id, create_time) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.groupId}, #{item.userId}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <!-- 删除群组全部成员 -->
+    <delete id="deleteMemberByGroupId" parameterType="Long">
+        delete
+        from px_data_group_member
+        where group_id = #{groupId}
+    </delete>
+
+    <!--
+      查询某用户可见的全部 userId（自己 + 所在所有群组的全部成员）。
+      已包含 userId 自身，调用方无需再单独处理自身。
+    -->
+    <select id="selectVisibleUserIds" parameterType="Long" resultType="Long">
+        select distinct user_id
+        from px_data_group_member
+        where group_id in (select group_id from px_data_group_member where user_id = #{userId})
+        union select #{userId}
+    </select>
+
+</mapper>

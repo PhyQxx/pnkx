@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxShareResourceMapper">
+    <resultMap type="PxShareResource" id="PxShareResourceResult">
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="diskType" column="disk_type"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="shareUrl" column="share_url"/>
+        <result property="cover" column="cover"/>
+        <result property="extractCode" column="extract_code"/>
+        <result property="qrCode" column="qr_code"/>
+        <result property="tags" column="tags"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="clickCount" column="click_count"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="version" column="version"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxShareResourceVo">
+        select id,
+               title,
+               disk_type,
+               resource_type,
+               share_url,
+               cover,
+               extract_code,
+               qr_code,
+               tags,
+               sort_order,
+               click_count,
+               status,
+               del_flag,
+               version,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               remark
+        from px_share_resource
+    </sql>
+
+    <select id="selectPxShareResourceList" parameterType="PxShareResource" resultMap="PxShareResourceResult">
+        <include refid="selectPxShareResourceVo"/>
+        <where>
+            <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+            <if test="diskType != null and diskType != ''">and disk_type = #{diskType}</if>
+            <if test="resourceType != null and resourceType != ''">and resource_type = #{resourceType}</if>
+            <if test="tags != null and tags != ''">and tags like concat('%', #{tags}, '%')</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+            <if test="delFlag != null">and del_flag = #{delFlag}</if>
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by sort_order asc, create_time desc
+    </select>
+
+    <select id="selectPxShareResourceById" parameterType="Long" resultMap="PxShareResourceResult">
+        <include refid="selectPxShareResourceVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPxShareResource" parameterType="PxShareResource" useGeneratedKeys="true" keyProperty="id">
+        insert into px_share_resource
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,</if>
+            <if test="diskType != null">disk_type,</if>
+            <if test="resourceType != null">resource_type,</if>
+            <if test="shareUrl != null">share_url,</if>
+            <if test="cover != null">cover,</if>
+            <if test="extractCode != null">extract_code,</if>
+            <if test="qrCode != null">qr_code,</if>
+            <if test="tags != null">tags,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="clickCount != null">click_count,</if>
+            <if test="status != null">status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="version != null">version,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},</if>
+            <if test="diskType != null">#{diskType},</if>
+            <if test="resourceType != null">#{resourceType},</if>
+            <if test="shareUrl != null">#{shareUrl},</if>
+            <if test="cover != null">#{cover},</if>
+            <if test="extractCode != null">#{extractCode},</if>
+            <if test="qrCode != null">#{qrCode},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="clickCount != null">#{clickCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="version != null">#{version},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxShareResource" parameterType="PxShareResource">
+        update px_share_resource
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title = #{title},</if>
+            <if test="diskType != null">disk_type = #{diskType},</if>
+            <if test="resourceType != null">resource_type = #{resourceType},</if>
+            <if test="shareUrl != null">share_url = #{shareUrl},</if>
+            <if test="cover != null">cover = #{cover},</if>
+            <if test="extractCode != null">extract_code = #{extractCode},</if>
+            <if test="qrCode != null">qr_code = #{qrCode},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="clickCount != null">click_count = #{clickCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxShareResourceById" parameterType="Long">
+        delete from px_share_resource where id = #{id}
+    </delete>
+
+    <delete id="deletePxShareResourceByIds" parameterType="String">
+        delete from px_share_resource where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="incrementClickCount">
+        update px_share_resource
+        set click_count = click_count + 1
+        where id = #{id}
+    </update>
+
+    <select id="getLabelList" resultType="string">
+        select distinct tags
+        from px_share_resource
+        where tags is not null
+          and tags != ''
+    </select>
+</mapper>

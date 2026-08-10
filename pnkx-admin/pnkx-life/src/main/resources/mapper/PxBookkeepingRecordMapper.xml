@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookkeepingRecordMapper">
+    <resultMap type="com.pnkx.domain.po.PxBookkeepingRecord" id="PxBookkeepingRecordResult">
+        <result property="id" column="id"/>
+        <result property="version" column="version"/>
+        <result property="account" column="account"/>
+        <result property="otherAccount" column="other_account"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="type" column="type"/>
+        <result property="money" column="money"/>
+        <result property="images" column="images"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="clientUuid" column="client_uuid"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="commemorationDayId" column="commemoration_day_id"/>
+        <association property="typeObject" javaType="com.pnkx.domain.po.PxBookkeepingClassification">
+            <result property="id" column="type_id"/>
+            <result property="typeIcon" column="type_icon"/>
+            <result property="typeParentId" column="type_parent_id"/>
+            <result property="typeName" column="type_name"/>
+            <result property="typeDifference" column="type_difference"/>
+        </association>
+        <association property="accountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+            <result property="id" column="account_id"/>
+            <result property="accountName" column="account_name"/>
+            <result property="accountIcon" column="account_icon"/>
+            <result property="accountType" column="account_type"/>
+        </association>
+        <association property="otherAccountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+            <result property="id" column="other_account_id"/>
+            <result property="accountName" column="other_account_name"/>
+            <result property="accountIcon" column="other_account_icon"/>
+            <result property="accountType" column="other_account_type"/>
+        </association>
+        <association property="commemorationDay" javaType="com.pnkx.domain.po.PxCommemorationDay">
+            <result property="id" column="commemoration_id"/>
+            <result property="name" column="commemoration_name"/>
+            <result property="date" column="commemoration_date"/>
+        </association>
+    </resultMap>
+
+    <sql id="selectPxBookkeepingRecordVo">
+        SELECT r.id,
+               r.version,
+               r.account,
+               a.id            account_id,
+               a.account_name,
+               a.account_icon,
+               a.account_type,
+               r.other_account,
+               oa.id           other_account_id,
+               oa.account_name other_account_name,
+               oa.account_icon other_account_icon,
+               oa.account_type other_account_type,
+               r.type,
+               c.id            type_id,
+               c.type_parent_id,
+               c.type_icon,
+               c.type_name,
+               c.type_difference,
+               r.create_by,
+               r.create_time,
+               r.update_by,
+               r.update_time,
+               r.remark,
+               r.pay_time,
+               r.images,
+               r.money,
+               r.client_uuid,
+               r.del_flag,
+               r.commemoration_day_id,
+               cd.id commemoration_id,
+               cd.name commemoration_name,
+               cd.date commemoration_date
+        FROM px_bookkeeping_record r
+                 LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+                 LEFT JOIN px_bookkeeping_account a ON r.account = a.id
+                 LEFT JOIN px_bookkeeping_account oa ON r.other_account = oa.id
+                 LEFT JOIN px_commemoration_day cd ON r.commemoration_day_id = cd.id AND cd.del_flag = 0
+    </sql>
+
+    <select id="selectPxBookkeepingRecordList" parameterType="PxBookkeepingRecord"
+            resultMap="PxBookkeepingRecordResult">
+        <include refid="selectPxBookkeepingRecordVo"/>
+        <where>
+            r.del_flag = 0
+            <if test="searchValue != null">and (type_name like concat('%', #{searchValue}, '%')
+            or r.remark like concat('%', #{searchValue}, '%') or a.account_name like concat('%', #{searchValue}, '%')
+            or oa.account_name like concat('%', #{searchValue}, '%'))</if>
+            <if test="payTime != null">and LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )</if>
+            <if test="account != null ">and (r.account = #{account} or r.other_account = #{account})</if>
+            /* version作为查询当天记录参数 */
+            <if test="version != null  and version != ''">and LEFT( r.pay_time, 10 ) = LEFT(
+                now(), 10 )
+            </if>
+            <if test="type != null  and type != ''">and r.type = #{type}</if>
+            <if test="commemorationDayId != null">and r.commemoration_day_id = #{commemorationDayId}</if>
+            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and r.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+        order by r.pay_time desc, r.create_time desc
+    </select>
+
+    <!--收入-->
+    <select id="getInflowMoney" parameterType="PxBookkeepingRecord"
+            resultType="double">
+        SELECT
+        sum(r.money)
+        FROM px_bookkeeping_record r
+        LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+        LEFT JOIN px_bookkeeping_account a ON r.account = a.id
+        LEFT JOIN px_bookkeeping_account oa ON r.other_account = oa.id
+        <where>
+            r.del_flag = 0 and c.type_difference = '0'
+            <if test="searchValue != null">and (type_name like concat('%', #{searchValue}, '%')
+                or r.remark like concat('%', #{searchValue}, '%') or a.account_name like concat('%', #{searchValue}, '%')
+                or oa.account_name like concat('%', #{searchValue}, '%'))</if>
+            <if test="payTime != null">and LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )</if>
+            <if test="account != null ">and (r.account = #{account} or r.other_account = #{account})</if>
+            /* version作为查询当天记录参数 */
+            <if test="version != null  and version != ''">and LEFT( r.pay_time, 10 ) = LEFT(
+                now(), 10 )
+            </if>
+            <if test="type != null  and type != ''">and r.type = #{type}</if>
+            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and r.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <!--支出-->
+    <select id="getFlowOutMoney" parameterType="PxBookkeepingRecord"
+            resultType="double">
+        SELECT
+        sum(r.money)
+        FROM px_bookkeeping_record r
+        LEFT JOIN px_bookkeeping_classification c ON r.type = c.id
+        LEFT JOIN px_bookkeeping_account a ON r.account = a.id
+        LEFT JOIN px_bookkeeping_account oa ON r.other_account = oa.id
+        <where>
+            r.del_flag = 0 and c.type_difference = '1'
+            <if test="searchValue != null">and (type_name like concat('%', #{searchValue}, '%')
+                or r.remark like concat('%', #{searchValue}, '%') or a.account_name like concat('%', #{searchValue}, '%')
+                or oa.account_name like concat('%', #{searchValue}, '%'))</if>
+            <if test="payTime != null">and LEFT( r.pay_time, 7 ) = LEFT( #{payTime}, 7 )</if>
+            <if test="account != null ">and (r.account = #{account} or r.other_account = #{account})</if>
+            /* version作为查询当天记录参数 */
+            <if test="version != null  and version != ''">and LEFT( r.pay_time, 10 ) = LEFT(
+                now(), 10 )
+            </if>
+            <if test="type != null  and type != ''">and r.type = #{type}</if>
+            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and r.create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPxBookkeepingRecordById" parameterType="Long" resultMap="PxBookkeepingRecordResult">
+        <include refid="selectPxBookkeepingRecordVo"/>
+        where r.id = #{id} and r.del_flag = 0
+    </select>
+    <select id="getNaturalLanguageList" resultType="com.alibaba.fastjson.JSONObject">
+        SELECT
+            DATE_FORMAT(r.pay_time, '%Y年%m月%d日') AS 日期,
+            c.type_name AS 分类,
+            CASE c.type_difference
+                WHEN '0' THEN '收入'
+                WHEN '1' THEN '支出'
+                WHEN '2' THEN '转账'
+                WHEN '3' THEN '账户调整'
+                ELSE '未知'
+                END AS 类型,
+            a.account_name AS 账户,
+            r.money AS 金额,
+            r.remark AS 备注
+        FROM
+            px_bookkeeping_record r
+                LEFT JOIN
+            px_bookkeeping_classification c ON r.type = c.id
+                LEFT JOIN px_bookkeeping_account a ON r.account = a.id
+        WHERE
+            r.del_flag = 0
+          AND c.del_flag = 0
+          AND r.type != 0
+          <if test="createBy != null">AND r.create_by = #{createBy}</if>
+          AND DATE_FORMAT(r.pay_time, '%Y-%m') = DATE_FORMAT(#{payTime}, '%Y-%m')
+        ORDER BY
+            r.pay_time ASC;
+    </select>
+
+    <insert id="insertPxBookkeepingRecord" parameterType="PxBookkeepingRecord" useGeneratedKeys="true" keyProperty="id">
+        insert into px_bookkeeping_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="version != null">version,</if>
+            <if test="account != null">account,</if>
+            <if test="otherAccount != null">other_account,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+            <if test="type != null">type,</if>
+            <if test="money != null">money,</if>
+            <if test="images != null">images,</if>
+            <if test="payTime != null">pay_time,</if>
+            <if test="clientUuid != null">client_uuid,</if>
+            <if test="commemorationDayId != null">commemoration_day_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="version != null">#{version},</if>
+            <if test="account != null">#{account},</if>
+            <if test="otherAccount != null">#{otherAccount},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="type != null">#{type},</if>
+            <if test="money != null">#{money},</if>
+            <if test="images != null">#{images},</if>
+            <if test="payTime != null">#{payTime},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
+            <if test="commemorationDayId != null">#{commemorationDayId},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePxBookkeepingRecord" parameterType="PxBookkeepingRecord">
+        update px_bookkeeping_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="version != null">version = #{version},</if>
+            <if test="account != null">account = #{account},</if>
+            <if test="otherAccount != null">other_account = #{otherAccount},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="money != null">money = #{money},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="payTime != null">pay_time = #{payTime},</if>
+            <if test="clientUuid != null">client_uuid = #{clientUuid},</if>
+            <if test="commemorationDayId != null">commemoration_day_id = #{commemorationDayId},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePxBookkeepingRecordById" parameterType="Long">
+        update px_bookkeeping_record
+        set del_flag = 1
+        where id = #{id}
+    </delete>
+
+    <delete id="deletePxBookkeepingRecordByIds" parameterType="Long">
+        update px_bookkeeping_record set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deletePxBookkeepingRecordByTypes" parameterType="Long">
+        update px_bookkeeping_record set del_flag = 1 where type in
+        <foreach item="type" collection="array" open="(" separator="," close=")">
+            #{type}
+        </foreach>
+    </delete>
+
+    <delete id="deletePxBookkeepingRecordByAccountId" parameterType="Long">
+        update px_bookkeeping_record
+        set del_flag = 1
+        where account = #{accountId}
+    </delete>
+
+    <!-- 根据客户端唯一标识查询（幂等去重） -->
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxBookkeepingRecordResult">
+        <include refid="selectPxBookkeepingRecordVo"/>
+        where r.client_uuid = #{clientUuid} limit 1
+    </select>
+
+    <!-- 增量查询（离线同步用，包含软删除记录以便客户端同步删除） -->
+    <select id="selectIncremental" resultMap="PxBookkeepingRecordResult">
+        <include refid="selectPxBookkeepingRecordVo"/>
+        where r.create_by = #{createBy}
+        and COALESCE(r.update_time, r.create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by COALESCE(r.update_time, r.create_time) asc
+        limit #{offset}, #{limit}
+    </select>
+</mapper>

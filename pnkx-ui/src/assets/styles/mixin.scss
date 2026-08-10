@@ -1,0 +1,94 @@
+@mixin clearfix {
+    &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+@mixin scrollBar {
+    &::-webkit-scrollbar-track-piece {
+        background: #d3dce6;
+    }
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #99a9bf;
+        border-radius: 20px;
+    }
+}
+
+@mixin relative {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+@mixin pct($pct) {
+    width: #{$pct};
+    position: relative;
+    margin: 0 auto;
+}
+
+@mixin triangle($width, $height, $color, $direction) {
+    $width: $width/2;
+    $color-border-style: $height solid $color;
+    $transparent-border-style: $width solid transparent;
+    height: 0;
+    width: 0;
+
+    @if $direction==up {
+        border-bottom: $color-border-style;
+        border-left: $transparent-border-style;
+        border-right: $transparent-border-style;
+    } @else if $direction==right {
+        border-left: $color-border-style;
+        border-top: $transparent-border-style;
+        border-bottom: $transparent-border-style;
+    } @else if $direction==down {
+        border-top: $color-border-style;
+        border-left: $transparent-border-style;
+        border-right: $transparent-border-style;
+    } @else if $direction==left {
+        border-right: $color-border-style;
+        border-top: $transparent-border-style;
+        border-bottom: $transparent-border-style;
+    }
+}
+
+// 适配表格高度自适应布局
+@mixin adaptive-table-layout($offset-height: 86px) {
+    height: calc(100vh - #{$offset-height});
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 20px;
+    box-sizing: border-box;
+
+    .el-form, .mb8, .operation-area {
+        flex-shrink: 0;
+    }
+
+    ::v-deep .table-main-area {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        
+        .el-table {
+            height: 100% !important;
+        }
+    }
+
+    ::v-deep .pagination-container {
+        height: 64px !important;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-shrink: 0;
+        padding: 0 16px !important;
+        margin-top: 0 !important;
+    }
+}

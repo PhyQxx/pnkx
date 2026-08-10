@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxStatisticsMapper">
+
+    <!--获取统计数据-->
+    <select id="getStatistics" resultType="map">
+        SELECT (SELECT count(*) FROM px_visits)        visitsNumber,
+               (SELECT count(*) FROM px_leave_message) messageNumber,
+               (SELECT count(*) FROM px_article)       articleNumber,
+               (SELECT count(*) FROM px_photo)         photoNumber
+    </select>
+
+    <!--获取文章饼型图数据-->
+    <select id="getArticlePieData" resultType="com.pnkx.domain.po.PxArticleType">
+        SELECT count(*) articleNumber,
+            d.dict_value typeCode,
+            d.dict_label typeName
+        FROM
+            px_article a
+            LEFT JOIN sys_dict_data d
+        ON a.type = d.dict_value
+            AND d.dict_type = 'px_article_type'
+        GROUP BY
+            a.type,
+            d.dict_value,
+            d.dict_label
+    </select>
+
+    <!--获取图片饼型图数据-->
+    <select id="getPicturePieData" resultType="map" parameterType="map">
+        SELECT count(*) value,
+            d.dict_label name
+        FROM
+            px_photo a
+            LEFT JOIN sys_dict_data d
+        ON a.type = d.dict_value
+            AND d.dict_type = 'px_album_name'
+        GROUP BY
+            a.type,
+            d.dict_label
+    </select>
+
+    <!--获取浏览量线形图数据（按天）-->
+    <select id="getVisitLineChartByDay" resultType="map" parameterType="string">
+        SELECT temp.date,
+               COALESCE(p.unmber, 0) number
+        FROM (
+                 SELECT adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) AS 'date'
+                 FROM (
+                          SELECT n1.i + n10.i * 10 + n100.i * 100 AS id
+                          FROM num n1
+                                   CROSS JOIN num AS n10
+                                   CROSS JOIN num AS n100
+                      ) AS numlist
+                 WHERE adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) &lt;= date_add(
+                         date_add(#{date}, interval - day(#{date}) + 1 day), INTERVAL 1 MONTH)
+             ) temp
+                 LEFT JOIN (SELECT LEFT (create_time, 10) AS udate, count(1) unmber
+                            FROM px_visits
+                            GROUP BY udate) p ON temp.date = p.udate
+        order by date
+    </select>
+
+    <!--获取浏览量线形图数据（按月）-->
+    <select id="getVisitLineChartByMonth" resultType="map" parameterType="string">
+        SELECT left (temp.date, 7) date,
+            COALESCE (q.unmber, 0) number
+        FROM (
+            SELECT adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) AS 'date'
+            FROM (
+            SELECT *
+            from (SELECT n1.i + n10.i * 10 AS id
+            FROM num n1
+            CROSS JOIN num AS n10) a
+            where a.id &lt;= 11
+            ) AS numlist
+            WHERE adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) &lt;=
+            CONCAT(YEAR (#{date}), '-', '12', '-', '01')
+            ) temp
+            LEFT JOIN (SELECT LEFT (create_time, 7) AS udate, count(1) unmber
+            FROM px_visits
+            GROUP BY udate) q
+        ON left (temp.date, 7) = q.udate
+        ORDER BY left (temp.date, 7)
+    </select>
+
+    <!--获取留言线形图数据（按天）-->
+    <select id="getMessageLineChartByDay" resultType="map" parameterType="string">
+        SELECT temp.date,
+               COALESCE(p.unmber, 0) number
+        FROM (
+                 SELECT adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) AS 'date'
+                 FROM (
+                          SELECT n1.i + n10.i * 10 + n100.i * 100 AS id
+                          FROM num n1
+                                   CROSS JOIN num AS n10
+                                   CROSS JOIN num AS n100
+                      ) AS numlist
+                 WHERE adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) &lt;= date_add(
+                         date_add(#{date}, interval - day(#{date}) + 1 day), INTERVAL 1 MONTH)
+             ) temp
+                 LEFT JOIN (SELECT LEFT (m.create_time, 10) AS udate, count(1) unmber
+                            FROM px_leave_message m left join px_article pa
+                            on m.article_id = pa.id
+                            GROUP BY udate) p ON temp.date = p.udate
+        order by date
+    </select>
+
+    <!--获取留言线形图数据（按月）-->
+    <select id="getMessageLineChartByMonth" resultType="map" parameterType="string">
+        SELECT left (temp.date, 7) date,
+            COALESCE (p.unmber, 0) number
+        FROM (
+            SELECT adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) AS 'date'
+            FROM (
+            SELECT *
+            from (SELECT n1.i + n10.i * 10 AS id
+            FROM num n1
+            CROSS JOIN num AS n10) a
+            where a.id &lt;= 11
+            ) AS numlist
+            WHERE adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) &lt;=
+            CONCAT(YEAR (#{date}), '-', '12', '-', '01')
+            ) temp
+            LEFT JOIN (SELECT LEFT (m.create_time, 7) AS udate, count(1) unmber
+            FROM px_leave_message m
+            left join px_article pa on m.article_id = pa.id
+            GROUP BY udate) p
+        ON left (temp.date,7) = p.udate
+        ORDER BY left (temp.date, 7)
+    </select>
+
+    <!--获取文章线形图数据（按天）-->
+    <select id="getArticleLineChartByDay" resultType="map" parameterType="string">
+        SELECT temp.date,
+               COALESCE(p.unmber, 0) number
+        FROM (
+                 SELECT adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) AS 'date'
+                 FROM (
+                          SELECT n1.i + n10.i * 10 + n100.i * 100 AS id
+                          FROM num n1
+                                   CROSS JOIN num AS n10
+                                   CROSS JOIN num AS n100
+                      ) AS numlist
+                 WHERE adddate(date_add(#{date}, interval - day(#{date}) + 1 day), numlist.id) &lt;= date_add(
+                         date_add(#{date}, interval - day(#{date}) + 1 day), INTERVAL 1 MONTH)
+             ) temp
+                 LEFT JOIN (SELECT LEFT (p.create_time, 10) AS udate, count(1) unmber
+                            FROM px_article p
+                            GROUP BY udate) p ON temp.date = p.udate
+        order by date
+    </select>
+
+    <!--获取文章线形图数据（按月）-->
+    <select id="getArticleLineChartByMonth" resultType="map" parameterType="string">
+        SELECT left (temp.date, 7) date,
+            COALESCE (p.unmber, 0) number
+        FROM (
+            SELECT adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) AS 'date'
+            FROM (
+            SELECT *
+            from (SELECT n1.i + n10.i * 10 AS id
+            FROM num n1
+            CROSS JOIN num AS n10) a
+            where a.id &lt;= 11
+            ) AS numlist
+            WHERE adddate(CONCAT(YEAR (#{date}), '-', '01', '-', '01'), interval numlist.id month) &lt;=
+            CONCAT(YEAR (#{date}), '-', '12', '-', '01')
+            ) temp
+            LEFT JOIN (SELECT LEFT (p.create_time, 7) AS udate, count(1) unmber
+            FROM px_article p
+            GROUP BY udate) p
+        ORDER BY left (temp.date, 7)
+    </select>
+
+    <!--地区统计-->
+    <select id="getRegionStatisticsData" resultType="map" parameterType="com.pnkx.domain.po.PxStatistics">
+        select province name, count(1) value
+        from px_visits
+        where country = '中国'
+          and unix_timestamp(create_time) between unix_timestamp(#{startDate})
+          and unix_timestamp(#{endDate})
+        group by province
+    </select>
+
+</mapper>

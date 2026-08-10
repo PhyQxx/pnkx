@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxWallpaperDownloadRecordMapper">
+
+    <resultMap type="com.pnkx.domain.po.PxWallpaperDownloadRecord" id="PxWallpaperDownloadRecordResult">
+        <result property="id" column="id"/>
+        <result property="itemId" column="item_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="itemThumbnail" column="item_thumbnail"/>
+        <result property="itemUrl" column="item_url"/>
+        <result property="downloadType" column="download_type"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="createByName" column="create_by_name"/>
+    </resultMap>
+
+    <!-- 我的下载记录列表（COALESCE 兜底：缩略图为空时用壁纸原图；昵称为空时回退 create_by / 游客） -->
+    <select id="selectMyDownloadList" parameterType="com.pnkx.domain.po.PxWallpaperDownloadRecord"
+            resultMap="PxWallpaperDownloadRecordResult">
+        select d.id, d.item_id,
+               COALESCE(d.item_name, w.name)                            as item_name,
+               COALESCE(d.item_thumbnail, w.thumbnail, w.url)          as item_thumbnail,
+               COALESCE(w.url, w.thumbnail)                            as item_url,
+               d.download_type, d.create_by, d.create_time,
+               COALESCE(u.nick_name,
+                        CASE WHEN d.create_by LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(d.create_by, 11))
+                             WHEN d.create_by IS NULL OR d.create_by = ''
+                             THEN '游客'
+                             ELSE d.create_by
+                             END)                                      as create_by_name
+        from px_wallpaper_download_record d
+        left join px_wallpaper w on d.item_id = w.id
+        left join sys_user u on d.create_by = u.user_id
+        <where>
+            <if test="createBy != null and createBy != ''">
+                d.create_by = #{createBy}
+            </if>
+        </where>
+        order by d.create_time desc
+    </select>
+
+    <!-- 管理端：下载记录中出现过的用户（用于用户筛选下拉）
+         不依赖 sys_user，覆盖真实用户、虚拟用户（fake_like_）与游客（空 create_by） -->
+    <select id="selectDownloadRecordUsers" resultType="map">
+        select t.create_by                                             as userId,
+               COALESCE(u.nick_name,
+                        CASE WHEN t.create_by LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(t.create_by, 11))
+                             WHEN t.create_by IS NULL OR t.create_by = ''
+                             THEN '游客'
+                             ELSE t.create_by
+                             END)                                      as nickName
+        from (select distinct create_by from px_wallpaper_download_record) t
+        left join sys_user u on t.create_by = u.user_id
+        order by nickName
+    </select>
+
+    <!-- 统计：按日期分组的下载数量 -->
+    <select id="selectDownloadStatsByDate" parameterType="map" resultType="map">
+        SELECT DATE_FORMAT(d.create_time, '%Y-%m-%d') AS date,
+               COUNT(*) AS count
+        FROM px_wallpaper_download_record d
+        WHERE d.create_time IS NOT NULL
+        <if test="beginTime != null">
+            AND d.create_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND d.create_time &lt;= #{endTime}
+        </if>
+        GROUP BY DATE_FORMAT(d.create_time, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <!-- 统计：按文件夹分组的下载数量 -->
+    <select id="selectDownloadStatsByFolder" parameterType="map" resultType="map">
+        SELECT f.name AS folder_name,
+               COUNT(*) AS count
+        FROM px_wallpaper_download_record d
+        INNER JOIN px_wallpaper w ON d.item_id = w.id
+        INNER JOIN px_wallpaper_folder f ON w.folder = f.id
+        GROUP BY f.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计：按用户分组的每日下载次数（用户汇总）
+         nick_name 兜底放外层 COALESCE，避免 MAX 混合 collation（虚拟用户/游客字面量）报错 -->
+    <select id="selectDownloadStatsByUser" parameterType="map" resultType="map">
+        SELECT t.userId                                                AS userId,
+               COALESCE(MAX(u.nick_name),
+                        CASE WHEN t.userId LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(t.userId, 11))
+                             WHEN t.userId IS NULL OR t.userId = ''
+                             THEN '游客'
+                             ELSE t.userId
+                             END)                                     AS nickName,
+               SUM(t.cnt)                                              AS count,
+               MAX(t.create_time)                                      AS lastDownloadTime
+        FROM (
+            SELECT create_by AS userId,
+                   COUNT(*)  AS cnt,
+                   MAX(create_time) AS create_time
+            FROM px_wallpaper_download_record
+            WHERE create_time IS NOT NULL
+            <if test="beginTime != null">
+                AND create_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= #{endTime}
+            </if>
+            GROUP BY create_by
+        ) t
+        LEFT JOIN sys_user u ON t.userId = u.user_id
+        GROUP BY t.userId
+    </select>
+
+    <!-- 统计：按用户+日期分组的下载次数明细 -->
+    <select id="selectDownloadStatsByUserDate" parameterType="map" resultType="map">
+        SELECT d.create_by                                               AS userId,
+               COALESCE(u.nick_name,
+                        CASE WHEN d.create_by LIKE 'fake_like_%'
+                             THEN CONCAT('虚拟用户', SUBSTRING(d.create_by, 11))
+                             WHEN d.create_by IS NULL OR d.create_by = ''
+                             THEN '游客'
+                             ELSE d.create_by
+                             END)                                       AS nickName,
+               DATE_FORMAT(d.create_time, '%Y-%m-%d')                   AS date,
+               COUNT(*)                                                  AS count
+        FROM px_wallpaper_download_record d
+        LEFT JOIN sys_user u ON d.create_by = u.user_id
+        WHERE d.create_time IS NOT NULL
+        <if test="beginTime != null">
+            AND d.create_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND d.create_time &lt;= #{endTime}
+        </if>
+        GROUP BY d.create_by, DATE_FORMAT(d.create_time, '%Y-%m-%d')
+    </select>
+
+    <!-- 统计某用户当日下载次数 -->
+    <select id="countTodayDownload" parameterType="String" resultType="int">
+        select count(*)
+        from px_wallpaper_download_record
+        where create_by = #{userId}
+          and date(create_time) = curdate()
+    </select>
+
+    <!-- 批量新增下载记录 -->
+    <insert id="batchInsertDownloadRecord" parameterType="java.util.List">
+        insert into px_wallpaper_download_record(item_id, item_name, item_thumbnail, download_type, create_by, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.itemId}, #{item.itemName}, #{item.itemThumbnail}, #{item.downloadType}, #{item.createBy}, #{item.createTime})
+        </foreach>
+    </insert>
+
+</mapper>

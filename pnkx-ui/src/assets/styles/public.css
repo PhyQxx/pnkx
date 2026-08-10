@@ -1,0 +1,262 @@
+/*全局样式*/
+html, body {
+    width: 100%;
+    height: 100%;
+    background-color: #5A8DEE36;
+}
+.select-none {
+user-select: none;
+}
+
+.pointer {
+    cursor: pointer !important;
+}
+
+.bgc-blue {
+    background-color: #5A8DEE !important;
+}
+
+.bgc-red {
+    background-color: #CD594B !important;
+}
+
+.bgc-yellow {
+    background-color: #F8CE5E !important;
+}
+
+.bgc-green {
+    background-color: #4B9E65 !important;
+}
+
+.theme-blue {
+    color: #5A8DEE !important;
+}
+
+.theme-red {
+    color: #CD594B !important;
+}
+
+.theme-yellow {
+    color: #F8CE5E !important;
+}
+
+.theme-green {
+    color: #4B9E65 !important;
+}
+
+.border-blue {
+    border: 1px solid #5A8DEE !important;
+}
+
+.border-red {
+    border: 1px solid #CD594B !important;
+}
+
+.border-yellow {
+    border: 1px solid #F8CE5E !important;
+}
+
+.border-green {
+    border: 1px solid #4B9E65 !important;
+}
+
+.theme-grey {
+    color: #565656 !important;
+}
+
+.theme-red-text:hover {
+    color: #CD594B !important;
+    cursor: pointer !important;
+    border-color: #CD594B !important;
+}
+
+.theme-blue-text:hover {
+    color: #5A8DEE !important;
+    cursor: pointer !important;
+    border-color: #5A8DEE !important;
+}
+
+/* flex布局相关 */
+.d-flex {
+    display: flex !important;
+}
+
+.flex-row {
+    flex-direction: row !important;
+}
+
+.flex-row-reverse {
+    flex-direction: row-reverse !important;
+}
+
+.flex-column {
+    flex-direction: column !important;
+}
+
+.flex-wrap {
+    flex-wrap: wrap !important;
+}
+
+.flex-nowrap {
+    flex-wrap: nowrap !important;
+}
+
+.flex-justify-start {
+    justify-content: flex-start !important;
+}
+
+.flex-justify-end {
+    justify-content: flex-end !important;
+}
+
+.flex-justify-center {
+    justify-content: center !important;
+}
+
+.flex-justify-between {
+    justify-content: space-between !important;
+}
+
+.flex-justify-around {
+    justify-content: space-around !important;
+}
+
+.flex-items-start {
+    align-items: flex-start !important;
+}
+
+.flex-items-end {
+    align-items: flex-end !important;
+}
+
+.flex-items-center {
+    align-items: center !important;
+}
+
+.flex-items-baseline {
+    align-items: baseline !important;
+}
+
+.flex-items-stretch {
+    align-items: stretch !important;
+}
+
+.flex-content-start {
+    align-content: flex-start !important;
+}
+
+.flex-content-end {
+    align-content: flex-end !important;
+}
+
+.flex-content-center {
+    align-content: center !important;
+}
+
+.flex-content-between {
+    align-content: space-between !important;
+}
+
+.flex-content-around {
+    align-content: space-around !important;
+}
+
+.flex-content-stretch {
+    align-content: stretch !important;
+}
+
+.flex-auto {
+    flex: 1 1 auto !important;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0 !important;
+}
+
+.flex-self-auto {
+    align-self: auto !important;
+}
+
+.flex-self-start {
+    align-self: flex-start !important;
+}
+
+.flex-self-end {
+    align-self: flex-end !important;
+}
+
+.flex-self-center {
+    align-self: center !important;
+}
+
+.flex-self-baseline {
+    align-self: baseline !important;
+}
+
+.flex-self-stretch {
+    align-self: stretch !important;
+}
+
+.flex-item-equal {
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+/*上传头像样式*/
+.user-info-head {
+    position: relative;
+    display: inline-block;
+    height: 120px;
+}
+
+.user-info-head:hover:after {
+    content: '+';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    color: #eee;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 24px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.full-box {
+    width: 100%;
+    height: 100%;
+}
+
+
+::-webkit-scrollbar {
+    display: none;
+    width: 5px;
+}
+
+/* 定义滚动条轨道 内阴影+圆角 */
+::-webkit-scrollbar-track {
+    display: none;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* 定义滑块 内阴影+圆角 */
+::-webkit-scrollbar-thumb {
+    display: none;
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* 留言框上方分割线 */
+.pagination-container-div {
+    border-bottom: 0.2rem solid #5A8DEE;
+    padding: 1rem 0;
+}
