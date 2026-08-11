@@ -61,6 +61,12 @@ build/
 # =====================
 **/uploadPath/
 **/upload/
+# 注意：在不区分大小写的文件系统（如 macOS，core.ignorecase=true）上，
+# 上面的 **/upload/ 会误伤 PascalCase 命名的前端组件目录 src/components/Upload，
+# 导致该组件不会被提交，CI/服务器拉取代码后构建会报 "Could not load .../components/Upload"。
+# 因此显式取消忽略该源码目录。
+!pnkx-ui/src/components/Upload/
+!pnkx-ui/src/components/Upload/**
 
 # =====================
 # 本地环境
