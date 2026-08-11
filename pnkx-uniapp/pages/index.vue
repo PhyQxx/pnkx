@@ -100,7 +100,7 @@
 
             <!-- Lovers Cards Items -->
             <view v-if="(reminderCards || []).length > 0" class="reminder-group">
-              <view v-for="item in reminderCards" :key="'card-' + item.title"
+              <view v-for="item in reminderCards" :key="'card-' + (item.createTime || '') + '-' + item.title"
                     class="reminder-item" @click="navigateToCard">
                 <view class="reminder-item__icon reminder-item__icon--card">
                   <text>💕</text>
@@ -110,6 +110,8 @@
                   <text class="reminder-item__desc">{{ item.description }}</text>
                 </view>
                 <view class="reminder-item__action">
+                  <text v-if="item.confirm !== true" class="reminder-item__status reminder-item__status--pending">待确认</text>
+                  <text v-else-if="item.score === null || item.score === 0" class="reminder-item__status reminder-item__status--scoring">待评分</text>
                   <text class="reminder-item__arrow">&gt;</text>
                 </view>
               </view>
@@ -1021,6 +1023,23 @@
     font-weight: $font-weight-bold;
     color: $commemoration;
     margin-right: $spacing-xs;
+  }
+
+  &__status {
+    font-size: $font-small;
+    padding: 2rpx 12rpx;
+    border-radius: $radius-full;
+    margin-right: $spacing-xs;
+
+    &--pending {
+      color: $card;
+      background: rgba($card, 0.1);
+    }
+
+    &--scoring {
+      color: $commemoration;
+      background: rgba($commemoration, 0.1);
+    }
   }
 
   &__arrow {

@@ -261,6 +261,19 @@
           }
         },
         {
+          "path": "note/obsidian",
+          "style": {
+            "navigationBarTitleText": "Obsidian 笔记"
+          }
+        },
+        {
+          "path": "note/obsidianEdit",
+          "style": {
+            "navigationBarTitleText": "编辑",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
           "path": "note/folder",
           "style": {
             "navigationBarTitleText": "文件夹管理",
@@ -478,6 +491,18 @@
           "path": "lifeManager/index",
           "style": {
             "navigationBarTitleText": "生活管家"
+          }
+        },
+        {
+          "path": "calendar/index",
+          "style": {
+            "navigationBarTitleText": "家庭日历"
+          }
+        },
+        {
+          "path": "subscription/index",
+          "style": {
+            "navigationBarTitleText": "订阅管理"
           }
         }
       ]

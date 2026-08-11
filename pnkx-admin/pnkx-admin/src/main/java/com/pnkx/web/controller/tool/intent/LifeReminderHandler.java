@@ -65,9 +65,9 @@ public class LifeReminderHandler implements IntentHandler {
 
     private String buildLoversCardReply(JSONArray cards) {
         if (cards == null || cards.isEmpty()) {
-            return "当前没有可用的情侣卡券。可以安排一个小惊喜，或者先去领取/创建新的卡券。";
+            return "当前没有使用中的情侣卡券记录。";
         }
-        StringBuilder reply = new StringBuilder("可以优先考虑这几张情侣卡券：\n");
+        StringBuilder reply = new StringBuilder("当前使用中的情侣卡券记录：\n");
         for (int i = 0; i < Math.min(cards.size(), 3); i++) {
             JSONObject card = cards.getJSONObject(i);
             reply.append("- ").append(card.getString("title"));
@@ -75,10 +75,16 @@ public class LifeReminderHandler implements IntentHandler {
             if (description != null && !description.isBlank()) {
                 reply.append("：").append(description);
             }
+            Boolean confirm = card.getBoolean("confirm");
+            Integer score = card.getInteger("score");
+            if (Boolean.TRUE.equals(confirm) && (score == null || score == 0)) {
+                reply.append("（待评分）");
+            } else if (!Boolean.TRUE.equals(confirm)) {
+                reply.append("（待确认）");
+            }
             reply.append("\n");
         }
-        reply.append("建议选一张今天就能兑现的小行动，别让卡券只停在库存里。");
-        return reply.toString();
+        return reply.toString().trim();
     }
 
     private String buildMenstruationReply(JSONObject data) {

@@ -3,10 +3,8 @@ package com.pnkx.service.impl;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.domain.po.PxCommemorationDay;
-import com.pnkx.domain.po.PxLoversCard;
 import com.pnkx.domain.po.PxMenstruationRecord;
 import com.pnkx.domain.vo.PxCardRecordVo;
-import com.pnkx.mapper.PxCardUserMapper;
 import com.pnkx.mapper.PxCommemorationDayMapper;
 import com.pnkx.mapper.PxMenstruationRecordMapper;
 import com.pnkx.service.AiLifeReminderDataService;
@@ -32,9 +30,6 @@ public class AiLifeReminderDataServiceImpl implements AiLifeReminderDataService 
 
     @Autowired
     private PxCommemorationDayMapper commemorationDayMapper;
-
-    @Autowired
-    private PxCardUserMapper cardUserMapper;
 
     @Autowired
     private PxMenstruationRecordMapper menstruationRecordMapper;
@@ -63,7 +58,7 @@ public class AiLifeReminderDataServiceImpl implements AiLifeReminderDataService 
         }
 
         if ("lovers_card".equals(scene)) {
-            data.put("cards", buildLoversCardData(numericUserId));
+            data.put("cards", buildLoversCardData());
         } else if ("menstruation".equals(scene)) {
             data.putAll(buildMenstruationData(numericUserId));
         } else {
@@ -131,14 +126,17 @@ public class AiLifeReminderDataServiceImpl implements AiLifeReminderDataService 
         return item;
     }
 
-    private JSONArray buildLoversCardData(Long userId) {
+    private JSONArray buildLoversCardData() {
         JSONArray cards = new JSONArray();
-        List<PxLoversCard> records = cardUserMapper.getCardByUserId(userId);
-        records.stream().limit(5).forEach(card -> {
+        List<PxCardRecordVo> records = loversCardService.getUsingCardRecord();
+        records.stream().limit(5).forEach(record -> {
             JSONObject item = new JSONObject();
-            item.put("title", card.getTitle());
-            item.put("description", card.getDescribe());
-            item.put("money", card.getMoney());
+            item.put("title", record.getCardName());
+            item.put("description", record.getInstructions());
+            item.put("confirm", record.getConfirm());
+            item.put("score", record.getScore());
+            item.put("userName", record.getUserName());
+            item.put("createTime", record.getCreateTime());
             cards.add(item);
         });
         return cards;

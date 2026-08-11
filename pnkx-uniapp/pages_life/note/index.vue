@@ -13,6 +13,9 @@
         <text class="header-subtitle">{{ headerSubtitle }}</text>
       </view>
       <view class="header-actions">
+        <view class="header-action" @click="openObsidian">
+          <text class="header-action-text">Obsidian</text>
+        </view>
         <view class="header-action" @click="openFolderManage">
           <uni-icons type="folder-add" size="20" color="#2563EB" />
         </view>
@@ -499,6 +502,12 @@ export default {
       this.fabExpanded = false
       this.$tab.navigateTo('/pages_life/note/folder')
     },
+    /**
+     * 跳转到 Obsidian 笔记（文件管理器）
+     */
+    openObsidian() {
+      this.$tab.navigateTo('/pages_life/note/obsidian')
+    },
 
     /**
      * 创建文件夹
@@ -597,16 +606,27 @@ export default {
       position: absolute;
       right: 28rpx;
       top: 38rpx;
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
 
       .header-action {
-        width: 72rpx;
-        height: 72rpx;
+        height: 64rpx;
+        min-width: 64rpx;
+        padding: 0 $spacing-md;
         border-radius: $radius-full;
         background-color: rgba(255, 255, 255, 0.92);
         display: flex;
         align-items: center;
         justify-content: center;
         box-shadow: $shadow-sm;
+      }
+
+      .header-action-text {
+        font-size: $font-mini;
+        color: #2563EB;
+        font-weight: $font-weight-semibold;
+        white-space: nowrap;
       }
     }
 

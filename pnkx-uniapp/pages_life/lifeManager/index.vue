@@ -8,12 +8,23 @@
       </view>
       <view class="lm-header__content">
         <text class="lm-header__title">生活管家</text>
-        <text class="lm-header__desc">菜谱 · 膳食 · 购物，一站式管理</text>
+        <text class="lm-header__desc">日历 · 菜谱 · 膳食 · 购物 · 订阅 · 报告</text>
       </view>
     </view>
 
-    <!-- Entries -->
+    <!-- Entries（与 PC 端生活管家 6 项一致）-->
     <view class="lm-grid">
+      <view class="lm-card" @click="navigate('/pages_life/calendar/index')">
+        <view class="lm-card__icon lm-card__icon--calendar">
+          <text class="lm-card__emoji">📅</text>
+        </view>
+        <view class="lm-card__body">
+          <text class="lm-card__title">家庭日历</text>
+          <text class="lm-card__desc">待办 / 纪念日 / 经期聚合</text>
+        </view>
+        <text class="lm-card__arrow">›</text>
+      </view>
+
       <view class="lm-card" @click="navigate('/pages_life/recipe/index')">
         <view class="lm-card__icon lm-card__icon--recipe">
           <text class="lm-card__emoji">🍳</text>
@@ -43,6 +54,28 @@
         <view class="lm-card__body">
           <text class="lm-card__title">购物清单</text>
           <text class="lm-card__desc">买菜购物不遗漏</text>
+        </view>
+        <text class="lm-card__arrow">›</text>
+      </view>
+
+      <view class="lm-card" @click="navigate('/pages_life/subscription/index')">
+        <view class="lm-card__icon lm-card__icon--sub">
+          <text class="lm-card__emoji">💳</text>
+        </view>
+        <view class="lm-card__body">
+          <text class="lm-card__title">订阅管理</text>
+          <text class="lm-card__desc">周期出账 + 支出预测</text>
+        </view>
+        <text class="lm-card__arrow">›</text>
+      </view>
+
+      <view class="lm-card" @click="navigate('/pages_life/report/index')">
+        <view class="lm-card__icon lm-card__icon--report">
+          <text class="lm-card__emoji">📊</text>
+        </view>
+        <view class="lm-card__body">
+          <text class="lm-card__title">生活报告</text>
+          <text class="lm-card__desc">AI 周报 / 月报</text>
         </view>
         <text class="lm-card__arrow">›</text>
       </view>
@@ -170,6 +203,18 @@ export default {
 
     &--shopping {
       background: rgba(91, 158, 238, 0.12);
+    }
+
+    &--calendar {
+      background: rgba(108, 99, 255, 0.12);
+    }
+
+    &--sub {
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    &--report {
+      background: rgba(255, 159, 67, 0.12);
     }
   }
 
