@@ -67,10 +67,3 @@ build/
 # 因此显式取消忽略该源码目录。
 !pnkx-ui/src/components/Upload/
 !pnkx-ui/src/components/Upload/**
-
-# =====================
-# 本地环境
-# =====================
-.env
-.env.*
-!.env.example
