@@ -83,6 +83,12 @@ public class SysMenu extends BaseEntity {
     private String isApp;
 
     /**
+     * 移动端路由路径（小程序专用，如 /pages_life/reminder/index）。
+     * 为空时移动端按 path 推导（兼容旧菜单）。
+     */
+    private String appPath;
+
+    /**
      * 权限字符串
      */
     private String perms;
@@ -232,6 +238,14 @@ public class SysMenu extends BaseEntity {
         this.isApp = isApp;
     }
 
+    public String getAppPath() {
+        return appPath;
+    }
+
+    public void setAppPath(String appPath) {
+        this.appPath = appPath;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -254,6 +268,7 @@ public class SysMenu extends BaseEntity {
                 .append("updateTime", getUpdateTime())
                 .append("remark", getRemark())
                 .append("isApp", getIsApp())
+                .append("appPath", getAppPath())
                 .toString();
     }
 }

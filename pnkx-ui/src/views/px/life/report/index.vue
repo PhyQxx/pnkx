@@ -1,5 +1,5 @@
 <template>
-    <div class="app-container report-page">
+    <div class="report-page">
         <div class="page-toolbar">
             <div class="toolbar-title">
                 <h2>生活报告</h2>
@@ -167,7 +167,7 @@ export default {
 
 <style scoped>
 .report-page {
-    min-height: calc(100vh - 84px);
+    min-height: 100%;
     padding: 20px;
     background: #f6f8fb;
 }

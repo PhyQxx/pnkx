@@ -182,6 +182,11 @@
                             </el-radio-group>
                         </el-form-item>
                     </el-col>
+                    <el-col v-if="form.menuType == 'C' && form.isApp == '1'" :span="12">
+                        <el-form-item label="移动端路由" prop="appPath">
+                            <el-input v-model="form.appPath" placeholder="如 /pages_life/reminder/index"/>
+                        </el-form-item>
+                    </el-col>
                     <el-col :span="12">
                         <el-form-item v-if="form.menuType != 'M'" label="权限标识">
                             <el-input v-model="form.perms" placeholder="请权限标识" maxlength="50"/>
@@ -351,6 +356,8 @@ export default {
                 orderNum: undefined,
                 isFrame: "1",
                 isCache: "0",
+                isApp: "0",
+                appPath: undefined,
                 visible: "0",
                 status: "0"
             };

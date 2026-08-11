@@ -20,11 +20,18 @@
           @tap="changeGrid({ detail: { index: menu.menuId } }, group)"
         >
           <view class="menu-icon-bg">
-            <svg-icon :icon-class="menu.icon" size="40rpx" class-name="menu-icon" />
+            <text v-if="emojiOf(menu)" class="menu-emoji">{{ emojiOf(menu) }}</text>
+            <svg-icon v-else :icon-class="menu.icon" size="40rpx" class-name="menu-icon" />
           </view>
           <text class="menu-name">{{ menu.menuName }}</text>
         </view>
       </view>
+    </view>
+
+    <!-- Empty -->
+    <view class="empty" v-if="!loading && manageList.length === 0">
+      <text class="empty__text">暂无可用功能</text>
+      <text class="empty__hint">请在后台开启 App 菜单</text>
     </view>
   </view>
 </template>
@@ -32,23 +39,37 @@
 <script>
 import {listByParams} from "@/api/system/menu";
 
+// emoji 兜底表：菜单 icon 找不到对应 svg 时，按菜单名匹配 emoji
+const EMOJI_FALLBACK = {
+  '纪念日': '🎂', '情侣卡': '💕', '日记': '📝',
+  '菜谱': '🍳', '膳食计划': '🥗', '姨妈助手': '🌸',
+  '提醒中心': '🔔', '家庭日历': '📅'
+}
+
 export default {
   data() {
     return {
-      // 管理列表
+      // 管理列表（后端菜单驱动）
       manageList: uni.getStorageSync('bolgMenu') || [],
+      loading: true
     }
   },
   onLoad() {
     this.getMenuList();
   },
   methods: {
+    emojiOf(menu) {
+      return EMOJI_FALLBACK[menu.menuName] || ''
+    },
     changeGrid(e, group) {
-      const path = group.children.find(item => item.menuId === e.detail.index).path;
-      this.$tab.navigateTo('/pages_life/' + path.replace(/\//g, '') + '/index');
+      const menu = group.children.find(item => item.menuId === e.detail.index);
+      if (!menu) return;
+      // 移动端路由：优先用 appPath，为空时按 path 推导（兼容旧菜单）
+      const target = menu.appPath || ('/pages_life/' + menu.path.replace(/\//g, '') + '/index');
+      uni.navigateTo({ url: target });
     },
     /**
-     * 获取路由
+     * 获取路由（后端菜单驱动，isApp='1' 的菜单才显示）
      */
     getMenuList() {
       listByParams({
@@ -65,6 +86,9 @@ export default {
         })
         this.manageList = Array.from(groupMap.values())
         uni.setStorageSync('bolgMenu', this.manageList);
+        this.loading = false
+      }).catch(() => {
+        this.loading = false
       })
     },
   }
@@ -157,6 +181,10 @@ page {
   box-shadow: $shadow-sm;
 }
 
+.menu-emoji {
+  font-size: 44rpx;
+}
+
 .menu-icon {
   display: block;
 }
@@ -187,6 +215,25 @@ page {
 
   &:last-child {
     margin-bottom: 0;
+  }
+}
+
+/* ---- Empty ---- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 200rpx;
+
+  &__text {
+    font-size: $font-body;
+    color: $text-tertiary;
+  }
+
+  &__hint {
+    font-size: $font-caption;
+    color: $text-tertiary;
+    margin-top: $spacing-xs;
   }
 }
 </style>

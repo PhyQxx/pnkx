@@ -5,7 +5,10 @@
  * @Description: 待办事项 - Modern UI/UX Refactored
 -->
 <template>
-  <div class="todo-container">
+  <div class="todo-page">
+    <el-tabs v-model="activeTab" class="todo-tabs">
+      <el-tab-pane label="待办列表" name="list">
+        <div class="todo-container">
     <!-- 左侧导航面板 -->
     <aside class="sidebar">
       <!-- 搜索栏 -->
@@ -389,6 +392,12 @@
         </div>
       </div>
     </transition>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="看板视图" name="kanban">
+        <todo-kanban v-if="activeTab === 'kanban'" />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -397,12 +406,15 @@ import { listUser } from '@/api/system/user'
 import { addDo, delDo, getDo, listDo, updateDo, getLabelList } from '@/api/px/life/todo'
 import Editor from '@/components/Editor'
 import Pagination from '@/components/Pagination'
+import TodoKanban from './kanban.vue'
 
 export default {
   name: 'index',
-  components: { Editor, Pagination },
+  components: { Editor, Pagination, TodoKanban },
   data() {
     return {
+      // 当前激活的 tab
+      activeTab: 'list',
       // 新增按钮loading
       addButtonLoading: false,
       // 主区域loading
@@ -826,9 +838,29 @@ export default {
 <style lang="scss" scoped>
 // ==================== 容器 ====================
 
+.todo-page {
+  height: calc(100vh - 84px);
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.todo-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  :deep(.el-tabs__content) {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
 .todo-container {
   display: flex;
-  height: calc(100vh - 84px);
+  height: 100%;
   background: var(--bg-body);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }

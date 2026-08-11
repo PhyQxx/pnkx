@@ -5,7 +5,7 @@
  * @Description: 订阅管理 - 周期自动出账 + 月/年预测
 -->
 <template>
-    <div class="app-container subscription-container">
+    <div class="subscription-container">
         <!-- 预测汇总卡片 -->
         <div class="forecast-cards">
             <div class="forecast-card">

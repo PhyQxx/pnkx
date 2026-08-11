@@ -18,66 +18,110 @@
         <!-- 通知中心抽屉 -->
         <el-drawer
             v-model="visible"
-            title="提醒中心"
             direction="rtl"
-            size="380px"
-            :with-header="true"
+            size="400px"
+            :with-header="false"
             @open="handleOpen"
         >
-            <div class="notification-panel">
-                <div class="panel-actions">
-                    <el-button text type="primary" size="small" :disabled="!unreadCount"
-                               @click="handleReadAll">全部已读
-                    </el-button>
+            <div class="reminder-drawer">
+                <div class="drawer-header">
+                    <span class="drawer-title">提醒中心</span>
+                    <el-icon class="drawer-close" @click="visible = false"><Close/></el-icon>
                 </div>
-                <div v-loading="loading">
-                    <div v-if="notifications.length === 0 && !loading" class="empty-tip">
-                        <el-icon>
-                            <BellFilled/>
-                        </el-icon>
-                        <p>暂无提醒</p>
-                    </div>
-                    <div
-                        v-for="item in notifications"
-                        :key="item.id"
-                        class="notification-item"
-                        :class="{ unread: item.status === '0' }"
-                        @click="handleClickNotification(item)"
-                    >
-                        <div class="noti-tag">
-                            <el-tag size="small" :type="sourceTagType(item.sourceType)" effect="light">
-                                {{ sourceLabel(item.sourceType) }}
-                            </el-tag>
+                <el-tabs v-model="drawerTab" class="drawer-tabs">
+                    <el-tab-pane :label="`通知${unreadCount ? '(' + unreadCount + ')' : ''}`" name="notifications">
+                        <div class="notification-panel">
+                            <div class="panel-actions">
+                                <el-button text type="primary" size="small" :disabled="!unreadCount"
+                                           @click="handleReadAll">全部已读
+                                </el-button>
+                            </div>
+                            <div v-loading="loading">
+                                <div v-if="notifications.length === 0 && !loading" class="empty-tip">
+                                    <el-icon><BellFilled/></el-icon>
+                                    <p>暂无提醒</p>
+                                </div>
+                                <div
+                                    v-for="item in notifications"
+                                    :key="item.id"
+                                    class="notification-item"
+                                    :class="{ unread: item.status === '0' }"
+                                    @click="handleClickNotification(item)"
+                                >
+                                    <div class="noti-tag">
+                                        <el-tag size="small" :type="sourceTagType(item.sourceType)" effect="light">
+                                            {{ sourceLabel(item.sourceType) }}
+                                        </el-tag>
+                                    </div>
+                                    <div class="noti-body">
+                                        <div class="noti-title">{{ item.title }}</div>
+                                        <div class="noti-content" v-if="item.content">{{ item.content }}</div>
+                                        <div class="noti-time">{{ formatTime(item.sendTime) }} · {{ channelLabel(item.channel) }}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="noti-body">
-                            <div class="noti-title">{{ item.title }}</div>
-                            <div class="noti-content" v-if="item.content">{{ item.content }}</div>
-                            <div class="noti-time">{{ formatTime(item.sendTime) }} · {{ channelLabel(item.channel) }}</div>
+                    </el-tab-pane>
+                    <el-tab-pane label="提醒规则" name="rules">
+                        <div class="rules-panel">
+                            <div v-loading="rulesLoading">
+                                <div v-if="rules.length === 0 && !rulesLoading" class="empty-tip">
+                                    <el-icon><Setting/></el-icon>
+                                    <p>暂无提醒规则<br/>可在各功能页面创建</p>
+                                </div>
+                                <div v-for="rule in rules" :key="rule.id" class="rule-item">
+                                    <div class="rule-info">
+                                        <div class="rule-top">
+                                            <el-tag size="small" :type="sourceTagType(rule.sourceType)" effect="light">
+                                                {{ sourceLabel(rule.sourceType) }}
+                                            </el-tag>
+                                            <el-tag size="small" :type="rule.enabled ? 'success' : 'info'">
+                                                {{ rule.enabled ? '启用' : '停用' }}
+                                            </el-tag>
+                                        </div>
+                                        <div class="rule-time">提醒时间：{{ formatTime(rule.remindTime) }}</div>
+                                        <div class="rule-meta">提前量：{{ formatLead(rule.leadMinutes) }}</div>
+                                    </div>
+                                    <div class="rule-actions">
+                                        <el-button text size="small" :type="rule.enabled ? 'warning' : 'primary'"
+                                                   @click="handleToggleRule(rule)">
+                                            {{ rule.enabled ? '停用' : '启用' }}
+                                        </el-button>
+                                        <el-button text size="small" type="danger" @click="handleDeleteRule(rule)">删除</el-button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </el-tab-pane>
+                </el-tabs>
             </div>
         </el-drawer>
     </div>
 </template>
 
 <script>
-import {Bell, BellFilled} from '@element-plus/icons-vue'
+import {Bell, BellFilled, Close, Setting} from '@element-plus/icons-vue'
 import {
     countUnread,
     listNotifications,
-    markNotificationsRead
+    markNotificationsRead,
+    listReminder,
+    updateReminder,
+    delReminder
 } from '@/api/px/life/reminder'
 
 export default {
     name: 'ReminderBell',
-    components: {Bell, BellFilled},
+    components: {Bell, BellFilled, Close, Setting},
     data() {
         return {
             visible: false,
+            drawerTab: 'notifications',
             unreadCount: 0,
             notifications: [],
             loading: false,
+            rules: [],
+            rulesLoading: false,
             ws: null,
             pollTimer: null
         }
@@ -85,6 +129,11 @@ export default {
     computed: {
         userId() {
             return this.$store.getters.id
+        }
+    },
+    watch: {
+        drawerTab(val) {
+            this.handleTabClick(val)
         }
     },
     mounted() {
@@ -113,6 +162,41 @@ export default {
         },
         handleOpen() {
             this.loadNotifications()
+        },
+        handleTabClick(tab) {
+            if (tab === 'rules' && this.rules.length === 0) {
+                this.loadRules()
+            }
+        },
+        loadRules() {
+            this.rulesLoading = true
+            listReminder({pageNum: 1, pageSize: 100}).then(res => {
+                this.rules = res.rows || []
+            }).finally(() => {
+                this.rulesLoading = false
+            })
+        },
+        handleToggleRule(rule) {
+            const text = rule.enabled ? '停用' : '启用'
+            this.$confirm(`确认${text}该提醒规则？`, '提示', {type: 'warning'}).then(() => {
+                return updateReminder({id: rule.id, enabled: !rule.enabled})
+            }).then(() => {
+                rule.enabled = !rule.enabled
+            }).catch(() => {})
+        },
+        handleDeleteRule(rule) {
+            this.$confirm('确认删除该提醒规则？', '提示', {type: 'warning'}).then(() => {
+                return delReminder(rule.id)
+            }).then(() => {
+                this.rules = this.rules.filter(r => r.id !== rule.id)
+            }).catch(() => {})
+        },
+        formatLead(minutes) {
+            if (minutes == null) return '-'
+            if (minutes === 0) return '准点'
+            if (minutes < 60) return `${minutes}分钟`
+            if (minutes < 1440) return `${Math.round(minutes / 60)}小时`
+            return `${Math.round(minutes / 1440)}天`
         },
         loadNotifications() {
             this.loading = true
@@ -258,6 +342,100 @@ export default {
             color: var(--pnkx-primary);
             box-shadow: var(--pnkx-shadow-1);
             outline: none;
+        }
+    }
+}
+
+.reminder-drawer {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px 0;
+
+        .drawer-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--pnkx-text);
+        }
+
+        .drawer-close {
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--pnkx-text-secondary);
+
+            &:hover {
+                color: var(--pnkx-text);
+            }
+        }
+    }
+
+    .drawer-tabs {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 0 4px;
+
+        :deep(.el-tabs__content) {
+            flex: 1;
+            overflow-y: auto;
+        }
+    }
+}
+
+.rules-panel {
+    padding: 0 12px;
+
+    .rule-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px;
+        border-bottom: 1px solid var(--pnkx-border);
+
+        .rule-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rule-top {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .rule-time, .rule-meta {
+            font-size: 12px;
+            color: var(--pnkx-text-secondary);
+            line-height: 1.6;
+        }
+
+        .rule-actions {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+    }
+
+    .empty-tip {
+        text-align: center;
+        color: var(--pnkx-text-secondary);
+        padding: 40px 0;
+        font-size: 14px;
+
+        .el-icon {
+            font-size: 36px;
+            opacity: 0.4;
+        }
+
+        p {
+            margin: 8px 0 0;
+            line-height: 1.8;
         }
     }
 }

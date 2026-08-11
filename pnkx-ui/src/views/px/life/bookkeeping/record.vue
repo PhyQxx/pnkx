@@ -5,7 +5,10 @@
  * @Description: 记账记录 - Modern UI Refactored
 -->
 <template>
-  <div class="bookkeeping-record-container">
+  <div class="bookkeeping-page">
+    <el-tabs v-model="activeTab" class="bookkeeping-tabs">
+      <el-tab-pane label="记账记录" name="record">
+        <div class="bookkeeping-record-container">
     <!-- 左侧列表面板 -->
     <aside class="sidebar">
       <!-- 搜索栏 -->
@@ -474,6 +477,18 @@
         </div>
       </div>
     </transition>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="账户管理" name="account">
+        <bk-account v-if="activeTab === 'account'" />
+      </el-tab-pane>
+      <el-tab-pane label="分类管理" name="classification">
+        <bk-classification v-if="activeTab === 'classification'" />
+      </el-tab-pane>
+      <el-tab-pane label="图表统计" name="statistics">
+        <bk-statistics v-if="activeTab === 'statistics'" />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -491,11 +506,17 @@ import {
 } from '@/api/px/life/bookkeeping/record'
 import {timeFilter} from "../../../../utils/filters.js";
 import { listDay } from '@/api/px/life/commemorationDay'
+import BkAccount from './account.vue'
+import BkClassification from './classification.vue'
+import BkStatistics from './statistics.vue'
 
 export default {
   name: 'Record',
+  components: { BkAccount, BkClassification, BkStatistics },
   data() {
     return {
+      // 当前激活的 tab
+      activeTab: 'record',
       // 加载标志
       listLoading: false,
       loading: false,
@@ -991,9 +1012,29 @@ export default {
 $bk-red: $theme-bookkeeping-red;
 $bk-green: $theme-bookkeeping-green;
 
+.bookkeeping-page {
+  height: calc(100vh - 84px);
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.bookkeeping-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  :deep(.el-tabs__content) {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
 .bookkeeping-record-container {
   display: flex;
-  height: calc(100vh - 84px);
+  height: 100%;
   background: var(--bg-body);
   font-family: var(--font-family-base);
 }

@@ -1,5 +1,5 @@
 <template>
-    <div class="app-container analysis-page">
+    <div class="analysis-page">
         <div class="page-toolbar">
             <div class="toolbar-title">
                 <h2>日记分析</h2>
@@ -264,7 +264,7 @@ export default {
 
 <style scoped>
 .analysis-page {
-    min-height: calc(100vh - 84px);
+    min-height: 100%;
     padding: 20px;
     background: #f6f8fb;
 }

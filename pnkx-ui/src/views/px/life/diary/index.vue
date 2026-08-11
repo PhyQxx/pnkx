@@ -5,7 +5,10 @@
  * @Description: 日记 - Modern UI/UX Refactored (双视图模式)
 -->
 <template>
-    <div class="diary-container">
+    <div class="diary-page">
+        <el-tabs v-model="activeTab" class="diary-tabs">
+            <el-tab-pane label="日记" name="diary">
+                <div class="diary-container">
         <!-- ==================== 现代分栏视图 ==================== -->
         <template v-if="viewMode === 'modern'">
             <!-- 左侧列表面板 -->
@@ -258,6 +261,12 @@
                 </div>
             </div>
         </transition>
+            </div>
+            </el-tab-pane>
+            <el-tab-pane label="日记分析" name="analysis">
+                <diary-analysis v-if="activeTab === 'analysis'" />
+            </el-tab-pane>
+        </el-tabs>
     </div>
 </template>
 
@@ -267,12 +276,15 @@ import {sanitizeHtml} from '@/utils/sanitizeHtml'
 import {addDiary, delDiary, getDiary, listDiary, retrievalDiary, updateDiary} from '@/api/px/life/diary'
 import Editor from '@/components/Editor/index.vue'
 import Calendar from './calendar.vue'
+import DiaryAnalysis from './analysis.vue'
 
 export default {
     name: 'Diary',
-    components: {IconSelect, Editor, Calendar},
+    components: {IconSelect, Editor, Calendar, DiaryAnalysis},
     data() {
         return {
+            // 当前激活的 tab
+            activeTab: 'diary',
             // 视图模式：modern 分栏 / calendar 日历
             viewMode: 'calendar',
             // 列表加载标志
@@ -576,9 +588,30 @@ export default {
 <style lang="scss" scoped>
 // ==================== 容器 ====================
 
+.diary-page {
+    height: calc(100vh - 84px);
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.diary-tabs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    :deep(.el-tabs__content) {
+        flex: 1;
+        overflow: hidden;
+    }
+}
+
 .diary-container {
     display: flex;
-    height: calc(100vh - 84px);
+    height: 100%;
+    overflow: hidden;
     background: var(--bg-body);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     position: relative;

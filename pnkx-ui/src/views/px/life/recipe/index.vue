@@ -5,7 +5,7 @@
  * @Description: 菜谱库 - 卡片网格 + 编辑弹窗(含食材管理)
 -->
 <template>
-    <div class="app-container recipe-center">
+    <div class="recipe-center">
         <!-- 搜索 / 工具栏 -->
         <div class="recipe-toolbar">
             <div class="toolbar-left">

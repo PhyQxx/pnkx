@@ -312,7 +312,7 @@ $bk-green: $theme-bookkeeping-green;
   padding: var(--space-6);
   background: var(--bg-body);
   font-family: var(--font-family-base);
-  min-height: calc(100vh - 84px);
+  min-height: 100%;
   overflow-y: auto;
 
   &::-webkit-scrollbar { width: 6px; }

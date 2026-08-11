@@ -8,10 +8,16 @@
       </view>
       <view class="greeting-header__content">
         <view class="greeting-header__text">
-          <text class="greeting-header__hello">{{ greetingText }}，</text>
-          <text class="greeting-header__name">{{ nickName }}</text>
+          <view class="greeting-header__row">
+            <text class="greeting-header__hello">{{ greetingText }}，</text>
+            <text class="greeting-header__name">{{ nickName }}</text>
+          </view>
+          <text class="greeting-header__date">{{ todayDate }}</text>
         </view>
-        <text class="greeting-header__date">{{ todayDate }}</text>
+        <view class="greeting-header__bell" @click="navigateToReminder">
+          <text class="greeting-header__bell-icon">🔔</text>
+          <view v-if="unreadCount > 0" class="greeting-header__bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
+        </view>
       </view>
     </view>
 
@@ -237,7 +243,8 @@
 		listRecord
 	} from '@/api/px/life/bookkeeping/record';
 	import {
-		getTodayReminders
+		getTodayReminders,
+		getUnreadCount
 	} from '@/api/px/life/reminder';
 	import checkUpdate from '@/utils/update';
 	import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue';
@@ -285,6 +292,8 @@
 				fabExpanded: false,
 				// 今日提醒聚合数据
 				reminderData: null,
+				// 未读通知数（铃铛红点）
+				unreadCount: 0,
 			}
 		},
 		computed: {
@@ -344,6 +353,7 @@
 		},
 		onShow() {
 			this.getBillList();
+			this.refreshUnreadCount();
 		},
 		onPullDownRefresh() {
 			this.refreshAll();
@@ -382,6 +392,22 @@
         uni.navigateTo({
           url: '/pages_life/card/index'
         })
+      },
+      /**
+       * 跳转到提醒中心
+       */
+      navigateToReminder() {
+        uni.navigateTo({
+          url: '/pages_life/reminder/index'
+        })
+      },
+      /**
+       * 刷新未读通知数（首页铃铛红点）
+       */
+      refreshUnreadCount() {
+        getUnreadCount().then(res => {
+          this.unreadCount = res.data || 0;
+        }).catch(() => {});
       },
       /**
        * 跳转到待办列表页面
@@ -637,12 +663,23 @@
   &__content {
     position: relative;
     z-index: $z-base;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
   }
 
   &__text {
     display: flex;
     flex-direction: column;
     margin-bottom: $spacing-xs;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
   }
 
   &__hello {
@@ -664,6 +701,39 @@
     font-size: $font-caption;
     color: rgba(255, 255, 255, 0.7);
     margin-top: $spacing-sm;
+  }
+
+  &__bell {
+    position: relative;
+    flex-shrink: 0;
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: $spacing-2xs;
+  }
+
+  &__bell-icon {
+    font-size: 32rpx;
+  }
+
+  &__bell-badge {
+    position: absolute;
+    top: -6rpx;
+    right: -6rpx;
+    min-width: 32rpx;
+    height: 32rpx;
+    line-height: 32rpx;
+    padding: 0 8rpx;
+    border-radius: $radius-full;
+    background: #FF4D4F;
+    color: #fff;
+    font-size: $font-mini;
+    text-align: center;
+    border: 2rpx solid var(--primary, #287BF8);
   }
 }
 
