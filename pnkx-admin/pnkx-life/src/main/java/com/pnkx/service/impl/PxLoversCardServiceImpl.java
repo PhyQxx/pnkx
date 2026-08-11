@@ -201,4 +201,13 @@ public class PxLoversCardServiceImpl implements IPxLoversCardService {
         pxCardRecordVo.setUserId(SecurityUtils.getLoginUser().getUser().getUserId());
         return pxCardRecordMapper.getToDoCard(pxCardRecordVo);
     }
+
+    /**
+     * 获取使用中（未完结）的卡券记录：待确认 或 已确认待评分
+     * @return 使用中的卡券记录
+     */
+    @Override
+    public List<PxCardRecordVo> getUsingCardRecord() {
+        return pxCardRecordMapper.getUsingCardRecord();
+    }
 }

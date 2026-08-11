@@ -101,6 +101,13 @@
         order by r.create_time desc
     </select>
 
+    <!--获取使用中（未完结）的卡券记录：待确认 或 已确认待评分 -->
+    <select id="getUsingCardRecord" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+        <include refid="selectPxCardRecordVo"/>
+        where (r.score is null or r.score = 0)
+        order by r.create_time desc
+    </select>
+
     <insert id="insertPxCardRecord" parameterType="PxCardRecord" useGeneratedKeys="true"
             keyProperty="id">
         insert into px_card_record

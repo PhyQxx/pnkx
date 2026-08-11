@@ -1,7 +1,7 @@
 // 应用全局配置
 export default {
-  baseUrl: 'https://admin.pnkx.top:8/prod-api',
-  // baseUrl: 'http://127.0.0.1:8068',
+  // baseUrl: 'https://admin.pnkx.top:8/prod-api',
+  baseUrl: 'http://127.0.0.1:8068',
   // 应用信息
   appInfo: {
     // 应用名称

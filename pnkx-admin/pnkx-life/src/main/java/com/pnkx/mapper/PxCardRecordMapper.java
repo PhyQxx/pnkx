@@ -67,4 +67,10 @@ public interface PxCardRecordMapper {
      * @return
      */
     List<PxCardRecordVo> getToDoCard(PxCardRecordVo pxCardRecordVo);
+
+    /**
+     * 获取使用中（未完结）的卡券记录：待确认 或 已确认待评分
+     * @return 使用中的卡券记录
+     */
+    List<PxCardRecordVo> getUsingCardRecord();
 }
