@@ -15,6 +15,7 @@
         <result property="isFrame" column="is_frame"/>
         <result property="isCache" column="is_cache"/>
         <result property="isApp" column="is_app"/>
+        <result property="appPath" column="app_path"/>
         <result property="menuType" column="menu_type"/>
         <result property="visible" column="visible"/>
         <result property="status" column="status"/>
@@ -37,6 +38,7 @@
                is_frame,
                is_cache,
                is_app,
+               app_path,
                menu_type,
                visible,
                status,
@@ -57,6 +59,7 @@
                m.is_frame,
                m.is_cache,
                m.is_app,
+               m.app_path,
                m.menu_type,
                m.visible,
                m.status,
@@ -229,6 +232,7 @@
             <if test="component != null">component = #{component},</if>
             <if test="isFrame != null and isFrame != ''">is_frame = #{isFrame},</if>
             <if test="isApp != null and isApp != ''">is_app = #{isApp},</if>
+            <if test="appPath != null and appPath != ''">app_path = #{appPath},</if>
             <if test="isCache != null and isCache != ''">is_cache = #{isCache},</if>
             <if test="menuType != null and menuType != ''">menu_type = #{menuType},</if>
             <if test="visible != null">visible = #{visible},</if>
@@ -252,6 +256,7 @@
         <if test="component != null and component != ''">component,</if>
         <if test="isFrame != null and isFrame != ''">is_frame,</if>
         <if test="isApp != null and isApp != ''">is_app,</if>
+        <if test="appPath != null and appPath != ''">app_path,</if>
         <if test="isCache != null and isCache != ''">is_cache,</if>
         <if test="menuType != null and menuType != ''">menu_type,</if>
         <if test="visible != null">visible,</if>
@@ -270,6 +275,7 @@
         <if test="component != null and component != ''">#{component},</if>
         <if test="isFrame != null and isFrame != ''">#{isFrame},</if>
         <if test="isApp != null and isApp != ''">#{isApp},</if>
+        <if test="appPath != null and appPath != ''">#{appPath},</if>
         <if test="isCache != null and isCache != ''">#{isCache},</if>
         <if test="menuType != null and menuType != ''">#{menuType},</if>
         <if test="visible != null">#{visible},</if>

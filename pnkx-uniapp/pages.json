@@ -56,7 +56,7 @@
     {
       "path": "pages/function/index",
       "style": {
-        "navigationBarTitleText": "工作台"
+        "navigationBarTitleText": "生活助手"
       }
     },
     {
@@ -436,6 +436,49 @@
           "style": {
             "navigationBarTitleText": "生活报告"
           }
+        },
+        {
+          "path": "reminder/index",
+          "style": {
+            "navigationBarTitleText": "提醒中心"
+          }
+        },
+        {
+          "path": "shoppingList/index",
+          "style": {
+            "navigationBarTitleText": "购物清单"
+          }
+        },
+        {
+          "path": "shoppingList/detail",
+          "style": {
+            "navigationBarTitleText": "清单详情"
+          }
+        },
+        {
+          "path": "recipe/index",
+          "style": {
+            "navigationBarTitleText": "菜谱库",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "recipe/detail",
+          "style": {
+            "navigationBarTitleText": "菜谱详情"
+          }
+        },
+        {
+          "path": "mealPlan/index",
+          "style": {
+            "navigationBarTitleText": "膳食计划"
+          }
+        },
+        {
+          "path": "lifeManager/index",
+          "style": {
+            "navigationBarTitleText": "生活管家"
+          }
         }
       ]
     },
@@ -464,7 +507,7 @@
         "pagePath": "pages/function/index",
         "iconPath": "static/images/tabbar/work.png",
         "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "工作台"
+        "text": "生活助手"
       },
       {
         "pagePath": "pages/mine/index",

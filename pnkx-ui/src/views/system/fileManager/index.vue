@@ -96,7 +96,7 @@
       <div v-if="currentFile && isMarkdown" class="markdown-editor">
         <CherryMarkdownEditor
           ref="cherryMarkdownEditor"
-          height="calc(100vh - 200px)"
+          height="100%"
           v-model="fileContent"
           @input="onContentChange"
         />
@@ -531,7 +531,7 @@ export default {
 <style lang="scss" scoped>
 .file-manager-container {
   display: flex;
-  height: calc(100vh - 84px);
+  height: 100%;
   overflow: hidden;
   background: var(--bg-card);
   border-radius: var(--radius-lg);

@@ -17,7 +17,7 @@
 
 const DB_NAME = '_pnkx_offline'
 const DB_PATH = '_doc/pnkx_offline.db'
-const DB_VERSION = 12 // 数据库版本号，结构变更时递增
+const DB_VERSION = 13 // 数据库版本号，结构变更时递增
 
 let dbOpened = false
 let openPromise = null  // 缓存 open promise，防止竞态重复打开
@@ -48,7 +48,7 @@ const TABLE_COLUMNS = {
   // 笔记文件夹 — Mapper: name, parent_id, password, `order`, del_flag, version, note_count
   px_note_folder: ['id', 'name', 'parent_id', 'password', 'order', 'del_flag', 'version', 'note_count', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', 'client_uuid', '_sync_status', '_server_id', '_updated_at'],
   // 菜单（只读缓存）
-  px_menu: ['id', 'menu_id', 'menu_name', 'parent_id', 'parent_name', 'path', 'icon', 'is_app', '_sync_status'],
+  px_menu: ['id', 'menu_id', 'menu_name', 'parent_id', 'parent_name', 'path', 'icon', 'is_app', 'app_path', '_sync_status'],
   _sync_queue: ['id', 'table_name', 'method', 'url', 'payload', 'status', 'retry_count', 'created_at', 'error_msg'],
   _sync_cursor: ['table_name', 'last_cursor', 'last_sync_at']
 }
@@ -103,7 +103,8 @@ const CAMEL_TO_SNAKE = {
   menuId: 'menu_id',
   menuName: 'menu_name',
   parentName: 'parent_name',
-  isApp: 'is_app'
+  isApp: 'is_app',
+  appPath: 'app_path'
 }
 
 /** 无需同步的冗余字段（服务端返回但本地不需要存储） */
@@ -397,6 +398,7 @@ const sqliteDB = {
         path VARCHAR(200),
         icon VARCHAR(100),
         is_app VARCHAR(5),
+        app_path VARCHAR(255),
         _sync_status TINYINT DEFAULT 1
       )`,
 

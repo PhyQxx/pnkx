@@ -549,7 +549,7 @@ $bk-green: $theme-bookkeeping-green;
 
 .bookkeeping-classification-container {
     display: flex;
-    height: calc(100vh - 84px);
+    height: 100%;
     background: var(--bg-body);
     font-family: var(--font-family-base);
 }

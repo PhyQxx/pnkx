@@ -5,7 +5,7 @@
  * @Description: 卡券管理
 -->
 <template>
-    <div class="app-container">
+    <div class="card-manage-container">
         <el-form v-show="showSearch" ref="queryForm" :inline="true" :model="queryParams" label-width="8rem">
             <el-form-item label="卡券名称" prop="title">
                 <el-input
@@ -331,10 +331,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.app-container {
+.card-manage-container {
     padding: var(--space-6);
     background: var(--bg-body);
-    min-height: calc(100vh - 84px);
+    min-height: 100%;
 
     ::v-deep .el-form {
         .el-form-item__label {

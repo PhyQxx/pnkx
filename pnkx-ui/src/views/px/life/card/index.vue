@@ -5,19 +5,20 @@
  * @Description: 卡券页面
 -->
 <template>
-    <div class="app-container">
-        <el-row justify="end" type="flex">
-            <el-button type="text" @click="$router.push('/lovers/card/manage')">卡券管理</el-button>
-            <el-button type="text" @click="$router.push('/lovers/card/record')">使用记录</el-button>
-            <el-button type="text" @click="getMyCards">刷新</el-button>
-        </el-row>
-        <el-row class="page-title">
-            我的卡券
-            <span class="total-value">总价值：￥{{totalValue}}</span>
-        </el-row>
-        <el-row v-loading="loading" class="my-card">
-            <el-col v-for="item in list" :key="item.id" :span="12" class="one-card">
-                <div class="card">
+    <div class="card-page">
+        <el-tabs v-model="activeTab" class="card-tabs">
+            <el-tab-pane label="我的卡券" name="mine">
+                <div class="card-mine-container">
+                    <el-row justify="end" type="flex">
+                        <el-button type="text" @click="getMyCards">刷新</el-button>
+                    </el-row>
+                    <el-row class="page-title">
+                        我的卡券
+                        <span class="total-value">总价值：￥{{totalValue}}</span>
+                    </el-row>
+                    <el-row v-loading="loading" class="my-card">
+                        <el-col v-for="item in list" :key="item.id" :span="12" class="one-card">
+                            <div class="card">
                     <div class="left">
                         <el-image :preview-src-list="[item.logo]"
                                   :src="item.thumbnail || item.logo"
@@ -49,18 +50,32 @@
                 </div>
             </el-col>
             <el-empty v-if="list.length < 1" description="暂无卡券"></el-empty>
-        </el-row>
+                    </el-row>
+                </div>
+            </el-tab-pane>
+            <el-tab-pane label="卡券管理" name="manage">
+                <card-manage v-if="activeTab === 'manage'" />
+            </el-tab-pane>
+            <el-tab-pane label="使用记录" name="record">
+                <card-record v-if="activeTab === 'record'" />
+            </el-tab-pane>
+        </el-tabs>
     </div>
 </template>
 
 <script>
 import {getCardByUserId, useCard} from "@/api/px/life/card";
 import chineseHelper from '@/utils/chineseHelper.js'
+import CardManage from './manage.vue'
+import CardRecord from './record.vue'
 
 export default {
-    name: "manage",
+    name: "MyCard",
+    components: { CardManage, CardRecord },
     data() {
         return {
+            // 当前激活的 tab
+            activeTab: 'mine',
             // 加载标志
             loading: false,
             // 我的卡券列表
@@ -115,6 +130,30 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+.card-page {
+    height: calc(100vh - 84px);
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-tabs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    :deep(.el-tabs__content) {
+        flex: 1;
+        overflow: auto;
+    }
+}
+
+.card-mine-container {
+    min-height: 100%;
+}
+
 .my-card {
     height: 76vh;
     overflow: auto;

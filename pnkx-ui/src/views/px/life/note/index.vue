@@ -5,7 +5,10 @@
  * @Description: 笔记 - Modern UI/UX Refactored
 -->
 <template>
-  <div class="note-container">
+  <div class="note-page">
+    <el-tabs v-model="activeTab" class="note-tabs">
+      <el-tab-pane label="我的笔记" name="note">
+        <div class="note-container">
     <!-- 左侧目录面板 -->
     <aside class="sidebar">
       <!-- 搜索栏 -->
@@ -272,6 +275,12 @@
         </div>
       </div>
     </transition>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="Obsidian 笔记" name="obsidian">
+        <file-manager v-if="activeTab === 'obsidian'" />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -288,11 +297,15 @@ import {
   updateFolder,
   updateNote
 } from '@/api/px/life/note'
+import FileManager from '@/views/system/fileManager/index.vue'
 
 export default {
   name: 'Note',
+  components: { FileManager },
   data() {
     return {
+      // 当前激活的 tab
+      activeTab: 'note',
       // 右键窗口样式
       rightStyle: '',
       // 右键窗口标志
@@ -746,9 +759,29 @@ export default {
 <style lang="scss" scoped>
 // ==================== 容器 ====================
 
+.note-page {
+  height: calc(100vh - 84px);
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  :deep(.el-tabs__content) {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
 .note-container {
   display: flex;
-  height: calc(100vh - 84px);
+  height: 100%;
   background: var(--bg-body);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }

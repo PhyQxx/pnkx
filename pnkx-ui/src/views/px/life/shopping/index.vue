@@ -5,7 +5,7 @@
  * @Description: 购物清单 - 左侧清单列表 + 右侧条目管理
 -->
 <template>
-    <div class="app-container shopping-center">
+    <div class="shopping-center">
         <div class="shopping-layout">
             <!-- ============ 左侧：清单列表 ============ -->
             <div class="sidebar">
@@ -340,7 +340,7 @@ export default {
     .shopping-layout {
         display: flex;
         gap: 16px;
-        height: calc(100vh - 140px);
+        height: 100%;
         min-height: 480px;
     }
 

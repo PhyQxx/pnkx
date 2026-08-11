@@ -5,7 +5,7 @@
  * @Description: 餐饮周计划 - 周网格（周一~周日 × 早/午/晚/加餐）
 -->
 <template>
-    <div class="app-container meal-center">
+    <div class="meal-center">
         <!-- 顶部工具栏 -->
         <div class="meal-toolbar">
             <div class="toolbar-left">

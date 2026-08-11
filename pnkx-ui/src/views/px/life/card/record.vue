@@ -5,7 +5,7 @@
  * @Description: 描述
 -->
 <template>
-    <div class="app-container">
+    <div class="card-record-container">
         <el-form ref="queryForm" :inline="true" :model="queryParams" label-width="8rem">
             <el-form-item label="卡券名称" prop="cardId">
                 <el-input
@@ -128,7 +128,7 @@ import { confirmCard, getCardRecord, listRecord, scoreCard } from '@/api/px/life
 import { listUser } from '@/api/system/user'
 
 export default {
-    name: "Record",
+    name: "CardRecord",
     components: {},
     data() {
         return {
@@ -241,10 +241,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.app-container {
+.card-record-container {
     padding: var(--space-6);
     background: var(--bg-body);
-    min-height: calc(100vh - 84px);
+    min-height: 100%;
 
     ::v-deep .el-form {
         .el-form-item__label {

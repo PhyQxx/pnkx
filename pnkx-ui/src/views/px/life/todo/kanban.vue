@@ -361,7 +361,7 @@ export default {
 .kanban-container {
     padding: 12px;
     /* 用视口高度约束整个看板，避免被大量卡片撑长 */
-    height: calc(100vh - 120px);
+    height: 100%;
     display: flex;
     flex-direction: column;
 }
