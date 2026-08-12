@@ -5,7 +5,7 @@
  * @Description: 笔记详情/编辑页
 -->
 <template>
-  <view class="note-detail">
+  <view class="note-detail subpage-shell">
     <!-- 表单内容 -->
     <scroll-view class="form-scroll" scroll-y>
       <view class="editor-hero">
@@ -93,9 +93,9 @@
             :class="{ selected: tempFolderId === 0 }"
             @click="tempFolderId = 0"
           >
-            <uni-icons type="folder" size="20" color="#6C9EFF" />
+            <uni-icons type="folder" size="20" color="#4F86F7" />
             <text class="folder-option-name">根目录</text>
-            <uni-icons v-if="tempFolderId === 0" type="checkmarkempty" size="18" color="#6C9EFF" />
+            <uni-icons v-if="tempFolderId === 0" type="checkmarkempty" size="18" color="#4F86F7" />
           </view>
           <view
             v-for="folder in flatFolderList"
@@ -104,9 +104,9 @@
             :class="{ selected: tempFolderId === folder.id }"
             @click="tempFolderId = folder.id"
           >
-            <uni-icons type="folder" size="20" :color="folder.password ? '#FBBF24' : '#6C9EFF'" />
+            <uni-icons type="folder" size="20" :color="folder.password ? '#FBBF24' : '#4F86F7'" />
             <text class="folder-option-name">{{ folder.indent }}{{ folder.name }}</text>
-            <uni-icons v-if="tempFolderId === folder.id" type="checkmarkempty" size="18" color="#6C9EFF" />
+            <uni-icons v-if="tempFolderId === folder.id" type="checkmarkempty" size="18" color="#4F86F7" />
           </view>
         </scroll-view>
       </view>
@@ -372,7 +372,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(180deg, #EEF5FF 0%, #F7F8FB 360rpx, #F7F8FB 100%);
+  background: linear-gradient(180deg, #EEF5FF 0%, #F2F7FE 360rpx, #F2F7FE 100%);
 
   .form-scroll {
     flex: 1;

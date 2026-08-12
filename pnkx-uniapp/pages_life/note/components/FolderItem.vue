@@ -8,7 +8,7 @@
   <view class="folder-item" @click="handleClick">
     <view class="folder-icon">
       <uni-icons v-if="folder.password" type="locked" size="24" color="#FBBF24" />
-      <uni-icons v-else type="folder" size="24" color="#6C9EFF" />
+      <uni-icons v-else type="folder" size="24" color="#4F86F7" />
     </view>
     <view class="folder-info">
       <view class="folder-name">{{ folder.name || '未命名文件夹' }}</view>

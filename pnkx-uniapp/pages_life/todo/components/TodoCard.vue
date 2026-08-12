@@ -34,7 +34,7 @@
             </view>
           </view>
           <view class="performer-section" v-if="todo.performerName">
-            <uni-icons type="person" size="14" color="#9BA8B7" />
+            <uni-icons type="person" size="14" color="#8EA0B8" />
             <text class="performer-text">{{ todo.performerName }}</text>
           </view>
         </view>
@@ -58,7 +58,7 @@ export default {
         {
           text: '编辑',
           style: {
-            backgroundColor: '#34D399'
+            backgroundColor: '#4F86F7'
           }
         },
         {
@@ -148,11 +148,11 @@ export default {
 .todo-card {
   position: relative;
   overflow: hidden;
-  background-color: $bg-card;
-  border-radius: $radius-lg;
-  padding: 26rpx;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: $radius-2xl;
+  padding: 28rpx;
   margin-bottom: $spacing-md;
-  border: 1rpx solid rgba($todo, 0.12);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
   box-shadow: $shadow-card;
   transition: all 0.3s;
 
@@ -164,7 +164,7 @@ export default {
     width: 8rpx;
     height: 76rpx;
     border-radius: 0 $radius-full $radius-full 0;
-    background-color: $todo;
+    background-color: $primary;
   }
 
   &.completed {
@@ -200,12 +200,12 @@ export default {
       align-items: center;
       justify-content: center;
       border-radius: $radius-full;
-      background-color: rgba($todo, 0.1);
+      background-color: rgba($primary, 0.09);
       transition: all 0.2s;
       flex-shrink: 0;
 
       &:active {
-        background-color: rgba($todo, 0.18);
+        background-color: rgba($primary, 0.16);
       }
     }
 
@@ -279,8 +279,8 @@ export default {
         height: 42rpx;
         padding: 0 14rpx;
         border-radius: $radius-full;
-        background-color: rgba($todo, 0.1);
-        color: $todo;
+        background-color: rgba($primary, 0.09);
+        color: $primary;
         font-size: $font-mini;
         line-height: 42rpx;
         overflow: hidden;

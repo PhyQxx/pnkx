@@ -1,5 +1,5 @@
 <template>
-  <view class="info-container">
+  <view class="info-container subpage-shell">
     <view class="info-card">
       <uni-list>
         <uni-list-item showExtraIcon="true" :extraIcon="{type: 'person-filled'}" title="昵称"

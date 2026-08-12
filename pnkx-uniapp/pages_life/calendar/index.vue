@@ -1,5 +1,5 @@
 <template>
-  <view class="calendar-page">
+  <view class="calendar-page subpage-shell">
     <!-- 月份导航 -->
     <view class="cal-header">
       <view class="cal-header__nav" @click="shiftMonth(-1)">‹</view>
@@ -166,7 +166,7 @@ export default {
       this.selectedDate = day.dateStr
     },
     colorOf(color) {
-      return COLOR_MAP[color] || '#909399'
+      return COLOR_MAP[color] || '#8EA0B8'
     },
     typeLabel(type) {
       const map = { todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账' }

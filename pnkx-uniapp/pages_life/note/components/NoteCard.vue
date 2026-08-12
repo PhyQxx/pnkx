@@ -19,7 +19,7 @@
         </view>
         <view class="note-footer">
           <view class="note-time">
-            <uni-icons type="calendar" size="13" color="#9BA8B7" />
+            <uni-icons type="calendar" size="13" color="#8EA0B8" />
             <text>{{ updateTime }}</text>
           </view>
           <view class="note-folder" v-if="note.folderName">

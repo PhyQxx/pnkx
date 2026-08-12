@@ -15,7 +15,7 @@
           <text class="greeting-header__date">{{ todayDate }}</text>
         </view>
         <view class="greeting-header__bell" @click="navigateToReminder">
-          <text class="greeting-header__bell-icon">🔔</text>
+          <svg-icon icon-class="tongzhi" size="42rpx" class-name="greeting-header__bell-icon" />
           <view v-if="unreadCount > 0" class="greeting-header__bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
         </view>
       </view>
@@ -73,7 +73,7 @@
           <view class="section-card">
             <view class="section-card__header">
               <view class="section-card__icon section-card__icon--reminder">
-                <text class="reminder-header-icon">🔔</text>
+                <svg-icon icon-class="naozhong" size="34rpx" />
               </view>
               <text class="section-card__title">今日提醒</text>
             </view>
@@ -83,7 +83,7 @@
               <view v-for="item in reminderCommemorationDays" :key="'commemoration-' + item.name"
                     class="reminder-item" @click="navigateToCommemoration">
                 <view class="reminder-item__icon reminder-item__icon--commemoration">
-                  <text>🎂</text>
+                  <svg-icon icon-class="date" size="36rpx" />
                 </view>
                 <view class="reminder-item__content">
                   <text class="reminder-item__title">{{ item.name }}</text>
@@ -103,7 +103,7 @@
               <view v-for="item in reminderCards" :key="'card-' + (item.createTime || '') + '-' + item.title"
                     class="reminder-item" @click="navigateToCard">
                 <view class="reminder-item__icon reminder-item__icon--card">
-                  <text>💕</text>
+                  <svg-icon icon-class="aixin" size="36rpx" />
                 </view>
                 <view class="reminder-item__content">
                   <text class="reminder-item__title">{{ item.title }}</text>
@@ -121,7 +121,7 @@
             <view v-if="reminderMenstruation && reminderMenstruation.length > 0" class="reminder-group">
               <view class="reminder-item" @click="navigateToMenstruation">
                 <view class="reminder-item__icon reminder-item__icon--menstruation">
-                  <text>🌸</text>
+                  <svg-icon icon-class="yimazhushou" size="36rpx" />
                 </view>
                 <view class="reminder-item__content">
                   <text class="reminder-item__title">姨妈提醒</text>
@@ -203,19 +203,19 @@
         <view class="fab-menu-item" @click="handleFabAction('diary')">
           <text class="fab-menu-label">写日记</text>
           <view class="fab-menu-icon fab-menu-icon--diary">
-            <text class="fab-menu-icon-text">📝</text>
+            <svg-icon icon-class="edit" size="34rpx" class-name="fab-menu-icon-text" />
           </view>
         </view>
         <view class="fab-menu-item" @click="handleFabAction('todo')">
           <text class="fab-menu-label">记待办</text>
           <view class="fab-menu-icon fab-menu-icon--todo">
-            <text class="fab-menu-icon-text">📋</text>
+            <svg-icon icon-class="daiban" size="34rpx" class-name="fab-menu-icon-text" />
           </view>
         </view>
         <view class="fab-menu-item" @click="handleFabAction('bookkeeping')">
           <text class="fab-menu-label">记一笔</text>
           <view class="fab-menu-icon fab-menu-icon--bookkeeping">
-            <text class="fab-menu-icon-text">¥</text>
+            <svg-icon icon-class="jizhang" size="34rpx" class-name="fab-menu-icon-text" />
           </view>
         </view>
       </view>
@@ -1182,7 +1182,7 @@
 
 .fab-menu-label {
   font-size: 26rpx;
-  color: #303133;
+  color: #123B70;
   background: #fff;
   padding: 10rpx 20rpx;
   border-radius: 8rpx;
@@ -1201,7 +1201,7 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 
   &--ai {
-    background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+    background: linear-gradient(135deg, #4F86F7, #6C63FF);
   }
 
   &--diary {
@@ -1244,5 +1244,82 @@
   font-size: 48rpx;
   font-weight: bold;
   line-height: 1;
+}
+
+/* Glacier morning refresh */
+.home-page {
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.02) 0%, $bg-page 720rpx),
+    url('/static/images/glacier-aurora-bg.png') top center / 100% auto no-repeat;
+}
+
+.greeting-header {
+  min-height: 340rpx;
+  background: transparent;
+}
+
+.greeting-header__bg { opacity: 0; }
+
+.greeting-header__content {
+  padding-top: calc(var(--status-bar-height, 44px) + 28rpx);
+  align-items: flex-start;
+}
+
+.greeting-header__hello,
+.greeting-header__name {
+  color: $text-primary;
+  font-size: 40rpx;
+  font-weight: $font-weight-semibold;
+}
+
+.greeting-header__date {
+  color: $text-secondary;
+  margin-top: 14rpx;
+}
+
+.greeting-header__bell {
+  color: $text-primary;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  box-shadow: $shadow-md;
+  backdrop-filter: blur(20rpx);
+}
+
+.home-body {
+  margin-top: -42rpx;
+  padding-bottom: 180rpx;
+}
+
+.section-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-card;
+  backdrop-filter: blur(26rpx);
+}
+
+.section-card__title,
+.reminder-item__title,
+.todo-item__title { color: $text-primary; }
+
+.fab-menu-label {
+  color: $text-primary;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: $radius-full;
+  box-shadow: $shadow-md;
+}
+
+.fab-menu-icon {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: $primary;
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  box-shadow: $shadow-md;
+}
+
+.fab-menu-icon-text { color: $primary; }
+
+.fab-btn {
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 55%, #8789FF 100%);
+  box-shadow: 0 12rpx 30rpx rgba(79, 134, 247, 0.28);
 }
 </style>

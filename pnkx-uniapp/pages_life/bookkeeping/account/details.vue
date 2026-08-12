@@ -1,5 +1,5 @@
 <template>
-  <view class="details">
+  <view class="details subpage-shell">
     <view class="header-card">
       <view class="account-icon">
         <svg-icon :icon-class="account.accountIcon || '默认'" size="56rpx"/>

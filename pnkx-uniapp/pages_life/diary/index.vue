@@ -1,5 +1,5 @@
 <template>
-  <view class="diary-page">
+  <view class="diary-page subpage-shell">
     <view class="fixed-header">
       <view class="overview-panel">
         <view class="overview-main">
@@ -12,7 +12,7 @@
             <text class="count-label">篇记录</text>
           </view>
           <view class="analysis-btn" @click="goAnalysis">
-            <uni-icons type="chart" size="18" color="#A78BFA" />
+            <uni-icons type="chart" size="18" color="#4F86F7" />
             <text class="analysis-btn-text">心情分析</text>
           </view>
         </view>
@@ -53,7 +53,7 @@
           :class="{ active: viewMode === 'timeline' }"
           @click="switchView('timeline')"
         >
-          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#A78BFA' : '#9BA8B7'" />
+          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#4F86F7' : '#8EA0B8'" />
           <text>时间线</text>
         </view>
         <view
@@ -61,7 +61,7 @@
           :class="{ active: viewMode === 'calendar' }"
           @click="switchView('calendar')"
         >
-          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#A78BFA' : '#9BA8B7'" />
+          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#4F86F7' : '#8EA0B8'" />
           <text>日历</text>
         </view>
       </view>
@@ -103,7 +103,7 @@
 
         <view v-else-if="selectedDate" class="empty-state compact">
           <view class="empty-icon">
-            <uni-icons type="calendar" size="40" color="#A78BFA" />
+            <uni-icons type="calendar" size="40" color="#4F86F7" />
           </view>
           <text class="empty-text">这一天还没有记录</text>
           <text class="empty-tip">写一篇，让日历多一个亮点</text>
@@ -113,7 +113,7 @@
       <view v-else class="timeline-view">
         <view v-if="diaryList.length === 0 && !loading" class="empty-state">
           <view class="empty-icon">
-            <uni-icons type="compose" size="42" color="#A78BFA" />
+            <uni-icons type="compose" size="42" color="#4F86F7" />
           </view>
           <text class="empty-text">{{ emptyTitle }}</text>
           <text class="empty-tip">{{ emptyTip }}</text>
@@ -388,14 +388,14 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba($diary, 0.14) 0%, $bg-page 380rpx);
+  background: linear-gradient(180deg, rgba($primary, 0.1) 0%, $bg-page 380rpx);
 
   .fixed-header {
     position: sticky;
     top: 0;
     z-index: $z-sticky;
     padding: 24rpx $page-padding 18rpx;
-    background: linear-gradient(180deg, rgba($diary, 0.18) 0%, rgba(244, 246, 249, 0.96) 100%);
+    background: linear-gradient(180deg, rgba($primary, 0.12) 0%, rgba(242, 247, 254, 0.96) 100%);
     box-shadow: 0 8rpx 24rpx rgba(74, 85, 104, 0.06);
 
     .overview-panel {
@@ -426,12 +426,12 @@ export default {
         width: 128rpx;
         height: 128rpx;
         border-radius: $radius-full;
-        background: linear-gradient(135deg, $diary 0%, #EC4899 100%);
+        background: linear-gradient(135deg, #789FFF 0%, $primary 58%, #9B87F5 100%);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 12rpx 28rpx rgba($diary, 0.3);
+        box-shadow: 0 12rpx 28rpx rgba($primary, 0.24);
 
         .count-number {
           font-size: 34rpx;
@@ -457,7 +457,7 @@ export default {
       .stat-item {
         padding: 16rpx 10rpx;
         border-radius: $radius-md;
-        border: 1rpx solid rgba($diary, 0.14);
+        border: 1rpx solid rgba($primary, 0.14);
         background-color: rgba(255, 255, 255, 0.78);
         display: flex;
         flex-direction: column;
@@ -488,7 +488,7 @@ export default {
       padding: 6rpx;
       margin-top: 14rpx;
       border-radius: $radius-full;
-      border: 1rpx solid rgba($diary, 0.14);
+      border: 1rpx solid rgba($primary, 0.14);
       background-color: rgba(255, 255, 255, 0.82);
 
       .switch-item {
@@ -504,7 +504,7 @@ export default {
         transition: all $duration-normal $ease-default;
 
         &.active {
-          color: $diary;
+          color: $primary;
           background-color: #FFFFFF;
           box-shadow: $shadow-sm;
           font-weight: $font-weight-semibold;
@@ -574,7 +574,7 @@ export default {
       width: 132rpx;
       height: 132rpx;
       border-radius: $radius-full;
-      background-color: rgba($diary, 0.12);
+      background-color: rgba($primary, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -606,16 +606,73 @@ export default {
     width: 104rpx;
     height: 104rpx;
     border-radius: $radius-full;
-    background: linear-gradient(135deg, $diary 0%, #EC4899 100%);
+    background: linear-gradient(135deg, #789FFF 0%, $primary 58%, #9B87F5 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 12rpx 28rpx rgba($diary, 0.38);
+    box-shadow: 0 12rpx 28rpx rgba($primary, 0.3);
     transition: transform $duration-fast $ease-spring;
 
     &:active {
       transform: scale(0.92);
     }
+  }
+}
+
+/* Glacier morning visual alignment */
+.diary-page {
+  background: transparent;
+
+  .fixed-header {
+    padding: 26rpx $page-padding 22rpx;
+    background: rgba(248, 251, 255, 0.78);
+    border-bottom: 1rpx solid rgba(214, 229, 247, 0.72);
+    box-shadow: 0 10rpx 28rpx rgba(64, 111, 176, 0.08);
+    backdrop-filter: blur(28rpx);
+
+    .overview-panel {
+      padding: 24rpx 26rpx;
+      border: 1rpx solid rgba(255, 255, 255, 0.94);
+      border-radius: $radius-2xl;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: $shadow-card;
+
+      .overview-count {
+        width: 112rpx;
+        height: 112rpx;
+        background: linear-gradient(135deg, #789FFF 0%, $primary 58%, #9B87F5 100%);
+        box-shadow: 0 12rpx 28rpx rgba(79, 134, 247, 0.24);
+      }
+    }
+
+    .stats-row {
+      gap: 14rpx;
+
+      .stat-item {
+        border-color: rgba(188, 210, 239, 0.3);
+        border-radius: $radius-lg;
+        background: rgba(255, 255, 255, 0.82);
+      }
+    }
+
+    .search-bar { margin: 0; }
+
+    .view-switch {
+      border-color: rgba(188, 210, 239, 0.3);
+      background: rgba(255, 255, 255, 0.7);
+
+      .switch-item.active {
+        color: $primary;
+        background: rgba(255, 255, 255, 0.96);
+      }
+    }
+  }
+
+  .content-scroll { padding-top: 28rpx; }
+
+  .fab-button {
+    background: linear-gradient(135deg, #789FFF 0%, $primary 58%, #9B87F5 100%);
+    box-shadow: 0 14rpx 34rpx rgba(79, 134, 247, 0.3);
   }
 }
 </style>

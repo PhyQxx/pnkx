@@ -1,5 +1,5 @@
 <template>
-  <view class="recipe-detail">
+  <view class="recipe-detail subpage-shell">
     <!-- Cover -->
     <view class="cover">
       <image v-if="recipe.url" :src="recipe.url" mode="aspectFill" class="cover__img" />

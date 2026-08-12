@@ -1,5 +1,5 @@
 <template>
-  <view class="container">
+  <view class="container subpage-shell">
     <view class="page-body uni-content-info">
       <view class='cropper-content'>
         <view v-if="isShowImg" class="uni-corpper"
@@ -436,7 +436,7 @@ page {
   height: 100%;
   overflow: visible;
   outline: 1rpx solid $primary;
-  outline-color: rgba(108, 158, 255, 0.75);
+  outline-color: rgba(79, 134, 247, 0.75);
 }
 
 .uni-cropper-dashed-h {

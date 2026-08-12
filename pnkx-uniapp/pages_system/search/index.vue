@@ -1,5 +1,5 @@
 <template>
-  <view class="seach">
+  <view class="seach subpage-shell">
     <uni-search-bar :focus="true" cancelButton="none" v-model="searchValue" @input="search">
     </uni-search-bar>
     <uni-section :title="item.label" type="line" v-for="item in list" :key="item.label">

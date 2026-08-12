@@ -1,5 +1,5 @@
 <template>
-  <view class="diary-edit">
+  <view class="diary-edit subpage-shell">
     <view class="edit-header">
       <view class="header-main">
         <text class="header-title">{{ isEditMode ? '编辑日记' : '写日记' }}</text>
@@ -307,18 +307,18 @@ export default {
       width: 116rpx;
       height: 116rpx;
       border-radius: $radius-full;
-      background: linear-gradient(135deg, $diary 0%, #EC4899 100%);
+      background-color: rgba($diary, 0.12);
+      border: 1rpx solid rgba($diary, 0.18);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 12rpx 28rpx rgba($diary, 0.28);
 
       .word-number {
         max-width: 90rpx;
         font-size: 30rpx;
         font-weight: $font-weight-bold;
-        color: $text-inverse;
+        color: $diary;
         line-height: 1.1;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -328,7 +328,7 @@ export default {
       .word-label {
         margin-top: 4rpx;
         font-size: $font-mini;
-        color: rgba(255, 255, 255, 0.86);
+        color: $text-tertiary;
       }
     }
   }

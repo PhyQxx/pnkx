@@ -4,7 +4,7 @@
  * @Description: diary mood analysis page
 -->
 <template>
-  <view class="diary-analysis">
+  <view class="diary-analysis subpage-shell">
     <!-- Header -->
     <view class="header">
       <view class="header-title">
@@ -166,16 +166,16 @@ export default {
       aiResult: '',
       isStreaming: false,
       htmlTagStyle: {
-        h1: 'font-size:32rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;',
-        h2: 'font-size:30rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;',
+        h1: 'font-size:32rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;',
+        h2: 'font-size:30rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;',
         h3: 'font-size:28rpx;font-weight:bold;color:#A78BFA;margin:16rpx 0 8rpx;padding-left:12rpx;border-left:6rpx solid #A78BFA;',
         p: 'margin:8rpx 0;line-height:1.7;',
-        blockquote: 'border-left:6rpx solid #A78BFA;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#606266;border-radius:0 8rpx 8rpx 0;',
+        blockquote: 'border-left:6rpx solid #A78BFA;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#4F627B;border-radius:0 8rpx 8rpx 0;',
         ul: 'padding-left:28rpx;margin:6rpx 0;list-style-type:disc;',
         ol: 'padding-left:36rpx;margin:6rpx 0;',
         li: 'margin:6rpx 0;line-height:1.7;',
-        strong: 'font-weight:bold;color:#303133;',
-        em: 'font-style:italic;color:#606266;',
+        strong: 'font-weight:bold;color:#123B70;',
+        em: 'font-style:italic;color:#4F627B;',
       }
     }
   },
@@ -212,11 +212,11 @@ export default {
       }
     },
     getMoodColor(mood) {
-      if (!mood) return '#9BA8B7'
+      if (!mood) return '#8EA0B8'
       const colorMap = {
         '开心': '#4ADE80', '快乐': '#4ADE80', '高兴': '#4ADE80',
-        '难过': '#6C9EFF', '伤心': '#6C9EFF', '悲伤': '#6C9EFF',
-        '平静': '#9BA8B7', '淡定': '#9BA8B7', '普通': '#9BA8B7',
+        '难过': '#4F86F7', '伤心': '#4F86F7', '悲伤': '#4F86F7',
+        '平静': '#8EA0B8', '淡定': '#8EA0B8', '普通': '#8EA0B8',
         '焦虑': '#FBBF24', '担忧': '#FBBF24', '紧张': '#FBBF24',
         '愤怒': '#FF6B6B', '生气': '#FF6B6B', '烦躁': '#FF6B6B',
       }

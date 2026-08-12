@@ -3,7 +3,7 @@
  * @Description: 书籍新增/编辑
 -->
 <template>
-	<view class="edit-page">
+	<view class="edit-page subpage-shell">
 		<view class="hero-banner">
 			<view class="hero-cover" :class="'cover-' + coverScheme">
 				<svg-icon icon-class="documentation" size="56px" class-name="cover-icon" />

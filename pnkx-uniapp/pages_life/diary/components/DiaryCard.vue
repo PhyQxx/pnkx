@@ -28,12 +28,12 @@
 
           <view class="card-footer">
             <view class="meta-pill">
-              <uni-icons type="compose" size="13" color="#A78BFA" />
+              <uni-icons type="compose" size="13" color="#4F86F7" />
               <text>{{ wordCount }}字</text>
             </view>
             <view class="read-more">
               <text>查看</text>
-              <uni-icons type="right" size="13" color="#9BA8B7" />
+              <uni-icons type="right" size="13" color="#8EA0B8" />
             </view>
           </view>
         </view>
@@ -57,7 +57,7 @@ export default {
         {
           text: '编辑',
           style: {
-            backgroundColor: '#A78BFA'
+            backgroundColor: '#4F86F7'
           }
         },
         {
@@ -159,10 +159,10 @@ export default {
   gap: $spacing-md;
   padding: 26rpx;
   margin-bottom: $spacing-md;
-  background-color: $bg-card;
-  border-radius: $radius-lg;
-  border: 1rpx solid rgba($diary, 0.12);
-  box-shadow: 0 8rpx 22rpx rgba(74, 85, 104, 0.06);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: $radius-2xl;
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  box-shadow: $shadow-card;
   transition: transform $duration-fast $ease-default;
 
   &:active {
@@ -173,8 +173,8 @@ export default {
     width: 92rpx;
     min-width: 92rpx;
     height: 112rpx;
-    border-radius: $radius-md;
-    background: linear-gradient(180deg, rgba($diary, 0.16) 0%, rgba($diary, 0.06) 100%);
+    border-radius: $radius-xl;
+    background: linear-gradient(180deg, rgba(79, 134, 247, 0.14) 0%, rgba(155, 135, 245, 0.06) 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -184,7 +184,7 @@ export default {
       font-size: 38rpx;
       line-height: 1;
       font-weight: $font-weight-bold;
-      color: $diary;
+      color: $primary;
     }
 
     .date-month {
@@ -277,8 +277,8 @@ export default {
       height: 42rpx;
       padding: 0 14rpx;
       border-radius: $radius-full;
-      background-color: rgba($diary, 0.08);
-      color: $diary;
+      background-color: rgba($primary, 0.08);
+      color: $primary;
     }
   }
 }

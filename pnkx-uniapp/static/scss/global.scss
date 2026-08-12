@@ -9,8 +9,243 @@ page {
   font-size: $font-body;
   color: $text-primary;
   background-color: $bg-page;
+  background-image:
+    linear-gradient(180deg, rgba(244, 249, 255, 0.12) 0%, $bg-page 520rpx),
+    url('/static/images/glacier-aurora-bg.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Glacier Morning Surfaces --- */
+.ice-page {
+  min-height: 100vh;
+  color: $text-primary;
+  background:
+    linear-gradient(180deg, rgba(247, 251, 255, 0.08) 0%, $bg-page 620rpx),
+    url('/static/images/glacier-aurora-bg.png') top center / 100% auto no-repeat;
+}
+
+.frost-card,
+.uni-card,
+.uni-list,
+.uni-section {
+  background: $frost-white !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: $shadow-card;
+  -webkit-backdrop-filter: blur(24rpx);
+  backdrop-filter: blur(24rpx);
+}
+
+.ice-section-title {
+  font-size: $font-h2;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  letter-spacing: 1rpx;
+}
+
+.ice-subtitle {
+  color: $text-secondary;
+  font-size: $font-caption;
+  line-height: $line-height-relaxed;
+}
+
+/* --- Secondary Page Shell --- */
+page .subpage-shell:not(.reader-page) {
+  min-height: 100vh;
+  color: $text-primary;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.04) 0%, rgba(242, 247, 254, 0.96) 600rpx, $bg-page 100%),
+    url('/static/images/glacier-aurora-bg.png') top center / 100% auto no-repeat !important;
+}
+
+.subpage-shell {
+  --ice-primary: #{$primary};
+  --ice-text: #{$text-primary};
+  --ice-muted: #{$text-secondary};
+  --ice-border: #{$border-color};
+  --ice-surface: #{$frost-white};
+  padding-bottom: calc(env(safe-area-inset-bottom) + 28rpx);
+}
+
+.subpage-shell .form-section,
+.subpage-shell .section-card,
+.subpage-shell .content-section,
+.subpage-shell .stat-card,
+.subpage-shell .stats-card,
+.subpage-shell .summary-card,
+.subpage-shell .calendar-card,
+.subpage-shell .trend-card,
+.subpage-shell .overview-panel,
+.subpage-shell .setting-card,
+.subpage-shell .setting-group,
+.subpage-shell .setting-panel,
+.subpage-shell .info-card,
+.subpage-shell .header-card,
+.subpage-shell .edit-card,
+.subpage-shell .editor-card,
+.subpage-shell .field-card,
+.subpage-shell .toggle-card,
+.subpage-shell .folder-card,
+.subpage-shell .folder-tree-panel,
+.subpage-shell .bk-card,
+.subpage-shell .bk-menu__card,
+.subpage-shell .lm-card {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-card;
+  -webkit-backdrop-filter: blur(24rpx);
+  backdrop-filter: blur(24rpx);
+}
+
+.subpage-shell .form-item,
+.subpage-shell .info-item,
+.subpage-shell .switch-item,
+.subpage-shell .content-row {
+  border-color: $border-color !important;
+}
+
+.subpage-shell .form-label,
+.subpage-shell .section-title,
+.subpage-shell .header-title,
+.subpage-shell .popup-title {
+  color: $text-primary;
+}
+
+.subpage-shell .header-subtitle,
+.subpage-shell .form-tip,
+.subpage-shell .empty-text,
+.subpage-shell .empty-tip,
+.subpage-shell .empty__text,
+.subpage-shell .empty-state__text {
+  color: $text-secondary;
+}
+
+.subpage-shell input,
+.subpage-shell textarea {
+  color: $text-primary;
+  caret-color: $primary;
+}
+
+.subpage-shell .search-bar,
+.subpage-shell .input-wrapper,
+.subpage-shell .field-block,
+.subpage-shell .sub-popup__input {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1rpx solid rgba(174, 198, 231, 0.34);
+  border-radius: $radius-xl;
+}
+
+.subpage-shell .input-wrapper:focus-within,
+.subpage-shell .field-block:focus-within,
+.subpage-shell .sub-popup__input:focus-within {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(79, 134, 247, 0.52);
+  box-shadow: 0 0 0 5rpx rgba(79, 134, 247, 0.1);
+}
+
+.subpage-shell .uni-easyinput__content {
+  min-height: 84rpx;
+  background: rgba(248, 251, 255, 0.82) !important;
+  border-color: rgba(174, 198, 231, 0.42) !important;
+  border-radius: $radius-lg !important;
+}
+
+.subpage-shell .uni-easyinput__content.is-input-border.is-focused {
+  border-color: $primary !important;
+  box-shadow: 0 0 0 5rpx rgba(79, 134, 247, 0.1);
+}
+
+.subpage-shell .uni-forms-item__label,
+.subpage-shell .uni-input-input,
+.subpage-shell .uni-textarea-textarea {
+  color: $text-primary !important;
+}
+
+.subpage-shell .uni-list {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-radius: $radius-2xl;
+}
+
+.subpage-shell .uni-list-item__container {
+  background: transparent !important;
+  border-color: $border-color !important;
+}
+
+.subpage-shell .uni-list-item__container:active,
+.subpage-shell .list-cell:active {
+  background: rgba(79, 134, 247, 0.06) !important;
+}
+
+.subpage-shell .popup-content,
+.subpage-shell .popup-container,
+.subpage-shell .picker-container {
+  color: $text-primary;
+  background: rgba(248, 251, 255, 0.96) !important;
+  border-radius: $radius-2xl $radius-2xl 0 0;
+  box-shadow: 0 -18rpx 50rpx rgba(64, 111, 176, 0.16);
+  -webkit-backdrop-filter: blur(28rpx);
+  backdrop-filter: blur(28rpx);
+}
+
+.subpage-shell .uni-popup-dialog {
+  overflow: hidden;
+  color: $text-primary;
+  background: rgba(248, 251, 255, 0.97) !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl !important;
+  box-shadow: $shadow-lg;
+}
+
+.subpage-shell button::after {
+  border: 0;
+}
+
+.subpage-shell .bottom-bar,
+.subpage-shell .footer {
+  background: rgba(248, 251, 255, 0.9) !important;
+  border-top: 1rpx solid rgba(207, 223, 243, 0.72);
+  box-shadow: 0 -10rpx 30rpx rgba(64, 111, 176, 0.08);
+  -webkit-backdrop-filter: blur(24rpx);
+  backdrop-filter: blur(24rpx);
+}
+
+.subpage-shell .save-btn,
+.subpage-shell .submit-btn,
+.subpage-shell .btn-save,
+.subpage-shell .btn-confirm,
+.subpage-shell .empty-state__btn,
+.subpage-shell .confirm-btn,
+.subpage-shell .footer__btn--primary,
+.subpage-shell .popup-confirm,
+.subpage-shell .popup__btn--primary {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%) !important;
+  border-radius: $radius-full;
+  box-shadow: 0 10rpx 26rpx rgba(79, 134, 247, 0.22);
+}
+
+.subpage-shell .cancel-btn,
+.subpage-shell .btn-cancel,
+.subpage-shell .popup-cancel,
+.subpage-shell .popup__btn--ghost {
+  color: $primary !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1rpx solid rgba(79, 134, 247, 0.28);
+  border-radius: $radius-full;
+}
+
+.subpage-shell .empty-state,
+.subpage-shell .empty {
+  color: $text-secondary;
+}
+
+.subpage-shell .safe-bottom {
+  height: calc(env(safe-area-inset-bottom) + 28rpx);
 }
 
 view, text, scroll-view {
@@ -174,8 +409,9 @@ view, text, scroll-view {
 
 /* --- Card Components --- */
 .card {
-  background-color: $bg-card;
-  border-radius: $radius-xl;
+  background: $frost-white;
+  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: $radius-2xl;
   padding: $spacing-lg;
   box-shadow: $shadow-card;
   margin-bottom: $section-gap;
@@ -183,7 +419,7 @@ view, text, scroll-view {
 
 .card-elevated {
   background-color: $bg-elevated;
-  border-radius: $radius-xl;
+  border-radius: $radius-2xl;
   padding: $spacing-lg;
   box-shadow: $shadow-md;
   margin-bottom: $section-gap;
@@ -191,7 +427,7 @@ view, text, scroll-view {
 
 .card-flat {
   background-color: $bg-card;
-  border-radius: $radius-xl;
+  border-radius: $radius-2xl;
   padding: $spacing-lg;
   margin-bottom: $section-gap;
 }
@@ -284,7 +520,7 @@ view, text, scroll-view {
 
 /* --- Buttons --- */
 .btn-primary {
-  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 55%, #7E85FF 100%);
   color: $text-inverse;
   border: none;
   border-radius: $radius-full;
@@ -293,11 +529,11 @@ view, text, scroll-view {
   padding: 24rpx 64rpx;
   text-align: center;
   transition: all $duration-fast $ease-default;
-  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.3);
+  box-shadow: 0 10rpx 26rpx rgba(79, 134, 247, 0.24);
 
   &:active {
     transform: scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(108, 158, 255, 0.2);
+    box-shadow: 0 4rpx 12rpx rgba(79, 134, 247, 0.2);
   }
 }
 
@@ -367,7 +603,7 @@ view, text, scroll-view {
 
 .fab-primary {
   background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
-  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(79, 134, 247, 0.4);
 }
 
 /* --- Gradient Text --- */
@@ -416,7 +652,7 @@ view, text, scroll-view {
 .cu-btn.bg-blue {
   background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
   color: $text-inverse;
-  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(79, 134, 247, 0.3);
 }
 
 .cu-avatar {

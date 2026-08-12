@@ -5,7 +5,7 @@
   * @Description: 姨妈助手主页
 -->
 <template>
-  <view class="period-page">
+  <view class="period-page subpage-shell">
     <view class="period-header">
       <view class="period-hero">
         <view class="period-hero__top">
@@ -14,7 +14,7 @@
             <text class="period-hero__title">{{ heroTitle }}</text>
           </view>
           <view class="period-hero__setting" @click="goToSettings">
-            <uni-icons type="gear" size="22" color="#BE185D" />
+            <uni-icons type="gear" size="22" color="#4F86F7" />
           </view>
         </view>
 
@@ -54,7 +54,7 @@
         </view>
         <view class="period-action" @click="goToSettings">
           <view class="period-action__icon pale">
-            <uni-icons type="gear" size="20" color="#BE185D" />
+            <uni-icons type="gear" size="20" color="#4F86F7" />
           </view>
           <text>设置</text>
         </view>
@@ -66,7 +66,7 @@
           :class="{ active: viewMode === 'calendar' }"
           @click="switchView('calendar')"
         >
-          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#BE185D' : '#9BA8B7'" />
+          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#4F86F7' : '#8EA0B8'" />
           <text>日历</text>
         </view>
         <view
@@ -74,7 +74,7 @@
           :class="{ active: viewMode === 'timeline' }"
           @click="switchView('timeline')"
         >
-          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#BE185D' : '#9BA8B7'" />
+          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#4F86F7' : '#8EA0B8'" />
           <text>列表</text>
         </view>
       </view>
@@ -108,7 +108,7 @@
             <text class="section-header__subtitle">{{ selectedDateRecords.length }} 条记录</text>
           </view>
           <view class="section-header__add" @click="handleAddRecord">
-            <uni-icons type="plus" size="16" color="#BE185D" />
+            <uni-icons type="plus" size="16" color="#4F86F7" />
           </view>
         </view>
 
@@ -125,7 +125,7 @@
 
         <view v-else-if="selectedDate" class="empty-state">
           <view class="empty-state__icon">
-            <uni-icons type="calendar" size="40" color="#F472B6" />
+            <uni-icons type="calendar" size="40" color="#4F86F7" />
           </view>
           <text class="empty-state__title">这一天还没有记录</text>
           <text class="empty-state__text">添加经期、体温或检查信息，后续回看会更清楚。</text>
@@ -135,7 +135,7 @@
       <view v-else class="timeline-view">
         <view v-if="timelineRecords.length === 0" class="empty-state">
           <view class="empty-state__icon">
-            <uni-icons type="calendar" size="40" color="#F472B6" />
+            <uni-icons type="calendar" size="40" color="#4F86F7" />
           </view>
           <text class="empty-state__title">暂无记录</text>
           <text class="empty-state__text">从今天开始记录，周期趋势会慢慢变得可参考。</text>
@@ -230,7 +230,7 @@ export default {
         aqq: '#DBEAFE',
         plq: '#FFF1F2'
       }
-      return colorMap[this.currentState] || '#F4F6F9'
+      return colorMap[this.currentState] || '#F2F7FE'
     },
     statusStyle() {
       return `color: ${this.statusColor}; background-color: ${this.statusBgColor}`
@@ -611,7 +611,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F7F8FB;
+  background: #F2F7FE;
 }
 
 .period-header {
@@ -619,7 +619,7 @@ export default {
   top: 0;
   z-index: 100;
   padding: 24rpx 30rpx 18rpx;
-  background: #F7F8FB;
+  background: #F2F7FE;
 }
 
 .period-hero {
@@ -732,7 +732,7 @@ export default {
     display: block;
     margin-top: 4rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 }
 
@@ -766,7 +766,7 @@ export default {
     }
 
     &.blue {
-      background: #6C9EFF;
+      background: #4F86F7;
     }
 
     &.pale {
@@ -797,7 +797,7 @@ export default {
     justify-content: center;
     gap: 8rpx;
     border-radius: 14rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
     font-size: 26rpx;
     font-weight: 600;
 
@@ -818,7 +818,7 @@ export default {
   overflow: hidden;
   background: #FFFFFF;
   border-radius: 18rpx;
-  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.08);
+  box-shadow: 0 8rpx 24rpx rgba(79, 134, 247, 0.08);
 
   ::v-deep .uni-calendar {
     background: transparent;
@@ -842,7 +842,7 @@ export default {
     display: block;
     margin-top: 6rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 
   &__add {
@@ -892,7 +892,7 @@ export default {
     margin-top: 10rpx;
     font-size: 24rpx;
     line-height: 1.5;
-    color: #9BA8B7;
+    color: #8EA0B8;
     text-align: center;
   }
 }
@@ -918,5 +918,85 @@ export default {
   &:active {
     transform: scale(0.96);
   }
+}
+
+/* Glacier morning visual alignment */
+.period-page {
+  background: transparent;
+}
+
+.period-header {
+  padding: 24rpx $page-padding 20rpx;
+  background: rgba(248, 251, 255, 0.78);
+  border-bottom: 1rpx solid rgba(214, 229, 247, 0.72);
+  box-shadow: 0 10rpx 28rpx rgba(64, 111, 176, 0.08);
+  backdrop-filter: blur(28rpx);
+}
+
+.period-hero {
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  background: linear-gradient(135deg, rgba(238, 247, 255, 0.9) 0%, rgba(255, 255, 255, 0.92) 54%, rgba(238, 231, 255, 0.84) 100%);
+  box-shadow: $shadow-card;
+
+  &__title { color: $text-primary; }
+  &__eyebrow { color: $primary-dark; }
+
+  &__setting {
+    border: 1rpx solid rgba(79, 134, 247, 0.18);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.period-insight,
+.period-action,
+.view-switch {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  box-shadow: $shadow-sm;
+}
+
+.period-action {
+  border-radius: $radius-xl;
+
+  &__icon.primary,
+  &__icon.blue { background: $primary; }
+
+  &__icon.pale { background: rgba(79, 134, 247, 0.12); }
+  text { color: $text-primary; }
+}
+
+.view-switch {
+  border-radius: $radius-full;
+
+  &__item {
+    border-radius: $radius-full;
+
+    &.active {
+      color: $primary;
+      background: rgba(79, 134, 247, 0.1);
+    }
+  }
+}
+
+.content-scroll { padding-top: 22rpx; }
+
+.calendar-card {
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: $shadow-card;
+}
+
+.empty-state {
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: $shadow-card;
+}
+
+.fab-button {
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%);
+  box-shadow: 0 14rpx 34rpx rgba(79, 134, 247, 0.26);
 }
 </style>

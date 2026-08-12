@@ -1,5 +1,5 @@
 <template>
-  <view>
+  <view class="textview-page subpage-shell">
     <uni-card class="view-title" :title="title">
       <text class="uni-body view-content">{{ content }}</text>
     </uni-card>
@@ -24,20 +24,26 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 page {
-  background-color: #ffffff;
+  background-color: $bg-page;
+}
+
+.textview-page {
+  min-height: 100vh;
+  padding: $page-padding;
+  box-sizing: border-box;
 }
 
 .view-title {
-  font-weight: bold;
+  font-weight: $font-weight-semibold;
 }
 
 .view-content {
   font-size: 26rpx;
   padding: 12px 5px 0;
-  color: #333;
-  line-height: 24px;
+  color: $text-secondary;
+  line-height: $line-height-relaxed;
   font-weight: normal;
 }
 </style>

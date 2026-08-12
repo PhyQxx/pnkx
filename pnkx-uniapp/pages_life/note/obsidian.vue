@@ -1,5 +1,5 @@
 <template>
-  <view class="obsidian-page">
+  <view class="obsidian-page subpage-shell">
     <!-- Header -->
     <view class="obs-header">
       <view class="obs-header__bg">
@@ -186,7 +186,7 @@ export default {
 /* Header */
 .obs-header {
   position: relative;
-  background: linear-gradient(135deg, #6C63FF 0%, #5A8DEE 100%);
+  background: linear-gradient(135deg, #6C63FF 0%, #4F86F7 100%);
   padding: $spacing-xl $page-padding $spacing-2xl;
   overflow: hidden;
 

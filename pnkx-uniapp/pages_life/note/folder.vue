@@ -5,7 +5,7 @@
  * @Description: 文件夹管理页
 -->
 <template>
-  <view class="folder-page">
+  <view class="folder-page subpage-shell">
     <view class="folder-header">
       <view class="header-copy">
         <text class="eyebrow">Folders</text>
@@ -102,9 +102,9 @@
             :class="{ selected: tempParentId === 0 }"
             @click="tempParentId = 0"
           >
-            <uni-icons type="folder" size="20" color="#6C9EFF" />
+            <uni-icons type="folder" size="20" color="#4F86F7" />
             <text class="folder-option-name">根目录</text>
-            <uni-icons v-if="tempParentId === 0" type="checkmarkempty" size="18" color="#6C9EFF" />
+            <uni-icons v-if="tempParentId === 0" type="checkmarkempty" size="18" color="#4F86F7" />
           </view>
           <view
             v-for="folder in flatFolderList"
@@ -113,9 +113,9 @@
             :class="{ selected: tempParentId === folder.id, disabled: folder.id === (editingFolder && editingFolder.id) }"
             @click="selectParent(folder)"
           >
-            <uni-icons type="folder" size="20" :color="folder.password ? '#FBBF24' : '#6C9EFF'" />
+            <uni-icons type="folder" size="20" :color="folder.password ? '#FBBF24' : '#4F86F7'" />
             <text class="folder-option-name">{{ folder.indent }}{{ folder.name }}</text>
-            <uni-icons v-if="tempParentId === folder.id" type="checkmarkempty" size="18" color="#6C9EFF" />
+            <uni-icons v-if="tempParentId === folder.id" type="checkmarkempty" size="18" color="#4F86F7" />
           </view>
         </scroll-view>
       </view>
@@ -340,7 +340,7 @@ export default {
 <style lang="scss" scoped>
 .folder-page {
   height: 100vh;
-  background: linear-gradient(180deg, #EEF5FF 0%, #F7F8FB 360rpx, #F7F8FB 100%);
+  background: linear-gradient(180deg, #EEF5FF 0%, #F2F7FE 360rpx, #F2F7FE 100%);
 
   .folder-header {
     position: relative;

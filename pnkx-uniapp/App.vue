@@ -69,17 +69,38 @@ export default {
 </script>
 
 <style lang="scss">
-@import '@/static/scss/index.scss';
+@import '@/static/scss/global.scss';
+@import '@/static/scss/colorui.css';
+@import '@/static/font/iconfont.css';
 
 .uni-page-head__title {
-  color: $primary;
+  color: $text-primary;
   font-weight: $font-weight-semibold;
+}
+
+.uni-page-head .uni-btn-icon,
+.uni-page-head .uni-page-head-btn,
+.uni-page-head .uni-page-head__btn {
+  color: $text-primary !important;
+}
+
+.uni-page-head {
+  background: rgba(248, 251, 255, 0.88) !important;
+  border-bottom: 1rpx solid rgba(215, 229, 247, 0.66) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 uni-page {
   position: fixed;
   overflow: auto;
   background-color: $bg-page;
+  background-image:
+    linear-gradient(180deg, rgba(246, 250, 255, 0.08) 0%, $bg-page 520rpx),
+    url('/static/images/glacier-aurora-bg.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% auto;
 }
 
 uni-page-body {

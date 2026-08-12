@@ -1,5 +1,5 @@
 <template>
-  <view class="statistics">
+  <view class="statistics subpage-shell">
     <view class="header">
       <view class="month-selector">
         <view class="month-selector__arrow" @click="changeMonth(-1)">
@@ -120,7 +120,7 @@ export default {
       ],
       lineData: [],
       pieData: [],
-      colors: ['#6C9EFF', '#FF6B6B', '#4ADE80', '#FBBF24', '#A78BFA', '#F472B6', '#34D399', '#60A5FA']
+      colors: ['#4F86F7', '#FF6B6B', '#4ADE80', '#FBBF24', '#A78BFA', '#F472B6', '#34D399', '#60A5FA']
     };
   },
   computed: {

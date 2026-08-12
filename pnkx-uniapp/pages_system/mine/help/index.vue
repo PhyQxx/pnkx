@@ -1,5 +1,5 @@
 <template>
-  <view class="help-container">
+  <view class="help-container subpage-shell">
     <view v-for="(item, findex) in list" :key="findex" :title="item.title" class="list-title">
       <view class="text-title">
         <view :class="item.icon"></view>

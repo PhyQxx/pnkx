@@ -5,7 +5,7 @@
   * @Description: 姨妈记录编辑页
 -->
 <template>
-  <view class="record-page">
+  <view class="record-page subpage-shell">
     <scroll-view class="record-scroll" scroll-y>
       <view class="record-hero">
         <text class="record-hero__eyebrow">{{ recordId ? '编辑记录' : '新增记录' }}</text>
@@ -59,7 +59,7 @@
                 <text class="toggle-card__title">姨妈走了</text>
                 <text class="toggle-card__desc">标记经期结束</text>
               </view>
-              <switch :checked="form.go" @click.stop @change="onGoChange" color="#6C9EFF" />
+              <switch :checked="form.go" @click.stop @change="onGoChange" color="#4F86F7" />
             </view>
           </view>
         </view>
@@ -385,7 +385,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F7F8FB;
+  background: #F2F7FE;
 }
 
 .record-scroll {
@@ -439,7 +439,7 @@ export default {
     min-height: 76rpx;
     border: none;
     border-radius: 14rpx;
-    background: #F7F8FB;
+    background: #F2F7FE;
   }
 }
 
@@ -460,7 +460,7 @@ export default {
     display: block;
     margin-top: 6rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 }
 
@@ -477,7 +477,7 @@ export default {
   min-height: 104rpx;
   padding: 18rpx;
   border-radius: 16rpx;
-  background: #F7F8FB;
+  background: #F2F7FE;
   border: 2rpx solid transparent;
 
   &.single {
@@ -503,7 +503,7 @@ export default {
     }
 
     &.end {
-      background: #6C9EFF;
+      background: #4F86F7;
     }
 
     &.soft {
@@ -527,7 +527,7 @@ export default {
     display: block;
     margin-top: 6rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 
   switch {

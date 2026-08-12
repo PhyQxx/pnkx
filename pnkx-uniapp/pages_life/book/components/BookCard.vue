@@ -73,7 +73,7 @@ export default {
 			return this.item.lastReadChapterName || '已阅读'
 		},
 		metaColor() {
-			return '#9BA8B7'
+			return '#8EA0B8'
 		},
 		arrowColor() {
 			return '#D1D8E0'

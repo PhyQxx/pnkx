@@ -1,5 +1,5 @@
 <template>
-  <view class="about-container">
+  <view class="about-container subpage-shell">
     <view class="header-section">
       <view class="header-bg"></view>
       <view class="brand-area">

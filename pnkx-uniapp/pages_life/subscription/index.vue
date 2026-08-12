@@ -1,5 +1,5 @@
 <template>
-  <view class="sub-page">
+  <view class="sub-page subpage-shell">
     <!-- 预测汇总 -->
     <view class="sub-summary" v-if="forecast.monthlyTotal !== undefined">
       <view class="sub-summary__card sub-summary__card--month">

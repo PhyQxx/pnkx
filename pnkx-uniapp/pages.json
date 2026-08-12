@@ -43,26 +43,26 @@
     {
       "path": "pages/login",
       "style": {
-        "navigationBarTitleText": "登录"
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/index",
       "style": {
-        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/function/index",
       "style": {
-        "navigationBarTitleText": "生活助手"
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/mine/index",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationStyle": "custom"
       }
     }
   ],
@@ -517,10 +517,10 @@
     }
   ],
   "tabBar": {
-    "color": "#9BA8B7",
-    "selectedColor": "#6C9EFF",
+    "color": "#8EA0B8",
+    "selectedColor": "#4F86F7",
     "borderStyle": "white",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#F8FBFF",
     "list": [
       {
         "pagePath": "pages/index",
@@ -545,7 +545,7 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Pei你看雪",
-    "navigationBarBackgroundColor": "#FFFFFF"
+    "navigationBarBackgroundColor": "#F8FBFF"
   },
   "preloadRule": {
     "pages/index": {

@@ -1,5 +1,5 @@
 <template>
-  <view class="recipe-page">
+  <view class="recipe-page subpage-shell">
     <!-- Search -->
     <view class="search-bar">
       <uni-search-bar

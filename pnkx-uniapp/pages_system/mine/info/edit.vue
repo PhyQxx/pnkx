@@ -1,5 +1,5 @@
 <template>
-  <view class="edit-container">
+  <view class="edit-container subpage-shell">
     <view class="edit-card">
       <uni-forms ref="form" :model="user" labelWidth="80px">
         <uni-forms-item label="用户昵称" name="nickName">

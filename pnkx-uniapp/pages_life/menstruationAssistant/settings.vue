@@ -5,7 +5,7 @@
   * @Description: 经期设置页
 -->
 <template>
-  <view class="settings-page">
+  <view class="settings-page subpage-shell">
     <view class="settings-hero">
       <text class="settings-hero__eyebrow">预测偏好</text>
       <text class="settings-hero__title">让提醒更贴近你的节律</text>
@@ -106,7 +106,7 @@ export default {
 .settings-page {
   min-height: 100vh;
   padding: 24rpx 30rpx 140rpx;
-  background: #F7F8FB;
+  background: #F2F7FE;
 }
 
 .settings-hero {
@@ -173,7 +173,7 @@ export default {
     margin-top: 8rpx;
     font-size: 23rpx;
     line-height: 1.45;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 
   &__control {
