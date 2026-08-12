@@ -119,7 +119,7 @@ public class PxBookkeepingAccountServiceImpl implements IPxBookKeepingAccountSer
      * @param pxBookkeepingClassification 账户
      * @return 账户列表
      */
-    @DataScopeSelf(alias = "r")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public List<PxBookkeepingAccount> getLatelyAccountList(PxBookkeepingClassification pxBookkeepingClassification) {
         List<PxBookkeepingAccount> latelyAccountList = pxBookkeepingAccountMapper.getLatelyAccountList(pxBookkeepingClassification);
