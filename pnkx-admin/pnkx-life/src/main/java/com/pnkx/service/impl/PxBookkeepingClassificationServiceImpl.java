@@ -106,7 +106,7 @@ public class PxBookkeepingClassificationServiceImpl implements IPxBookkeepingCla
      * @param pxBookkeepingClassification 分类
      * @return 分类列表
      */
-    @DataScopeSelf(alias = "r")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public List<PxBookkeepingClassification> getLatelyTypeList(PxBookkeepingClassification pxBookkeepingClassification) {
         List<PxBookkeepingClassification> latelyTypeList = pxBookkeepingClassificationMapper.getLatelyTypeList(pxBookkeepingClassification);
