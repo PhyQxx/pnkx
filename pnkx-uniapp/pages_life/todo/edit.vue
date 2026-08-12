@@ -5,7 +5,7 @@
  * @Description: 待办编辑页
 -->
 <template>
-  <view class="todo-edit">
+  <view class="todo-edit subpage-shell">
     <!-- 内容输入 -->
     <view class="form-section">
       <view class="form-label">内容 <text class="required">*</text></view>
@@ -26,7 +26,7 @@
         <text class="picker-value" :class="{ placeholder: !performerNameDisplay }">
           {{ performerNameDisplay || '请选择执行者' }}
         </text>
-        <uni-icons type="arrowright" size="14" color="#9BA8B7" />
+        <uni-icons type="arrowright" size="14" color="#8EA0B8" />
       </view>
     </view>
 
@@ -92,12 +92,12 @@
               @click="choiceUser(user)"
             >
               <view class="user-info">
-                <uni-icons type="person-filled" size="18" color="#34D399" />
+                <uni-icons type="person-filled" size="18" color="#4F86F7" />
                 <text class="user-name">{{ user.nickName }}</text>
               </view>
               <uni-icons
                 :type="selectedUserIds.includes(user.userId) ? 'checkbox-filled' : 'circle'"
-                :color="selectedUserIds.includes(user.userId) ? '#34D399' : '#D1D8E0'"
+                :color="selectedUserIds.includes(user.userId) ? '#4F86F7' : '#C8D6E8'"
                 size="22"
               />
             </view>
@@ -376,9 +376,15 @@ export default {
   padding-bottom: 40rpx;
 
   .form-section {
-    background-color: $bg-card;
+    background: rgba(255, 255, 255, 0.88);
     padding: 30rpx;
-    margin-bottom: 20rpx;
+    margin: 0 $page-padding 22rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-2xl;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(24rpx);
+
+    &:first-child { margin-top: 28rpx; }
 
     .form-label {
       font-size: $font-body;
@@ -396,8 +402,9 @@ export default {
       width: 100%;
       min-height: 200rpx;
       padding: 20rpx;
-      background-color: $bg-page;
-      border-radius: $radius-sm;
+      background-color: rgba(246, 250, 255, 0.84);
+      border: 1rpx solid rgba(188, 210, 239, 0.34);
+      border-radius: $radius-xl;
       font-size: $font-h3;
       line-height: 1.6;
       color: $text-primary;
@@ -417,11 +424,11 @@ export default {
           margin-right: 20rpx;
           margin-bottom: 20rpx;
           background-color: $bg-page;
-          border-radius: $radius-sm;
+          border-radius: $radius-lg;
 
           &.is-checked {
-            background-color: $todo;
-            border-color: $todo;
+            background-color: $primary;
+            border-color: $primary;
 
             .checklist-text {
               color: #FFFFFF;
@@ -448,7 +455,7 @@ export default {
       gap: 10rpx;
       padding: 30rpx;
       background-color: $bg-card;
-      border-radius: $radius-sm;
+      border-radius: $radius-xl;
       font-size: $font-body;
       color: $danger;
       transition: all $duration-fast;
@@ -464,8 +471,9 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 20rpx;
-    background-color: $bg-page;
-    border-radius: $radius-sm;
+    background-color: rgba(246, 250, 255, 0.84);
+    border: 1rpx solid rgba(188, 210, 239, 0.34);
+    border-radius: $radius-xl;
 
     .picker-value {
       flex: 1;

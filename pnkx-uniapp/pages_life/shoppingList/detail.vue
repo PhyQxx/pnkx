@@ -1,5 +1,5 @@
 <template>
-  <view class="detail-page">
+  <view class="detail-page subpage-shell">
     <!-- Add input -->
     <view class="add-bar">
       <input

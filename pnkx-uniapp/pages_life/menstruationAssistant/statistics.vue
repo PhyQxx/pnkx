@@ -5,7 +5,7 @@
   * @Description: 经期统计页
 -->
 <template>
-  <view class="statistics-page">
+  <view class="statistics-page subpage-shell">
     <view class="stats-hero">
       <text class="stats-hero__eyebrow">周期统计</text>
       <text class="stats-hero__title">{{ stats.avgCycleText }} 天</text>
@@ -262,7 +262,7 @@ export default {
 .statistics-page {
   min-height: 100vh;
   padding: 24rpx 30rpx;
-  background: #F7F8FB;
+  background: #F2F7FE;
 }
 
 .stats-hero {
@@ -310,7 +310,7 @@ export default {
   border-top: 6rpx solid #F472B6;
 
   &.blue {
-    border-top-color: #6C9EFF;
+    border-top-color: #4F86F7;
   }
 
   &.green {
@@ -359,7 +359,7 @@ export default {
     display: block;
     margin-top: 6rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 }
 
@@ -391,7 +391,7 @@ export default {
     height: 16rpx;
     overflow: hidden;
     border-radius: 999rpx;
-    background: #F4F6F9;
+    background: #F2F7FE;
   }
 
   &__bar-fill {
@@ -411,7 +411,7 @@ export default {
   align-items: center;
   gap: 18rpx;
   padding: 18rpx 0;
-  border-bottom: 1px solid #F4F6F9;
+  border-bottom: 1px solid #F2F7FE;
 
   &:last-child {
     border-bottom: none;
@@ -466,7 +466,7 @@ export default {
     display: block;
     margin-top: 8rpx;
     font-size: 23rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -506,7 +506,7 @@ export default {
     margin-top: 10rpx;
     font-size: 24rpx;
     line-height: 1.5;
-    color: #9BA8B7;
+    color: #8EA0B8;
     text-align: center;
   }
 }

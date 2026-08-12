@@ -5,7 +5,7 @@
  * @Description: 卡券使用记录页
 -->
 <template>
-  <view class="history-page">
+  <view class="history-page subpage-shell">
     <view v-if="historyList.length === 0" class="empty-state">
       <uni-icons type="list" size="80" color="#D1D8E0" />
       <text class="empty-text">暂无使用记录</text>
@@ -29,7 +29,7 @@
             <uni-icons 
               :type="item.userName === '秦可爱' ? 'person' : 'person'" 
               size="18" 
-              :color="item.userName === '秦可爱' ? '#F472B6' : '#6C9EFF'"
+              :color="item.userName === '秦可爱' ? '#F472B6' : '#4F86F7'"
             />
           </view>
         </view>

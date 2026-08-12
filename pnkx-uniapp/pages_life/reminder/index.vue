@@ -1,5 +1,5 @@
 <template>
-  <view class="reminder-page">
+  <view class="reminder-page subpage-shell">
     <!-- Tabs -->
     <view class="tabs">
       <view

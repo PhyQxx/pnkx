@@ -1,5 +1,5 @@
 <template>
-  <view class="life-report">
+  <view class="life-report subpage-shell">
     <view class="header">
       <view class="period-selector">
         <view
@@ -104,24 +104,24 @@ export default {
       isStreaming: false,
       xhr: null,
       htmlTagStyle: {
-        h1: 'font-size:32rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;',
-        h2: 'font-size:30rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;padding-bottom:8rpx;border-bottom:2rpx solid #e4e7ed;',
-        h3: 'font-size:28rpx;font-weight:bold;color:#5A8DEE;margin:16rpx 0 8rpx;padding-left:12rpx;border-left:6rpx solid #5A8DEE;',
-        h4: 'font-size:27rpx;font-weight:bold;color:#303133;margin:12rpx 0 6rpx;',
+        h1: 'font-size:32rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;',
+        h2: 'font-size:30rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;padding-bottom:8rpx;border-bottom:2rpx solid #DFE9F6;',
+        h3: 'font-size:28rpx;font-weight:bold;color:#4F86F7;margin:16rpx 0 8rpx;padding-left:12rpx;border-left:6rpx solid #4F86F7;',
+        h4: 'font-size:27rpx;font-weight:bold;color:#123B70;margin:12rpx 0 6rpx;',
         p: 'margin:8rpx 0;line-height:1.7;',
-        blockquote: 'border-left:6rpx solid #5A8DEE;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#606266;border-radius:0 8rpx 8rpx 0;',
+        blockquote: 'border-left:6rpx solid #4F86F7;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#4F627B;border-radius:0 8rpx 8rpx 0;',
         pre: 'background:#1e1e2e;border-radius:12rpx;padding:20rpx 24rpx;margin:16rpx 0;overflow-x:auto;',
         code: 'font-size:24rpx;font-family:Consolas,Monaco,monospace;',
-        table: 'width:100%;border-collapse:collapse;font-size:24rpx;border:2rpx solid #e4e7ed;border-radius:8rpx;overflow:hidden;margin:16rpx 0;',
-        th: 'background:#5A8DEE;color:#fff;padding:10rpx 16rpx;text-align:left;font-weight:bold;',
+        table: 'width:100%;border-collapse:collapse;font-size:24rpx;border:2rpx solid #DFE9F6;border-radius:8rpx;overflow:hidden;margin:16rpx 0;',
+        th: 'background:#4F86F7;color:#fff;padding:10rpx 16rpx;text-align:left;font-weight:bold;',
         td: 'padding:10rpx 16rpx;border-bottom:2rpx solid #f0f0f0;',
         ul: 'padding-left:28rpx;margin:6rpx 0;list-style-type:disc;',
         ol: 'padding-left:36rpx;margin:6rpx 0;',
         li: 'margin:6rpx 0;line-height:1.7;',
-        hr: 'border:none;border-top:2rpx solid #e4e7ed;margin:16rpx 0;',
-        strong: 'font-weight:bold;color:#303133;',
-        em: 'font-style:italic;color:#606266;',
-        a: 'color:#5A8DEE;text-decoration:none;'
+        hr: 'border:none;border-top:2rpx solid #DFE9F6;margin:16rpx 0;',
+        strong: 'font-weight:bold;color:#123B70;',
+        em: 'font-style:italic;color:#4F627B;',
+        a: 'color:#4F86F7;text-decoration:none;'
       }
     }
   },
@@ -536,7 +536,7 @@ export default {
   width: 56rpx;
   height: 56rpx;
   border-radius: $radius-full;
-  background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+  background: linear-gradient(135deg, #4F86F7, #6C63FF);
   display: flex;
   align-items: center;
   justify-content: center;

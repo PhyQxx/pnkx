@@ -1,5 +1,5 @@
 <template>
-  <view class="ai-chat">
+  <view class="ai-chat subpage-shell">
     <!-- 消息区域 -->
     <scroll-view class="chat-body" scroll-y :scroll-into-view="scrollToId" :scroll-with-animation="false">
       <!-- 欢迎消息 -->
@@ -103,24 +103,24 @@ export default {
         { key: 'analysis', text: '分析本月消费', icon: '📊' },
       ],
       htmlTagStyle: {
-        h1: 'font-size:32rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;',
-        h2: 'font-size:30rpx;font-weight:bold;color:#303133;margin:20rpx 0 10rpx;padding-bottom:8rpx;border-bottom:2rpx solid #e4e7ed;',
-        h3: 'font-size:28rpx;font-weight:bold;color:#5A8DEE;margin:16rpx 0 8rpx;padding-left:12rpx;border-left:6rpx solid #5A8DEE;',
-        h4: 'font-size:27rpx;font-weight:bold;color:#303133;margin:12rpx 0 6rpx;',
+        h1: 'font-size:32rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;',
+        h2: 'font-size:30rpx;font-weight:bold;color:#123B70;margin:20rpx 0 10rpx;padding-bottom:8rpx;border-bottom:2rpx solid #DFE9F6;',
+        h3: 'font-size:28rpx;font-weight:bold;color:#4F86F7;margin:16rpx 0 8rpx;padding-left:12rpx;border-left:6rpx solid #4F86F7;',
+        h4: 'font-size:27rpx;font-weight:bold;color:#123B70;margin:12rpx 0 6rpx;',
         p: 'margin:8rpx 0;line-height:1.7;',
-        blockquote: 'border-left:6rpx solid #5A8DEE;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#606266;border-radius:0 8rpx 8rpx 0;',
+        blockquote: 'border-left:6rpx solid #4F86F7;padding:10rpx 16rpx;margin:10rpx 0;background:#f8f9ff;color:#4F627B;border-radius:0 8rpx 8rpx 0;',
         pre: 'background:#1e1e2e;border-radius:12rpx;padding:20rpx 24rpx;margin:16rpx 0;overflow-x:auto;',
         code: 'font-size:24rpx;font-family:Consolas,Monaco,monospace;',
-        table: 'width:100%;border-collapse:collapse;font-size:24rpx;border:2rpx solid #e4e7ed;border-radius:8rpx;overflow:hidden;margin:16rpx 0;',
-        th: 'background:#5A8DEE;color:#fff;padding:10rpx 16rpx;text-align:left;font-weight:bold;',
+        table: 'width:100%;border-collapse:collapse;font-size:24rpx;border:2rpx solid #DFE9F6;border-radius:8rpx;overflow:hidden;margin:16rpx 0;',
+        th: 'background:#4F86F7;color:#fff;padding:10rpx 16rpx;text-align:left;font-weight:bold;',
         td: 'padding:10rpx 16rpx;border-bottom:2rpx solid #f0f0f0;',
         ul: 'padding-left:28rpx;margin:6rpx 0;list-style-type:disc;',
         ol: 'padding-left:36rpx;margin:6rpx 0;',
         li: 'margin:6rpx 0;line-height:1.7;',
-        hr: 'border:none;border-top:2rpx solid #e4e7ed;margin:16rpx 0;',
-        strong: 'font-weight:bold;color:#303133;',
-        em: 'font-style:italic;color:#606266;',
-        a: 'color:#5A8DEE;text-decoration:none;'
+        hr: 'border:none;border-top:2rpx solid #DFE9F6;margin:16rpx 0;',
+        strong: 'font-weight:bold;color:#123B70;',
+        em: 'font-style:italic;color:#4F627B;',
+        a: 'color:#4F86F7;text-decoration:none;'
       }
     }
   },
@@ -475,7 +475,7 @@ uni-page-body {
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+  background: linear-gradient(135deg, #4F86F7, #6C63FF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -490,14 +490,14 @@ uni-page-body {
 
 .welcome-title {
   font-size: 34rpx;
-  color: #303133;
+  color: #123B70;
   font-weight: 600;
   margin-bottom: 12rpx;
 }
 
 .welcome-subtitle {
   font-size: 26rpx;
-  color: #909399;
+  color: #8EA0B8;
   margin-bottom: 32rpx;
 }
 
@@ -514,11 +514,11 @@ uni-page-body {
   gap: 8rpx;
   padding: 16rpx 24rpx;
   background: #fff;
-  border: 2rpx solid #e4e7ed;
+  border: 2rpx solid #DFE9F6;
   border-radius: 40rpx;
 
   &:active {
-    border-color: #5A8DEE;
+    border-color: #4F86F7;
     background: #f0f5ff;
   }
 }
@@ -529,7 +529,7 @@ uni-page-body {
 
 .quick-prompt-text {
   font-size: 26rpx;
-  color: #606266;
+  color: #4F627B;
 }
 
 /* 消息 */
@@ -552,7 +552,7 @@ uni-page-body {
   width: 60rpx;
   height: 60rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+  background: linear-gradient(135deg, #4F86F7, #6C63FF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -575,14 +575,14 @@ uni-page-body {
   word-break: break-word;
 
   &.user {
-    background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+    background: linear-gradient(135deg, #4F86F7, #6C63FF);
     color: #fff;
     border-bottom-right-radius: 8rpx;
   }
 
   &.assistant {
     background: #fff;
-    color: #303133;
+    color: #123B70;
     border-bottom-left-radius: 8rpx;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
   }
@@ -608,11 +608,11 @@ uni-page-body {
   font-size: 26rpx;
   border: 2rpx solid #dcdfe6;
   background: #fff;
-  color: #606266;
+  color: #4F627B;
 
   &.confirm {
-    background: #5A8DEE;
-    border-color: #5A8DEE;
+    background: #4F86F7;
+    border-color: #4F86F7;
     color: #fff;
   }
 
@@ -684,7 +684,7 @@ uni-page-body {
 .chat-input {
   flex: 1;
   height: 72rpx;
-  background: #f5f6f8;
+  background: #F2F7FE;
   border-radius: 40rpx;
   padding: 0 28rpx;
   font-size: 28rpx;
@@ -694,7 +694,7 @@ uni-page-body {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5A8DEE, #6C63FF);
+  background: linear-gradient(135deg, #4F86F7, #6C63FF);
   display: flex;
   align-items: center;
   justify-content: center;

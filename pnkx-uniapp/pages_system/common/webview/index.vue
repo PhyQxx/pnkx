@@ -1,5 +1,5 @@
 <template>
-  <view v-if="params.url">
+  <view v-if="params.url" class="webview-page subpage-shell">
     <web-view :webview-styles="webviewStyles" :src="`${params.url}`"></web-view>
   </view>
 </template>
@@ -11,7 +11,7 @@ export default {
       params: {},
       webviewStyles: {
         progress: {
-          color: "#FF3333"
+          color: "#4F86F7"
         }
       }
     }

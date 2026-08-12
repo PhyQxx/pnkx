@@ -1,6 +1,7 @@
 package com.pnkx.framework.aspectj;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 
 import org.aspectj.lang.JoinPoint;
@@ -69,6 +70,15 @@ public class DataScopeSelfAspect {
             }
         }
         if (baseEntity == null) {
+            return;
+        }
+
+        // 仅本人：忽略群组共享与管理员全量权限，只注入当前用户。
+        // 「最近使用」等个性化查询即使管理员也只反映本人习惯。
+        if (dataScope.onlySelf()) {
+            baseEntity.getParams().put(DataScopeSelf.SCOPE_ALL, false);
+            baseEntity.getParams().put(DataScopeSelf.SCOPE_USER_IDS,
+                    Collections.singletonList(currentUser.getUserId()));
             return;
         }
 

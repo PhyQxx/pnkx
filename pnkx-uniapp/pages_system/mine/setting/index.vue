@@ -1,5 +1,5 @@
 <template>
-  <view class="setting-container" :style="{height: `${windowHeight}px`}">
+  <view class="setting-container subpage-shell" :style="{height: `${windowHeight}px`}">
     <view class="menu-list">
       <view class="list-cell list-cell-arrow" @click="handleToPwd">
         <view class="menu-item-box">
@@ -141,7 +141,11 @@ export default {
 
 /* List Cell */
 .menu-list {
-  background-color: #ffffff;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-card;
   margin-bottom: $spacing-md;
 }
 
@@ -153,8 +157,8 @@ export default {
   padding: 26rpx 32rpx;
   font-size: 28rpx;
   line-height: 48rpx;
-  color: #333;
-  background-color: #fff;
+  color: $text-primary;
+  background-color: transparent;
   align-items: center;
 }
 
@@ -164,7 +168,7 @@ export default {
   height: 12rpx;
   width: 12rpx;
   border-width: 4rpx 4rpx 0 0;
-  border-color: #c0c0c0;
+  border-color: $gray-400;
   border-style: solid;
   transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
   position: absolute;
@@ -181,7 +185,7 @@ export default {
 
 .menu-icon {
   margin-right: 10rpx;
-  color: #5A8DEE;
+  color: #4F86F7;
   font-size: 32rpx;
 }
 </style>

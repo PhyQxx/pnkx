@@ -38,6 +38,15 @@ public @interface DataScopeSelf {
     String alias() default "";
 
     /**
+     * 是否严格只过滤当前登录用户本人（忽略群组共享与管理员全量权限）。
+     * <p>
+     * 为 true 时，切面只注入当前用户自己的 userId，既不扩展到所在群组成员，
+     * 也不因管理员身份而放开。适用于「最近使用」这类高度个性化、
+     * 只应反映用户本人使用习惯的聚合查询。
+     */
+    boolean onlySelf() default false;
+
+    /**
      * params 中存放可见 userId 集合的 key。
      */
     String SCOPE_USER_IDS = "scopeUserIds";

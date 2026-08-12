@@ -5,7 +5,7 @@
  * @Description: 情侣卡券列表页
 -->
 <template>
-  <view class="card-page">
+  <view class="card-page subpage-shell">
     <view v-if="cardList.length === 0" class="empty-state">
       <uni-icons type="wallet" size="80" color="#D1D8E0" />
       <text class="empty-text">暂无卡券</text>

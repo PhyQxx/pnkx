@@ -3,7 +3,7 @@
  * @Description: 书籍详情 + 章节目录
 -->
 <template>
-	<view class="detail-page">
+	<view class="detail-page subpage-shell">
 		<!-- 头部信息卡 -->
 		<view class="book-hero" :class="'hero-' + coverScheme">
 			<view class="hero-mask"></view>
@@ -52,7 +52,7 @@
 						@confirm="searchChapters"
 						@clear="searchChapters"
 						prefixIcon="search"
-						:styles="{ backgroundColor: '#F4F6F9' }"
+						:styles="{ backgroundColor: '#F2F7FE' }"
 					/>
 				</view>
 			</view>

@@ -5,7 +5,7 @@
  * @Description: 纪念日列表页
 -->
 <template>
-  <view class="commemoration-day-page">
+  <view class="commemoration-day-page subpage-shell">
     <view class="search-bar">
       <uni-search-bar
         v-model="searchKeyword"

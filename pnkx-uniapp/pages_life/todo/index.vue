@@ -5,7 +5,7 @@
  * @Description: 待办列表页
 -->
 <template>
-  <view class="todo-page">
+  <view class="todo-page subpage-shell">
     <view class="fixed-header">
       <view class="overview-panel">
         <view class="overview-main">
@@ -57,7 +57,7 @@
           :class="{ active: viewMode === 'timeline' }"
           @click="switchView('timeline')"
         >
-          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#34D399' : '#9BA8B7'" />
+          <uni-icons type="list" size="17" :color="viewMode === 'timeline' ? '#34D399' : '#8EA0B8'" />
           <text>列表</text>
         </view>
         <view
@@ -65,7 +65,7 @@
           :class="{ active: viewMode === 'calendar' }"
           @click="switchView('calendar')"
         >
-          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#34D399' : '#9BA8B7'" />
+          <uni-icons type="calendar" size="17" :color="viewMode === 'calendar' ? '#34D399' : '#8EA0B8'" />
           <text>日历</text>
         </view>
       </view>
@@ -637,7 +637,7 @@ export default {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20rpx;
+      margin-bottom: $spacing-md;
 
       .overview-main {
         display: flex;
@@ -882,6 +882,80 @@ export default {
     &:active {
       transform: scale(0.92);
     }
+  }
+}
+
+/* Glacier morning visual alignment */
+.todo-page {
+  background: transparent;
+
+  .fixed-header {
+    padding: 26rpx $page-padding 22rpx;
+    background: rgba(248, 251, 255, 0.78);
+    border-bottom: 1rpx solid rgba(214, 229, 247, 0.72);
+    box-shadow: 0 10rpx 28rpx rgba(64, 111, 176, 0.08);
+    backdrop-filter: blur(28rpx);
+
+    .overview-panel {
+      margin-bottom: 24rpx;
+      padding: 24rpx 26rpx;
+      border: 1rpx solid rgba(255, 255, 255, 0.94);
+      border-radius: $radius-2xl;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: $shadow-card;
+
+      .overview-progress {
+        width: 112rpx;
+        height: 112rpx;
+        background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%);
+        box-shadow: 0 12rpx 28rpx rgba(79, 134, 247, 0.24);
+      }
+    }
+
+    .stats-row {
+      gap: 14rpx;
+
+      .stat-item {
+        padding: 16rpx 8rpx;
+        border-color: rgba(188, 210, 239, 0.3);
+        border-radius: $radius-lg;
+        background: rgba(255, 255, 255, 0.82);
+      }
+    }
+
+    .search-bar { margin: 0; }
+
+    .view-switch {
+      border-color: rgba(188, 210, 239, 0.3);
+      background: rgba(255, 255, 255, 0.7);
+
+      .switch-item.active {
+        color: $primary;
+        background: rgba(255, 255, 255, 0.96);
+      }
+    }
+
+    .label-scroll .label-list .label-item {
+      flex-shrink: 0;
+      white-space: nowrap;
+      border-color: rgba(188, 210, 239, 0.34);
+
+      &.active {
+        color: $text-inverse;
+        border-color: $primary;
+        background: $primary;
+        box-shadow: 0 8rpx 18rpx rgba(79, 134, 247, 0.2);
+      }
+    }
+  }
+
+  .content-scroll { padding-top: 28rpx; }
+
+  .empty-state .empty-icon { background: rgba(79, 134, 247, 0.1); }
+
+  .fab-button {
+    background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%);
+    box-shadow: 0 14rpx 34rpx rgba(79, 134, 247, 0.3);
   }
 }
 </style>

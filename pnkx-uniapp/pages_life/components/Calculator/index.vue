@@ -108,13 +108,13 @@ export default {
 
 <style lang="scss" scoped>
 .calculator {
-  background-color: $bg-card;
+  background: rgba(255, 255, 255, 0.9);
   padding: $spacing-md;
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 80rpx);
+    grid-template-rows: repeat(4, clamp(60rpx, 8.5vh, 80rpx));
     gap: $spacing-xs;
   }
 
@@ -122,7 +122,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     font-weight: $font-weight-bold;
     font-size: $font-h2;
     transition: transform 80ms $ease-default, background-color $duration-fast $ease-default;
@@ -133,7 +133,7 @@ export default {
   }
 
   &__key--num {
-    background-color: $gray-50;
+    background-color: rgba(246, 250, 255, 0.88);
     color: $text-primary;
 
     &:active {
@@ -142,7 +142,7 @@ export default {
   }
 
   &__key--func {
-    background-color: $bookkeeping-light;
+    background-color: rgba(79, 134, 247, 0.12);
     color: $primary;
 
     &:active {
@@ -161,13 +161,29 @@ export default {
   }
 
   &__key--confirm {
-    background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+    background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%);
     color: $text-inverse;
     grid-row: span 2;
     font-size: $font-h3;
 
     &:active {
       opacity: 0.85;
+    }
+  }
+}
+
+@media screen and (max-height: 760px) {
+  .calculator {
+    padding: 10rpx;
+
+    &__grid {
+      grid-template-rows: repeat(4, 58rpx);
+      gap: 6rpx;
+    }
+
+    &__key {
+      border-radius: $radius-lg;
+      font-size: $font-h3;
     }
   }
 }

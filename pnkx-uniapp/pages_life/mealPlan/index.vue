@@ -1,5 +1,5 @@
 <template>
-  <view class="meal-page">
+  <view class="meal-page subpage-shell">
     <!-- Week selector -->
     <view class="week-bar">
       <view class="week-bar__nav" @click="shiftWeek(-1)">‹</view>

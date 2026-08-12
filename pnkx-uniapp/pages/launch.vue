@@ -36,7 +36,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #6C9EFF 0%, #A8C8FF 50%, #D6E4FF 100%);
+  background:
+    linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.7) 100%),
+    url('/static/images/glacier-aurora-bg.png') center / cover no-repeat;
 }
 
 .launch-content {
@@ -49,14 +51,17 @@ export default {
   width: 160rpx;
   height: 160rpx;
   border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14rpx;
+  box-shadow: 0 16rpx 42rpx rgba(64, 111, 176, 0.16);
   margin-bottom: 48rpx;
 }
 
 .launch-spinner {
   width: 48rpx;
   height: 48rpx;
-  border: 4rpx solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  border: 4rpx solid rgba(79, 134, 247, 0.18);
+  border-top-color: $primary;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

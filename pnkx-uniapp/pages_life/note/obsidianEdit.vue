@@ -1,5 +1,5 @@
 <template>
-  <view class="obs-edit">
+  <view class="obs-edit subpage-shell">
     <!-- Toolbar -->
     <view class="edit-toolbar">
       <view class="edit-toolbar__info">

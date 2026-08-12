@@ -1,5 +1,5 @@
 <template>
-  <view class="shopping-page">
+  <view class="shopping-page subpage-shell">
     <view class="list" v-if="list.length > 0">
       <view
         class="card"

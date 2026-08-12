@@ -1,5 +1,5 @@
 <template>
-  <view class="record-list">
+  <view class="record-list subpage-shell">
     <view class="header">
       <view class="month-selector">
         <view class="arrow" @click="changeMonth(-1)">
@@ -41,7 +41,7 @@
         <text class="empty-state__title">暂无记录</text>
         <text class="empty-state__hint">点击下方按钮开始记账</text>
         <view class="empty-state__btn" @click="handleAdd">
-          <uni-icons type="plus" size="16" color="#6C9EFF"/>
+          <uni-icons type="plus" size="16" color="#4F86F7"/>
           <text>记一笔</text>
         </view>
       </view>
@@ -54,7 +54,7 @@
           </view>
           <view class="day-right">
             <view v-if="day.expenditure > 0" class="day-summary">
-              <uni-icons type="minus" size="12" color="#6C9EFF"/>
+              <uni-icons type="minus" size="12" color="#4F86F7"/>
               <text class="expenditure">{{ moneyFilter(day.expenditure) }}</text>
             </view>
             <view v-if="day.income > 0" class="day-summary">
@@ -124,9 +124,9 @@ export default {
       total: 0,
       loadStatus: 'more',
       isRefreshing: false,
-      categoryColors: ['#6C9EFF', '#FF6B6B', '#4ADE80', '#FBBF24', '#A78BFA', '#F472B6', '#34D399', '#60A5FA'],
+      categoryColors: ['#4F86F7', '#FF6B6B', '#4ADE80', '#FBBF24', '#A78BFA', '#F472B6', '#34D399', '#60A5FA'],
       swipeOptions: [
-        { text: '编辑', style: { backgroundColor: '#6C9EFF' } },
+        { text: '编辑', style: { backgroundColor: '#4F86F7' } },
         { text: '删除', style: { backgroundColor: '#FF6B6B' } }
       ]
     };
@@ -234,10 +234,12 @@ export default {
       this.$tab.navigateTo(`/pages_life/bookkeeping/record/add?recordId=${record.id}`);
     },
     getRecordIcon(record) {
+      if (this.isTransfer(record)) return 'zhuanzhang';
       return (record.typeObject && record.typeObject.typeIcon) || '默认';
     },
     isTransfer(record) {
-      return record.typeObject && record.typeObject.typeDifference === '2';
+      // 转账记录 type=0 导致 typeObject 为 null，靠 otherAccount 兜底识别
+      return !!record.otherAccount || (record.typeObject && record.typeObject.typeDifference === '2');
     },
     getAccountName(record) {
       return record.accountObject && record.accountObject.accountName;
@@ -249,6 +251,7 @@ export default {
       return record.typeObject && record.typeObject.typeName;
     },
     getAmountPrefix(record) {
+      if (this.isTransfer(record)) return '';
       const diff = record.typeObject && record.typeObject.typeDifference;
       return diff === '1' ? '-' : '+';
     },

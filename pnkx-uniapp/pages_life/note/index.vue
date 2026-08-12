@@ -5,7 +5,7 @@
  * @Description: 笔记列表页
 -->
 <template>
-  <view class="note-page">
+  <view class="note-page subpage-shell">
     <view class="note-header">
       <view class="header-copy">
         <text class="eyebrow">My notes</text>
@@ -41,7 +41,7 @@
           @clear="handleSearch"
           @input="onSearchInput"
           radius="100"
-          bgColor="#F4F6F9"
+          bgColor="#F2F7FE"
           :focus="false"
           :show-action="false"
         />
@@ -63,7 +63,7 @@
         </view>
       </scroll-view>
       <view class="breadcrumb-placeholder" v-else>
-        <uni-icons type="folder" size="14" color="#9BA8B7" />
+        <uni-icons type="folder" size="14" color="#8EA0B8" />
         <text>全部笔记</text>
       </view>
     </view>
@@ -568,7 +568,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(180deg, #EEF5FF 0%, #F7F8FB 360rpx, #F7F8FB 100%);
+  background: linear-gradient(180deg, #EEF5FF 0%, #F2F7FE 360rpx, #F2F7FE 100%);
 
   .note-header {
     position: relative;

@@ -5,7 +5,7 @@
  * @Description: 新增记录
 -->
 <template>
-  <view class="add-record">
+  <view class="add-record subpage-shell">
     <!-- 顶部操作栏 -->
     <view class="header-row">
       <!-- 记账类型标签栏 -->
@@ -46,8 +46,8 @@
         </view>
       </view>
 
-      <!-- 分类图标区域 -->
-      <view class="category-section">
+      <!-- 分类图标区域（转账无分类） -->
+      <view class="category-section" v-if="active !== '2'">
         <view class="category-grid">
           <view
             v-for="(category, index) in currentCategoryList"
@@ -68,8 +68,8 @@
 
       <!-- 金额和备注区域 -->
       <view class="input-section">
-        <!-- 当前分类显示 -->
-        <view class="current-category" @click="openSecondaryPicker">
+        <!-- 当前分类显示（转账无分类） -->
+        <view class="current-category" v-if="active !== '2'" @click="openSecondaryPicker">
           <svg-icon icon-class="type-icon" size="14px"/>
           <text class="category-text">{{ currentCategoryName || '选择分类' }}</text>
           <uni-icons type="arrowright" size="12"/>
@@ -78,16 +78,37 @@
         <!-- 金额显示 -->
         <view class="amount-display">
           <text class="amount-symbol">¥</text>
-          <text class="amount-value" :class="{ 'amount--expense': active === '1', 'amount--income': active === '0' }">{{ formatAmount(recordForm.money) }}</text>
+          <text class="amount-value" :class="{ 'amount--expense': active === '1', 'amount--income': active === '0', 'amount--transfer': active === '2' }">{{ formatAmount(recordForm.money) }}</text>
           <text class="amount-process">{{ money }}</text>
         </view>
 
-        <!-- 账户选择 -->
-        <view class="account-select" @click="$refs.accountPopup.open()">
+        <!-- 账户选择（收支） -->
+        <view class="account-select" v-if="active !== '2'" @click="openAccountPicker('account')">
           <view class="account-icon">
             <svg-icon icon-class="银行卡" size="14px"/>
           </view>
           <view class="account-label">{{ temporaryForm.account || '选择账户' }}</view>
+          <view class="account-arrow">
+            <uni-icons type="arrowright" size="12"/>
+          </view>
+        </view>
+
+        <!-- 转账：转出账户 -->
+        <view class="account-select" v-if="active === '2'" @click="openAccountPicker('out')">
+          <view class="account-icon">
+            <svg-icon icon-class="银行卡" size="14px"/>
+          </view>
+          <view class="account-label">{{ temporaryForm.account || '选择转出账户' }}</view>
+          <view class="account-arrow">
+            <uni-icons type="arrowright" size="12"/>
+          </view>
+        </view>
+        <!-- 转账：转入账户 -->
+        <view class="account-select" v-if="active === '2'" @click="openAccountPicker('in')">
+          <view class="account-icon">
+            <svg-icon icon-class="zhuanzhang" size="14px"/>
+          </view>
+          <view class="account-label">{{ temporaryForm.otherAccountName || '选择转入账户' }}</view>
           <view class="account-arrow">
             <uni-icons type="arrowright" size="12"/>
           </view>
@@ -201,10 +222,11 @@ export default {
   },
   data() {
     return {
-      // 记账类型标签（不含转账）
+      // 记账类型标签
       typeTabs: [
         {label: '支出', value: '1'},
         {label: '收入', value: '0'},
+        {label: '转账', value: '2'},
       ],
       // 当前选择的记账类型
       active: '1',
@@ -215,6 +237,7 @@ export default {
         primaryType: '',
         secondaryType: '',
         account: '',
+        otherAccountName: '',
       },
       // 记录表单
       recordForm: {
@@ -224,8 +247,11 @@ export default {
         remark: '',
         type: '',
         account: '',
+        otherAccount: '',
         typeDifference: '1',
       },
+      // 账户选择弹窗当前作用目标：account=普通账户 out=转出 in=转入
+      accountPickerMode: 'account',
       // 类型列表
       typeColumns: [],
       // 账户列表
@@ -237,7 +263,7 @@ export default {
       // 临时选中的二级分类
       temporarySecondaryType: '',
       // 分类图标背景颜色
-      categoryColors: ['#6C9EFF', '#FF6B6B', '#4ADE80', '#FBBF24', '#A78BFA', '#F472B6', '#34D399', '#60A5FA'],
+      categoryColors: ['#DDEAFF', '#FFE4E4', '#DCF8E8', '#FFF1C9', '#EEE7FF', '#FCE7F3', '#DDF7EE', '#E1F0FF'],
       // 是否正在初始化
       isInitializing: false,
       // AI记账相关
@@ -286,7 +312,8 @@ export default {
     // 标签指示器样式
     indicatorStyle() {
       const index = this.typeTabs.findIndex(tab => tab.value === this.active);
-      return `left: ${index * 50}%;`;
+      const step = 100 / this.typeTabs.length;
+      return `left: ${index * step}%;`;
     }
   },
   onLoad(option) {
@@ -302,10 +329,21 @@ export default {
      */
     active(newAction) {
       if (this.isInitializing) return;
+      this.recordForm.typeDifference = newAction;
+      // 重置分类与账户选择，避免不同类型间串数据
       this.temporaryForm.primaryType = '';
       this.temporaryForm.secondaryType = '';
-      this.recordForm.type = '';
-      this.recordForm.typeDifference = newAction;
+      this.temporaryForm.account = '';
+      this.temporaryForm.otherAccountName = '';
+      this.recordForm.account = '';
+      this.recordForm.otherAccount = '';
+      this.temporaryAccountId = '';
+      if (newAction === '2') {
+        // 转账：无分类，type 固定为 0（与 PC 端一致，type=0 的记录不关联分类）
+        this.recordForm.type = 0;
+      } else {
+        this.recordForm.type = '';
+      }
       this.loadListsAndSetDefault();
     },
     'recordForm.payTime': {
@@ -331,7 +369,9 @@ export default {
         // 获取记录信息（编辑模式）
         if (this.recordForm.id) {
           const res = await getRecord(this.recordForm.id);
-          this.active = res.data.typeObject.typeDifference;
+          // 转账记录 typeObject 为 null，靠 otherAccount 兜底识别
+          this.active = (res.data.typeObject && res.data.typeObject.typeDifference)
+            || (res.data.otherAccount ? '2' : '1');
           this.recordForm = {
             ...res.data,
             payTime: new Date(res.data.payTime || new Date()),
@@ -352,6 +392,12 @@ export default {
             this.recordForm.account = res.data.account;
             this.temporaryAccountId = res.data.account;
           }
+          // 转账：回填转入账户
+          if (res.data.otherAccount) {
+            this.recordForm.otherAccount = res.data.otherAccount;
+            this.temporaryForm.otherAccountName = res.data.otherAccountObject
+              ? res.data.otherAccountObject.accountName : '';
+          }
           // 加载列表数据
           await this.loadListsAndSetDefault();
         } else {
@@ -368,6 +414,11 @@ export default {
      * 设置默认选中
      */
     setDefaultSelection() {
+      // 转账：不设分类，仅默认转出/转入账户
+      if (this.active === '2') {
+        this.setDefaultTransferAccounts();
+        return;
+      }
       // 设置默认分类为最近使用的第一个二级类型
       if (!this.recordForm.type && this.typeColumns.length > 0) {
         const firstType = this.typeColumns[0];
@@ -416,6 +467,11 @@ export default {
      * 获取分类列表
      */
     async getTypeList() {
+      // 转账无分类
+      if (this.active === '2') {
+        this.typeColumns = [];
+        return;
+      }
       const response = await getClassificationList({typeDifference: this.active});
       this.typeColumns = response.data || [];
       uni.setStorage({
@@ -427,12 +483,38 @@ export default {
      * 获取账户列表
      */
     async getAccountList() {
-      const response = await getAccountList({typeDifference: this.active});
+      // 账户不区分收支/转账，转账时取全量账户
+      const params = this.active === '2' ? {} : {typeDifference: this.active};
+      const response = await getAccountList(params);
       this.accountColumns = response.data || [];
       uni.setStorage({
         key: 'accountColumns',
         data: this.accountColumns
       });
+    },
+    /**
+     * 转账模式默认账户：转出=第一个，转入=第二个（确保不同账户）
+     */
+    setDefaultTransferAccounts() {
+      const allAccounts = [];
+      for (const group of this.accountColumns) {
+        if (group.children && group.children.length) {
+          allAccounts.push(...group.children);
+        } else if (group.id) {
+          allAccounts.push(group);
+        }
+      }
+      if (allAccounts.length === 0) return;
+      if (!this.recordForm.account) {
+        const out = allAccounts[0];
+        this.recordForm.account = out.id;
+        this.temporaryForm.account = out.accountName;
+      }
+      if (!this.recordForm.otherAccount) {
+        const inAcc = allAccounts.find(a => a.id !== this.recordForm.account) || allAccounts[0];
+        this.recordForm.otherAccount = inAcc.id;
+        this.temporaryForm.otherAccountName = inAcc.accountName;
+      }
     },
     /**
      * 获取列表数据并设置默认选中
@@ -622,12 +704,49 @@ export default {
       this.recordForm.type = category.id;
     },
     /**
+     * 打开账户选择弹窗（mode: account=普通账户 out=转出 in=转入）
+     */
+    openAccountPicker(mode) {
+      this.accountPickerMode = mode;
+      // 同步当前已选账户到弹窗选中态
+      this.temporaryAccountId = mode === 'in'
+        ? (this.recordForm.otherAccount || '')
+        : (this.recordForm.account || '');
+      this.$refs.accountPopup.open();
+    },
+    /**
+     * 按 id 查找账户
+     */
+    findAccountById(id) {
+      for (const group of this.accountColumns) {
+        if (group.children) {
+          const a = group.children.find(x => x.id === id);
+          if (a) return a;
+        } else if (group.id === id) {
+          return group;
+        }
+      }
+      return null;
+    },
+    /**
+     * 写入选中账户到当前目标（普通/转出/转入）
+     */
+    applyAccountSelection(account) {
+      if (!account) return;
+      if (this.accountPickerMode === 'in') {
+        this.temporaryForm.otherAccountName = account.accountName;
+        this.recordForm.otherAccount = account.id;
+      } else {
+        this.temporaryForm.account = account.accountName;
+        this.recordForm.account = account.id;
+      }
+    },
+    /**
      * 选择账户项
      */
     selectAccountItem(account) {
       this.temporaryAccountId = account.id;
-      this.temporaryForm.account = account.accountName;
-      this.recordForm.account = account.id;
+      this.applyAccountSelection(account);
       this.closePopup('accountPopup');
     },
     /**
@@ -635,17 +754,7 @@ export default {
      */
     confirmAccount() {
       if (this.temporaryAccountId) {
-        // 查找选中的账户
-        for (const group of this.accountColumns) {
-          if (group.children) {
-            const account = group.children.find(a => a.id === this.temporaryAccountId);
-            if (account) {
-              this.temporaryForm.account = account.accountName;
-              this.recordForm.account = account.id;
-              break;
-            }
-          }
-        }
+        this.applyAccountSelection(this.findAccountById(this.temporaryAccountId));
       }
       this.closePopup('accountPopup');
     },
@@ -721,20 +830,36 @@ export default {
      * 保存记录
      */
     async handleSave() {
-      // 验证分类
-      if (!this.recordForm.type) {
-        if (this.temporaryForm.primaryType) {
-          this.recordForm.type = this.temporaryForm.primaryType;
-        } else {
-          uni.showToast({title: '请选择分类', icon: 'none'});
+      // 转账：校验转出/转入账户
+      if (this.active === '2') {
+        if (!this.recordForm.account) {
+          uni.showToast({title: '请选择转出账户', icon: 'none'});
           return;
         }
-      }
+        if (!this.recordForm.otherAccount) {
+          uni.showToast({title: '请选择转入账户', icon: 'none'});
+          return;
+        }
+        if (this.recordForm.account === this.recordForm.otherAccount) {
+          uni.showToast({title: '转出账户与转入账户不能相同', icon: 'none'});
+          return;
+        }
+      } else {
+        // 验证分类
+        if (!this.recordForm.type) {
+          if (this.temporaryForm.primaryType) {
+            this.recordForm.type = this.temporaryForm.primaryType;
+          } else {
+            uni.showToast({title: '请选择分类', icon: 'none'});
+            return;
+          }
+        }
 
-      // 验证账户
-      if (!this.recordForm.account && this.active !== '2') {
-        uni.showToast({title: '请选择账户', icon: 'none'});
-        return;
+        // 验证账户
+        if (!this.recordForm.account) {
+          uni.showToast({title: '请选择账户', icon: 'none'});
+          return;
+        }
       }
 
       // 验证金额
@@ -780,6 +905,9 @@ uni-page-body {
 .add-record {
   width: 100%;
   height: 100%;
+  min-height: 0 !important;
+  box-sizing: border-box;
+  padding-bottom: 0;
   background-color: $bg-page;
   display: flex;
   flex-direction: column;
@@ -917,7 +1045,7 @@ uni-page-body {
       position: absolute;
       bottom: 0;
       left: 0;
-      width: 50%;
+      width: calc(100% / 3);
       height: $spacing-2xs;
       background-color: $primary;
       transition: left $duration-normal $ease-default;
@@ -1040,7 +1168,7 @@ uni-page-body {
     background-color: $bg-card;
     margin-top: 1rpx solid $border-light;
     padding: $spacing-sm $spacing-md;
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -1100,6 +1228,10 @@ uni-page-body {
 
       .amount--income {
         color: #22C55E;
+      }
+
+      .amount--transfer {
+        color: $primary;
       }
     }
 
@@ -1315,6 +1447,137 @@ uni-page-body {
           background-color: $gray-50;
         }
       }
+    }
+  }
+}
+
+/* Glacier morning visual alignment */
+.add-record {
+  background: transparent;
+
+  .header-row {
+    margin: 20rpx $page-padding 0;
+    padding: 8rpx 12rpx;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-full;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(24rpx);
+  }
+
+  .type-tabs { background: transparent; }
+
+  .category-section {
+    margin: 20rpx $page-padding 0;
+    padding: 22rpx 20rpx;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-2xl;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(24rpx);
+
+    .category-grid { gap: 10rpx; }
+
+    .category-item {
+      width: calc(25% - 8rpx);
+      padding: 10rpx 4rpx;
+      background: transparent;
+
+      &.selected {
+        background: rgba(79, 134, 247, 0.1);
+        box-shadow: inset 0 0 0 1rpx rgba(79, 134, 247, 0.18);
+      }
+    }
+
+    .category-icon {
+      width: 70rpx;
+      height: 70rpx;
+      box-shadow: none;
+    }
+  }
+
+  .input-section {
+    margin: 20rpx $page-padding 0;
+    padding: 22rpx;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-2xl;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(24rpx);
+
+    .current-category,
+    .account-select,
+    .note-section .note-input {
+      background: rgba(246, 250, 255, 0.82);
+      border: 1rpx solid rgba(188, 210, 239, 0.3);
+      border-radius: $radius-xl;
+    }
+
+    .amount-display { padding: 10rpx 14rpx; }
+
+    .note-section {
+      padding-top: 10rpx;
+      margin-bottom: 0;
+
+      .note-input {
+        height: 54rpx;
+        margin-bottom: 8rpx;
+      }
+
+      .image-attachments .attachment-btn {
+        width: 48rpx;
+        height: 48rpx;
+      }
+    }
+  }
+
+  .calculator {
+    margin: 18rpx $page-padding 24rpx;
+    padding: 16rpx;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-2xl;
+    box-shadow: $shadow-card;
+  }
+}
+
+@media screen and (max-height: 760px) {
+  .add-record {
+    .header-row {
+      margin-top: 10rpx;
+      min-height: 64rpx;
+    }
+
+    .type-tabs .tab-item { padding: 10rpx 0; }
+
+    .category-section {
+      margin-top: 10rpx;
+      padding: 12rpx 14rpx;
+
+      .category-grid { gap: 4rpx 8rpx; }
+      .category-item { padding: 4rpx 2rpx; }
+      .category-icon { width: 58rpx; height: 58rpx; }
+      .category-label { font-size: 20rpx; }
+    }
+
+    .input-section {
+      margin-top: 10rpx;
+      padding: 12rpx 16rpx;
+
+      .current-category,
+      .account-select {
+        padding: 10rpx 14rpx;
+        margin-bottom: 8rpx;
+      }
+
+      .amount-display { padding: 6rpx 12rpx; }
+      .note-section { padding-top: 6rpx; }
+    }
+
+    .calculator {
+      margin-top: 10rpx;
+      margin-bottom: 10rpx;
+      padding: 10rpx;
     }
   }
 }

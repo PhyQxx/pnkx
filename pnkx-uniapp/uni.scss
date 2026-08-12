@@ -6,11 +6,15 @@
 /* ============================
    Primary Colors（主色）
    ============================ */
-$primary: #6C9EFF;
-$primary-light: #A8C8FF;
-$primary-lighter: #D6E4FF;
-$primary-dark: #4A7ADB;
-$primary-darker: #3B68B8;
+$primary: #4F86F7;
+$primary-light: #91B7FF;
+$primary-lighter: #DDEAFF;
+$primary-dark: #2E65CF;
+$primary-darker: #17458F;
+$aurora-cyan: #DDF8FF;
+$aurora-lavender: #EEE7FF;
+$ice-white: #F8FBFF;
+$frost-white: rgba(255, 255, 255, 0.88);
 
 /* ============================
    Functional Colors（功能色）
@@ -27,13 +31,13 @@ $danger: #FF6B6B;
 $danger-light: #FECACA;
 $danger-dark: #EF4444;
 
-$info: #6C9EFF;
+$info: #4F86F7;
 
 /* ============================
    Feature Colors（功能模块色）
    ============================ */
-$bookkeeping: #6C9EFF;
-$bookkeeping-light: #D6E4FF;
+$bookkeeping: #4F86F7;
+$bookkeeping-light: #DDEAFF;
 
 $diary: #A78BFA;
 $diary-light: #DDD6FE;
@@ -59,15 +63,15 @@ $book-light: #C7D2FE;
 /* ============================
    Neutral Colors（中性色）
    ============================ */
-$gray-50: #FAFBFC;
-$gray-100: #F4F6F9;
-$gray-200: #E8ECF1;
-$gray-300: #D1D8E0;
-$gray-400: #9BA8B7;
-$gray-500: #6B7B8D;
-$gray-600: #4A5568;
-$gray-700: #2D3748;
-$gray-800: #1A202C;
+$gray-50: #F8FBFF;
+$gray-100: #F1F6FD;
+$gray-200: #DFE9F6;
+$gray-300: #C8D6E8;
+$gray-400: #8EA0B8;
+$gray-500: #6C7F99;
+$gray-600: #4F627B;
+$gray-700: #29415F;
+$gray-800: #123B70;
 
 /* ============================
    Legacy Theme Colors（兼容旧色）
@@ -85,7 +89,7 @@ $theme-pink: $menstruation;
 $theme-bookkeeping-red: #FF6B6B;
 $theme-bookkeeping-green: #4ADE80;
 $theme-bookkeeping-gray: $gray-400;
-$theme-bookkeeping-bg-color-blue: rgba(108, 158, 255, 0.12);
+$theme-bookkeeping-bg-color-blue: rgba(79, 134, 247, 0.12);
 
 /* ============================
    Text Colors（文字色）
@@ -100,18 +104,18 @@ $text-inverse: #FFFFFF;
 /* ============================
    Background Colors（背景色）
    ============================ */
-$bg-page: $gray-100;
-$bg-card: #FFFFFF;
+$bg-page: #F2F7FE;
+$bg-card: rgba(255, 255, 255, 0.92);
 $bg-elevated: #FFFFFF;
 $bg-hover: $gray-50;
 $bg-mask: rgba(0, 0, 0, 0.5);
-$bg-menu: rgba(108, 158, 255, 0.08);
+$bg-menu: rgba(79, 134, 247, 0.08);
 
 /* ============================
    Border Colors（边框色）
    ============================ */
-$border-color: $gray-200;
-$border-light: $gray-100;
+$border-color: rgba(142, 174, 218, 0.26);
+$border-light: rgba(218, 232, 249, 0.72);
 
 /* ============================
    Typography（排版）
@@ -157,20 +161,20 @@ $section-gap: 24rpx;
 $radius-xs: 4rpx;
 $radius-sm: 8rpx;
 $radius-md: 12rpx;
-$radius-lg: 16rpx;
-$radius-xl: 24rpx;
-$radius-2xl: 32rpx;
+$radius-lg: 20rpx;
+$radius-xl: 28rpx;
+$radius-2xl: 40rpx;
 $radius-full: 999rpx;
 
 /* ============================
    Shadows（阴影）
    ============================ */
 $shadow-xs: 0 1rpx 2rpx rgba(0, 0, 0, 0.04);
-$shadow-sm: 0 2rpx 8rpx rgba(108, 158, 255, 0.08);
-$shadow-md: 0 8rpx 24rpx rgba(108, 158, 255, 0.12);
-$shadow-lg: 0 16rpx 48rpx rgba(108, 158, 255, 0.16);
-$shadow-card: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
-$shadow-float: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+$shadow-sm: 0 4rpx 14rpx rgba(64, 111, 176, 0.07);
+$shadow-md: 0 12rpx 32rpx rgba(64, 111, 176, 0.10);
+$shadow-lg: 0 22rpx 54rpx rgba(64, 111, 176, 0.14);
+$shadow-card: 0 10rpx 30rpx rgba(64, 111, 176, 0.09);
+$shadow-float: 0 16rpx 42rpx rgba(64, 111, 176, 0.16);
 
 /* ============================
    Transitions（动效）

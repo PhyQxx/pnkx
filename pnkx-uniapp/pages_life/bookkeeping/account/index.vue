@@ -1,5 +1,5 @@
 <template>
-  <view class="bk-page">
+  <view class="bk-page subpage-shell">
     <view class="bk-total">
       <view class="bk-total__label">总资产 (CNY)</view>
       <view class="bk-total__number">{{ moneyFilter(totalAssets) }}</view>
@@ -61,7 +61,7 @@ export default {
   },
   computed: {
     assetBreakdown() {
-      const colors = ['#6C9EFF', '#4ADE80', '#FBBF24', '#A78BFA'];
+      const colors = ['#4F86F7', '#4ADE80', '#FBBF24', '#A78BFA'];
       return this.accountInfoList.map((item, index) => ({
         label: item.dictLabel,
         color: colors[index % colors.length],
@@ -113,12 +113,12 @@ export default {
     },
     getTypeGradient(dictValue) {
       const gradients = {
-        '1': 'linear-gradient(135deg, #6C9EFF, #4A7ADB)',
+        '1': 'linear-gradient(135deg, #4F86F7, #4A7ADB)',
         '2': 'linear-gradient(135deg, #4ADE80, #22C55E)',
         '3': 'linear-gradient(135deg, #FBBF24, #F59E0B)',
         '4': 'linear-gradient(135deg, #A78BFA, #8B5CF6)',
       };
-      return gradients[dictValue] || 'linear-gradient(135deg, #6C9EFF, #4A7ADB)';
+      return gradients[dictValue] || 'linear-gradient(135deg, #4F86F7, #4A7ADB)';
     }
   },
   filters: {

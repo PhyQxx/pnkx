@@ -1,10 +1,8 @@
 <template>
-  <view class="life-manager">
+  <view class="life-manager subpage-shell">
     <!-- Header -->
     <view class="lm-header">
       <view class="lm-header__bg">
-        <view class="lm-header__decor lm-header__decor--circle"></view>
-        <view class="lm-header__decor lm-header__decor--dot"></view>
       </view>
       <view class="lm-header__content">
         <text class="lm-header__title">生活管家</text>
@@ -16,7 +14,7 @@
     <view class="lm-grid">
       <view class="lm-card" @click="navigate('/pages_life/calendar/index')">
         <view class="lm-card__icon lm-card__icon--calendar">
-          <text class="lm-card__emoji">📅</text>
+          <svg-icon icon-class="date" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">家庭日历</text>
@@ -27,7 +25,7 @@
 
       <view class="lm-card" @click="navigate('/pages_life/recipe/index')">
         <view class="lm-card__icon lm-card__icon--recipe">
-          <text class="lm-card__emoji">🍳</text>
+          <svg-icon icon-class="c-huacai" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">菜谱库</text>
@@ -38,7 +36,7 @@
 
       <view class="lm-card" @click="navigate('/pages_life/mealPlan/index')">
         <view class="lm-card__icon lm-card__icon--meal">
-          <text class="lm-card__emoji">🥗</text>
+          <svg-icon icon-class="qingdan" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">膳食计划</text>
@@ -49,7 +47,7 @@
 
       <view class="lm-card" @click="navigate('/pages_life/shoppingList/index')">
         <view class="lm-card__icon lm-card__icon--shopping">
-          <text class="lm-card__emoji">🛒</text>
+          <svg-icon icon-class="shopping" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">购物清单</text>
@@ -60,7 +58,7 @@
 
       <view class="lm-card" @click="navigate('/pages_life/subscription/index')">
         <view class="lm-card__icon lm-card__icon--sub">
-          <text class="lm-card__emoji">💳</text>
+          <svg-icon icon-class="finance" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">订阅管理</text>
@@ -71,7 +69,7 @@
 
       <view class="lm-card" @click="navigate('/pages_life/report/index')">
         <view class="lm-card__icon lm-card__icon--report">
-          <text class="lm-card__emoji">📊</text>
+          <svg-icon icon-class="chart" size="42rpx" />
         </view>
         <view class="lm-card__body">
           <text class="lm-card__title">生活报告</text>
@@ -83,7 +81,8 @@
 
     <!-- Workflow hint -->
     <view class="lm-tip">
-      <text class="lm-tip__text">💡 从菜谱加入膳食计划，一键生成购物清单</text>
+      <svg-icon icon-class="ai" size="30rpx" />
+      <text class="lm-tip__text">从菜谱加入膳食计划，一键生成购物清单</text>
     </view>
   </view>
 </template>
@@ -101,15 +100,20 @@ export default {
 <style lang="scss" scoped>
 .life-manager {
   min-height: 100vh;
-  background: $bg-page;
-  padding-bottom: $spacing-xl;
+  background: transparent;
+  padding: 0 $page-padding $spacing-xl;
 }
 
 /* Header */
 .lm-header {
   position: relative;
-  background: linear-gradient(135deg, #34D399 0%, #22C55E 100%);
-  padding: $spacing-xl $page-padding $spacing-2xl;
+  margin: 24rpx 0 28rpx;
+  padding: 34rpx 30rpx;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-card;
+  backdrop-filter: blur(28rpx);
   overflow: hidden;
 
   &__bg {
@@ -121,27 +125,6 @@ export default {
     pointer-events: none;
   }
 
-  &__decor {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.1;
-    background: #fff;
-
-    &--circle {
-      width: 300rpx;
-      height: 300rpx;
-      top: -100rpx;
-      right: -60rpx;
-    }
-
-    &--dot {
-      width: 120rpx;
-      height: 120rpx;
-      bottom: 20rpx;
-      left: 60rpx;
-    }
-  }
-
   &__content {
     position: relative;
     z-index: $z-base;
@@ -151,33 +134,41 @@ export default {
 
   &__title {
     font-size: $font-h1;
-    color: #fff;
+    color: $text-primary;
     font-weight: $font-weight-bold;
     line-height: $line-height-tight;
   }
 
   &__desc {
     font-size: $font-caption;
-    color: rgba(255, 255, 255, 0.8);
+    color: $text-secondary;
     margin-top: $spacing-xs;
   }
 }
 
 /* Grid */
 .lm-grid {
-  margin: -$spacing-lg $page-padding 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin: 0;
   position: relative;
   z-index: $z-card;
 }
 
 .lm-card {
+  position: relative;
+  min-height: 208rpx;
   display: flex;
-  align-items: center;
-  background: $bg-card;
-  border-radius: $radius-lg;
+  flex-direction: column;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
   box-shadow: $shadow-card;
-  padding: $spacing-md;
-  margin-bottom: $spacing-sm;
+  padding: 26rpx;
+  margin: 0;
+  backdrop-filter: blur(24rpx);
 
   &:active {
     transform: scale(0.98);
@@ -191,44 +182,41 @@ export default {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-right: $spacing-md;
+    margin-right: 0;
 
     &--recipe {
-      background: rgba(251, 146, 60, 0.12);
+      background: rgba(238, 231, 255, 0.74);
     }
 
     &--meal {
-      background: rgba(52, 211, 153, 0.12);
+      background: rgba(221, 248, 255, 0.78);
     }
 
     &--shopping {
-      background: rgba(91, 158, 238, 0.12);
+      background: rgba(221, 234, 255, 0.82);
     }
 
     &--calendar {
-      background: rgba(108, 99, 255, 0.12);
+      background: rgba(238, 231, 255, 0.8);
     }
 
     &--sub {
-      background: rgba(251, 191, 36, 0.12);
+      background: rgba(221, 248, 255, 0.76);
     }
 
     &--report {
-      background: rgba(255, 159, 67, 0.12);
+      background: rgba(221, 234, 255, 0.82);
     }
-  }
-
-  &__emoji {
-    font-size: 44rpx;
   }
 
   &__body {
     flex: 1;
     min-width: 0;
+    margin-top: 20rpx;
   }
 
   &__title {
-    font-size: $font-body;
+    font-size: $font-h3;
     font-weight: $font-weight-semibold;
     color: $text-primary;
     display: block;
@@ -242,7 +230,10 @@ export default {
   }
 
   &__arrow {
-    font-size: 40rpx;
+    position: absolute;
+    top: 26rpx;
+    right: 24rpx;
+    font-size: 34rpx;
     color: $text-tertiary;
     margin-left: $spacing-sm;
   }
@@ -250,10 +241,17 @@ export default {
 
 /* Tip */
 .lm-tip {
-  margin: $spacing-lg $page-padding 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin: 28rpx 0 0;
   padding: $spacing-md;
-  background: rgba(52, 211, 153, 0.08);
-  border-radius: $radius-md;
+  color: $primary;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
   text-align: center;
 
   &__text {

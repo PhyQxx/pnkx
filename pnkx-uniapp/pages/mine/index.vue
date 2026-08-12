@@ -3,6 +3,12 @@
     <!-- Gradient header with wave bottom -->
     <view class="header-section">
       <view class="header-bg">
+        <view class="mine-navbar">
+          <text class="mine-navbar__title">我的</text>
+          <view class="mine-navbar__setting" @click="handleToSetting">
+            <view class="iconfont icon-setting"></view>
+          </view>
+        </view>
         <view class="header-content">
           <view class="user-row">
             <view class="avatar-wrapper" @click="handleToAvatar">
@@ -20,6 +26,7 @@
                 {{ name }}
               </view>
               <view v-if="name" class="user-desc">记录生活，陪伴每一刻</view>
+              <view v-if="name" class="companionship">Pei你看雪 · 温柔陪伴每一天</view>
             </view>
           </view>
           <view class="info-link" @click="handleToInfo">
@@ -192,9 +199,38 @@ page {
 }
 
 .header-bg {
-  background: linear-gradient(160deg, $primary 0%, $primary-dark 100%);
-  padding: calc(var(--status-bar-height, 44px) + $spacing-lg) $page-padding $spacing-3xl;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.02), rgba(242, 247, 254, 0.18)),
+    url('/static/images/glacier-aurora-bg.png') top center / cover no-repeat;
+  padding: calc(var(--status-bar-height, 44px) + 24rpx) $page-padding 112rpx;
   position: relative;
+}
+
+.mine-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 42rpx;
+
+  &__title {
+    color: $text-primary;
+    font-size: 44rpx;
+    font-weight: $font-weight-bold;
+  }
+
+  &__setting {
+    width: 76rpx;
+    height: 76rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $text-primary;
+    font-size: 36rpx;
+    border-radius: $radius-full;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1rpx solid rgba(255, 255, 255, 0.92);
+    box-shadow: $shadow-md;
+  }
 }
 
 .header-content {
@@ -260,50 +296,54 @@ page {
 .username {
   font-size: $font-h1;
   font-weight: $font-weight-bold;
-  color: $text-inverse;
+  color: $text-primary;
   line-height: $line-height-tight;
 }
 
 .login-tip {
   font-size: $font-h2;
   font-weight: $font-weight-medium;
-  color: $text-inverse;
+  color: $text-primary;
   opacity: 0.9;
 }
 
 .user-desc {
   font-size: $font-caption;
-  color: rgba(255, 255, 255, 0.7);
+  color: $text-secondary;
   margin-top: $spacing-2xs;
+}
+
+.companionship {
+  margin-top: 10rpx;
+  color: $primary-dark;
+  font-size: $font-mini;
 }
 
 .info-link {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.78);
   border-radius: $radius-full;
   padding: $spacing-xs $spacing-sm $spacing-xs $spacing-md;
   margin-left: $spacing-sm;
 
   .info-link-text {
     font-size: $font-caption;
-    color: $text-inverse;
+    color: $primary;
     white-space: nowrap;
   }
 
   .info-link-arrow {
     font-size: $font-caption;
-    color: rgba(255, 255, 255, 0.8);
+    color: $primary;
     margin-left: $spacing-2xs;
   }
 }
 
 /* Wave bottom edge */
 .header-wave {
-  position: relative;
-  height: 40rpx;
-  margin-top: -2rpx;
+  display: none;
 }
 
 .wave-curve {
@@ -385,14 +425,18 @@ page {
    Menu Section
    ================================ */
 .menu-section {
-  margin: $section-gap $page-padding 0;
+  margin: -56rpx $page-padding 0;
+  position: relative;
+  z-index: 2;
 }
 
 .menu-card {
-  background: $bg-card;
-  border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border-radius: $radius-2xl;
   box-shadow: $shadow-card;
   overflow: hidden;
+  backdrop-filter: blur(24rpx);
 }
 
 .menu-item {
@@ -417,7 +461,7 @@ page {
 }
 
 .menu-icon-blue {
-  background: rgba(108, 158, 255, 0.12);
+  background: rgba(79, 134, 247, 0.12);
 
   .menu-item-icon {
     color: $primary;
@@ -492,8 +536,9 @@ page {
   align-items: center;
   justify-content: center;
   gap: $spacing-xs;
-  background: $bg-card;
-  border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1rpx solid rgba(255, 255, 255, 0.92);
+  border-radius: $radius-2xl;
   padding: $spacing-md 0;
   font-size: $font-body;
   color: $danger;

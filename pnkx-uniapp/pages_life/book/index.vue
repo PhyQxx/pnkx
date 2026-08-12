@@ -3,7 +3,7 @@
  * @Description: 我的书城 - 书架列表
 -->
 <template>
-	<view class="book-page">
+	<view class="book-page subpage-shell">
 		<!-- 搜索栏 -->
 		<view class="search-bar">
 			<uni-search-bar
@@ -129,7 +129,7 @@ export default {
 			pageSize: 20,
 			total: 0,
 			fabOpen: false,
-			textTertiary: '#9BA8B7'
+			textTertiary: '#8EA0B8'
 		}
 	},
 	onLoad() {

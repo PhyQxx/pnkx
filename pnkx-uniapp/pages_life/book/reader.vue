@@ -3,7 +3,7 @@
  * @Description: 章节阅读器
 -->
 <template>
-	<view class="reader-page" :class="'theme-' + theme">
+	<view class="reader-page subpage-shell" :class="'theme-' + theme">
 		<!-- 加载中 -->
 		<view v-if="loading" class="reader-loading">
 			<uni-icons type="spinner-cycle" size="32" :color="mutedColor" />
@@ -116,7 +116,7 @@ export default {
 				{ value: 'dark' }
 			],
 			accentColor: '#6366F1',
-			mutedColor: '#9BA8B7'
+			mutedColor: '#8EA0B8'
 		}
 	},
 	onLoad(options) {
@@ -278,7 +278,7 @@ export default {
 .chapter-meta {
 	text-align: center;
 	font-size: $font-caption;
-	color: #9BA8B7;
+	color: #8EA0B8;
 	margin-bottom: $spacing-xl;
 }
 
@@ -322,7 +322,7 @@ export default {
 		display: block;
 		margin-top: $spacing-md;
 		font-size: $font-caption;
-		color: #9BA8B7;
+		color: #8EA0B8;
 	}
 }
 

@@ -153,7 +153,9 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #6C9EFF 0%, #A8C8FF 50%, #D6E4FF 100%);
+  background:
+    linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.78) 100%),
+    url('/static/images/glacier-aurora-bg.png') center / cover no-repeat;
   padding: 0 $page-padding;
   position: relative;
   overflow: hidden;
@@ -171,7 +173,7 @@ export default {
     position: absolute;
     border-radius: 50%;
     opacity: 0.12;
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.65);
   }
 
   .circle-1 {
@@ -216,33 +218,34 @@ export default {
     width: 140rpx;
     height: 140rpx;
     border-radius: $radius-2xl;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.78);
     padding: 16rpx;
     margin-bottom: $spacing-lg;
-    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+    box-shadow: $shadow-md;
   }
 
   .brand-name {
     font-size: $font-h1;
     font-weight: $font-weight-bold;
-    color: #FFFFFF;
+    color: $text-primary;
     margin-bottom: $spacing-xs;
     letter-spacing: 4rpx;
   }
 
   .brand-slogan {
     font-size: $font-caption;
-    color: rgba(255, 255, 255, 0.8);
+    color: $text-secondary;
     letter-spacing: 2rpx;
   }
 }
 
 .login-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.88);
   border-radius: $radius-2xl;
   padding: $spacing-xl $spacing-lg;
-  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-lg;
+  border: 1rpx solid rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   position: relative;
@@ -267,7 +270,7 @@ export default {
   &:focus-within {
     background: #FFFFFF;
     border-color: $primary-light;
-    box-shadow: 0 0 0 4rpx rgba(108, 158, 255, 0.15);
+    box-shadow: 0 0 0 4rpx rgba(79, 134, 247, 0.15);
   }
 
   .input-icon {
@@ -311,7 +314,7 @@ export default {
 .login-btn {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 55%, #8388FF 100%);
   color: #FFFFFF;
   font-size: $font-h3;
   font-weight: $font-weight-semibold;
@@ -319,12 +322,12 @@ export default {
   border-radius: $radius-lg;
   margin-top: $spacing-lg;
   letter-spacing: 4rpx;
-  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.35);
+  box-shadow: 0 10rpx 26rpx rgba(79, 134, 247, 0.26);
   transition: all $duration-fast $ease-default;
 
   &:active {
     transform: scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(108, 158, 255, 0.25);
+    box-shadow: 0 4rpx 12rpx rgba(79, 134, 247, 0.25);
   }
 
   &::after {
@@ -341,7 +344,7 @@ export default {
 
   .footer-text {
     font-size: $font-small;
-    color: rgba(255, 255, 255, 0.6);
+    color: $text-tertiary;
   }
 }
 </style>

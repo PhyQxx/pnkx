@@ -1,5 +1,5 @@
 <template>
-  <view class="bk-page">
+  <view class="bk-page subpage-shell">
     <!-- Header -->
     <view class="bk-header">
       <view class="bk-header__bg">
@@ -40,14 +40,14 @@
         @click="handleMenuClick(menu)"
       >
         <view class="bk-menu__icon" :style="{ background: menu.gradient }">
-          <uni-icons :type="menu.icon" size="24" color="#ffffff" />
+          <uni-icons :type="menu.icon" size="24" :color="menu.iconColor" />
         </view>
         <view class="bk-menu__text">
           <text class="bk-menu__name">{{ menu.name }}</text>
           <text class="bk-menu__desc">{{ menu.desc }}</text>
         </view>
         <view class="bk-menu__arrow">
-          <uni-icons type="right" size="16" color="#9BA8B7" />
+          <uni-icons type="right" size="16" color="#8EA0B8" />
         </view>
       </view>
     </view>
@@ -108,7 +108,8 @@ export default {
           desc: '快速记账',
           icon: 'compose',
           theme: 'primary',
-          gradient: 'linear-gradient(135deg, #6C9EFF, #4A7ADB)',
+          gradient: 'rgba(79, 134, 247, 0.13)',
+          iconColor: '#4F86F7',
           path: '/pages_life/bookkeeping/record/add'
         },
         {
@@ -117,7 +118,8 @@ export default {
           desc: '查看流水',
           icon: 'list',
           theme: 'success',
-          gradient: 'linear-gradient(135deg, #4ADE80, #22C55E)',
+          gradient: 'rgba(52, 211, 153, 0.14)',
+          iconColor: '#22A879',
           path: '/pages_life/bookkeeping/record/index'
         },
         {
@@ -126,7 +128,8 @@ export default {
           desc: '资产统计',
           icon: 'wallet',
           theme: 'warning',
-          gradient: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
+          gradient: 'rgba(251, 191, 36, 0.16)',
+          iconColor: '#D99313',
           path: '/pages_life/bookkeeping/account/index'
         },
         {
@@ -135,7 +138,8 @@ export default {
           desc: '图表报表',
           icon: 'bars',
           theme: 'purple',
-          gradient: 'linear-gradient(135deg, #A78BFA, #8B5CF6)',
+          gradient: 'rgba(167, 139, 250, 0.15)',
+          iconColor: '#7C67D9',
           path: '/pages_life/bookkeeping/statistics/index'
         }
       ]
@@ -527,5 +531,97 @@ export default {
     color: $text-secondary;
     font-weight: $font-weight-medium;
   }
+}
+
+/* Glacier morning visual alignment */
+.bk-header {
+  padding: 42rpx $page-padding 54rpx;
+
+  &__bg {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: 0 0 $radius-2xl $radius-2xl;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(28rpx);
+  }
+
+  &__wave { display: none; }
+
+  &__month-num,
+  &__month-unit { color: $text-primary; }
+
+  &__month-label { color: $text-secondary; }
+
+  &__summary {
+    background: rgba(247, 251, 255, 0.78);
+    border: 1rpx solid rgba(188, 210, 239, 0.34);
+    border-radius: $radius-xl;
+    box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  }
+
+  &__summary-item { border-right-color: $border-color; }
+  &__summary-label { color: $text-secondary; }
+  &__summary-value--expense { color: $danger; }
+  &__summary-value--income { color: $success-dark; }
+  &__summary-value--balance { color: $text-primary; }
+}
+
+.bk-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: $spacing-md;
+
+  &__card {
+    position: relative;
+    min-height: 176rpx;
+    margin-bottom: 0;
+    padding: 26rpx;
+    align-items: flex-start;
+    flex-direction: column;
+    border-radius: $radius-2xl;
+  }
+
+  &__icon {
+    width: 70rpx;
+    height: 70rpx;
+    border-radius: $radius-xl;
+  }
+
+  &__text {
+    margin: 20rpx 0 0;
+  }
+
+  &__name {
+    font-size: $font-h3;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__arrow {
+    position: absolute;
+    top: 28rpx;
+    right: 24rpx;
+  }
+}
+
+.bk-recent {
+  margin-top: 38rpx;
+
+  &__list {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1rpx solid rgba(255, 255, 255, 0.94);
+    border-radius: $radius-2xl;
+    backdrop-filter: blur(24rpx);
+  }
+
+  &__icon-wrap { background: rgba(79, 134, 247, 0.08); }
+}
+
+.bk-fab__btn {
+  width: 104rpx;
+  height: 104rpx;
+  background: linear-gradient(135deg, #6EA2FF 0%, $primary 58%, #8589FF 100%);
+  box-shadow: 0 14rpx 34rpx rgba(79, 134, 247, 0.3);
 }
 </style>

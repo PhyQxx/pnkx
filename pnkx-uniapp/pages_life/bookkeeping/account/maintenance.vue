@@ -1,5 +1,5 @@
 <template>
-  <view class="maintenance">
+  <view class="maintenance subpage-shell">
     <uni-forms ref="form" :model="form" :rules="rules" class="form">
       <view class="form-section">
         <text class="form-section__title">基本信息</text>

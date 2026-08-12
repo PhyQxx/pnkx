@@ -5,7 +5,7 @@
  * @Description: 纪念日编辑页
 -->
 <template>
-  <view class="commemoration-add-page">
+  <view class="commemoration-add-page subpage-shell">
     <view class="form-section">
       <view class="form-item">
         <view class="form-label">纪念日名称</view>

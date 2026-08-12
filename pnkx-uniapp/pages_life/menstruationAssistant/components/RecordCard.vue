@@ -144,7 +144,7 @@ export default {
     }
 
     &.end {
-      background: #6C9EFF;
+      background: #4F86F7;
     }
   }
 
@@ -189,7 +189,7 @@ export default {
 
   &__weekday {
     font-size: 22rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 
   &__tags {
@@ -206,7 +206,7 @@ export default {
     font-size: 22rpx;
     line-height: 1.2;
     color: #6B7B8D;
-    background: #F4F6F9;
+    background: #F2F7FE;
 
     &.start {
       color: #DB2777;
@@ -246,7 +246,7 @@ export default {
   &__metric-label {
     display: block;
     font-size: 22rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
     margin-bottom: 6rpx;
   }
 
@@ -276,7 +276,7 @@ export default {
     flex-shrink: 0;
     width: 112rpx;
     font-size: 24rpx;
-    color: #9BA8B7;
+    color: #8EA0B8;
   }
 
   &__note-content {
