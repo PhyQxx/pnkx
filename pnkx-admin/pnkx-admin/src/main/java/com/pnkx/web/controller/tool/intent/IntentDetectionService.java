@@ -51,10 +51,12 @@ public class IntentDetectionService {
     }
 
     public IntentDetectionResult detect(AiClient aiClient, List<IntentHandler> handlers, String question) {
+        long start = System.currentTimeMillis();
         String prompt = buildPrompt(handlers);
         String rawContent = null;
         try {
             JSONObject result = aiClient.chat(prompt, "[意图识别]" + question);
+            logger.info("意图识别LLM调用完成 耗时: {}ms 问题: {}", System.currentTimeMillis() - start, question);
             if (result != null) {
                 rawContent = result.getString("content");
                 if (rawContent != null) {

@@ -13,6 +13,7 @@
         <result property="isDefault" column="is_default"/>
         <result property="isEnabled" column="is_enabled"/>
         <result property="temperature" column="temperature"/>
+        <result property="thinking" column="thinking"/>
         <result property="sort" column="sort"/>
         <result property="delFlag" column="del_flag"/>
         <result property="createBy" column="create_by"/>
@@ -23,7 +24,7 @@
     </resultMap>
 
     <sql id="selectPxAiModelConfigVo">
-        SELECT id, model_name, model_key, base_url, api_key, is_default, is_enabled, temperature, sort, del_flag, create_by, create_time, update_by, update_time, remark
+        SELECT id, model_name, model_key, base_url, api_key, is_default, is_enabled, temperature, thinking, sort, del_flag, create_by, create_time, update_by, update_time, remark
         FROM px_ai_model_config
     </sql>
 
@@ -67,6 +68,7 @@
             <if test="isDefault != null">is_default,</if>
             <if test="isEnabled != null">is_enabled,</if>
             <if test="temperature != null">temperature,</if>
+            <if test="thinking != null">thinking,</if>
             <if test="sort != null">sort,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="createBy != null">create_by,</if>
@@ -81,6 +83,7 @@
             <if test="isDefault != null">#{isDefault},</if>
             <if test="isEnabled != null">#{isEnabled},</if>
             <if test="temperature != null">#{temperature},</if>
+            <if test="thinking != null">#{thinking},</if>
             <if test="sort != null">#{sort},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -99,6 +102,7 @@
             <if test="isDefault != null">is_default = #{isDefault},</if>
             <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
             <if test="temperature != null">temperature = #{temperature},</if>
+            <if test="thinking != null">thinking = #{thinking},</if>
             <if test="sort != null">sort = #{sort},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

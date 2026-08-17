@@ -106,6 +106,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
+        <el-button v-if="isEdit" :loading="testing" @click="handleTest">测试</el-button>
         <el-button @click="showDialog = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">保存</el-button>
       </template>
@@ -120,7 +121,8 @@ import {
   addAiModel,
   updateAiModel,
   delAiModel,
-  setDefaultAiModel
+  setDefaultAiModel,
+  testAiModel
 } from '@/api/px/life/aiModel'
 
 export default {
@@ -131,6 +133,7 @@ export default {
       defaultModel: null,
       showDialog: false,
       isEdit: false,
+      testing: false,
       isDefaultChecked: false,
       isEnabledChecked: true,
       form: {
@@ -204,6 +207,22 @@ export default {
           this.$notify.success(this.isEdit ? '修改成功' : '新增成功')
           this.showDialog = false
           this.getList()
+        })
+      })
+    },
+    handleTest() {
+      this.$refs.form.validate(valid => {
+        if (!valid) return
+        const data = { ...this.form }
+        if (!data.apiKey) {
+          delete data.apiKey
+        }
+        this.testing = true
+        testAiModel(data).then(res => {
+          const duration = res.data == null ? '' : `（${res.data}ms）`
+          this.$notify.success(`连接测试成功${duration}`)
+        }).finally(() => {
+          this.testing = false
         })
       })
     },

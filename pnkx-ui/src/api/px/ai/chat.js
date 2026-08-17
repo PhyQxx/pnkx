@@ -35,15 +35,19 @@ export function listModels() {
 /**
  * AI流式对话
  * @param {string} question - 用户问题
+ * @param {boolean} thinking - 是否开启思考模式
  * @returns {Promise<Response>} fetch Response with ReadableStream
  */
-export function chatStream(question, messages = [], modelId = null) {
+export function chatStream(question, messages = [], modelId = null, thinking = null) {
   const baseUrl = import.meta.env.VUE_APP_BASE_API
   const url = baseUrl + '/ai/chat/stream'
   const token = localStorage.getItem('Admin-Token') || localStorage.getItem('Token')
   const body = { question, messages }
   if (modelId) {
     body.modelId = modelId
+  }
+  if (thinking !== null) {
+    body.thinking = thinking
   }
   return fetch(url, {
     method: 'POST',

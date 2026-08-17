@@ -1,5 +1,6 @@
 package com.pnkx.service.impl;
 
+import com.pnkx.ai.AiClient;
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
@@ -21,6 +22,9 @@ public class PxAiModelConfigServiceImpl implements IPxAiModelConfigService {
 
     @Resource
     private PxAiModelConfigMapper pxAiModelConfigMapper;
+
+    @Resource
+    private AiClient aiClient;
 
     @Override
     public PxAiModelConfig selectPxAiModelConfigById(Long id) {
@@ -54,16 +58,27 @@ public class PxAiModelConfigServiceImpl implements IPxAiModelConfigService {
         if ("1".equals(pxAiModelConfig.getIsDefault())) {
             pxAiModelConfigMapper.clearDefaultFlag();
         }
-        return pxAiModelConfigMapper.updatePxAiModelConfig(pxAiModelConfig);
+        int rows = pxAiModelConfigMapper.updatePxAiModelConfig(pxAiModelConfig);
+        // 配置变更（思考模式、温度、apiKey 等）后，清除缓存的模型实例使其重新构建生效
+        if (rows > 0 && pxAiModelConfig.getId() != null) {
+            aiClient.clearModelCache(pxAiModelConfig.getId());
+        }
+        return rows;
     }
 
     @Override
     public int deletePxAiModelConfigById(Long id) {
+        aiClient.clearModelCache(id);
         return pxAiModelConfigMapper.deletePxAiModelConfigById(id);
     }
 
     @Override
     public int deletePxAiModelConfigByIds(Long[] ids) {
+        if (ids != null) {
+            for (Long id : ids) {
+                aiClient.clearModelCache(id);
+            }
+        }
         return pxAiModelConfigMapper.deletePxAiModelConfigByIds(ids);
     }
 

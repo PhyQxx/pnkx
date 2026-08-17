@@ -86,6 +86,23 @@ public class AiController extends BaseController {
         return null;
     }
 
+    public static Boolean resolveThinking(Map<String, Object> body) {
+        if (body == null) {
+            return null;
+        }
+        Object value = body.get("thinking");
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            return Boolean.parseBoolean(((String) value).trim());
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue() != 0;
+        }
+        return null;
+    }
+
     @RequestMapping("/chat")
     public AjaxResult chat(String question) {
         try {
@@ -108,50 +125,66 @@ public class AiController extends BaseController {
         long startTime = System.currentTimeMillis();
         String question = (String) body.get("question");
         Long modelId = resolveModelId(body);
+        Boolean thinking = resolveThinking(body);
         aiOperationLogService.start(requestId, question, modelId, true);
+        logger.info("AI请求开始 requestId={} 模型={} 思考={} 问题={}", requestId, modelId, thinking, question);
 
-        String userInfo = buildUserInfoWithHistory(body);
+        // 按请求覆盖思考模式：意图识别与各 handler 的 AI 调用都会读取该覆盖值
+        AiClient.setThinkingOverride(thinking);
+        try {
+            long tCtx = System.currentTimeMillis();
+            String userInfo = buildUserInfoWithHistory(body);
+            logger.info("AI构建上下文 requestId={} 耗时={}ms", requestId, System.currentTimeMillis() - tCtx);
 
-        setupSseResponse(response);
-        OutputStream out = response.getOutputStream();
+            setupSseResponse(response);
+            OutputStream out = response.getOutputStream();
 
-        IntentDetectionResult detection = intentDetectionService.detect(aiClient, handlers, question);
-        String intent = detection.getIntent();
-        logger.info("用户意图识别: intent={}, source={}, confidence={}, question={}", intent, detection.getSource(), detection.getConfidence(), question);
+            long tDetect = System.currentTimeMillis();
+            IntentDetectionResult detection = intentDetectionService.detect(aiClient, handlers, question);
+            logger.info("AI意图识别完成 requestId={} 耗时={}ms intent={} source={} confidence={}",
+                    requestId, System.currentTimeMillis() - tDetect, detection.getIntent(), detection.getSource(), detection.getConfidence());
+            String intent = detection.getIntent();
 
-        aiOperationLogService.finishDetection(
-                requestId,
-                intent,
-                detection.getConfidence(),
-                detection.getSlots() != null ? detection.getSlots().toJSONString() : null,
-                System.currentTimeMillis() - startTime
-        );
+            aiOperationLogService.finishDetection(
+                    requestId,
+                    intent,
+                    detection.getConfidence(),
+                    detection.getSlots() != null ? detection.getSlots().toJSONString() : null,
+                    System.currentTimeMillis() - startTime
+            );
 
-        if (detection.isLowConfidence()) {
-            IntentHandler.writeSse(out, "我还不太确定你的意思。你是想记账、写日记、创建待办，还是普通聊天？请再补充一点信息。");
-            IntentHandler.writeSse(out, "[DONE]");
-            return;
-        }
+            long tHandle = System.currentTimeMillis();
+            if (detection.isLowConfidence()) {
+                IntentHandler.writeSse(out, "我还不太确定你的意思。你是想记账、写日记、创建待办，还是普通聊天？请再补充一点信息。");
+                IntentHandler.writeSse(out, "[DONE]");
+                return;
+            }
 
-        IntentHandler handler = getHandlerMap().get(intent);
+            IntentHandler handler = getHandlerMap().get(intent);
 
-        JSONObject intentData = detection.getSlots() != null ? (JSONObject) detection.getSlots().clone() : new JSONObject();
-        intentData.put("requestId", requestId);
-        intentData.put("confidence", detection.getConfidence());
-        intentData.put("intentSource", detection.getSource());
-        intentData.put("intentReason", detection.getReason());
-        intentData.put("systemPrompt", userInfo);
-        if (modelId != null) {
-            intentData.put("modelId", modelId);
-        }
+            JSONObject intentData = detection.getSlots() != null ? (JSONObject) detection.getSlots().clone() : new JSONObject();
+            intentData.put("requestId", requestId);
+            intentData.put("confidence", detection.getConfidence());
+            intentData.put("intentSource", detection.getSource());
+            intentData.put("intentReason", detection.getReason());
+            intentData.put("systemPrompt", userInfo);
+            if (modelId != null) {
+                intentData.put("modelId", modelId);
+            }
 
-        if (handler != null && handler.handle(question, intentData, out)) {
-            return;
-        }
+            if (handler != null && handler.handle(question, intentData, out)) {
+                logger.info("AI回答阶段完成 requestId={} handler={} 耗时={}ms", requestId, intent, System.currentTimeMillis() - tHandle);
+                return;
+            }
 
-        IntentHandler chatHandler = getHandlerMap().get("chat");
-        if (chatHandler != null) {
-            chatHandler.handle(question, intentData, out);
+            IntentHandler chatHandler = getHandlerMap().get("chat");
+            if (chatHandler != null) {
+                chatHandler.handle(question, intentData, out);
+                logger.info("AI回答阶段完成 requestId={} handler=chat 耗时={}ms", requestId, System.currentTimeMillis() - tHandle);
+            }
+        } finally {
+            AiClient.clearThinkingOverride();
+            logger.info("AI请求结束 requestId={} 总耗时={}ms", requestId, System.currentTimeMillis() - startTime);
         }
     }
 

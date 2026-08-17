@@ -64,6 +64,20 @@
       </div>
 
       <div class="chat-footer">
+        <div class="footer-toolbar">
+          <el-tooltip
+            content="开启后 AI 会先深度思考再回答，质量更高但更慢；关闭则直接快速回答"
+            placement="top"
+          >
+            <el-switch
+              v-model="thinkingEnabled"
+              inline-prompt
+              active-text="深度思考"
+              inactive-text="快速回答"
+              size="small"
+            />
+          </el-tooltip>
+        </div>
         <div class="sender-wrapper">
           <el-input
             v-model="inputText"
@@ -93,6 +107,7 @@ import { cancelPendingAction, chatStream, confirmPendingAction, listModels } fro
 const inputText = ref('')
 const isLoading = ref(false)
 const isThinking = ref(false)
+const thinkingEnabled = ref(false)
 const showSidebar = ref(true)
 const chatBodyRef = ref(null)
 const models = ref([])
@@ -196,7 +211,7 @@ async function sendText(text) {
       role: msg.role,
       content: msg.content
     }))
-    const res = await chatStream(text, history, selectedModel.value)
+    const res = await chatStream(text, history, selectedModel.value, thinkingEnabled.value)
     isThinking.value = false
     addMessage('assistant', '')
     await readStreamResponse(res)
@@ -485,6 +500,12 @@ function deleteConversation(index) {
 .chat-footer {
   padding: 16px 20px;
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.footer-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0 4px 8px;
 }
 
 .sender-wrapper {

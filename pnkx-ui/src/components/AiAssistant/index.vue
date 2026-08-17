@@ -456,7 +456,7 @@ defineExpose({
 .ai-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   background: #f7f8fa;
 
   &::-webkit-scrollbar {
@@ -466,6 +466,59 @@ defineExpose({
   &::-webkit-scrollbar-thumb {
     background: #d0d0d0;
     border-radius: 2px;
+  }
+
+  /* PC 弹框使用更紧凑的消息密度，避免小窗口内气泡显得臃肿 */
+  :deep(.elx-bubble-list__list) {
+    gap: 10px;
+  }
+
+  :deep(.elx-bubble__content-wrapper .elx-bubble__content) {
+    --elx-bubble-padding-y: 7px;
+    --elx-bubble-padding-x: 10px;
+    --elx-bubble-radius: 10px;
+    min-height: 34px;
+    max-width: min(86%, 500px);
+  }
+
+  :deep(.x-markdown-container) {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  :deep(.x-markdown-container .x-md-renderer) {
+    padding: 0 !important;
+    background-color: transparent !important;
+    color: inherit !important;
+  }
+
+  :deep(.x-markdown-container .x-md-core) {
+    p {
+      margin: 0 0 6px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+      margin: 4px 0 6px;
+
+      li {
+        margin-bottom: 2px;
+      }
+    }
+
+    blockquote {
+      margin: 6px 0;
+      padding: 5px 10px;
+    }
   }
 
   /* 修复欢迎语和提示项布局 */

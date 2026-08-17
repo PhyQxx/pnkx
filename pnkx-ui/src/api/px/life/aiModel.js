@@ -58,3 +58,12 @@ export function getDefaultAiModel() {
         method: 'get'
     })
 }
+
+// 测试AI模型连接
+export function testAiModel(data) {
+    return request({
+        url: '/aiModel/test',
+        method: 'post',
+        data: data
+    })
+}

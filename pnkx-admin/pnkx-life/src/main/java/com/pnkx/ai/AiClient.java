@@ -21,9 +21,12 @@ import jakarta.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AI客户端（基于AgentScope Java框架，支持多模型配置）
@@ -43,6 +46,13 @@ public class AiClient {
     private RedisCache redisCache;
 
     private final ConcurrentHashMap<Long, Model> modelCache = new ConcurrentHashMap<>();
+
+    /**
+     * 单次请求的思考模式覆盖（null=沿用模型配置默认值）。
+     * 由 AiController 在请求开始时设置、结束时清理；整个请求链同步运行在 Tomcat 线程上，
+     * 因此意图识别、各 handler 的 AI 调用都会读取到该覆盖值。
+     */
+    private static final ThreadLocal<Boolean> thinkingOverride = new ThreadLocal<>();
 
     /**
      * 使用默认模型调用AI（同步）
@@ -93,28 +103,65 @@ public class AiClient {
     }
 
     /**
+     * 使用尚未保存的配置发送最小请求，用于后台配置页测试连接。
+     * 测试模型不进入实例缓存，避免未保存的参数影响正常请求。
+     */
+    public void testConnection(PxAiModelConfig modelConfig) {
+        GenerateOptions.Builder optionsBuilder = GenerateOptions.builder()
+                .temperature(modelConfig.getTemperature() == null ? 0.7D : modelConfig.getTemperature());
+        if (modelConfig.getThinking() != null) {
+            optionsBuilder.additionalBodyParam("thinking",
+                    Map.of("type", Boolean.TRUE.equals(modelConfig.getThinking()) ? "enabled" : "disabled"));
+        }
+
+        Model model = OpenAIChatModel.builder()
+                .apiKey(modelConfig.getApiKey())
+                .modelName(modelConfig.getModelKey())
+                .baseUrl(modelConfig.getBaseUrl())
+                .stream(true)
+                .generateOptions(optionsBuilder.build())
+                .build();
+
+        Msg systemMsg = Msg.builder().textContent("你是一个连接测试助手。").build();
+        Msg userMsg = Msg.builder().textContent("请仅回复 OK").build();
+        List<ChatResponse> responses = model.stream(List.of(systemMsg, userMsg), null, null)
+                .collectList()
+                .block(Duration.ofSeconds(30));
+        if (responses == null || responses.isEmpty()) {
+            throw new IllegalStateException("模型未返回内容");
+        }
+    }
+
+    /**
      * 通用AI调用（同步，通过stream + blockLast实现）
      */
     private JSONObject chatWithModel(PxAiModelConfig modelConfig, String userInfo, String question) {
+        long start = System.currentTimeMillis();
+        String modelKey = modelConfig.getModelKey();
         String cacheKey = buildCacheKey(modelConfig, userInfo, question, currentUserId());
         String redisKey = RedisConstants.AI_RESPONSE_CACHE + cacheKey;
         JSONObject cached = redisCache.getCacheObject(redisKey);
         if (cached != null) {
-            logger.info("缓存命中");
+            logger.info("AI调用缓存命中 - 模型: {} 耗时: {}ms", modelKey, System.currentTimeMillis() - start);
             return cached;
         }
 
-        logger.info("AI调用 - 模型: {} 问题: {}", modelConfig.getModelKey(), question);
+        logger.info("AI调用开始 - 模型: {} 问题: {}", modelKey, question);
 
         try {
+            long tModel = System.currentTimeMillis();
             Model model = getOrCreateModel(modelConfig);
+            logger.info("AI调用模型就绪 - 模型: {} 耗时: {}ms", modelKey, System.currentTimeMillis() - tModel);
 
             Msg systemMsg = Msg.builder().textContent(userInfo).build();
             Msg userMsg = Msg.builder().textContent(question).build();
 
             // 使用 stream + collectList 获取完整响应
-            List<ChatResponse> responses = model.stream(List.of(systemMsg, userMsg), null, null)
+            long tCall = System.currentTimeMillis();
+            GenerateOptions perCallOptions = buildThinkingOptions(modelConfig, thinkingOverride.get());
+            List<ChatResponse> responses = model.stream(List.of(systemMsg, userMsg), null, perCallOptions)
                     .collectList().block();
+            logger.info("AI调用LLM返回 - 模型: {} 思考={} 耗时: {}ms", modelKey, thinkingOverride.get(), System.currentTimeMillis() - tCall);
 
             if (responses != null && !responses.isEmpty()) {
                 // 拼接所有响应的文本内容
@@ -132,14 +179,15 @@ public class AiClient {
                 if (!content.isEmpty()) {
                     JSONObject result = new JSONObject();
                     result.put("content", content);
-                    result.put("model", modelConfig.getModelKey());
+                    result.put("model", modelKey);
                     redisCache.setCacheObject(redisKey, result, 1, TimeUnit.HOURS);
-                    logger.info("AI调用成功");
+                    logger.info("AI调用成功 - 模型: {} 总耗时: {}ms", modelKey, System.currentTimeMillis() - start);
                     return result;
                 }
             }
+            logger.warn("AI调用返回空 - 模型: {} 总耗时: {}ms", modelKey, System.currentTimeMillis() - start);
         } catch (Exception e) {
-            logger.error("AI调用失败: {}", e.getMessage());
+            logger.error("AI调用失败 - 模型: {} 总耗时: {}ms 错误: {}", modelKey, System.currentTimeMillis() - start, e.getMessage());
         }
         return null;
     }
@@ -148,17 +196,30 @@ public class AiClient {
      * 流式AI调用
      */
     private Flux<ChatResponse> chatStreamWithModel(PxAiModelConfig modelConfig, String userInfo, String question) {
-        logger.info("AI流式调用 - 模型: {} 问题: {}", modelConfig.getModelKey(), question);
+        long start = System.currentTimeMillis();
+        String modelKey = modelConfig.getModelKey();
+        logger.info("AI流式调用开始 - 模型: {} 问题: {}", modelKey, question);
 
         try {
+            long tModel = System.currentTimeMillis();
             Model model = getOrCreateModel(modelConfig);
+            logger.info("AI流式模型就绪 - 模型: {} 耗时: {}ms", modelKey, System.currentTimeMillis() - tModel);
 
             Msg systemMsg = Msg.builder().textContent(userInfo).build();
             Msg userMsg = Msg.builder().textContent(question).build();
 
-            return model.stream(List.of(systemMsg, userMsg), null, null);
+            GenerateOptions perCallOptions = buildThinkingOptions(modelConfig, thinkingOverride.get());
+            AtomicBoolean firstTokenLogged = new AtomicBoolean(false);
+            return model.stream(List.of(systemMsg, userMsg), null, perCallOptions)
+                    .doOnNext(resp -> {
+                        if (firstTokenLogged.compareAndSet(false, true)) {
+                            logger.info("AI流式首Token - 模型: {} TTFT: {}ms", modelKey, System.currentTimeMillis() - start);
+                        }
+                    })
+                    .doOnComplete(() -> logger.info("AI流式调用完成 - 模型: {} 总耗时: {}ms", modelKey, System.currentTimeMillis() - start))
+                    .doOnError(e -> logger.error("AI流式调用失败 - 模型: {} 总耗时: {}ms 错误: {}", modelKey, System.currentTimeMillis() - start, e.getMessage()));
         } catch (Exception e) {
-            logger.error("AI流式调用失败: {}", e.getMessage());
+            logger.error("AI流式调用构建失败: {}", e.getMessage());
             return Flux.empty();
         }
     }
@@ -167,17 +228,23 @@ public class AiClient {
      * 获取或创建模型实例（带缓存）
      */
     private Model getOrCreateModel(PxAiModelConfig config) {
-        return modelCache.computeIfAbsent(config.getId(), id ->
-            OpenAIChatModel.builder()
-                .apiKey(config.getApiKey())
-                .modelName(config.getModelKey())
-                .baseUrl(config.getBaseUrl())
-                .stream(true)
-                .generateOptions(GenerateOptions.builder()
-                    .temperature(config.getTemperature())
-                    .build())
-                .build()
-        );
+        return modelCache.computeIfAbsent(config.getId(), id -> {
+            GenerateOptions.Builder optionsBuilder = GenerateOptions.builder()
+                    .temperature(config.getTemperature());
+            // 思考模式开关：仅 thinking 非 null 时注入，透传为智谱 OpenAI 兼容的 thinking 字段
+            // {"type":"enabled"} 开启 / {"type":"disabled"} 关闭；为 null 则不发送，兼容不支持思考的厂商
+            if (config.getThinking() != null) {
+                optionsBuilder.additionalBodyParam("thinking",
+                        Map.of("type", Boolean.TRUE.equals(config.getThinking()) ? "enabled" : "disabled"));
+            }
+            return OpenAIChatModel.builder()
+                    .apiKey(config.getApiKey())
+                    .modelName(config.getModelKey())
+                    .baseUrl(config.getBaseUrl())
+                    .stream(true)
+                    .generateOptions(optionsBuilder.build())
+                    .build();
+        });
     }
 
     public static String buildCacheKey(PxAiModelConfig modelConfig, String userInfo, String question, Long userId) {
@@ -215,6 +282,42 @@ public class AiClient {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 not available", e);
         }
+    }
+
+    /**
+     * 设置当前请求的思考模式覆盖（由控制器在请求生命周期内调用）
+     *
+     * @param thinking null=沿用模型配置默认值；true=开启思考；false=关闭思考
+     */
+    public static void setThinkingOverride(Boolean thinking) {
+        if (thinking == null) {
+            thinkingOverride.remove();
+        } else {
+            thinkingOverride.set(thinking);
+        }
+    }
+
+    /**
+     * 清除当前请求的思考模式覆盖（务必在请求结束时调用，避免线程复用污染）
+     */
+    public static void clearThinkingOverride() {
+        thinkingOverride.remove();
+    }
+
+    /**
+     * 构建按请求覆盖思考模式的 per-call GenerateOptions。
+     * 同时带上 temperature 以保证与模型配置一致（不受 mergeOptions 语义影响）。
+     * 返回 null 表示不覆盖，沿用模型实例自身配置。
+     */
+    private GenerateOptions buildThinkingOptions(PxAiModelConfig config, Boolean thinking) {
+        if (thinking == null) {
+            return null;
+        }
+        return GenerateOptions.builder()
+                .temperature(config.getTemperature())
+                .additionalBodyParam("thinking",
+                        Map.of("type", Boolean.TRUE.equals(thinking) ? "enabled" : "disabled"))
+                .build();
     }
 
     /**
