@@ -53,6 +53,12 @@ public class PxAiModelConfig extends BaseEntity {
     private Double temperature;
 
     /**
+     * 是否开启思考模式（null=不设置，true=开启，false=关闭）
+     * 仅对支持思考的模型生效，如智谱 GLM-4.5/4.7/5；为 null 时不向请求体注入 thinking 字段
+     */
+    private Boolean thinking;
+
+    /**
      * 排序
      */
     private Integer sort;

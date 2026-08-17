@@ -354,7 +354,7 @@
               value-format="YYYY-MM-DD HH:mm:ss"
               type="datetime"
               size="small"
-              placeholder="时间"
+              :placeholder="scope.$index === 0 ? '时间' : '同上'"
               style="width: 100%"
             />
           </template>
@@ -367,7 +367,7 @@
               :options="typeList"
               :props="typeProps"
               :show-all-levels="false"
-              placeholder="分类"
+              :placeholder="scope.$index === 0 ? '分类' : '同上'"
               size="small"
               @change="(val) => scope.row.type = val[1]"
             />
@@ -381,7 +381,7 @@
               :options="accountList"
               :props="accountProps"
               :show-all-levels="false"
-              placeholder="账户"
+              :placeholder="scope.$index === 0 ? '账户' : '同上'"
               size="small"
               @change="(val) => scope.row.account = val[1]"
             />
@@ -395,7 +395,7 @@
               :options="accountList"
               :props="accountProps"
               :show-all-levels="false"
-              placeholder="转入账户"
+              :placeholder="scope.$index === 0 ? '转入账户' : '同上'"
               size="small"
               @change="(val) => scope.row.otherAccount = val[1]"
             />
@@ -893,16 +893,13 @@ export default {
         remark: ''
       }
 
-      // 如果已有记录，则默认继承上一条的部分数据
+      // 如果已有记录，类型沿用上一条；时间、分类、账户显示“同上”，提交时再解析
       if (this.batchRecordList.length > 0) {
         const lastRow = this.batchRecordList[this.batchRecordList.length - 1]
         newRow = {
           ...newRow,
           typeDifference: lastRow.typeDifference,
-          payTime: lastRow.payTime,
-          type: lastRow.type,
-          account: lastRow.account,
-          otherAccount: lastRow.otherAccount
+          payTime: ''
         }
       }
 
@@ -968,11 +965,30 @@ export default {
         this.$message.warning('请至少添加一条记录')
         return
       }
+
+      // 空的时间、分类、账户、转入账户表示“同上”，转换成接口需要的实际值
+      const resolvedList = []
+      this.batchRecordList.forEach((item, index) => {
+        const previous = resolvedList[index - 1]
+        const isTransfer = item.typeDifference === '2'
+        resolvedList.push({
+          ...item,
+          payTime: item.payTime || previous?.payTime || '',
+          type: isTransfer ? 0 : (item.type || previous?.type || ''),
+          account: item.account || previous?.account || '',
+          otherAccount: isTransfer ? (item.otherAccount || previous?.otherAccount || '') : ''
+        })
+      })
+
       // 校验
-      for (let i = 0; i < this.batchRecordList.length; i++) {
-        const item = this.batchRecordList[i]
+      for (let i = 0; i < resolvedList.length; i++) {
+        const item = resolvedList[i]
         if (!item.money) {
           this.$message.warning(`第 ${i + 1} 行未填写金额`)
+          return
+        }
+        if (!item.payTime) {
+          this.$message.warning(`第 ${i + 1} 行未选择时间`)
           return
         }
         if (item.typeDifference !== '2' && !item.type) {
@@ -994,7 +1010,7 @@ export default {
       }
 
       this.batchLoading = true
-      addBatchRecord(this.batchRecordList).then(() => {
+      addBatchRecord(resolvedList).then(() => {
         this.$notify.success('批量新增记录成功')
         this.batchVisible = false
         this.listRecord()
