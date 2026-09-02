@@ -3,14 +3,11 @@ package com.pnkx.web.controller.life;
 import com.pnkx.common.annotation.Log;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
-import com.pnkx.common.core.domain.model.LoginUser;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
 import com.pnkx.common.utils.SecurityUtils;
-import com.pnkx.common.utils.ServletUtils;
 import com.pnkx.domain.po.PxToDo;
-import com.pnkx.framework.web.service.TokenService;
 import com.pnkx.service.IPxToDoService;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +25,6 @@ import java.util.List;
 public class PxToDoController extends BaseController {
     @Resource
     private IPxToDoService pxToDoService;
-    @Resource
-    private TokenService tokenService;
 
     /**
      * 查询待办事项列表
@@ -81,8 +76,10 @@ public class PxToDoController extends BaseController {
     @Log(title = "待办事项", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody PxToDo pxToDo) {
-        LoginUser loginUser = tokenService.getLoginUser(ServletUtils.getRequest());
-        pxToDo.setUpdateBy(String.valueOf(loginUser.getUser().getUserId()));
+        // 与 add 保持一致：从 SecurityContext 取身份。
+        // 不再用 tokenService.getLoginUser——集成令牌（X-Integration-Token）
+        // 只建立 SecurityContext、没有 Redis 会话，走会话会 NPE。
+        pxToDo.setUpdateBy(String.valueOf(SecurityUtils.getUserId()));
         return toAjax(pxToDoService.updatePxToDo(pxToDo));
     }
 
