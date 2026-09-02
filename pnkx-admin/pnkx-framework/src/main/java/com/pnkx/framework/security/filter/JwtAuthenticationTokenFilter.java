@@ -37,7 +37,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        LoginUser loginUser = tokenService.getLoginUser(request);
+        LoginUser loginUser = tokenService.getLoginUserFromToken(request);
         Authentication existingAuth = SecurityUtils.getAuthentication();
         boolean noAuth = existingAuth == null || existingAuth instanceof AnonymousAuthenticationToken;
 
@@ -53,7 +53,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                     // 自动登录
                     String tokenKey = tokenService.getUserKeyFromRequest(request);
                     tokenService.createToken(tokenKey, sysUser);
-                    LoginUser newLoginUser = tokenService.getLoginUser(request);
+                    LoginUser newLoginUser = tokenService.getLoginUserFromToken(request);
                     if (StringUtils.isNotNull(newLoginUser)) {
                         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(newLoginUser, null, newLoginUser.getAuthorities());
                         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

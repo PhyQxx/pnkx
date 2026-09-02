@@ -27,6 +27,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.crypto.SecretKey;
 
@@ -68,17 +70,8 @@ public class TokenService {
      * @return 当前登录人信息
      */
     public SysUser getLoginSysUser(HttpServletRequest request) {
-        // 获取请求携带的令牌
-        String token = getToken(request);
-        if (StringUtils.isNotEmpty(token)) {
-            Claims claims = parseToken(token);
-            // 解析对应的权限以及用户信息
-            String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
-            String userKey = getTokenKey(uuid);
-            LoginUser user = redisCache.getCacheObject(userKey);
-            return user.getUser();
-        }
-        return null;
+        LoginUser loginUser = getLoginUser(request);
+        return loginUser == null ? null : loginUser.getUser();
     }
 
     /**
@@ -104,6 +97,27 @@ public class TokenService {
      * @return 结果
      */
     public LoginUser getLoginUser(HttpServletRequest request) {
+        // JWT 过滤器与内部集成令牌过滤器都会把已认证身份放入
+        // SecurityContext。优先从这里读取，使无 Redis 会话的集成令牌
+        // 与原有 tokenService.getLoginUser(request) 调用完全兼容。
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof LoginUser loginUser) {
+            return loginUser;
+        }
+
+        // 兼容 JWT 过滤器建立 SecurityContext 之前的首次解析，以及旧调用链。
+        return getLoginUserFromToken(request);
+    }
+
+    /**
+     * 仅从请求 JWT 与 Redis 会话中读取身份。
+     *
+     * JWT 过滤器使用此方法，避免过滤器顺序变化时把集成令牌已经放入
+     * SecurityContext 的身份误当成 JWT 会话并刷新 Redis。
+     */
+    public LoginUser getLoginUserFromToken(HttpServletRequest request) {
         // 获取请求携带的令牌
         String token = getToken(request);
         if (StringUtils.isNotEmpty(token)) {
