@@ -1,6 +1,7 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.DateUtils;
 import com.pnkx.domain.po.*;
 import com.pnkx.mapper.*;
 import com.pnkx.service.IPxOfflineSyncService;
@@ -202,8 +203,13 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
     private PxBookkeepingRecord mapToBookkeepingRecord(Map<String, Object> p) {
         PxBookkeepingRecord r = new PxBookkeepingRecord();
         if (p.get("account") != null) r.setAccount(toLong(p.get("account")));
+        if (p.get("otherAccount") != null) r.setOtherAccount(toLong(p.get("otherAccount")));
         if (p.get("type") != null) r.setType(toLong(p.get("type")));
         if (p.get("money") != null) r.setMoney((String) p.get("money"));
+        if (p.get("payTime") != null) r.setPayTime(DateUtils.parseDate(p.get("payTime")));
+        if (p.get("commemorationDayId") != null) {
+            r.setCommemorationDayId(toLong(p.get("commemorationDayId")));
+        }
         if (p.get("remark") != null) r.setRemark((String) p.get("remark"));
         return r;
     }
