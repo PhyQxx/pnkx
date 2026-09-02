@@ -136,14 +136,17 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     @Override
     public TableDataInfo selectPxBookkeepingRecordList(PxBookkeepingRecord pxBookkeepingRecord) {
         List<PxBookkeepingRecord> list = pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
+        // 主列表查询完成后立即保存分页总数并清理 ThreadLocal。后面的收支合计也是
+        // SELECT；若继续携带分页上下文，分页拦截器会用聚合查询的 1 行结果覆盖 total。
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<PxBookkeepingRecord> page =
+                com.pnkx.common.core.controller.BaseController.getPage();
+        long total = page != null ? page.getTotal() : list.size();
+        com.pnkx.common.core.controller.BaseController.clearPage();
         TableDataInfo rspData = new TableDataInfo();
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg(pxBookkeepingRecordMapper.getInflowMoney(pxBookkeepingRecord) + "," + pxBookkeepingRecordMapper.getFlowOutMoney(pxBookkeepingRecord));
         rspData.setRows(list);
-        // total 由 ThreadLocal 拦截器回填到 BaseController 的 Page，这里从 getPage() 取
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<PxBookkeepingRecord> page = com.pnkx.common.core.controller.BaseController.getPage();
-        rspData.setTotal(page != null ? page.getTotal() : list.size());
-        com.pnkx.common.core.controller.BaseController.clearPage();
+        rspData.setTotal(total);
         return rspData;
     }
 

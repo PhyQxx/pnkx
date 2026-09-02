@@ -228,8 +228,7 @@
 
     <!--月度统计-->
     <select id="getMonthlyStatistics" resultType="map" parameterType="map">
-        SELECT r.id,
-            left( pay_time, 7) 'name',
+        SELECT left( pay_time, 7) 'name',
             sum(cast(money as decimal(18, 2))) 'value'
         FROM
             px_bookkeeping_record r left join px_bookkeeping_classification c
