@@ -15,7 +15,7 @@ pnkx:
   # 内部系统集成令牌：留空则完全关闭；配置后 X-Integration-Token 匹配的请求
   # 以 integration.userId 指定的用户身份通过鉴权（供 Aria Companion Hub 等可信系统使用）
   integration:
-    token: ''
+    token: 'pnkx'
     userId: 1
 
 # 开发环境配置
