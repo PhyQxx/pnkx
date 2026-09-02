@@ -1,5 +1,6 @@
 package com.pnkx.framework.config;
 
+import com.pnkx.framework.security.filter.IntegrationTokenFilter;
 import com.pnkx.framework.security.filter.JwtAuthenticationTokenFilter;
 import com.pnkx.framework.security.handle.AuthenticationEntryPointImpl;
 import com.pnkx.framework.security.handle.LogoutSuccessHandlerImpl;
@@ -56,6 +57,12 @@ public class SecurityConfig {
      */
     @Resource
     private JwtAuthenticationTokenFilter authenticationTokenFilter;
+
+    /**
+     * 内部系统集成令牌过滤器（X-Integration-Token，绑定配置用户）
+     */
+    @Resource
+    private IntegrationTokenFilter integrationTokenFilter;
 
     /**
      * 跨域过滤器
@@ -136,6 +143,8 @@ public class SecurityConfig {
         httpSecurity.logout(logout -> logout.logoutUrl("/logout").logoutSuccessHandler(logoutSuccessHandler));
         // 添加JWT filter（Spring Security 6 中 AuthorizationFilter 一定存在，UsernamePasswordAuthenticationFilter 默认不存在）
         httpSecurity.addFilterBefore(authenticationTokenFilter, AuthorizationFilter.class);
+        // 内部系统集成令牌：在 JWT 之后、授权之前，JWT 未认证时按 X-Integration-Token 绑定身份
+        httpSecurity.addFilterBefore(integrationTokenFilter, AuthorizationFilter.class);
         // 添加CORS filter
         httpSecurity.addFilterBefore(corsFilter, LogoutFilter.class);
 
