@@ -75,6 +75,13 @@ public class PxToDoServiceImpl implements IPxToDoService {
      */
     @Override
     public int insertPxToDo(PxToDo pxToDo) {
+        if (pxToDo.getClientUuid() != null && !pxToDo.getClientUuid().isBlank()) {
+            PxToDo existing = pxToDoMapper.selectByClientUuid(pxToDo.getClientUuid());
+            if (existing != null) {
+                pxToDo.setId(existing.getId());
+                return 1;
+            }
+        }
         pxToDo.setCreateTime(DateUtils.getNowDate());
         return pxToDoMapper.insertPxToDo(pxToDo);
     }
