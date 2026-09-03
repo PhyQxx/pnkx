@@ -15,6 +15,8 @@ import java.util.List;
 public interface PxShoppingListMapper {
     PxShoppingList selectPxShoppingListById(Long id);
 
+    PxShoppingList selectByClientUuid(String clientUuid);
+
     List<PxShoppingList> selectPxShoppingListList(PxShoppingList pxShoppingList);
 
     int insertPxShoppingList(PxShoppingList pxShoppingList);
