@@ -47,6 +47,7 @@
         `order`,
         del_flag,
         version,
+        client_uuid,
         create_by,
         create_time,
         update_by,
@@ -100,6 +101,8 @@
             </if>
             <if test="version != null">version,
             </if>
+            <if test="clientUuid != null">client_uuid,
+            </if>
             <if test="createBy != null">create_by,
             </if>
             <if test="createTime != null">create_time,
@@ -125,6 +128,8 @@
             <if test="delFlag != null">#{delFlag},
             </if>
             <if test="version != null">#{version},
+            </if>
+            <if test="clientUuid != null">#{clientUuid},
             </if>
             <if test="createBy != null">#{createBy},
             </if>
