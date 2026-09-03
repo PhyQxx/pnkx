@@ -1,7 +1,7 @@
 package com.pnkx.service.impl;
 
-import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.domain.po.*;
 import com.pnkx.mapper.*;
 import com.pnkx.service.IPxOfflineSyncService;
@@ -228,7 +228,9 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
         PxCommemorationDay c = new PxCommemorationDay();
         if (p.get("name") != null) c.setName((String) p.get("name"));
         if (p.get("icon") != null) c.setIcon((String) p.get("icon"));
+        if (p.get("date") != null) c.setDate(DateUtils.parseDate(p.get("date")));
         if (p.get("isRepeat") != null) c.setRepeat(Boolean.parseBoolean(p.get("isRepeat").toString()));
+        if (p.get("orderNum") != null) c.setOrderNum(toLong(p.get("orderNum")));
         if (p.get("remark") != null) c.setRemark((String) p.get("remark"));
         return c;
     }
