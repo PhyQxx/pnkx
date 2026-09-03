@@ -15,6 +15,8 @@ import java.util.List;
 public interface PxRecipeMapper {
     PxRecipe selectPxRecipeById(Long id);
 
+    PxRecipe selectByClientUuid(String clientUuid);
+
     List<PxRecipe> selectPxRecipeList(PxRecipe pxRecipe);
 
     int insertPxRecipe(PxRecipe pxRecipe);

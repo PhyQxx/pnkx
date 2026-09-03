@@ -34,12 +34,24 @@
             <if test="title != null  and title != ''">and title like concat('%', #{title}, '%')</if>
             <if test="servings != null ">and servings = #{servings}</if>
             and del_flag = '0'
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
         </where>
     </select>
 
     <select id="selectPxRecipeById" parameterType="Long" resultMap="PxRecipeResult">
         <include refid="selectPxRecipeVo"/>
         where id = #{id}
+    </select>
+
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxRecipeResult">
+        <include refid="selectPxRecipeVo"/>
+        where client_uuid = #{clientUuid}
+        limit 1
     </select>
 
     <insert id="insertPxRecipe" parameterType="PxRecipe" useGeneratedKeys="true" keyProperty="id">

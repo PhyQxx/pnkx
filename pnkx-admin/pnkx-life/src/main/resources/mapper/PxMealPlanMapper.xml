@@ -38,6 +38,12 @@
             <if test="planDate != null  and planDate != ''">and plan_date = #{planDate}</if>
             <if test="mealType != null ">and meal_type = #{mealType}</if>
             and del_flag = '0'
+            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
+                and create_by in
+                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
+                    #{uid}
+                </foreach>
+            </if>
         </where>
         order by plan_date asc, meal_type asc, sort_order asc
     </select>
@@ -45,6 +51,12 @@
     <select id="selectPxMealPlanById" parameterType="Long" resultMap="PxMealPlanResult">
         <include refid="selectPxMealPlanVo"/>
         where id = #{id}
+    </select>
+
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxMealPlanResult">
+        <include refid="selectPxMealPlanVo"/>
+        where client_uuid = #{clientUuid}
+        limit 1
     </select>
 
     <!-- 按日期范围查询 -->

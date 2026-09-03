@@ -17,6 +17,8 @@ import java.util.List;
 public interface PxMealPlanMapper {
     PxMealPlan selectPxMealPlanById(Long id);
 
+    PxMealPlan selectByClientUuid(String clientUuid);
+
     List<PxMealPlan> selectPxMealPlanList(PxMealPlan pxMealPlan);
 
     /** 按日期范围查询（周视图用） */

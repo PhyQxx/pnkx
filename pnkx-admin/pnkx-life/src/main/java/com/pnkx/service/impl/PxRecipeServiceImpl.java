@@ -2,6 +2,8 @@ package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxRecipe;
 import com.pnkx.domain.po.PxRecipeIngredient;
 import com.pnkx.mapper.PxRecipeIngredientMapper;
@@ -58,6 +60,14 @@ public class PxRecipeServiceImpl implements IPxRecipeService {
      */
     @Override
     public int insertPxRecipe(PxRecipe pxRecipe) {
+        if (StringUtils.isNotEmpty(pxRecipe.getClientUuid())) {
+            PxRecipe existing = pxRecipeMapper.selectByClientUuid(pxRecipe.getClientUuid());
+            if (existing != null) {
+                pxRecipe.setId(existing.getId());
+                return 1;
+            }
+        }
+        pxRecipe.setCreateBy(SecurityUtils.getUserId());
         pxRecipe.setCreateTime(DateUtils.getNowDate());
         int rows = pxRecipeMapper.insertPxRecipe(pxRecipe);
         if (pxRecipe.getIngredients() != null) {
