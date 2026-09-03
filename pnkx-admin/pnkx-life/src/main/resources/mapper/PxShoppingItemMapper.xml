@@ -47,6 +47,12 @@
         where id = #{id}
     </select>
 
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxShoppingItemResult">
+        <include refid="selectPxShoppingItemVo"/>
+        where client_uuid = #{clientUuid}
+        limit 1
+    </select>
+
     <insert id="insertPxShoppingItem" parameterType="PxShoppingItem" useGeneratedKeys="true" keyProperty="id">
         insert into px_shopping_item
         <trim prefix="(" suffix=")" suffixOverrides=",">

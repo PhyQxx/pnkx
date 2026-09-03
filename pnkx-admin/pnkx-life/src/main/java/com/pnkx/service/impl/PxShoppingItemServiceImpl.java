@@ -2,6 +2,8 @@ package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxShoppingItem;
 import com.pnkx.mapper.PxShoppingItemMapper;
 import com.pnkx.service.IPxShoppingItemService;
@@ -53,6 +55,15 @@ public class PxShoppingItemServiceImpl implements IPxShoppingItemService {
      */
     @Override
     public int insertPxShoppingItem(PxShoppingItem pxShoppingItem) {
+        if (StringUtils.isNotEmpty(pxShoppingItem.getClientUuid())) {
+            PxShoppingItem existing = pxShoppingItemMapper.selectByClientUuid(
+                    pxShoppingItem.getClientUuid());
+            if (existing != null) {
+                pxShoppingItem.setId(existing.getId());
+                return 1;
+            }
+        }
+        pxShoppingItem.setCreateBy(SecurityUtils.getUserId());
         pxShoppingItem.setCreateTime(DateUtils.getNowDate());
         return pxShoppingItemMapper.insertPxShoppingItem(pxShoppingItem);
     }
