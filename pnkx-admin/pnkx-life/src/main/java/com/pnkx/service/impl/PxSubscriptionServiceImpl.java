@@ -2,6 +2,8 @@ package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxBookkeepingRecord;
 import com.pnkx.domain.po.PxSubscription;
 import com.pnkx.mapper.PxBookkeepingRecordMapper;
@@ -50,6 +52,15 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
 
     @Override
     public int insertPxSubscription(PxSubscription pxSubscription) {
+        if (StringUtils.isNotEmpty(pxSubscription.getClientUuid())) {
+            PxSubscription existing = pxSubscriptionMapper.selectByClientUuid(
+                    pxSubscription.getClientUuid());
+            if (existing != null) {
+                pxSubscription.setId(existing.getId());
+                return 1;
+            }
+        }
+        pxSubscription.setCreateBy(SecurityUtils.getUserId());
         pxSubscription.setCreateTime(DateUtils.getNowDate());
         return pxSubscriptionMapper.insertPxSubscription(pxSubscription);
     }

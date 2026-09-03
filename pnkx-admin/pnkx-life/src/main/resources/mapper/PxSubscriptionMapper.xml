@@ -55,6 +55,12 @@
         where id = #{id}
     </select>
 
+    <select id="selectByClientUuid" parameterType="String" resultMap="PxSubscriptionResult">
+        <include refid="selectPxSubscriptionVo"/>
+        where client_uuid = #{clientUuid}
+        limit 1
+    </select>
+
     <!-- 查询已到期且启用的订阅 -->
     <select id="selectDueSubscriptions" resultMap="PxSubscriptionResult">
         <include refid="selectPxSubscriptionVo"/>

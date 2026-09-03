@@ -17,6 +17,8 @@ import java.util.List;
 public interface PxSubscriptionMapper {
     PxSubscription selectPxSubscriptionById(Long id);
 
+    PxSubscription selectByClientUuid(String clientUuid);
+
     List<PxSubscription> selectPxSubscriptionList(PxSubscription pxSubscription);
 
     int insertPxSubscription(PxSubscription pxSubscription);

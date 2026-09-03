@@ -44,7 +44,11 @@ public class PxSubscriptionController extends BaseController {
     @Log(title = "订阅管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody PxSubscription pxSubscription) {
-        return toAjax(pxSubscriptionService.insertPxSubscription(pxSubscription));
+        int rows = pxSubscriptionService.insertPxSubscription(pxSubscription);
+        if (rows > 0) {
+            return AjaxResult.success(pxSubscription.getId());
+        }
+        return AjaxResult.error();
     }
 
     @Log(title = "订阅管理", businessType = BusinessType.UPDATE)
