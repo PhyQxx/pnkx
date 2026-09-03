@@ -2,6 +2,8 @@ package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxMealPlan;
 import com.pnkx.domain.po.PxRecipeIngredient;
 import com.pnkx.domain.po.PxShoppingItem;
@@ -64,6 +66,15 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int insertPxMealPlan(PxMealPlan pxMealPlan) {
+        if (StringUtils.isNotEmpty(pxMealPlan.getClientUuid())) {
+            PxMealPlan existing = pxMealPlanMapper.selectByClientUuid(
+                    pxMealPlan.getClientUuid());
+            if (existing != null) {
+                pxMealPlan.setId(existing.getId());
+                return 1;
+            }
+        }
+        pxMealPlan.setCreateBy(SecurityUtils.getUserId());
         pxMealPlan.setCreateTime(DateUtils.getNowDate());
         return pxMealPlanMapper.insertPxMealPlan(pxMealPlan);
     }
