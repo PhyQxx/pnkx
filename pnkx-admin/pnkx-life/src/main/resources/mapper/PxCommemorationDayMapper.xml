@@ -92,6 +92,7 @@
             <if test="orderNum != null">order_num,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="version != null">version,</if>
+            <if test="clientUuid != null">client_uuid,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -106,6 +107,7 @@
             <if test="orderNum != null">#{orderNum},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="version != null">#{version},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
