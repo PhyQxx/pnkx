@@ -183,6 +183,7 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
         if (p.get("title") != null) d.setTitle((String) p.get("title"));
         if (p.get("mood") != null) d.setMood((String) p.get("mood"));
         if (p.get("weather") != null) d.setWeather((String) p.get("weather"));
+        if (p.get("date") != null) d.setDate(DateUtils.parseDate(p.get("date")));
         if (p.get("content") != null) d.setContent((String) p.get("content"));
         if (p.get("richText") != null) d.setRichText((String) p.get("richText"));
         if (p.get("remark") != null) d.setRemark((String) p.get("remark"));
@@ -220,6 +221,7 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
         if (p.get("content") != null) n.setContent((String) p.get("content"));
         if (p.get("richText") != null) n.setRichText((String) p.get("richText"));
         if (p.get("folder") != null) n.setFolder(toLong(p.get("folder")));
+        if (p.get("order") != null) n.setOrder(Integer.parseInt(p.get("order").toString()));
         if (p.get("remark") != null) n.setRemark((String) p.get("remark"));
         return n;
     }
