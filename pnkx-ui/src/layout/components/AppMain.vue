@@ -26,20 +26,14 @@ export default {
 
 <style lang="scss" scoped>
 .app-main {
-    min-height: calc(100vh - 86px);
+    flex: 1;
+    min-height: 0;
     width: 100%;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     background: var(--pnkx-bg);
 }
 
-.fixed-header + .app-main {
-    padding-top: 86px;
-}
-
-.fixed-header:not(.hasTagsView) + .app-main {
-    padding-top: 52px;
-}
 </style>
 
 <style lang="scss">

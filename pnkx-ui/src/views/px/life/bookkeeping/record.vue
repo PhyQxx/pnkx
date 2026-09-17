@@ -1046,6 +1046,10 @@ $bk-green: $theme-bookkeeping-green;
     flex: 1;
     overflow: hidden;
   }
+
+  :deep(.el-tab-pane) {
+    height: 100%;
+  }
 }
 
 .bookkeeping-record-container {
