@@ -268,7 +268,7 @@ export default {
         height: 100%;
         line-height: 52px;
         display: flex;
-        justify-content: center;
+        justify-content: flex-end;
         align-items: center;
 
         #header-search {
@@ -382,7 +382,7 @@ export default {
         }
 
         .avatar-container {
-            margin-right: 30px;
+            margin-right: 12px;
 
             .avatar-wrapper {
                 margin-top: 5px;
