@@ -777,6 +777,10 @@ export default {
     flex: 1;
     overflow: hidden;
   }
+
+  :deep(.el-tab-pane) {
+    height: 100%;
+  }
 }
 
 .note-container {

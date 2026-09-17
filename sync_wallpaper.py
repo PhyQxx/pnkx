@@ -51,6 +51,14 @@ SERIES = [
      "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/鹿鼎记插画",     "parent_name": "鹿鼎记"},
     {"key": "ashtly",     "name": "爱上她的理由",   "base": "/Users/peihaoyu/Pictures/裴浩宇/爱上她的理由",
      "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/爱上她的理由",   "parent_name": "爱上她的理由"},
+    {"key": "overlord",   "name": "Overlord",       "base": "/Users/peihaoyu/Pictures/裴浩宇/Overlord",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/Overlord",       "parent_name": "Overlord"},
+    {"key": "is",         "name": "无限斯特拉托斯", "base": "/Users/peihaoyu/Pictures/裴浩宇/无限斯特拉托斯",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/无限斯特拉托斯", "parent_name": "无限斯特拉托斯"},
+    {"key": "dressup",    "name": "更衣人偶坠入爱河", "base": "/Users/peihaoyu/Pictures/裴浩宇/更衣人偶坠入爱河",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/更衣人偶坠入爱河", "parent_name": "更衣人偶坠入爱河"},
+    {"key": "bleach",     "name": "死神",           "base": "/Users/peihaoyu/Pictures/裴浩宇/死神",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/死神",           "parent_name": "死神"},
 ]
 EXCLUDE = {"NSFW"}
 IMG_EXT = (".png", ".jpg", ".jpeg", ".webp")
