@@ -206,7 +206,12 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="链接" prop="shareUrl">
-                    <el-input v-model="form.shareUrl" placeholder="请输入分享链接"/>
+                    <el-input
+                        v-model="form.shareUrl"
+                        placeholder="请输入分享链接，粘贴整段分享文案将自动提取链接"
+                        @paste="handleShareUrlPaste"
+                        @blur="normalizeShareUrl"
+                    />
                 </el-form-item>
                 <el-form-item label="封面" prop="cover">
                     <div class="share-cover-editor">
@@ -460,6 +465,31 @@ export default {
         },
         handleCopy(row) {
             this.$copyText(this.buildShareText(row));
+        },
+        extractShareUrl(text) {
+            const match = (text || '').match(/https?:\/\/[A-Za-z0-9\-._~:/?#[\]@!$&*+;=%]+/i);
+            return match ? match[0] : null;
+        },
+        handleShareUrlPaste(event) {
+            const text = event.clipboardData?.getData('text') || '';
+            const url = this.extractShareUrl(text);
+            if (!url || text.trim() === url) return;
+            event.preventDefault();
+            const input = event.target;
+            const start = input.selectionStart ?? (this.form.shareUrl || '').length;
+            const end = input.selectionEnd ?? start;
+            const current = this.form.shareUrl || '';
+            this.form.shareUrl = current.slice(0, start) + url + current.slice(end);
+            this.$nextTick(() => {
+                const pos = start + url.length;
+                if (input.setSelectionRange) input.setSelectionRange(pos, pos);
+            });
+        },
+        normalizeShareUrl() {
+            const url = this.extractShareUrl(this.form.shareUrl);
+            if (url && url !== this.form.shareUrl) {
+                this.form.shareUrl = url;
+            }
         },
         createImportText(content = '') {
             return {
