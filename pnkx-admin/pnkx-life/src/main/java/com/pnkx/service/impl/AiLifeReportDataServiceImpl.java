@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +42,8 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         LocalDate startDate;
         if ("week".equals(period)) {
             startDate = now.minusWeeks(1);
+        } else if ("year".equals(period)) {
+            startDate = now.withDayOfYear(1);
         } else {
             startDate = now.minusMonths(1);
         }
@@ -88,8 +91,53 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
                 })
                 .sum();
         
-        obj.put("totalExpense", totalExpense);
+        obj.put("totalExpense", Math.round(totalExpense * 100) / 100.0);
         obj.put("recordCount", periodRecords.size());
+
+        // 支出分类 Top5（周/月/年报通用）
+        Map<String, Double> typeExpense = new java.util.LinkedHashMap<>();
+        for (PxBookkeepingRecord r : periodRecords) {
+            if (r.getTypeObject() == null || r.getMoney() == null) {
+                continue;
+            }
+            String typeName = r.getTypeObject().getTypeName() != null
+                    ? r.getTypeObject().getTypeName() : "未分类";
+            try {
+                typeExpense.merge(typeName, Double.parseDouble(r.getMoney()), Double::sum);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        List<JSONObject> topTypes = typeExpense.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(5)
+                .map(e -> {
+                    JSONObject t = new JSONObject();
+                    t.put("typeName", e.getKey());
+                    t.put("expense", Math.round(e.getValue() * 100) / 100.0);
+                    return t;
+                })
+                .collect(Collectors.toList());
+        obj.put("topTypes", topTypes);
+
+        // 年报专属：12 个月支出分布
+        if (startDate.getDayOfYear() == 1) {
+            double[] monthly = new double[12];
+            for (PxBookkeepingRecord r : periodRecords) {
+                if (r.getPayTime() == null || r.getMoney() == null || r.getTypeObject() == null) {
+                    continue;
+                }
+                int month = new java.sql.Date(r.getPayTime().getTime()).toLocalDate().getMonthValue();
+                try {
+                    monthly[month - 1] += Double.parseDouble(r.getMoney());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            List<Double> monthlyList = new java.util.ArrayList<>();
+            for (double v : monthly) {
+                monthlyList.add(Math.round(v * 100) / 100.0);
+            }
+            obj.put("monthlyExpense", monthlyList);
+        }
         return obj;
     }
 
@@ -115,8 +163,12 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         query.setCreateBy(userId);
         List<PxToDo> records = todoMapper.selectPxToDoList(query);
 
-        long done = records.stream().filter(r -> r.getStatus() != null && r.getStatus()).count();
-        long undone = records.stream().filter(r -> r.getStatus() == null || !r.getStatus()).count();
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        List<PxToDo> periodRecords = records.stream()
+                .filter(r -> r.getCreateTime() != null && r.getCreateTime().after(java.sql.Timestamp.valueOf(startDateTime)))
+                .collect(Collectors.toList());
+        long done = periodRecords.stream().filter(r -> r.getStatus() != null && r.getStatus()).count();
+        long undone = periodRecords.stream().filter(r -> r.getStatus() == null || !r.getStatus()).count();
 
         obj.put("done", done);
         obj.put("undone", undone);

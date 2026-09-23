@@ -8,6 +8,7 @@
                 <el-radio-group v-model="period" class="toolbar-segmented" :disabled="dataLoading" @change="loadData">
                     <el-radio-button value="week">本周</el-radio-button>
                     <el-radio-button value="month">本月</el-radio-button>
+                    <el-radio-button value="year">今年</el-radio-button>
                 </el-radio-group>
                 <el-radio-group v-model="reportType" class="toolbar-segmented" :disabled="dataLoading" @change="loadData">
                     <el-radio-button value="summary">综合</el-radio-button>
@@ -48,6 +49,39 @@
             </el-col>
         </el-row>
 
+        <!-- 年报专属：月度支出分布 + 分类 Top5 -->
+        <el-row v-if="period === 'year'" :gutter="18" class="metric-row">
+            <el-col :lg="14" :sm="24" :xs="24">
+                <el-card v-loading="dataLoading" shadow="never" class="panel-card">
+                    <template #header><span>月度支出分布</span></template>
+                    <div class="monthly-bars">
+                        <div v-for="(v, i) in monthlyExpense" :key="i" class="monthly-bar-col">
+                            <div class="monthly-bar-track">
+                                <div class="monthly-bar" :style="{height: barHeight(v)}">
+                                    <span v-if="v > 0" class="monthly-bar-value">{{ shortMoney(v) }}</span>
+                                </div>
+                            </div>
+                            <span class="monthly-bar-label">{{ i + 1 }}月</span>
+                        </div>
+                    </div>
+                </el-card>
+            </el-col>
+            <el-col :lg="10" :sm="24" :xs="24">
+                <el-card v-loading="dataLoading" shadow="never" class="panel-card">
+                    <template #header><span>支出分类 Top5</span></template>
+                    <div v-if="topTypes.length === 0" class="top-types-empty">本周期暂无支出</div>
+                    <div v-for="(t, i) in topTypes" :key="t.typeName" class="top-type-row">
+                        <span class="top-type-rank" :class="'rank-' + (i + 1)">{{ i + 1 }}</span>
+                        <span class="top-type-name">{{ t.typeName }}</span>
+                        <div class="top-type-track">
+                            <div class="top-type-bar" :style="{width: topPercent(t.expense)}"></div>
+                        </div>
+                        <span class="top-type-value">¥{{ t.expense }}</span>
+                    </div>
+                </el-card>
+            </el-col>
+        </el-row>
+
         <!-- 日期范围 -->
         <el-card v-loading="dataLoading" shadow="never" class="panel-card report-detail-card">
             <template #header><span>数据范围：{{ dateRange }}</span></template>
@@ -74,7 +108,7 @@
             <template #header><span>历史报告</span></template>
             <el-empty v-if="historyList.length === 0" description="暂无历史报告" />
             <el-collapse v-else>
-                <el-collapse-item v-for="item in historyList" :key="item.id" :title="`${item.createTime} · ${item.period === 'week' ? '周报' : '月报'}`">
+                <el-collapse-item v-for="item in historyList" :key="item.id" :title="`${item.createTime} · ${periodName(item.period)}`">
                     <XMarkDown :content="item.content" />
                 </el-collapse-item>
             </el-collapse>
@@ -103,6 +137,12 @@ export default {
             if (!this.reportData.dateRange) return ''
             return this.reportData.dateRange.join(' ~ ')
         },
+        monthlyExpense() {
+            return this.reportData?.bookkeeping?.monthlyExpense || []
+        },
+        topTypes() {
+            return this.reportData?.bookkeeping?.topTypes || []
+        },
         todoRate() {
             const done = this.reportData.todo?.done || 0
             const undone = this.reportData.todo?.undone || 0
@@ -115,6 +155,20 @@ export default {
         this.loadHistory()
     },
     methods: {
+        periodName(p) {
+            return p === 'week' ? '周报' : (p === 'year' ? '年报' : '月报')
+        },
+        barHeight(v) {
+            const max = Math.max(...this.monthlyExpense, 1)
+            return Math.max(4, Math.round(v / max * 100)) + '%'
+        },
+        shortMoney(v) {
+            return v >= 10000 ? (v / 10000).toFixed(1) + 'w' : (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v))
+        },
+        topPercent(v) {
+            const max = Math.max(...this.topTypes.map(t => t.expense), 1)
+            return Math.round(v / max * 100) + '%'
+        },
         loadData() {
             this.dataLoading = true
             getLifeReportData({period: this.period, reportType: this.reportType}).then(res => {
@@ -317,4 +371,115 @@ export default {
         width: 100%;
     }
 }
+
+/* 年报：月度支出柱状 */
+.monthly-bars {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 160px;
+  padding: 8px 4px 0;
+
+  .monthly-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+
+    .monthly-bar-track {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+
+      .monthly-bar {
+        position: relative;
+        width: 70%;
+        max-width: 28px;
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(180deg, #6366f1, #a5b4fc);
+        transition: height .4s ease;
+
+        .monthly-bar-value {
+          position: absolute;
+          top: -18px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 10px;
+          color: #999;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .monthly-bar-label {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+  }
+}
+
+/* 年报：支出分类 Top5 */
+.top-types-empty {
+  color: #999;
+  font-size: 13px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.top-type-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  .top-type-rank {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f0f2f5;
+    color: #909399;
+
+    &.rank-1 { background: #fde2e2; color: #f56c6c; }
+    &.rank-2 { background: #faecd8; color: #e6a23c; }
+    &.rank-3 { background: #f3d19e; color: #b88230; }
+  }
+
+  .top-type-name {
+    width: 72px;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .top-type-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: #f0f2f5;
+    overflow: hidden;
+
+    .top-type-bar {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+  }
+
+  .top-type-value {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+  }
+}
+
 </style>

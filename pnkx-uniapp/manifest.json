@@ -16,7 +16,8 @@
         },
         "modules" : {
             "SQLite" : {},
-            "Camera" : {}
+            "Camera" : {},
+            "Push" : {}
         },
         "distribute" : {
             "android" : {
@@ -45,7 +46,14 @@
             "ios" : {
                 "dSYMs" : false
             },
-            "sdkConfigs" : {},
+            "sdkConfigs" : {
+                "push" : {
+                    "unipush" : {
+                        "version" : "2",
+                        "offline" : false
+                    }
+                }
+            },
             "icons" : {
                 "android" : {
                     "hdpi" : "unpackage/res/icons/72x72.png",

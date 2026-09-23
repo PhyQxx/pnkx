@@ -88,15 +88,27 @@ public class PxLifeReportController extends BaseController {
             JSONObject reportData = lifeReportDataService.buildReportData(userId, period, reportType);
             StringBuilder generatedContent = new StringBuilder();
 
-            String periodLabel = "week".equals(period) ? "周" : "月";
-            String promptText = "你是一个生活分析专家。根据以下用户" + periodLabel + "度数据，生成一份生活报告。\n"
-                    + "数据：" + reportData.toJSONString() + "\n\n"
-                    + "报告要求：\n"
-                    + "1. 消费总览与建议\n"
-                    + "2. 心情与日记关键词\n"
-                    + "3. 待办完成情况\n"
-                    + "4. 下期建议\n"
-                    + "请用 Markdown 格式输出，突出重点。";
+            String promptText;
+            if ("year".equals(period)) {
+                promptText = "你是一个生活分析专家。根据以下用户全年数据，生成一份温暖走心的「年度报告」。\n"
+                        + "数据：" + reportData.toJSONString() + "\n\n"
+                        + "报告要求：\n"
+                        + "1. 年度关键词（3 个词概括这一年）\n"
+                        + "2. 年度消费盘点：总额、月度分布亮点、支出最多的分类与有趣洞察\n"
+                        + "3. 这一年记录了什么：日记与待办里的高光时刻\n"
+                        + "4. 写给明年的一小段话（口语化、有温度，像朋友写的）\n"
+                        + "请用 Markdown 格式输出，语气亲切自然，避免流水账。";
+            } else {
+                String periodLabel = "week".equals(period) ? "周" : "月";
+                promptText = "你是一个生活分析专家。根据以下用户" + periodLabel + "度数据，生成一份生活报告。\n"
+                        + "数据：" + reportData.toJSONString() + "\n\n"
+                        + "报告要求：\n"
+                        + "1. 消费总览与建议\n"
+                        + "2. 心情与日记关键词\n"
+                        + "3. 待办完成情况\n"
+                        + "4. 下期建议\n"
+                        + "请用 Markdown 格式输出，突出重点。";
+            }
 
             CountDownLatch latch = new CountDownLatch(1);
             Flux<ChatResponse> flux = aiClient.chatStream("你是一个专业的生活助理和数据分析师。", promptText);
