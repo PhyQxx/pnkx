@@ -23,6 +23,7 @@ import io.agentscope.core.message.TextBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import jakarta.annotation.Resource;
@@ -31,6 +32,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author PHY
@@ -79,6 +83,23 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
      * @param record 记账记录
      */
     private void autoMatchCommemorationDay(PxBookkeepingRecord record) {
+        PxBookkeepingClassification classification =
+                record.getType() == null ? null
+                        : classificationMapper.selectPxBookkeepingClassificationById(record.getType());
+        autoMatchCommemorationDay(record, classification,
+                commemorationDayService.getCommemorationDayList(new PxCommemorationDay()));
+    }
+
+    /**
+     * 同上，但分类与纪念日列表由调用方预加载传入，避免批量导入时逐条查库（N+1）
+     *
+     * @param record         记账记录
+     * @param classification record.type 对应的分类（可为 null）
+     * @param days           纪念日全量列表（可为 null 表示无数据）
+     */
+    private void autoMatchCommemorationDay(PxBookkeepingRecord record,
+                                           PxBookkeepingClassification classification,
+                                           List<PxCommemorationDay> days) {
         if (record.getCommemorationDayId() != null) {
             // 用户已手动指定，尊重用户选择
             return;
@@ -87,13 +108,11 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
             return;
         }
         // 判断分类名是否含"礼物"
-        PxBookkeepingClassification classification = classificationMapper.selectPxBookkeepingClassificationById(record.getType());
         if (classification == null || classification.getTypeName() == null
                 || !classification.getTypeName().contains("礼物")) {
             return;
         }
         // 查找消费时间附近最近的纪念日
-        List<PxCommemorationDay> days = commemorationDayService.getCommemorationDayList(new PxCommemorationDay());
         if (days == null || days.isEmpty()) {
             return;
         }
@@ -124,10 +143,25 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertBatchRecord(List<PxBookkeepingRecord> list) {
+        if (list == null || list.isEmpty()) {
+            return 0;
+        }
+        Date now = DateUtils.getNowDate();
+        String userId = SecurityUtils.getUserId();
+        // 预加载分类与纪念日，避免逐条查库（原实现每条记录 3 次查询）
+        Map<Long, PxBookkeepingClassification> classificationMap = classificationMapper
+                .selectPxBookkeepingClassificationList(new PxBookkeepingClassification())
+                .stream()
+                .collect(Collectors.toMap(PxBookkeepingClassification::getId, c -> c, (a, b) -> a));
+        List<PxCommemorationDay> days = commemorationDayService.getCommemorationDayList(new PxCommemorationDay());
         int rows = 0;
         for (PxBookkeepingRecord record : list) {
-            rows += insertPxBookkeepingRecord(record);
+            record.setCreateTime(now);
+            record.setCreateBy(userId);
+            autoMatchCommemorationDay(record, classificationMap.get(record.getType()), days);
+            rows += pxBookkeepingRecordMapper.insertPxBookkeepingRecord(record);
         }
         return rows;
     }

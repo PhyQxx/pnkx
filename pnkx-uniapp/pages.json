@@ -1,4 +1,5 @@
 {
+  "lazyCodeLoading": "requiredComponents",
   "easycom": {
     "autoscan": true,
     "custom": {

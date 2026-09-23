@@ -456,12 +456,14 @@
 			 */
 			getNoticeList() {
 				const regex = /(<([^>]+)>)/ig;
+				// 从富文本 HTML 中提取第一张图片的 src，不依赖固定偏移量
+				const imgSrcRegex = /<img[^>]*\ssrc=["']([^"']+)["']/i;
 				listNotice().then(response => {
 					this.noticeList = response.rows;
 					this.noticeList.map(item => {
 						if (item.firstPicture) {
-							item.firstPicture = item.firstPicture.slice(10, item.firstPicture.indexOf(
-								' alt') - 1)
+							const matched = item.firstPicture.match(imgSrcRegex);
+							item.firstPicture = matched ? matched[1] : '';
 						}
 						return item
 					})
@@ -1250,7 +1252,7 @@
 .home-page {
   background:
     linear-gradient(180deg, rgba(248, 251, 255, 0.02) 0%, $bg-page 720rpx),
-    url('/static/images/glacier-aurora-bg.png') top center / 100% auto no-repeat;
+    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
 }
 
 .greeting-header {

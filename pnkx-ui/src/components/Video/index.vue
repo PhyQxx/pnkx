@@ -27,6 +27,8 @@
 
 <script>
 import {VideoPlayer} from '@videojs-player/vue'
+// video.js 样式仅本组件使用，随组件按需加载（原为 main.js 全局引入）
+import 'video.js/dist/video-js.css'
 
 export default {
     name: "Video",

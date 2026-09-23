@@ -1,5 +1,6 @@
 package com.pnkx.common.core.redis;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -9,8 +10,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
@@ -206,11 +209,19 @@ public class RedisCache {
 
     /**
      * 获得缓存的基本对象列表
+     * <p>
+     * 使用 SCAN 游标迭代代替 KEYS：KEYS 是 O(N) 阻塞命令，
+     * 键量大时会卡住整个 Redis，线上禁用
      *
      * @param pattern 字符串前缀
      * @return 对象列表
      */
     public Collection<String> keys(final String pattern) {
-        return redisTemplate.keys(pattern);
+        List<String> keys = new ArrayList<>();
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).count(200).build();
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            cursor.forEachRemaining(keys::add);
+        }
+        return keys;
     }
 }

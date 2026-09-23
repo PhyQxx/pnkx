@@ -3,7 +3,8 @@ import App from './App.vue'
 import store from './store'
 import plugins from './plugins'
 import './permission'
-import moment from 'moment'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
 import { getDicts } from "@/api/system/dict/data"
 import * as filters from '@/utils/filters'
 import SvgIcon from '@/components/SvgIcon/index.vue'
@@ -50,7 +51,7 @@ import uniCollapse from '@/uni_modules/uni-collapse/components/uni-collapse/uni-
 import uniCollapseItem from '@/uni_modules/uni-collapse/components/uni-collapse-item/uni-collapse-item.vue'
 import uniNumberBox from '@/uni_modules/uni-number-box/components/uni-number-box/uni-number-box.vue'
 
-moment.locale('zh-cn')
+dayjs.locale('zh-cn')
 
 export function createApp() {
   const app = createSSRApp(App)
@@ -59,7 +60,7 @@ export function createApp() {
   app.use(plugins)
 
   // 全局属性
-  app.config.globalProperties.$moment = moment
+  app.config.globalProperties.$moment = dayjs
   app.config.globalProperties.$store = store
   app.config.globalProperties.$getConfigKey = getConfigKey
   app.config.globalProperties.$parseTime = parseTime

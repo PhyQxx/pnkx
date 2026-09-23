@@ -30,7 +30,6 @@
 
 <script>
 import echarts from '@/utils/echarts'
-import china from './data/china.json'
 import {getMoreStatistics} from "../../../../api/px/blog/statistics";
 
 import 'echarts/theme/macarons'; // echarts theme
@@ -93,8 +92,10 @@ export default {
         },
         /**
          * 初始化地区统计图表
+         * 地图 GeoJSON（582KB）动态加载，只在进入本页时才拉取对应 chunk
          */
-        initRegionEcharts() {
+        async initRegionEcharts() {
+            const china = (await import('./data/china.json')).default;
             echarts.registerMap('中华人民共和国', china);
             this.chart = echarts.init(document.getElementById('region-echarts'));
             const option = {

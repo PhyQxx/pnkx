@@ -1,9 +1,8 @@
 {
   "dependencies": {
     "@dcloudio/uni-ui": "^1.5.12",
-    "js-pinyin": "^0.2.5",
-    "moment": "^2.30.1",
-    "opencode-supermemory": "^2.0.4"
+    "dayjs": "^1.11.13",
+    "js-pinyin": "^0.2.5"
   },
   "devDependencies": {
     "@dcloudio/uni-app": "^3.0.0-alpha-5000720260410001",

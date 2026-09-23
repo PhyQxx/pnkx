@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, defineAsyncComponent } from 'vue'
 import Cookies from 'js-cookie'
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -42,7 +42,6 @@ import { getSession, removeSession, setSession } from '@/utils/session'
 import { getLocal, removeLocal, setLocal } from '@/utils/local'
 import { dateChange, getDaysBetween, getNow, getTimeDifference, isDateInRange, parseTime } from '@/utils/time'
 import { arraySum, sortAscByKey, sortDesByKey } from '@/utils/array'
-import EditPicture from '@/components/EditPicture/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import ToMessage from '@/components/ToMessage/index.vue'
 import { compressImage } from '@/utils/compressImage'
@@ -50,18 +49,18 @@ import { getUserProfile } from '@/api/system/user'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
-import '@/assets/js/prism'
-import '@/assets/styles/prism.css'
 import RightToolbar from '@/components/RightToolbar/index.vue'
 import noData from '@/components/NoData/index.vue'
 import ModelImage from '@/components/ModelImage/index.vue'
-import XMarkDown from '@/components/XMarkDown/index.vue'
-import CherryMarkdownEditor from '@/components/CherryMarkdownEditor/index.vue'
 import AdminMessageBoard from '@/components/MessageBoard/admin.vue'
-import Editor from '@/components/Editor/index.vue'
 import * as filters from '@/utils/filters'
 import TencentCaptcha from '@/assets/js/TencentCaptcha'
-import 'video.js/dist/video-js.css'
+
+// 重型编辑器/裁剪组件按需异步加载，避免打入首屏入口 chunk
+const XMarkDown = defineAsyncComponent(() => import('@/components/XMarkDown/index.vue'))
+const CherryMarkdownEditor = defineAsyncComponent(() => import('@/components/CherryMarkdownEditor/index.vue'))
+const EditPicture = defineAsyncComponent(() => import('@/components/EditPicture/index.vue'))
+const Editor = defineAsyncComponent(() => import('@/components/Editor/index.vue'))
 
 const app = createApp(App)
 

@@ -23,9 +23,6 @@ export default defineConfig(({ mode }) => {
             extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
             alias: {
                 '@': path.resolve(__dirname, './src'),
-                'vue': 'vue/dist/vue.esm-bundler.js',
-                'cytoscape/dist/cytoscape.umd.js': 'cytoscape/dist/cytoscape.esm.mjs',
-                'cytoscape': 'cytoscape/dist/cytoscape.esm.mjs',
                 '@shikijs/core': path.resolve(__dirname, './src/shiki-shim.js')
             }
         },
@@ -52,7 +49,7 @@ export default defineConfig(({ mode }) => {
             outDir: 'dist',
             assetsDir: 'static',
             sourcemap: false,
-            chunkSizeWarningLimit: 1000,
+            chunkSizeWarningLimit: 500,
             rollupOptions: {
                 output: {
                     manualChunks: {
