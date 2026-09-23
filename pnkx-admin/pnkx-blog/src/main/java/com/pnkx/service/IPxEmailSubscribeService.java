@@ -1,5 +1,6 @@
 package com.pnkx.service;
 
+import com.pnkx.domain.po.PxArticle;
 import com.pnkx.domain.po.PxEmailSubscribe;
 
 import java.util.List;
@@ -59,4 +60,11 @@ public interface IPxEmailSubscribeService {
      * @return 结果
      */
     int deletePxEmailSubscribeById(Long id);
+
+    /**
+     * 新文章发布通知：异步向全部订阅者群发邮件（失败仅记录日志，不阻塞发文）
+     *
+     * @param article 新发布的文章
+     */
+    void notifyNewArticle(PxArticle article);
 }

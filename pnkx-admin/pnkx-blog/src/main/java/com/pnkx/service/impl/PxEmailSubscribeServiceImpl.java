@@ -1,9 +1,18 @@
 package com.pnkx.service.impl;
 
+import com.pnkx.common.constant.WebsiteAddressConstants;
+import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.StringUtils;
+import com.pnkx.common.utils.template.TemplateUtils;
+import com.pnkx.domain.po.PxArticle;
 import com.pnkx.domain.po.PxEmailSubscribe;
 import com.pnkx.mapper.PxEmailSubscribeMapper;
 import com.pnkx.service.IPxEmailSubscribeService;
-import com.pnkx.common.utils.DateUtils;
+import com.pnkx.system.domain.SysEmail;
+import com.pnkx.system.service.ISysEmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -17,8 +26,13 @@ import java.util.List;
 @Service
 public class PxEmailSubscribeServiceImpl implements IPxEmailSubscribeService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PxEmailSubscribeServiceImpl.class);
+
     @Resource
     private PxEmailSubscribeMapper pxEmailSubscribeMapper;
+
+    @Resource
+    private ISysEmailService sysEmailService;
 
     /**
      * 查询订阅
@@ -86,5 +100,39 @@ public class PxEmailSubscribeServiceImpl implements IPxEmailSubscribeService {
     @Override
     public int deletePxEmailSubscribeById(Long id) {
         return pxEmailSubscribeMapper.deletePxEmailSubscribeById(id);
+    }
+
+    /**
+     * 新文章发布通知：异步向全部订阅者群发邮件（失败仅记录日志，不阻塞发文）
+     */
+    @Async("notifyExecutor")
+    @Override
+    public void notifyNewArticle(PxArticle article) {
+        List<PxEmailSubscribe> subscribers = pxEmailSubscribeMapper.selectPxEmailSubscribeList(new PxEmailSubscribe());
+        if (subscribers.isEmpty()) {
+            logger.info("无邮件订阅者，跳过新文章通知");
+            return;
+        }
+        String template = TemplateUtils.getTemplate("newArticle");
+        String url = WebsiteAddressConstants.WEB_SITE_ADDRESS + "article/" + article.getId();
+        String summary = StringUtils.isEmpty(article.getContent()) ? "点击查看最新内容"
+                : StringUtils.strip(article.getContent().replaceAll("<[^>]+>", "")).substring(0, Math.min(120, article.getContent().replaceAll("<[^>]+>", "").length()));
+        String content = template.replace("template-title", article.getTitle())
+                .replace("template-summary", summary + "……")
+                .replace("template-url", url);
+        int success = 0;
+        for (PxEmailSubscribe subscriber : subscribers) {
+            try {
+                SysEmail email = new SysEmail();
+                email.setReceiverEmail(subscriber.getSubscribeMail());
+                email.setSubject("「Pei你看雪」新文章：" + article.getTitle());
+                email.setContent(content);
+                sysEmailService.sendMail(email);
+                success++;
+            } catch (Exception e) {
+                logger.error("新文章通知发送失败, 订阅者: {}", subscriber.getSubscribeMail(), e);
+            }
+        }
+        logger.info("新文章《{}》通知完成：{}/{} 成功", article.getTitle(), success, subscribers.size());
     }
 }

@@ -1,6 +1,8 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.pnkx.common.core.domain.entity.SysDictData;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
@@ -32,8 +34,12 @@ import java.util.regex.Pattern;
  */
 @Service
 public class PxArticleServiceImpl implements IPxArticleService {
+
+    private static final Logger log = LoggerFactory.getLogger(PxArticleServiceImpl.class);
     @Resource
     private PxArticleMapper pxArticleMapper;
+    @Resource
+    private com.pnkx.service.IPxEmailSubscribeService emailSubscribeService;
     @Resource
     private PxStatisticsMapper pxStatisticsMapper;
     @Resource
@@ -95,6 +101,12 @@ public class PxArticleServiceImpl implements IPxArticleService {
         pxArticle.setCreateTime(DateUtils.getNowDate());
         pxArticle.setCreateBy(SecurityUtils.getUserId());
         pxArticleMapper.insertPxArticle(pxArticle);
+        // 新文章发布：异步通知邮件订阅者（失败不影响发文）
+        try {
+            emailSubscribeService.notifyNewArticle(pxArticle);
+        } catch (Exception e) {
+            log.error("触发新文章订阅通知失败", e);
+        }
         return pxArticle.getId();
     }
 

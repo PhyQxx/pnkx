@@ -29,8 +29,24 @@ watch(
     articleInfo,
     (value) => {
       if (value) {
+        // OG 社交分享卡片：微信/Twitter 等平台抓取以下 meta 生成链接预览
+        const plainText = (value.content || '').replace(/<[^>]+>/g, '').trim()
+        const description = plainText.substring(0, 100) || 'Pei你看雪个人博客文章'
         useHead({
-          title: `${value.title}-Pei你看雪`
+          title: `${value.title}-Pei你看雪`,
+          meta: [
+            {name: 'description', content: description},
+            {property: 'og:title', content: value.title},
+            {property: 'og:type', content: 'article'},
+            {property: 'og:url', content: `https://pnkx.top/post/${id}`},
+            {property: 'og:site_name', content: 'Pei你看雪'},
+            {property: 'og:description', content: description},
+            ...(value.cover ? [{property: 'og:image', content: value.cover}] : []),
+            {name: 'twitter:card', content: 'summary_large_image'},
+            {name: 'twitter:title', content: value.title},
+            {name: 'twitter:description', content: description},
+            ...(value.cover ? [{name: 'twitter:image', content: value.cover}] : [])
+          ]
         })
         likeNumber.value = value.likeNumber
       }

@@ -10,7 +10,12 @@ export default defineNuxtConfig({
       title: 'Pei你看雪',
       meta: [
         { name: 'keywords', content: 'Pei你看雪,博客,前端,后端,Vue,SpringBoot' },
-        { name: 'description', content: 'PNKX，Pei你看雪情侣博客' }
+        { name: 'description', content: 'PNKX，Pei你看雪情侣博客' },
+        // OG 社交卡片兜底（文章页动态覆盖）
+        { property: 'og:site_name', content: 'Pei你看雪' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://pnkx.top' },
+        { name: 'twitter:card', content: 'summary' }
       ],
       link: [
         {
