@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.Resource;
+
 /**
  * 提醒推送通道的 WebSocket 实现。
  * <p>
@@ -26,12 +28,24 @@ public class WebSocketReminderPushChannel implements ReminderPushChannel {
         this.webSocketController = webSocketController;
     }
 
+    @Resource
+    private com.pnkx.system.service.impl.UniPushService uniPushService;
+
     @Override
     public void push(String userName, String payload) {
         if (userName == null || userName.isEmpty()) {
             return;
         }
         log.info("【提醒推送】向用户 {} 发送实时提醒", userName);
+        // 站内 WebSocket（在线送达）
         webSocketController.sendOneMessage(userName, payload);
+        // App 离线推送兜底（未配置 uniPush 时静默跳过；在线设备收锁屏通知亦为正常体验）
+        try {
+            com.alibaba.fastjson.JSONObject msg = com.alibaba.fastjson.JSON.parseObject(payload);
+            uniPushService.sendToUser(userName, msg.getString("title"), msg.getString("content"),
+                    java.util.Collections.singletonMap("type", msg.getString("type")));
+        } catch (Exception e) {
+            log.warn("【提醒推送】离线推送失败（不影响站内推送）, user={}", userName, e);
+        }
     }
 }

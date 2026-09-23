@@ -43,6 +43,8 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     @Resource
     private PxBookkeepingAiService aiService;
     @Resource
+    private PxBookkeepingBudgetServiceImpl budgetService;
+    @Resource
     private IPxCommemorationDayService commemorationDayService;
 
     /**
@@ -61,7 +63,12 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         pxBookkeepingRecord.setCreateBy(SecurityUtils.getUserId());
         // 礼物类支出联动纪念日：用户未手动指定时，自动匹配消费时间附近最近的纪念日
         autoMatchCommemorationDay(pxBookkeepingRecord);
-        return pxBookkeepingRecordMapper.insertPxBookkeepingRecord(pxBookkeepingRecord);
+        int rows = pxBookkeepingRecordMapper.insertPxBookkeepingRecord(pxBookkeepingRecord);
+        // 预算超支/接近超支实时提醒（同步执行内部已全量 try-catch，绝不影响记账）
+        if (rows > 0) {
+            budgetService.checkBudgetAlertAfterRecord(pxBookkeepingRecord);
+        }
+        return rows;
     }
 
     /**

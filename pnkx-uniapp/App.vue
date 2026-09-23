@@ -12,6 +12,7 @@ export default {
     this.initApp()
     // #ifdef APP-PLUS
     this.initOffline()
+    this.initPush()
     // #endif
   },
   onShow: function () {
@@ -20,6 +21,44 @@ export default {
     // #endif
   },
   methods: {
+    /**
+     * App 推送（uniPush 2.0）：登记设备 + 通知点击监听
+     * 后端未配置 UNIPUSH_* 时上报仅落库不推送，无副作用
+     */
+    initPush() {
+      try {
+        uni.getPushClientId({
+          success: (res) => {
+            const token = getToken()
+            if (!res.clientId || !token) return
+            uni.request({
+              url: config.baseUrl + '/system/push/device',
+              method: 'POST',
+              header: {'Authorization': 'Bearer ' + token},
+              data: {
+                clientId: res.clientId,
+                platform: uni.getSystemInfoSync().platform,
+                appVersion: plus.runtime.version || ''
+              }
+            })
+          }
+        })
+        uni.onPushMessage((msg) => {
+          // 点击通知消息：透传 payload.type 可按需跳转对应页面
+          if (msg.type === 'click' && msg.data && msg.data.payload) {
+            try {
+              const payload = typeof msg.data.payload === 'string'
+                ? JSON.parse(msg.data.payload) : msg.data.payload
+              if (payload && payload.type === 'life_reminder') {
+                uni.switchTab({url: '/pages/index/index'})
+              }
+            } catch (e) { /* payload 非预期格式时忽略 */ }
+          }
+        })
+      } catch (e) {
+        console.warn('推送初始化失败（不影响应用）', e)
+      }
+    },
     // 初始化应用
     initApp() {
       // 初始化应用配置

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.system.mapper.PxPushDeviceMapper">
+
+    <resultMap type="com.pnkx.system.domain.PxPushDevice" id="PxPushDeviceResult">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="clientId" column="client_id"/>
+        <result property="platform" column="platform"/>
+        <result property="appVersion" column="app_version"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <insert id="upsertDevice" parameterType="com.pnkx.system.domain.PxPushDevice">
+        INSERT INTO px_push_device (user_id, client_id, platform, app_version, update_time, create_time)
+        VALUES (#{userId}, #{clientId}, #{platform}, #{appVersion}, now(), now())
+        ON DUPLICATE KEY UPDATE platform = #{platform},
+                                app_version = #{appVersion},
+                                update_time = now()
+    </insert>
+
+    <select id="selectByUserId" resultMap="PxPushDeviceResult">
+        select id, user_id, client_id, platform, app_version, update_time
+        from px_push_device
+        where user_id = #{userId}
+    </select>
+
+    <delete id="cleanStaleDevices">
+        delete
+        from px_push_device
+        where update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+</mapper>

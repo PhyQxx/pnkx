@@ -208,6 +208,13 @@ wx:
       commemoration: ${WX_TEMPLATE_COMMEMORATION:}
       menstruation: ${WX_TEMPLATE_MENSTRUATION:}
 
+# uniPush 2.0（个推）App 离线推送：三要素齐全时启用，任一缺失则推送静默跳过
+# DCloud 开发者中心 → 应用 → uniPush 2.0 开通后获取
+unipush:
+  appid: ${UNIPUSH_APPID:}
+  appkey: ${UNIPUSH_APPKEY:}
+  mastersecret: ${UNIPUSH_MASTERSECRET:}
+
 # token配置
 token:
   # 令牌自定义标识
