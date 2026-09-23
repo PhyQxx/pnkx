@@ -8,7 +8,8 @@ import com.pnkx.common.utils.random.NameAndHeader;
 import com.pnkx.framework.web.service.SysPermissionService;
 import com.pnkx.framework.web.service.TokenService;
 import com.pnkx.system.service.ISysUserService;
-import net.sf.json.JSONObject;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -184,8 +185,8 @@ public class WxLoginController {
             RestTemplate restTemplate = new RestTemplate();
             String result = restTemplate.getForObject(url, String.class);
             log.info("微信 code2Session 返回: {}", result);
-            JSONObject json = JSONObject.fromObject(result);
-            if (json.has("openid")) {
+            JSONObject json = JSON.parseObject(result);
+            if (json.containsKey("openid")) {
                 return json.getString("openid");
             }
             log.error("code2Session 失败: {}", result);
@@ -203,8 +204,8 @@ public class WxLoginController {
             String url = String.format(ACCESS_TOKEN_URL, appid, secret);
             RestTemplate restTemplate = new RestTemplate();
             String result = restTemplate.getForObject(url, String.class);
-            JSONObject json = JSONObject.fromObject(result);
-            if (json.has("access_token")) {
+            JSONObject json = JSON.parseObject(result);
+            if (json.containsKey("access_token")) {
                 return json.getString("access_token");
             }
             log.error("获取 access_token 失败: {}", result);
@@ -232,8 +233,8 @@ public class WxLoginController {
             org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(reqBody.toString(), headers);
             String result = restTemplate.postForObject(url, entity, String.class);
             log.info("微信 getPhoneNumber 返回: {}", result);
-            JSONObject json = JSONObject.fromObject(result);
-            if (json.has("phone_info")) {
+            JSONObject json = JSON.parseObject(result);
+            if (json.containsKey("phone_info")) {
                 return json.getJSONObject("phone_info").getString("phoneNumber");
             }
             log.error("getPhoneNumber 失败: {}", result);

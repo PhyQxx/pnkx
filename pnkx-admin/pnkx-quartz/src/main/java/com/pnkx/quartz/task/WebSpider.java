@@ -1,5 +1,8 @@
 package com.pnkx.quartz.task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,6 +19,8 @@ import java.util.regex.Pattern;
  * @Author by PHY
  */
 public class WebSpider {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSpider.class);
     /**
      * 获得urlStr对应网络内容
      *
@@ -32,7 +37,7 @@ public class WebSpider {
                 sb.append(temp);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("爬取网页异常: {}", urlStr, e);
         }
         String firstStr = sb.toString();
         String secondStr = firstStr.substring(firstStr.indexOf("<tbody>") + 1, firstStr.lastIndexOf("</tbody>"));

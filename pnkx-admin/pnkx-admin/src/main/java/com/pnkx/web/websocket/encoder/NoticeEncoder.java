@@ -1,5 +1,8 @@
 package com.pnkx.web.websocket.encoder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.pnkx.web.websocket.domain.WebSocketMessage;
@@ -14,13 +17,15 @@ import jakarta.websocket.EndpointConfig;
  * @description: 描述
  */
 public class NoticeEncoder implements Encoder.Text<WebSocketMessage>  {
+
+    private static final Logger log = LoggerFactory.getLogger(NoticeEncoder.class);
     @Override
     public String encode(WebSocketMessage webSocketMessage) {
         try {
             JsonMapper jsonMapper = new JsonMapper();
             return jsonMapper.writeValueAsString(webSocketMessage);
         } catch ( JsonProcessingException e) {
-            e.printStackTrace();
+            log.error("WebSocket 消息编码异常", e);
             return null;
         }
     }

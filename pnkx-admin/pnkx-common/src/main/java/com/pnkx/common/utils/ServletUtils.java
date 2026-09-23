@@ -1,5 +1,8 @@
 package com.pnkx.common.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +19,8 @@ import com.pnkx.common.core.text.Convert;
  * @author phy
  */
 public class ServletUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(ServletUtils.class);
     /**
      * 获取String参数
      */
@@ -84,7 +89,7 @@ public class ServletUtils {
             response.setCharacterEncoding("utf-8");
             response.getWriter().print(string);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("写出响应内容异常", e);
         }
         return null;
     }

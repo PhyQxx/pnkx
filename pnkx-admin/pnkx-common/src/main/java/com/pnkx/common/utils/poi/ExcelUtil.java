@@ -332,14 +332,14 @@ public class ExcelUtil<T> {
                 try {
                     wb.close();
                 } catch (IOException e1) {
-                    e1.printStackTrace();
+                    log.error("关闭工作簿异常", e1);
                 }
             }
             if (out != null) {
                 try {
                     out.close();
                 } catch (IOException e1) {
-                    e1.printStackTrace();
+                    log.error("关闭输出流异常", e1);
                 }
             }
         }

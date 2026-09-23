@@ -116,7 +116,9 @@ public class CommonController {
             ajax.put("thumbnail", sysFile.getThumbnail());
             return ajax;
         } catch (Exception e) {
-            return AjaxResult.error(e.getMessage());
+            log.error("上传文件失败", e);
+            // 异常细节不外泄给客户端，避免暴露内部路径/实现信息
+            return AjaxResult.error("上传文件失败，请稍后重试");
         }
     }
 

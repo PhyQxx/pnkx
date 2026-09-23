@@ -1,5 +1,8 @@
 package com.pnkx.common.utils.file;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
  * @author phy
  */
 public class FileUtils extends org.apache.commons.io.FileUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
     public static String FILENAME_PATTERN = "[a-zA-Z0-9_\\-\\|\\.\\u4e00-\\u9fa5]+";
 
     /**
@@ -46,14 +51,14 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
                 try {
                     os.close();
                 } catch (IOException e1) {
-                    e1.printStackTrace();
+                    logger.error("关闭输出流异常", e1);
                 }
             }
             if (fis != null) {
                 try {
                     fis.close();
                 } catch (IOException e1) {
-                    e1.printStackTrace();
+                    logger.error("关闭输入流异常", e1);
                 }
             }
         }
