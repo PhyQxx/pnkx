@@ -17,20 +17,24 @@ const route = useRoute();
 
 // 获取激活账号
 const activationUserName: any = route.query.activationUserName
+const activationToken: any = route.query.activationToken
 
 if (activationUserName) {
-  user.activation(activationUserName).then(res => {
+  user.activation(activationUserName, activationToken).then(res => {
     if (res.data.value?.data) {
       message.success('激活成功，请登录！')
+    } else {
+      message.error('激活链接无效或已过期！')
     }
   })
 }
 
 // 获取重置账号
 const restUserName: any = route.query.restUserName
+const restToken: any = route.query.restToken
 
 if (restUserName) {
-  user.restPassword(restUserName).then(res => {
+  user.restPassword(restUserName, restToken).then(res => {
     if (res.data.value?.data) {
       dialog.success({
         title: '重置密码成功',

@@ -126,6 +126,7 @@
 
 <script>
 import {getMessageRecord, loginChat, sendMessage, signOut} from "@/api/px/chat";
+import {getToken} from '@/utils/auth'
 import emoji from './emoji'
 import {WEBSOCKET_MESSAGE_TYPE} from "@/assets/js/common";
 import {sanitizeHtml} from '@/utils/sanitizeHtml';
@@ -361,7 +362,7 @@ export default {
         initWebSocket() {
             // WebSocket
             if ('WebSocket' in window) {
-                this.websocket = new WebSocket(`${import.meta.env.VUE_APP_SOCKET}/${this.userInfo.id}`);
+                this.websocket = new WebSocket(`${import.meta.env.VUE_APP_SOCKET}/${this.userInfo.id}?token=${getToken()}`);
                 // 连接错误
                 this.websocket.onerror = this.setErrorMessage;
                 // 连接成功
@@ -406,7 +407,7 @@ export default {
                 return
             }
             switch (data.webSocket) {
-                case WEBSOCKET_MESSAGE_TYPE.CHAT_MESSAGE:
+                case WEBSOCKET_MESSAGE_TYPE.CHAT_MESSAGE: {
                     const message = data.message;
                     // 消费消息
                     const userInfo = this.memberList.find(item => Number(item.userId) === Number(message.userId));
@@ -416,7 +417,8 @@ export default {
                     this.recordList.push(message);
                     this.scroll();
                     break;
-                case WEBSOCKET_MESSAGE_TYPE.LOGIN:
+                }
+                case WEBSOCKET_MESSAGE_TYPE.LOGIN: {
                     // 登录
                     let flag = true;
                     this.memberList.forEach(item => {
@@ -428,12 +430,14 @@ export default {
                         this.memberList.push(data.message)
                     }
                     break;
-                case WEBSOCKET_MESSAGE_TYPE.LOG_OUT:
+                }
+                case WEBSOCKET_MESSAGE_TYPE.LOG_OUT: {
                     // 退出登录
                     this.memberList = this.memberList.filter(item => {
                         return item.userId !== data.userId
                     });
                     break;
+                }
             }
         },
         setOncloseMessage() {

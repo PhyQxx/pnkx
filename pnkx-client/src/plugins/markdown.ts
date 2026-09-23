@@ -6,6 +6,21 @@ import hljs from 'highlight.js/lib/common'
 import iterator from 'markdown-it-for-inline'
 // @ts-ignore
 import container from 'markdown-it-container'
+// @ts-ignore isomorphic-dompurify 无类型声明，SSR 与客户端均可消毒
+import DOMPurify from 'isomorphic-dompurify'
+
+/**
+ * 输出消毒：MarkdownIt 开启了 html:true，原文中的 HTML 会进入渲染结果，
+ * 输出前统一过 DOMPurify（与 pnkx-ui 的 sanitizeHtml 配置保持一致）
+ */
+function sanitize(html: string): string {
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+  })
+}
+
 export default defineNuxtPlugin(() => {
   return {
     provide: {
@@ -85,14 +100,14 @@ export default defineNuxtPlugin(() => {
             return textToHtml(token.content);
           };
         });
-        // 渲染成html
-        return md.render(data)
+        // 渲染成html（消毒后返回，防存储型 XSS）
+        return sanitize(md.render(data))
       },
       markdownItSearch: (data: string) => {
         const md = new MarkdownIt({
           html: true
         }).disable(['link', 'image'])
-        return md.renderInline(data)
+        return sanitize(md.renderInline(data))
       },
       markdownItContent: (data: string) => {
         const md = new MarkdownIt()

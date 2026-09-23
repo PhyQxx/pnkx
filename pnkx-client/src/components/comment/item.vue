@@ -149,8 +149,8 @@
           >
             @{{ (data as Reply).replyNickName }}
           </NuxtLink>
-          <!-- eslint-disable-next-line -->
-          <span v-html="data.content.replace(/(\r\n)|(\n)/g, '<br>')"></span>
+          <!-- 用户评论按纯文本渲染（white-space 换行），杜绝 XSS -->
+          <span class="whitespace-pre-line">{{ data.content }}</span>
         </p>
         <div class="flex">
           <div

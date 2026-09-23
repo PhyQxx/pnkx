@@ -34,10 +34,12 @@ export function register(data: UserForm, option?: HttpOption<null>) {
 
 /**
  * 激活账号
+ * @param userName 用户名
+ * @param activationToken 激活令牌（邮件下发）
  * @returns 激活账号结果
  */
-export function activation(userName: string) {
-  return useHttp.get<boolean>(Api.activation + userName)
+export function activation(userName: string, activationToken: string) {
+  return useHttp.get<boolean>(Api.activation + userName, { activationToken })
 }
 
 /**
@@ -50,10 +52,12 @@ export function sendResetEmail(userName: string) {
 
 /**
  * 重置密码
- * @returns 发送结果
+ * @param userName 用户名
+ * @param resetToken 重置令牌（邮件下发）
+ * @returns 新密码
  */
-export function restPassword(userName: string) {
-  return useHttp.get<boolean>(Api.restPassword + userName)
+export function restPassword(userName: string, resetToken: string) {
+  return useHttp.post<string>(Api.restPassword + userName, {}, { params: { resetToken } })
 }
 
 /**

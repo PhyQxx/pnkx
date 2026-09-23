@@ -1,0 +1,4 @@
+# pnpm 10 构建脚本白名单（供应链策略：仅允许已知安全的包执行 install 脚本）
+allowBuilds:
+  esbuild: true
+  vue-demi: true

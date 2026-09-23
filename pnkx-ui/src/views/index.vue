@@ -131,7 +131,7 @@
                   <div v-if="menstruationAssistantSetting.state === 'zjjq'" class="reminder-title">
                     姨妈提醒
                   </div>
-                  <div v-if="menstruationAssistantSetting.state === 'zjjq'" class="reminder-desc" v-html="menstruation" />
+                  <div v-if="menstruationAssistantSetting.state === 'zjjq'" class="reminder-desc" v-html="safeMenstruation" />
                   <div v-if="menstruationAssistantSetting.state === 'whyl'" class="reminder-desc">
                     孕 <span class="highlight-red">{{ pregnancy[0] }}</span> 周
                     <span class="highlight-blue">{{ pregnancy[1] }}</span> 天
@@ -245,6 +245,7 @@ import { getAIAnalysisStream, listRecord } from '@/api/px/life/bookkeeping/recor
 import { getAllTodoList } from '@/api/px/homepage'
 import Calendar from '@/views/homepage/calendar.vue'
 import { marked } from 'marked'
+import {sanitizeHtml} from '@/utils/sanitizeHtml'
 
 export default {
   name: 'Index',
@@ -305,6 +306,9 @@ export default {
     }
   },
   computed: {
+    safeMenstruation() {
+      return sanitizeHtml(this.menstruation || '')
+    },
     renderedAnalysis() {
       return this.aiAnalysis ? marked.parse(this.aiAnalysis, { breaks: true }) : ''
     }

@@ -84,7 +84,6 @@
 <script>
 import {getCodeImg} from "@/api/login";
 import Cookies from "js-cookie";
-import {encrypt, decrypt} from '@/utils/jsencrypt'
 
 export default {
     name: "Login",
@@ -133,11 +132,10 @@ export default {
         },
         getCookie() {
             const userName = Cookies.get("userName");
-            const password = Cookies.get("password");
             const rememberMe = Cookies.get('rememberMe')
             this.loginForm = {
                 userName: userName === undefined ? this.loginForm.userName : userName,
-                password: password === undefined ? this.loginForm.password : decrypt(password),
+                password: this.loginForm.password,
                 rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
             };
         },
@@ -147,11 +145,9 @@ export default {
                     this.loading = true;
                     if (this.loginForm.rememberMe) {
                         Cookies.set("userName", this.loginForm.userName, {expires: 30});
-                        Cookies.set("password", encrypt(this.loginForm.password), {expires: 30});
                         Cookies.set('rememberMe', this.loginForm.rememberMe, {expires: 30});
                     } else {
                         Cookies.remove("userName");
-                        Cookies.remove("password");
                         Cookies.remove('rememberMe');
                     }
                     this.$store.dispatch("Login", this.loginForm).then(() => {

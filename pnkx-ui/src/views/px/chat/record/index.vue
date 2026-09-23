@@ -137,16 +137,17 @@
 <script>
 import { listMessage, getMessage, delMessage, addMessage, updateMessage, exportMessage } from '@/api/px/chat/record'
 import Editor from '@/components/Editor'
+import {sanitizeHtml} from '@/utils/sanitizeHtml'
 
 // 简单的markdown渲染函数
 const renderMarkdown = (content) => {
     if (!content) return ''
     // 简单的markdown转html，实际项目中可以使用更完整的markdown解析器
-    return content
+    return sanitizeHtml(content
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>')
+        .replace(/\n/g, '<br>'))
 }
 export default {
     name: 'ChatMessage ',

@@ -116,7 +116,8 @@ async function send() {
             />
             <span class="text-base text-white">
               {{ danmu.nickName }}：
-              <span class="message-content" v-html="danmu.content"></span>
+              <!-- 弹幕内容为其他用户提交，按纯文本渲染防 XSS -->
+              <span class="message-content">{{ danmu.content }}</span>
             </span>
           </div>
         </template>

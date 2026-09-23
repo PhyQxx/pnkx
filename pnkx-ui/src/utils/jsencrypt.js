@@ -5,8 +5,8 @@ import JSEncrypt from 'jsencrypt'
 const publicKey = 'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKoR8mX0rGKLqzcWmOzbfj64K8ZIgOdH\n' +
     'nzkXSOVOZbFu/TJhZ7rFAN+eaGkl3C4buccQd/EjEsj9ir7ijT7h96MCAwEAAQ=='
 
-// 私钥仅用于"记住密码"Cookie解密，通过环境变量配置
-const privateKey = import.meta.env.VITE_RSA_PRIVATE_KEY || ''
+// 安全说明：私钥绝不能打包进前端——"记住密码"若在前端解密则加密形同明文。
+// 因此本文件只提供加密能力，敏感凭据一律不做前端本地存储。
 
 // 加密
 export function encrypt(txt) {
@@ -14,11 +14,3 @@ export function encrypt(txt) {
     encryptor.setPublicKey(publicKey) // 设置公钥
     return encryptor.encrypt(txt) // 对数据进行加密
 }
-
-// 解密
-export function decrypt(txt) {
-    const encryptor = new JSEncrypt()
-    encryptor.setPrivateKey(privateKey) // 设置私钥
-    return encryptor.decrypt(txt) // 对数据进行解密
-}
-

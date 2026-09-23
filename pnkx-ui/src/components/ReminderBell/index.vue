@@ -109,6 +109,7 @@ import {
     updateReminder,
     delReminder
 } from '@/api/px/life/reminder'
+import {getToken} from '@/utils/auth'
 
 export default {
     name: 'ReminderBell',
@@ -260,7 +261,7 @@ export default {
             if (!this.userId) return
             const base = import.meta.env.VUE_APP_SOCKET || (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
             try {
-                this.ws = new WebSocket(`${base}/websocket/${this.userId}`)
+                this.ws = new WebSocket(`${base}/websocket/${this.userId}?token=${getToken()}`)
                 this.ws.onmessage = (event) => {
                     this.handleWsMessage(event.data)
                 }
