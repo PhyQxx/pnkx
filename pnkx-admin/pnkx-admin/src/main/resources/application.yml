@@ -14,9 +14,14 @@ pnkx:
   profile: /tmp/pnkx
   # 内部系统集成令牌：留空则完全关闭；配置后 X-Integration-Token 匹配的请求
   # 以 integration.userId 指定的用户身份通过鉴权（供 Aria Companion Hub 等可信系统使用）
+  # 出厂默认关闭，生产启用必须通过 INTEGRATION_TOKEN 环境变量注入强随机值
   integration:
-    token: 'pnkx'
+    token: ${INTEGRATION_TOKEN:}
     userId: 1
+  # VoceChat Webhook 鉴权密钥：留空则无鉴权（告警提示）；配置后调用方需携带
+  # X-Webhook-Secret 头或 X-Webhook-Signature 头（HMAC-SHA256 hex）
+  webhook:
+    secret: ${WEBHOOK_SECRET:}
 
 # 开发环境配置
 server:
@@ -36,8 +41,8 @@ server:
 
 # Swagger配置
 swagger:
-  # 是否开启swagger
-  enabled: ${SWAGGER_ENABLED:true}
+  # 是否开启swagger（默认关闭，开发环境通过 SWAGGER_ENABLED=true 开启）
+  enabled: ${SWAGGER_ENABLED:false}
 
 # 日志配置
 logging:
@@ -121,13 +126,14 @@ spring:
       webStatFilter:
         enabled: true
       statViewServlet:
-        enabled: true
+        # Druid 监控台默认关闭，开发环境通过 DRUID_STAT_ENABLED=true 开启
+        enabled: ${DRUID_STAT_ENABLED:false}
         # 设置白名单，不填则允许所有访问
         allow: 127.0.0.1
         url-pattern: /druid/*
-        # 控制台管理用户名和密码
+        # 控制台管理用户名和密码（默认关闭，需通过环境变量开启）
         login-userName: ${DRUID_USERNAME:admin}
-        login-password: ${DRUID_PASSWORD:pnkx2024}
+        login-password: ${DRUID_PASSWORD:}
       filter:
         stat:
           enabled: true
@@ -191,12 +197,12 @@ ftp:
   # ftp上传路径
   path: /ftp/
 
-# 微信小程序配置（用于微信登录，需填入真实 appsecret）
+# 微信小程序配置（用于微信登录，appsecret 仅通过环境变量注入，不入库）
 wx:
   # 小程序appid
   appid: ${WX_APPID:wx1a797ab499d31dac}
-  # 小程序secret（微信公众平台获取，请勿泄露）
-  secret: ${WX_SECRET:***REMOVED-WX-SECRET***}
+  # 小程序secret（微信公众平台获取，请勿泄露；未配置时微信登录不可用）
+  secret: ${WX_SECRET:}
   subscribe:
     templates:
       commemoration: ${WX_TEMPLATE_COMMEMORATION:}

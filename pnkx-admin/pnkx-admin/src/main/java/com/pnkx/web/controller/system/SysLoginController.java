@@ -9,7 +9,6 @@ import com.pnkx.common.core.domain.model.LoginUser;
 import com.pnkx.common.utils.ServletUtils;
 import com.pnkx.common.utils.ip.IpLocation;
 import com.pnkx.common.utils.ip.IpUtils;
-import com.pnkx.common.utils.uuid.UUID;
 import com.pnkx.domain.po.PxLikeRecord;
 import com.pnkx.framework.web.service.SysLoginService;
 import com.pnkx.framework.web.service.SysPermissionService;
@@ -17,6 +16,8 @@ import com.pnkx.framework.web.service.TokenService;
 import com.pnkx.service.IPxLikeRecordService;
 import com.pnkx.system.service.ISysMenuService;
 import com.pnkx.system.service.ISysUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
  */
 @RestController
 public class SysLoginController {
+
+    private static final Logger log = LoggerFactory.getLogger(SysLoginController.class);
 
     @Resource
     private SysLoginService loginService;
@@ -132,15 +135,14 @@ public class SysLoginController {
     /**
      * 账号激活
      *
-     * @param userName 用户名
+     * @param userName        用户名
+     * @param activationToken 激活令牌（邮件下发，一次性）
      * @return 激活结果
      */
     @GetMapping("/activation/{userName}")
-    public AjaxResult activation(@PathVariable("userName") String userName) {
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName(userName);
-        sysUser.setStatus("0");
-        return AjaxResult.success(userService.updateUserByUserName(sysUser));
+    public AjaxResult activation(@PathVariable("userName") String userName,
+                                 @RequestParam("activationToken") String activationToken) {
+        return AjaxResult.success(loginService.activation(userName, activationToken));
     }
 
     /**
@@ -154,7 +156,7 @@ public class SysLoginController {
         try {
             return AjaxResult.success(loginService.sendResetEmail(userName));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("发送重置邮件失败, userName: {}", userName, e);
             return AjaxResult.success(false);
         }
     }
@@ -162,18 +164,13 @@ public class SysLoginController {
     /**
      * 重置账号密码
      *
-     * @param userName 用户名
-     * @return 重置结果
+     * @param userName   用户名
+     * @param resetToken 重置令牌（邮件下发，一次性）
+     * @return 重置结果，data 为新密码
      */
-    @GetMapping("/restPassword/{userName}")
-    public AjaxResult restPassword(@PathVariable("userName") String userName) {
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName(userName);
-        String newPassword = UUID.randomString(8);
-        sysUser.setPassword(newPassword);
-        if (userService.updateUserByUserName(sysUser) > 0) {
-            return AjaxResult.success("重置密码成功", newPassword);
-        }
-        return AjaxResult.error("重置密码失败");
+    @PostMapping("/restPassword/{userName}")
+    public AjaxResult restPassword(@PathVariable("userName") String userName,
+                                   @RequestParam("resetToken") String resetToken) {
+        return AjaxResult.success("重置密码成功", loginService.restPassword(userName, resetToken));
     }
 }

@@ -13,12 +13,17 @@ import com.pnkx.service.IPxDeepSeekService;
 import com.pnkx.service.IPxMessageSendService;
 import com.pnkx.system.service.ISysConfigService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +48,16 @@ public class PxWebhookController {
     private static final String NO_REPLY_MESSAGE = "无回复";
     private static final String ANALYZE_MONTHLY_CONSUMPTION = "分析本月消费";
     private static final String ANALYZE_MONTHLY_CONSUMPTION_ALL = "分析所有记录";
+
+    /**
+     * Webhook 共享密钥：配置后调用方必须携带 X-Webhook-Secret 头，
+     * 或 X-Webhook-Signature 头（HMAC-SHA256(secret, body) 的 hex 值）
+     */
+    @Value("${pnkx.webhook.secret:}")
+    private String webhookSecret;
+
+    private static final String SECRET_HEADER = "X-Webhook-Secret";
+    private static final String SIGNATURE_HEADER = "X-Webhook-Signature";
 
     // 存储用户对话上下文：userId -> 对话列表（使用Redis持久化）
     @Resource
@@ -86,7 +101,12 @@ public class PxWebhookController {
      */
     @PostMapping
     public AjaxResult webhook(@RequestBody String requestBody, HttpServletRequest request) {
-        log.info("📥 收到Webhook请求: {}", requestBody);
+        if (!isAuthorized(requestBody, request)) {
+            log.warn("🚫 Webhook 鉴权失败，来源IP：{}", request.getRemoteAddr());
+            return AjaxResult.error("未授权的Webhook请求");
+        }
+        // 聊天内容属隐私数据，只在 debug 级别记录完整请求体
+        log.debug("📥 收到Webhook请求: {}", requestBody);
 
         try {
             WebhookEvent event = parseWebhookEvent(requestBody);
@@ -109,8 +129,40 @@ public class PxWebhookController {
 
         } catch (Exception e) {
             log.error("❌ 处理Webhook请求异常", e);
-            return AjaxResult.error("处理Webhook请求失败: " + e.getMessage());
+            return AjaxResult.error("处理Webhook请求失败");
         }
+    }
+
+    /**
+     * Webhook 鉴权：密钥未配置时放行（告警提示），配置后必须通过
+     * X-Webhook-Secret（常量时间比较）或 X-Webhook-Signature（HMAC-SHA256 hex）
+     */
+    private boolean isAuthorized(String requestBody, HttpServletRequest request) {
+        if (!StringUtils.hasText(webhookSecret)) {
+            log.warn("⚠️ 未配置 webhook 密钥（WEBHOOK_SECRET 环境变量），Webhook 处于无鉴权状态，任何人可触发 AI 调用");
+            return true;
+        }
+        String presentedSecret = request.getHeader(SECRET_HEADER);
+        if (StringUtils.hasText(presentedSecret)) {
+            return MessageDigest.isEqual(
+                    webhookSecret.getBytes(StandardCharsets.UTF_8),
+                    presentedSecret.trim().getBytes(StandardCharsets.UTF_8));
+        }
+        String signature = request.getHeader(SIGNATURE_HEADER);
+        if (StringUtils.hasText(signature)) {
+            try {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                mac.init(new SecretKeySpec(webhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+                String expected = HexFormat.of().formatHex(mac.doFinal(requestBody.getBytes(StandardCharsets.UTF_8)));
+                return MessageDigest.isEqual(
+                        expected.getBytes(StandardCharsets.UTF_8),
+                        signature.trim().replaceFirst("^sha256=", "").toLowerCase().getBytes(StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                log.error("Webhook 签名校验异常", e);
+                return false;
+            }
+        }
+        return false;
     }
 
     /**

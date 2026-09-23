@@ -1,4 +1,4 @@
-FROM eclipse-temurin:8-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 LABEL authors="Pei你看雪"
 
 # 设置工作目录

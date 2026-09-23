@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 通用请求处理
@@ -40,6 +41,21 @@ import java.util.List;
 @RestController
 public class SysFileController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(SysFileController.class);
+
+    /**
+     * 分片上传 identifier 白名单：字母数字下划线连字符，防路径穿越
+     */
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[A-Za-z0-9_-]{1,64}$");
+
+    /**
+     * 分片序号/总数白名单：纯数字
+     */
+    private static final Pattern SAFE_CHUNK_NUMBER = Pattern.compile("^\\d{1,9}$");
+
+    /**
+     * 文件扩展名白名单：字母数字
+     */
+    private static final Pattern SAFE_EXTENSION = Pattern.compile("^[A-Za-z0-9]{1,10}$");
 
     @Resource
     private ISysFileService sysFileService;
@@ -74,14 +90,29 @@ public class SysFileController extends BaseController {
         if (StringUtils.isEmpty(chunkNumber)) {
             chunkNumber = "1";
         }
+        if (!SAFE_CHUNK_NUMBER.matcher(chunkNumber).matches() || "0".equals(chunkNumber)) {
+            return AjaxResult.error("非法的分片序号");
+        }
         // 文件被分成块的总数
         if (StringUtils.isEmpty(totalChunks)) {
             totalChunks = "1";
         }
-        // 文件唯一标识
+        if (!SAFE_CHUNK_NUMBER.matcher(totalChunks).matches()) {
+            return AjaxResult.error("非法的分片总数");
+        }
+        if (Integer.parseInt(chunkNumber) > Integer.parseInt(totalChunks)) {
+            return AjaxResult.error("分片序号超出总数");
+        }
+        // 文件唯一标识（用户可控，白名单校验防路径穿越）
         if (StringUtils.isEmpty(identifier)) {
             identifier = IdUtils.fastUUID();
         }
+        if (!SAFE_IDENTIFIER.matcher(identifier).matches()) {
+            return AjaxResult.error("非法的文件标识");
+        }
+        // 扩展名参与分片/合并文件命名，白名单校验
+        String extension = getSafeExtension(filename);
+        uploadPath = sanitizeUploadPath(uploadPath);
 
         // 分片文件存放位置
         String undeterminedArea = PnkxConfig.getUploadPath() + File.separator + "undetermined" + File.separator + identifier;
@@ -93,7 +124,7 @@ public class SysFileController extends BaseController {
         }
 
         // 文件分片的路径
-        String filePath = undeterminedArea + File.separator + chunkNumber + filename.substring(filename.lastIndexOf("."));
+        String filePath = undeterminedArea + File.separator + chunkNumber + extension;
         try {
             File saveFile = new File(filePath);
             // 写入文件分片
@@ -107,7 +138,7 @@ public class SysFileController extends BaseController {
             assert list != null;
             if (list.length == Integer.parseInt(totalChunks)) {
                 // 合并文件分片
-                mergeChunkName = mergeChunk(undeterminedArea, uploadPath, isThumbnail, identifier + filename.substring(filename.lastIndexOf(".")), fileType, filename);
+                mergeChunkName = mergeChunk(undeterminedArea, uploadPath, isThumbnail, identifier + extension, fileType, filename);
                 return AjaxResult.success(mergeChunkName, true);
             }
             return AjaxResult.success(mergeChunkName, false);
@@ -115,6 +146,43 @@ public class SysFileController extends BaseController {
             log.error("保存文件分片异常", e);
             return AjaxResult.error("保存文件分片异常");
         }
+    }
+
+    /**
+     * 提取安全的文件扩展名（仅字母数字，否则回退 .part），防止扩展名携带路径字符
+     */
+    private String getSafeExtension(String filename) {
+        int idx = filename.lastIndexOf('.');
+        if (idx < 0 || idx == filename.length() - 1) {
+            return ".part";
+        }
+        String ext = filename.substring(idx + 1);
+        return SAFE_EXTENSION.matcher(ext).matches() ? "." + ext : ".part";
+    }
+
+    /**
+     * 净化上传子路径：仅允许相对路径（禁止绝对路径、反斜杠、冒号与 .. 上跳）
+     */
+    private String sanitizeUploadPath(String uploadPath) {
+        if (StringUtils.isEmpty(uploadPath)) {
+            return uploadPath;
+        }
+        String clean = uploadPath.replace('\\', '/');
+        if (clean.contains(":") || clean.startsWith("/")) {
+            return "";
+        }
+        String[] parts = clean.split("/", -1);
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (StringUtils.isEmpty(part) || ".".equals(part) || "..".equals(part)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('/');
+            }
+            sb.append(part);
+        }
+        return sb.toString();
     }
 
     /**
@@ -204,18 +272,18 @@ public class SysFileController extends BaseController {
                 .sorted(Comparator.comparing(o -> Integer.valueOf(o.getName().substring(0, o.getName().lastIndexOf(".")))))
                 .toArray(File[]::new);
         try {
-            // 合并文件
-            RandomAccessFile randomAccessFileWriter = new RandomAccessFile(mergeFile, "rw");
-            byte[] bytes = new byte[1024];
-            for (File chunk : files) {
-                RandomAccessFile randomAccessFileReader = new RandomAccessFile(chunk, "r");
-                int len;
-                while ((len = randomAccessFileReader.read(bytes)) != -1) {
-                    randomAccessFileWriter.write(bytes, 0, len);
+            // 合并文件（try-with-resources 确保异常时释放句柄）
+            try (RandomAccessFile randomAccessFileWriter = new RandomAccessFile(mergeFile, "rw")) {
+                byte[] bytes = new byte[8192];
+                for (File chunk : files) {
+                    try (RandomAccessFile randomAccessFileReader = new RandomAccessFile(chunk, "r")) {
+                        int len;
+                        while ((len = randomAccessFileReader.read(bytes)) != -1) {
+                            randomAccessFileWriter.write(bytes, 0, len);
+                        }
+                    }
                 }
-                randomAccessFileReader.close();
             }
-            randomAccessFileWriter.close();
         } catch (Exception e) {
             log.error("合并文件异常", e);
             throw new IOException("合并文件异常", e);

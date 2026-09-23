@@ -115,10 +115,9 @@ public class SecurityConfig {
 //                        .requestMatchers("/open/**").anonymous()
                         // ftp资源请求
                         .requestMatchers("/ftp/**").anonymous()
-                        .requestMatchers("/system/file-manager/**").permitAll()
                         // 壁纸下载需登录：识别下载人并记录。放在 /client/** 放行规则之前，优先命中
-                        .requestMatchers("/client/**").permitAll()
                         .requestMatchers("/client/wallpaper/download/**").authenticated()
+                        .requestMatchers("/client/**").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/*.html"

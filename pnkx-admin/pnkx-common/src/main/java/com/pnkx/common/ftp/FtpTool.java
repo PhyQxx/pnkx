@@ -86,13 +86,14 @@ public class FtpTool {
             }
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
             if (!FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
-                log.error("连接FTP失败，用户名或密码错误；用户名：{}；密码{}", USER_NAME, PWD);
+                // 凭据不得写入日志
+                log.error("连接FTP失败，用户名或密码错误（host={}，port={}，username={}）", HOST, PORT, USER_NAME);
                 ftpClient.disconnect();
             } else {
                 log.info("FTP连接成功!");
             }
         } catch (Exception e) {
-            log.info("登陆FTP失败，请检查FTP相关配置信息是否正确！；用户名：{}；密码{}；异常信息：{}", USER_NAME, PWD, e.toString());
+            log.error("登陆FTP失败，请检查FTP相关配置信息是否正确！（host={}，port={}，username={}）", HOST, PORT, USER_NAME, e);
             return null;
         }
         return ftpClient;
@@ -104,6 +105,9 @@ public class FtpTool {
      * @param ftpClient 链接
      */
     public void closeFtpClient(FTPClient ftpClient) {
+        if (ftpClient == null) {
+            return;
+        }
         if (ftpClient.isConnected()) {
             try {
                 ftpClient.disconnect();
@@ -306,7 +310,7 @@ public class FtpTool {
                 log.info("进入文件夹{}失败！开始创建文件夹", directory);
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            log.error("FTP 切换工作目录异常", ioe);
         }
         return flag;
     }
@@ -394,7 +398,7 @@ public class FtpTool {
                 log.info("创建文件夹{}失败！", dir);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("FTP 创建目录异常", e);
         }
         return flag;
     }

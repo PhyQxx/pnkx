@@ -49,9 +49,7 @@ public class SysFileServiceImpl implements ISysFileService {
     public String uploadFile(File file, String path, String fileName) {
         FTPClient ftpClient = ftpTool.connectFtp();
         LocalDate date = LocalDate.now();
-        if (StringUtils.isEmpty(path)) {
-            path = date.toString().replace("-", "/");
-        }
+        path = sanitizeFtpPath(path, date);
         String name = ftpTool.uploadFile(ftpClient, path, fileName, file);
         return "/ftp/" + path + "/" + name;
     }
@@ -66,11 +64,35 @@ public class SysFileServiceImpl implements ISysFileService {
     public String uploadMultipartFile(MultipartFile file, String path) {
         FTPClient ftpClient = ftpTool.connectFtp();
         LocalDate date = LocalDate.now();
-        if (StringUtils.isEmpty(path)) {
-            path = date.toString().replace("-", "/");
-        }
+        path = sanitizeFtpPath(path, date);
         String name = ftpTool.uploadMultipartFile(ftpClient, path, file.getOriginalFilename(), file);
         return "/ftp/" + path + "/" + name;
+    }
+
+    /**
+     * 净化 FTP 子路径：仅允许相对路径，剔除绝对路径、反斜杠、冒号与 .. 上跳，
+     * 非法或空路径回退为按日期归档，防止把文件写到预期目录之外
+     */
+    private String sanitizeFtpPath(String path, LocalDate date) {
+        String fallback = date.toString().replace("-", "/");
+        if (StringUtils.isEmpty(path)) {
+            return fallback;
+        }
+        String clean = path.replace('\\', '/');
+        if (clean.contains(":") || clean.startsWith("/")) {
+            return fallback;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String part : clean.split("/", -1)) {
+            if (StringUtils.isEmpty(part) || ".".equals(part) || "..".equals(part)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('/');
+            }
+            sb.append(part);
+        }
+        return sb.length() > 0 ? sb.toString() : fallback;
     }
 
     /**

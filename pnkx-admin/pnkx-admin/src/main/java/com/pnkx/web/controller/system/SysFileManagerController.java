@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.pnkx.common.core.controller.BaseController;
@@ -24,33 +25,42 @@ import com.pnkx.common.utils.StringUtils;
  *
  * @author phy
  */
+@PreAuthorize("@ss.hasRole('admin')")
 @RestController
 @RequestMapping("/system/file-manager")
 public class SysFileManagerController extends BaseController {
 
     private static final String BASE_PATH = "/vol2/1000/我的文档/obsidian/";
+    private static final Path BASE_DIR = Paths.get(BASE_PATH).normalize();
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final Set<String> ALLOWED_EXTENSIONS = new HashSet<>(
         Arrays.asList(".md", ".txt", ".png", ".jpg", ".jpeg", ".gif", ".pdf")
     );
 
     /**
-     * 安全路径校验：必须以 BASE_PATH 开头，不允许 .. 目录穿越
+     * 安全路径解析：将用户输入的相对路径解析到 BASE_DIR 内，
+     * 经 normalize 消解 .. 与绝对路径后必须仍位于 BASE_DIR 之下，否则拒绝
+     *
+     * @return 解析后的绝对路径，非法时返回 null
      */
-    private boolean isSafePath(String relativePath) {
-        if (relativePath == null) {
-            return false;
+    static Path resolveSafePath(String relativePath) {
+        // 用原生判空：StringUtils.isEmpty 对单个 NUL 字符也返回 true，会吞掉注入检查
+        if (relativePath == null || relativePath.isEmpty()) {
+            return BASE_DIR;
         }
-        // 不允许包含 ..
-        if (relativePath.contains("..")) {
-            return false;
+        if (relativePath.contains("\0")) {
+            return null;
         }
-        // 去掉开头的 /，当作相对路径处理
-        String clean = relativePath.startsWith("/") ? relativePath.substring(1) : relativePath;
-        // 构建完整路径
-        String fullPath = BASE_PATH + clean;
-        // 简单前缀检查
-        return fullPath.startsWith(BASE_PATH);
+        Path resolved = BASE_DIR.resolve(relativePath).normalize();
+        return resolved.startsWith(BASE_DIR) ? resolved : null;
+    }
+
+    /**
+     * 校验文件名（新建文件/目录时使用，防止名称本身携带路径穿越）
+     */
+    static boolean isSafeName(String name) {
+        return !StringUtils.isEmpty(name) && !name.contains("/") && !name.contains("\\")
+                && !name.contains("..") && !name.contains("\0");
     }
 
     /**
@@ -60,12 +70,12 @@ public class SysFileManagerController extends BaseController {
      */
     @GetMapping("/list")
     public AjaxResult list(@RequestParam(required = false) String path) {
-        if (!isSafePath(path == null ? "" : path)) {
+        Path dirPath = resolveSafePath(path);
+        if (dirPath == null) {
             return AjaxResult.error("非法路径访问");
         }
 
-        String dirPath = StringUtils.isEmpty(path) ? BASE_PATH : BASE_PATH + path;
-        File dir = new File(dirPath);
+        File dir = dirPath.toFile();
         if (!dir.exists() || !dir.isDirectory()) {
             return AjaxResult.error("目录不存在");
         }
@@ -75,6 +85,7 @@ public class SysFileManagerController extends BaseController {
             return AjaxResult.success(Collections.emptyList());
         }
 
+        String relativeBase = StringUtils.isEmpty(path) ? "" : (path.endsWith("/") ? path : path + "/");
         List<Map<String, Object>> result = new ArrayList<>();
         // 目录优先排序
         List<Map<String, Object>> dirs = new ArrayList<>();
@@ -83,8 +94,7 @@ public class SysFileManagerController extends BaseController {
         for (File f : files) {
             Map<String, Object> item = new HashMap<>();
             item.put("name", f.getName());
-            String relativePath = path == null ? f.getName() : (path.endsWith("/") ? path + f.getName() : path + "/" + f.getName());
-            item.put("path", relativePath);
+            item.put("path", relativeBase + f.getName());
             item.put("isDirectory", f.isDirectory());
             item.put("size", f.length());
             item.put("modifiedTime", f.lastModified());
@@ -110,14 +120,17 @@ public class SysFileManagerController extends BaseController {
      */
     @GetMapping("/read")
     public AjaxResult read(@RequestParam String path) {
-        if (!isSafePath(path)) {
+        Path safePath = resolveSafePath(path);
+        if (safePath == null) {
             return AjaxResult.error("非法路径访问");
         }
 
-        String fullPath = BASE_PATH + path;
-        File file = new File(fullPath);
+        File file = safePath.toFile();
         if (!file.exists() || !file.isFile()) {
             return AjaxResult.error("文件不存在");
+        }
+        if (!ALLOWED_EXTENSIONS.contains(getExtension(file.getName()).toLowerCase())) {
+            return AjaxResult.error("不支持的文件类型");
         }
         if (file.length() > MAX_FILE_SIZE) {
             return AjaxResult.error("文件超过5MB限制");
@@ -162,14 +175,17 @@ public class SysFileManagerController extends BaseController {
     public AjaxResult write(@RequestBody Map<String, String> body) {
         String path = body.get("path");
         String content = body.get("content");
-        if (!isSafePath(path)) {
+        Path safePath = resolveSafePath(path);
+        if (safePath == null) {
             return AjaxResult.error("非法路径访问");
         }
 
-        String fullPath = BASE_PATH + path;
-        File file = new File(fullPath);
+        File file = safePath.toFile();
         if (!file.exists() || !file.isFile()) {
             return AjaxResult.error("文件不存在");
+        }
+        if (!ALLOWED_EXTENSIONS.contains(getExtension(file.getName()).toLowerCase())) {
+            return AjaxResult.error("不支持的文件类型");
         }
         if (file.length() > MAX_FILE_SIZE) {
             return AjaxResult.error("文件超过5MB限制");
@@ -192,15 +208,12 @@ public class SysFileManagerController extends BaseController {
     public AjaxResult mkdir(@RequestBody Map<String, String> body) {
         String path = body.get("path");
         String name = body.get("name");
-        if (!isSafePath(path == null ? "" : path)) {
+        Path safePath = resolveSafePath(StringUtils.isEmpty(path) ? name : path + "/" + name);
+        if (safePath == null || !isSafeName(name)) {
             return AjaxResult.error("非法路径访问");
         }
-        if (StringUtils.isEmpty(name)) {
-            return AjaxResult.error("目录名称不能为空");
-        }
 
-        String dirPath = StringUtils.isEmpty(path) ? BASE_PATH + name : BASE_PATH + path + "/" + name;
-        File dir = new File(dirPath);
+        File dir = safePath.toFile();
         if (dir.exists()) {
             return AjaxResult.error("目录已存在");
         }
@@ -220,19 +233,18 @@ public class SysFileManagerController extends BaseController {
         String path = body.get("path");
         String name = body.get("name");
         String content = body.get("content");
-        if (!isSafePath(path == null ? "" : path)) {
+        if (!isSafeName(name)) {
+            return AjaxResult.error("非法文件名称");
+        }
+        Path filePath = resolveSafePath(StringUtils.isEmpty(path) ? name : path + "/" + name);
+        if (filePath == null) {
             return AjaxResult.error("非法路径访问");
         }
-        if (StringUtils.isEmpty(name)) {
-            return AjaxResult.error("文件名称不能为空");
+        if (!ALLOWED_EXTENSIONS.contains(getExtension(name).toLowerCase())) {
+            return AjaxResult.error("不支持的文件类型");
         }
 
-        String dirPath = StringUtils.isEmpty(path) ? BASE_PATH : BASE_PATH + path;
-        if (!path.endsWith("/") && !StringUtils.isEmpty(path)) {
-            dirPath = BASE_PATH + path;
-        }
-        String filePath = dirPath + "/" + name;
-        File file = new File(filePath);
+        File file = filePath.toFile();
         if (file.exists()) {
             return AjaxResult.error("文件已存在");
         }
@@ -240,7 +252,7 @@ public class SysFileManagerController extends BaseController {
         try {
             // 默认内容
             String defaultContent = StringUtils.isEmpty(content) ? "" : content;
-            Files.write(file.toPath(), defaultContent.getBytes(StandardCharsets.UTF_8));
+            Files.write(filePath, defaultContent.getBytes(StandardCharsets.UTF_8));
             String relativePath = StringUtils.isEmpty(path) ? name : path + "/" + name;
             return AjaxResult.success("创建成功", relativePath);
         } catch (IOException e) {
@@ -254,14 +266,18 @@ public class SysFileManagerController extends BaseController {
      */
     @DeleteMapping("/")
     public AjaxResult delete(@RequestParam String path) {
-        if (!isSafePath(path)) {
+        Path safePath = resolveSafePath(path);
+        if (safePath == null) {
             return AjaxResult.error("非法路径访问");
         }
 
-        String fullPath = BASE_PATH + path;
-        File target = new File(fullPath);
+        File target = safePath.toFile();
         if (!target.exists()) {
             return AjaxResult.error("文件或目录不存在");
+        }
+        // 禁止删除根目录本身
+        if (safePath.equals(BASE_DIR)) {
+            return AjaxResult.error("不允许删除根目录");
         }
 
         try {
@@ -300,14 +316,14 @@ public class SysFileManagerController extends BaseController {
     public AjaxResult move(@RequestBody Map<String, String> body) {
         String oldPath = body.get("oldPath");
         String newPath = body.get("newPath");
-        if (!isSafePath(oldPath) || !isSafePath(newPath)) {
+        Path safeOldPath = resolveSafePath(oldPath);
+        Path safeNewPath = resolveSafePath(newPath);
+        if (safeOldPath == null || safeNewPath == null) {
             return AjaxResult.error("非法路径访问");
         }
 
-        String fullOldPath = BASE_PATH + oldPath;
-        String fullNewPath = BASE_PATH + newPath;
-        File oldFile = new File(fullOldPath);
-        File newFile = new File(fullNewPath);
+        File oldFile = safeOldPath.toFile();
+        File newFile = safeNewPath.toFile();
 
         if (!oldFile.exists()) {
             return AjaxResult.error("源文件不存在");
@@ -349,9 +365,9 @@ public class SysFileManagerController extends BaseController {
                     if (fileName.contains(query)) {
                         addResult(file, false);
                     } else {
-                        // 搜索 .md 文件内容
+                        // 搜索 .md 文件内容（跳过超大文件）
                         String ext = getExtension(fileName);
-                        if (ext.equals(".md") || ext.equals(".txt")) {
+                        if ((ext.equals(".md") || ext.equals(".txt")) && attrs.size() <= MAX_FILE_SIZE) {
                             try {
                                 String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
                                 if (content.toLowerCase().contains(query)) {

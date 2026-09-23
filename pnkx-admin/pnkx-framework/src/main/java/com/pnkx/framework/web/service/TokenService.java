@@ -137,6 +137,36 @@ public class TokenService {
     }
 
     /**
+     * 直接根据令牌字符串获取用户身份（用于 WebSocket 握手等无法携带请求头的场景）
+     *
+     * @param token 令牌，可含 Bearer 前缀
+     * @return 用户信息，无效或过期返回 null
+     */
+    public LoginUser getLoginUserByToken(String token) {
+        if (StringUtils.isEmpty(token)) {
+            return null;
+        }
+        if (token.startsWith(Constants.TOKEN_PREFIX)) {
+            token = token.replace(Constants.TOKEN_PREFIX, "");
+        }
+        try {
+            Claims claims = parseToken(token);
+            String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
+            Object obj = redisCache.getCacheObject(getTokenKey(uuid));
+            if (obj instanceof LoginUser loginUser) {
+                return loginUser;
+            }
+            if (obj instanceof com.alibaba.fastjson.JSONObject jsonObject) {
+                return jsonObject.toJavaObject(LoginUser.class);
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("解析令牌失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * 设置用户身份信息
      */
     public void setLoginUser(LoginUser loginUser) {
