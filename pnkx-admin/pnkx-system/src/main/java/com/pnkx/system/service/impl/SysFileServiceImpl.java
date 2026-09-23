@@ -1,6 +1,7 @@
 package com.pnkx.system.service.impl;
 
 import com.pnkx.common.constant.WebsiteAddressConstants;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.ftp.FtpTool;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
@@ -48,6 +49,9 @@ public class SysFileServiceImpl implements ISysFileService {
     @Override
     public String uploadFile(File file, String path, String fileName) {
         FTPClient ftpClient = ftpTool.connectFtp();
+        if (ftpClient == null) {
+            throw new ServiceException("FTP 连接失败，请检查存储服务配置");
+        }
         LocalDate date = LocalDate.now();
         path = sanitizeFtpPath(path, date);
         String name = ftpTool.uploadFile(ftpClient, path, fileName, file);
@@ -63,6 +67,9 @@ public class SysFileServiceImpl implements ISysFileService {
     @Override
     public String uploadMultipartFile(MultipartFile file, String path) {
         FTPClient ftpClient = ftpTool.connectFtp();
+        if (ftpClient == null) {
+            throw new ServiceException("FTP 连接失败，请检查存储服务配置");
+        }
         LocalDate date = LocalDate.now();
         path = sanitizeFtpPath(path, date);
         String name = ftpTool.uploadMultipartFile(ftpClient, path, file.getOriginalFilename(), file);

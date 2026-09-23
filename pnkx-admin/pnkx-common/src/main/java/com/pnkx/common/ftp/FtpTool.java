@@ -68,11 +68,13 @@ public class FtpTool {
 
     /**
      * 创建连接
+     *
+     * @return 已登录的连接；连接或登录失败返回 null（调用方需判空）
      */
     public FTPClient connectFtp() {
         FTPClient ftpClient;
         try {
-            ftpClient = new FTPClient();    
+            ftpClient = new FTPClient();
             ftpClient.setConnectTimeout(TIMEOUT);
             ftpClient.connect(HOST, PORT);
             ftpClient.setRemoteVerificationEnabled(false);
@@ -88,10 +90,11 @@ public class FtpTool {
             if (!FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
                 // 凭据不得写入日志
                 log.error("连接FTP失败，用户名或密码错误（host={}，port={}，username={}）", HOST, PORT, USER_NAME);
-                ftpClient.disconnect();
-            } else {
-                log.info("FTP连接成功!");
+                closeFtpClient(ftpClient);
+                // 登录失败的连接不可用，返回 null 让调用方感知失败
+                return null;
             }
+            log.info("FTP连接成功!");
         } catch (Exception e) {
             log.error("登陆FTP失败，请检查FTP相关配置信息是否正确！（host={}，port={}，username={}）", HOST, PORT, USER_NAME, e);
             return null;
@@ -118,6 +121,10 @@ public class FtpTool {
     }
 
     public InputStream previewFile(FTPClient ftpClient, String path) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法预览文件: {}", path);
+            return null;
+        }
         InputStream inputStream = null;
         try {
             inputStream = ftpClient.retrieveFileStream(path);
@@ -175,6 +182,10 @@ public class FtpTool {
      * 从FTP下载文件到本地
      */
     public String downloadFile(FTPClient ftpClient, String remotePath, String fileName, String downloadPath) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法下载文件: {}", remotePath);
+            return null;
+        }
         InputStream is = null;
         FileOutputStream fos = null;
         final File targetFile = new File(downloadPath + File.separator + fileName);
@@ -221,6 +232,10 @@ public class FtpTool {
      * @return
      */
     public String uploadFile(FTPClient ftpClient, String serviceDec, String fileName, File file) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法上传文件: {}", fileName);
+            return null;
+        }
         try (InputStream input = Files.newInputStream(file.toPath())) {
             return uploadFile(ftpClient, PATH + serviceDec, fileName, input);
         } catch (IOException e) {
@@ -238,6 +253,10 @@ public class FtpTool {
      * @return
      */
     public String uploadMultipartFile(FTPClient ftpClient, String serviceDec, String fileName, MultipartFile file) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法上传文件: {}", fileName);
+            return null;
+        }
         try (InputStream input = file.getInputStream()) {
             return uploadFile(ftpClient, PATH + serviceDec, fileName, input);
         } catch (IOException e) {
@@ -411,6 +430,10 @@ public class FtpTool {
      * @param type       类型（0：文件夹，1文件，2：全部）
      */
     public List<SysFTPFile> getFileNameList(FTPClient ftpClient, String ftpDirPath, String type) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法列举目录: {}", ftpDirPath);
+            return new ArrayList<>();
+        }
         List<SysFTPFile> files = new ArrayList<>();
         try {
             // 通过提供的文件路径获取FTPFile对象列表
@@ -444,6 +467,10 @@ public class FtpTool {
      * @return fileName
      */
     public String getNewFile(FTPClient ftpClient, String ftpDirPath) throws Exception {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法获取目录新文件: {}", ftpDirPath);
+            return null;
+        }
 
         // 通过提供的文件路径获取FTPFile对象列表
         FTPFile[] files = ftpClient.listFiles(ftpDirPath);
@@ -473,6 +500,10 @@ public class FtpTool {
      *                    "/" 表示用户根目录,则删除所有内容
      */
     public boolean deleteServerFiles(FTPClient ftpClient, String deleteFiles) {
+        if (ftpClient == null) {
+            log.error("FTP 连接不可用，无法删除文件: {}", deleteFiles);
+            return false;
+        }
         boolean deleteFlag = false;
         // 如果 FTP 连接已经关闭，或者连接无效，则直接返回
         if (!ftpClient.isConnected() || !ftpClient.isAvailable()) {
