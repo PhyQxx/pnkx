@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NButton, NInput, NSpin, useMessage } from 'naive-ui'
+import { API_BASE_URL } from '@/utils/apiBase'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -25,7 +26,7 @@ const loading = ref(false)
 // 滚动容器引用
 const scrollBody = ref<HTMLElement | null>(null)
 
-const baseURL = (import.meta.env.VITE_APP_BASE_URL as string) || 'https://admin.pnkx.top:8/prod-api'
+const baseURL = API_BASE_URL
 
 // 主题色：跟随 app.vue 配置
 const primaryColor = computed(() => (color.value === 'dark' ? '#6366f1' : '#f97316'))

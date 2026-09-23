@@ -155,7 +155,7 @@ export default {
   justify-content: center;
   background:
     linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.78) 100%),
-    url('/static/images/glacier-aurora-bg.png') center / cover no-repeat;
+    url('/static/images/glacier-aurora-bg.jpg') center / cover no-repeat;
   padding: 0 $page-padding;
   position: relative;
   overflow: hidden;

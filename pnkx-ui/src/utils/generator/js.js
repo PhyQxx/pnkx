@@ -142,7 +142,10 @@ function buildRules(conf, ruleList) {
         if (conf.regList && isArray(conf.regList)) {
             conf.regList.forEach(item => {
                 if (item.pattern) {
-                    rules.push(`{ pattern: ${eval(item.pattern)}, message: '${item.message}', trigger: '${trigger[conf.tag]}' }`)
+                    // pattern 为正则字面量字符串（如 /^\d+$/），直接插值进生成代码；
+                    // 裸表达式补上斜杠定界，替代原 eval 实现（安全且行为一致）
+                    const patternStr = item.pattern.startsWith('/') ? item.pattern : `/${item.pattern}/`;
+                    rules.push(`{ pattern: ${patternStr}, message: '${item.message}', trigger: '${trigger[conf.tag]}' }`)
                 }
             })
         }

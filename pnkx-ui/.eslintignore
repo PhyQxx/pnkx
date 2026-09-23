@@ -1,10 +1,7 @@
-# 忽略build目录下类型为js的文件的语法检查
-build/*.js
-# 忽略src/assets目录下文件的语法检查
-src/assets
-# 忽略public目录下文件的语法检查
-public
-# 忽略当前目录下为js的文件的语法检查
-*.js
-# 忽略当前目录下为vue的文件的语法检查
-*.vue
+# 只忽略 vendored / 构建产物，src 业务代码正常检查
+# （旧配置的 `*.js`/`*.vue` 会匹配 src 下所有源码，等于完全关闭 lint）
+build/
+public/
+src/assets/
+dist/
+node_modules/

@@ -142,7 +142,7 @@ page {
   box-sizing: border-box;
   background:
     linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, $bg-page 650rpx),
-    url('/static/images/glacier-aurora-bg.png') top center / 100% auto no-repeat;
+    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
 }
 
 .assistant-hero {

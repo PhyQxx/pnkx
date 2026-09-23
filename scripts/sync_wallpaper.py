@@ -64,10 +64,17 @@ EXCLUDE = {"NSFW"}
 IMG_EXT = (".png", ".jpg", ".jpeg", ".webp")
 LIKE_MIN, LIKE_MAX = 100, 300
 
-# ---- DB ----
-DB = dict(host="***REMOVED-DB-HOST***", port=13306, user="root",
-          password=\"***REMOVED***\", database="pnkx", charset="utf8mb4",
+# ---- DB（凭据从环境变量读取，禁止硬编码入库）----
+#   export WP_DB_HOST=***REMOVED-DB-HOST*** WP_DB_PORT=13306 WP_DB_USER=xxx WP_DB_PASSWORD=xxx WP_DB_NAME=pnkx
+DB = dict(host=os.environ.get("WP_DB_HOST", "127.0.0.1"),
+          port=int(os.environ.get("WP_DB_PORT", "3306")),
+          user=os.environ.get("WP_DB_USER", "root"),
+          password=os.environ.get("WP_DB_PASSWORD", ""),
+          database=os.environ.get("WP_DB_NAME", "pnkx"),
+          charset="utf8mb4",
           autocommit=True)
+if not DB["password"]:
+    sys.exit("错误：请先设置 WP_DB_PASSWORD 环境变量（数据库凭据不再硬编码）")
 
 
 def esc(s):

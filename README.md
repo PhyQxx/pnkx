@@ -126,25 +126,25 @@ pnpm build       # 构建
 
 #### 首页 · Hero 横幅
 
-![博客首页](docs/screenshots/home.png)
+![博客首页](docs/screenshots/home.jpg)
 
 #### 首页 · 文章列表
 
-![文章列表](docs/screenshots/home-articles.png)
+![文章列表](docs/screenshots/home-articles.jpg)
 
 #### 友链
 
-![友链](docs/screenshots/link.png)
+![友链](docs/screenshots/link.jpg)
 
 #### 留言板
 
-![留言板](docs/screenshots/message.png)
+![留言板](docs/screenshots/message.jpg)
 
 ### 后台管理系统
 
 #### 工作台（今日账单 · 数据概览）
 
-![后台工作台](docs/screenshots/admin-index.png)
+![后台工作台](docs/screenshots/admin-index.jpg)
 
 ### 移动端（uniapp · H5）
 
@@ -158,10 +158,10 @@ pnpm build       # 构建
     <td align="center">我的</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/app-home.png"/></td>
-    <td><img src="docs/screenshots/app-life.png"/></td>
-    <td><img src="docs/screenshots/app-bookkeeping.png"/></td>
-    <td><img src="docs/screenshots/app-mine.png"/></td>
+    <td><img src="docs/screenshots/app-home.jpg"/></td>
+    <td><img src="docs/screenshots/app-life.jpg"/></td>
+    <td><img src="docs/screenshots/app-bookkeeping.jpg"/></td>
+    <td><img src="docs/screenshots/app-mine.jpg"/></td>
   </tr>
 </table>
 

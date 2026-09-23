@@ -201,7 +201,7 @@ page {
 .header-bg {
   background:
     linear-gradient(180deg, rgba(248, 251, 255, 0.02), rgba(242, 247, 254, 0.18)),
-    url('/static/images/glacier-aurora-bg.png') top center / cover no-repeat;
+    url('/static/images/glacier-aurora-bg.jpg') top center / cover no-repeat;
   padding: calc(var(--status-bar-height, 44px) + 24rpx) $page-padding 112rpx;
   position: relative;
 }

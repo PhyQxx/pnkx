@@ -56,7 +56,7 @@
                     </template>
                 </el-table-column>
                 <el-table-column label="友链图片" align="center">
-                    <template v-slot="scope" class="photo-column">
+                    <template v-slot="scope">
                         <el-image
                             class="photo-one pointer"
                             :src="scope.row.img"

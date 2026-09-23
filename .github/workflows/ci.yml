@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: 后端构建（Spring Boot / JDK 21）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: 编译打包（跳过测试，测试需 MySQL/Redis 运行环境）
+        working-directory: pnkx-admin
+        run: mvn -B -DskipTests package
+
+  pnkx-ui:
+    name: 后台前端构建（Vue 3 / Vite）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装依赖
+        working-directory: pnkx-ui
+        run: npm install --no-audit --no-fund
+
+      - name: Lint（错误级须为 0，警告级为存量迁移债不阻塞）
+        working-directory: pnkx-ui
+        run: npm run lint
+
+      - name: 构建
+        working-directory: pnkx-ui
+        run: npm run build
+
+  pnkx-client:
+    name: 博客前台构建（Nuxt 3）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 安装依赖
+        working-directory: pnkx-client
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 构建
+        working-directory: pnkx-client
+        run: pnpm build
+
+  uniapp-deps:
+    name: 移动端依赖校验（uniapp）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 依赖安装校验（构建产物由 HBuilderX 发布，不在 CI 范围）
+        working-directory: pnkx-uniapp
+        run: pnpm install --frozen-lockfile

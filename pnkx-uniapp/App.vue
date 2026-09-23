@@ -97,7 +97,7 @@ uni-page {
   background-color: $bg-page;
   background-image:
     linear-gradient(180deg, rgba(246, 250, 255, 0.08) 0%, $bg-page 520rpx),
-    url('/static/images/glacier-aurora-bg.png');
+    url('/static/images/glacier-aurora-bg.jpg');
   background-repeat: no-repeat;
   background-position: top center;
   background-size: 100% auto;

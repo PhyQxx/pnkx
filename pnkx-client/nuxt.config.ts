@@ -24,10 +24,8 @@ export default defineNuxtConfig({
           src: 'https://ftp.pnkx.top:8/ftp/pnkx/static/js/starrySky.min.js',
           defer: true
         },
-        // 聊天机器人
-        {
-          src: 'https://ai.pnkx.top:8/api/application/embed?protocol=https&host=ai.pnkx.top:8&token=***REMOVED-AI-EMBED-TOKEN***'
-        }
+        // 聊天机器人（embed 地址含 token，从环境变量 AI_EMBED_URL 读取，未配置则不注入）
+        ...(process.env.AI_EMBED_URL ? [{ src: process.env.AI_EMBED_URL }] : [])
       ]
     }
   },

@@ -2,6 +2,7 @@ import { createDiscreteApi } from 'naive-ui'
 import type { FetchResponse, SearchParameters } from 'ofetch'
 import type { UseFetchOptions } from '#app'
 import type { Result } from '@/types'
+import { API_BASE_URL } from '@/utils/apiBase'
 
 type UrlType = string | Request | Ref<string | Request> | (() => string | Request)
 
@@ -9,12 +10,8 @@ export type HttpOption<T> = UseFetchOptions<Result<T>>
 
 const { message } = createDiscreteApi(['message'])
 
-const baseURL = import.meta.env.VITE_APP_BASE_URL as string
-
 function handleError<T>(response: FetchResponse<Result<T>> & FetchResponse<ResponseType>) {
   const err = (text: string) => {
-    // @ts-ignore
-    console.log(response['[Symbol(Response internals)]'].url, response?._data?.msg ?? text)
     message.error(response?._data?.msg ?? text)
   }
   if (!response._data) {
@@ -53,13 +50,8 @@ function fetch<T>(url: UrlType, option: any) {
     onRequest({ options }) {
       // get方法传递数组形式参数
       options.params = paramsSerializer(options.params)
-      // 添加baseURL,从环境变量里面取
-      if (!baseURL) {
-        options.baseURL = 'https://admin.pnkx.top:8/prod-api';
-      } else {
-        // 本地需要登录的用这个
-        options.baseURL = baseURL
-      }
+      // 统一后端地址（含兜底，见 utils/apiBase.ts）
+      options.baseURL = API_BASE_URL
       options.headers = new Headers(options.headers)
       const { tokenPrefix, getToken } = useToken()
       // 携带token

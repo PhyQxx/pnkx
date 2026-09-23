@@ -19,7 +19,10 @@ import icons from './requireIcons'
 export default {
     name: 'IconSelect',
     props: {
-        prefix: '',
+        prefix: {
+            type: String,
+            default: ''
+        },
         height: {
             type: String,
             default: '8rem'

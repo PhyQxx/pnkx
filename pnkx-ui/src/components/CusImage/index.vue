@@ -47,13 +47,22 @@ export default {
         };
     },
     props: {
-        isAdmin: false,
+        isAdmin: {
+            type: Boolean,
+            default: false
+        },
         src: {
             type: String,
             default: "",
         },
-        remark: '',
-        imageId: undefined,
+        remark: {
+            type: String,
+            default: ''
+        },
+        imageId: {
+            type: [Number, String],
+            default: undefined
+        },
         previewSrcList: {
             type: Array,
             default: function () {

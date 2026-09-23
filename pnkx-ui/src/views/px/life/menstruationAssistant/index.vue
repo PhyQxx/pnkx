@@ -73,7 +73,8 @@
         <el-timeline v-if="!showTable" v-infinite-scroll="loadMore">
             <el-timeline-item :timestamp="parseTime(item.date)"
                               placement="bottom"
-                              v-for="item in timelineRecord">
+                              v-for="item in timelineRecord"
+                              :key="item.id">
                 <el-card>
                     <div class="menstruation-assistant-info">
                         <div class="left">
