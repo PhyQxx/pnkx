@@ -20,9 +20,13 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: 编译打包（跳过测试，测试需 MySQL/Redis 运行环境）
+      - name: 编译打包
         working-directory: pnkx-admin
         run: mvn -B -DskipTests package
+
+      - name: 纯逻辑单元测试（无外部环境依赖；其余测试需 MySQL/Redis，仅在本地跑）
+        working-directory: pnkx-admin
+        run: mvn -B test -pl pnkx-life -am -Dtest=PxBookkeepingRecurringServiceTest -Dsurefire.failIfNoSpecifiedTests=false
 
   pnkx-ui:
     name: 后台前端构建（Vue 3 / Vite）

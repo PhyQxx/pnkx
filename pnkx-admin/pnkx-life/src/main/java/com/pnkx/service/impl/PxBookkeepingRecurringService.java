@@ -152,8 +152,9 @@ public class PxBookkeepingRecurringService {
 
     /**
      * 计算基准日之后（不含基准日）的下一个执行日
+     * （包级可见以便单元测试覆盖日期边界）
      */
-    private LocalDate computeNextRunDate(PxBookkeepingRecurring rule, LocalDate base) {
+    static LocalDate computeNextRunDate(PxBookkeepingRecurring rule, LocalDate base) {
         if (FREQ_WEEK.equals(rule.getFrequency())) {
             int diff = rule.getDayNumber() - base.getDayOfWeek().getValue();
             if (diff <= 0) {

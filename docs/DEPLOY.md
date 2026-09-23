@@ -36,6 +36,7 @@ pnkx-uniapp (uniapp 移动端，HBuilderX 发布 App/小程序/H5)
 | `FTP_HOST` / `FTP_PORT` / `FTP_USERNAME` / `FTP_PASSWORD` | FTP 存储连接 | 本机/admin/空 |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | QQ 邮箱 SMTP（注册激活 / 重置密码邮件） | 空（邮件功能不可用） |
 | `SWAGGER_ENABLED` | Swagger 文档 | false（生产保持关闭） |
+| `UNIPUSH_APPID` / `UNIPUSH_APPKEY` / `UNIPUSH_MASTERSECRET` | uniPush 2.0 App 离线推送三要素（DCloud 中心获取）；任一缺失推送整体静默跳过 | 空（不推送） |
 | `DRUID_STAT_ENABLED` / `DRUID_USERNAME` / `DRUID_PASSWORD` | Druid 监控台 | false 关闭 |
 | `LOG_LEVEL` | com.pnkx 日志级别 | info |
 
@@ -102,4 +103,5 @@ npm run lint        # ESLint（错误级 0 通过，警告级为存量迁移债�
 2. 建议用 `git filter-repo` 清洗历史提交中的密钥；
 3. 生产保持 `SWAGGER_ENABLED=false`、`DRUID_STAT_ENABLED=false`；
 4. 登录接口有"账号+IP 连续失败 5 次锁 10 分钟"的 Redis 限流；
-5. 数据库迁移由 Flyway 管理，禁止手工改表结构。
+5. 数据库迁移由 Flyway 管理，禁止手工改表结构；
+6. 内置定时任务（管理端「监控→定时任务」可调）：数据库自动备份（每日 03:00，FTP `pnkx-backup/` 保留 30 天）、周期记账生成（每日 08:30）、AI 生活周报（每周一 09:00）。

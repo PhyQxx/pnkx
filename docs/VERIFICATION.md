@@ -136,3 +136,47 @@ cd ../pnkx-ui && npm run lint && npm run build
 - Node 18 跑不动 pnkx-client 构建（依赖树要求 ≥20.12），本机用 nvm 的 v22.23.1；
 - `~/.npmrc` 指向局域网 registry，离线装包需加 `--registry=https://registry.npmmirror.com`；
 - 生产部署环境变量清单见 [DEPLOY.md](./DEPLOY.md)。
+
+## ⑤ 功能开发批次验证（2026-09-23 第二批：11 个新能力）
+
+### A1 邮件订阅通知
+1. 博客前台用测试邮箱订阅 → 管理后台发布新文章 → **预期**：订阅邮箱收到「文章更新」邮件（异步发送，发文不等邮件；无订阅者时日志打印"跳过通知"）
+
+### A4 RSS / Sitemap / OG（部署 pnkx-client 后）
+```bash
+curl -s https://pnkx.top/robots.txt        # 应输出 robots + sitemap 指向
+curl -s https://pnkx.top/rss.xml | head    # <channel> + 文章 <item> 列表
+curl -s https://pnkx.top/sitemap.xml | head# 静态页 + /post/{id} 列表
+```
+微信/Twitter 发文章链接 → 出现标题+封面预览卡片
+
+### B1 数据自动备份
+1. 管理端「监控→定时任务」→ 找到「数据库自动备份」→ 执行一次
+2. **预期**：日志输出"备份统计：N 张表，M 行数据"；FTP 根目录出现 `pnkx-backup/pnkx-backup-日期.sql.gz`；本地临时文件已清理
+
+### B2 记账预算 + 超支推送
+1. 统计 tab → 预算面板 → 设置总预算（小于本月已支出）→ **预期**：进度条红色 + 超支标签
+2. 再记一笔支出 → **预期**：右上角通知弹「预算超支提醒」（当天同预算不重复弹）
+3. 数据库：`SHOW CREATE TABLE px_bookkeeping_budget` 有唯一索引 uk_month_type_user
+
+### B3 周期记账
+1. 记账页「周期记账」tab → 新增"测试规则"（每月 28 号 / 金额 1 元）
+2. 管理端定时任务执行「周期记账生成」一次（若当天未到 28 号应无生成）
+3. 临时把某规则 next_run_date 改为今天再执行 → **预期**：生成一条带「周期·每月」备注的记录，且规则 next_run_date 推进到下月
+
+### B4 账单导出
+记账页搜索栏「导出」→ 下载 Excel，内容与当前筛选条件一致（含金额/分类/备注列）
+
+### B5 年度报告
+1. 生活报告页 → 周期切「今年」→ **预期**：出现月度支出柱状图 + 分类 Top5 排行
+2. 生成 AI 报告 → **预期**：流式输出"年度关键词/消费盘点/高光时刻/写给明年"结构的 Markdown；历史记录里标签显示「年报」
+
+### A3/A5 加固项
+- A3：留言/回复提交应即时返回（不再被 SMTP 拖慢）；断开邮件服务后评论仍能提交成功
+- A5：管理后台开 DevTools Network 断网 5 秒再恢复 → **预期**：提醒 WebSocket 自动重连（Console 可见重连，无需刷新页面）
+
+### A2 uniPush（需先完成平台开通，见 FEATURE_TASKS.md 四步）
+装新包登录后数据库 `px_push_device` 出现设备记录；杀掉 App 进程 → 触发一条提醒 → 锁屏收到通知
+
+### B6 登录设备管理
+管理端「系统监控→在线用户」（RuoYi 自带）：列表可见当前会话，「强退」后该会话接口调用返回 401
