@@ -3,20 +3,17 @@ package com.pnkx.web.controller.life;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
-import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxLikeRecord;
 import com.pnkx.domain.po.PxWallpaper;
 import com.pnkx.domain.po.PxWallpaperDownloadRecord;
 import com.pnkx.domain.po.PxWallpaperFolder;
-import com.pnkx.domain.po.PxWallpaperShareRewardRecord;
 import com.pnkx.mapper.PxLikeRecordMapper;
 import com.pnkx.mapper.PxWallpaperDownloadRecordMapper;
-import com.pnkx.mapper.PxWallpaperShareRewardRecordMapper;
 import com.pnkx.service.IPxWallpaperFolderService;
 import com.pnkx.service.IPxWallpaperService;
-import com.pnkx.system.service.ISysConfigService;
+import com.pnkx.web.service.PxWallpaperDownloadService;
 import com.pnkx.web.service.PxWallpaperLikeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,34 +76,7 @@ public class PxClientWallpaperController extends BaseController {
     private PxWallpaperDownloadRecordMapper pxWallpaperDownloadRecordMapper;
 
     @Resource
-    private PxWallpaperShareRewardRecordMapper pxWallpaperShareRewardRecordMapper;
-
-    @Resource
-    private ISysConfigService sysConfigService;
-
-    /**
-     * 每用户每日下载上限配置键
-     */
-    private static final String DAILY_LIMIT_CONFIG_KEY = "sys.wallpaper.download.daily.limit";
-    private static final int DEFAULT_DAILY_LIMIT = 50;
-
-    /**
-     * 达到每日下载上限时的提醒文案配置键
-     */
-    private static final String DOWNLOAD_REMIND_CONFIG_KEY = "sys.wallpaper.download.remind.text";
-    private static final String DEFAULT_DOWNLOAD_REMIND_TEXT = "今日下载次数已达上限，明天再来吧～";
-
-    /**
-     * 分享小程序每次奖励的下载次数配置键
-     */
-    private static final String SHARE_REWARD_CONFIG_KEY = "sys.wallpaper.download.share.reward";
-    private static final int DEFAULT_SHARE_REWARD = 10;
-
-    /**
-     * 每日最多可分享获奖次数配置键（防刷，0 表示不限）
-     */
-    private static final String SHARE_DAILY_TIMES_CONFIG_KEY = "sys.wallpaper.download.share.daily.times";
-    private static final int DEFAULT_SHARE_DAILY_TIMES = 3;
+    private PxWallpaperDownloadService downloadService;
 
     /**
      * 壁纸点赞记录类型（与文章"0"、评论"1"区分）
@@ -213,11 +183,10 @@ public class PxClientWallpaperController extends BaseController {
      */
     @GetMapping("/downloadStatus")
     public AjaxResult downloadStatus() {
-        int shareReward = getShareReward();
         String userId = SecurityUtils.getUserId();
         AjaxResult ajax = AjaxResult.success();
-        fillDownloadStatus(ajax, userId, shareReward);
-        ajax.put("remindText", getDownloadRemindText());
+        downloadService.fillDownloadStatus(ajax, userId, downloadService.getShareReward());
+        ajax.put("remindText", downloadService.getDownloadRemindText());
         return ajax;
     }
 
@@ -238,52 +207,23 @@ public class PxClientWallpaperController extends BaseController {
         if (StringUtils.isEmpty(userId)) {
             return AjaxResult.error(401, "请先登录");
         }
-        int reward = getShareReward();
-        // 防刷：每日最多可分享获奖次数（0 表示不限）
-        int shareTimesLimit = getShareDailyTimes();
-        if (shareTimesLimit > 0) {
-            int used = getTodayShareTimes(userId);
-            if (used >= shareTimesLimit) {
-                AjaxResult ajax = AjaxResult.error("今日分享奖励次数已用完，明天再来吧～");
-                // 仍返回最新配额，便于前端刷新卡片
-                fillDownloadStatus(ajax, userId, reward);
-                return ajax;
-            }
+        int reward = downloadService.getShareReward();
+        PxWallpaperDownloadService.ShareRewardResult result = downloadService.grantShareReward(userId);
+        if (result == PxWallpaperDownloadService.ShareRewardResult.LIMIT_REACHED) {
+            AjaxResult ajax = AjaxResult.error("今日分享奖励次数已用完，明天再来吧～");
+            // 仍返回最新配额，便于前端刷新卡片
+            downloadService.fillDownloadStatus(ajax, userId, reward);
+            return ajax;
         }
-        // 写入一条分享奖励记录
-        try {
-            PxWallpaperShareRewardRecord record = new PxWallpaperShareRewardRecord();
-            record.setRewardCount(reward);
-            record.setCreateBy(userId);
-            record.setCreateTime(DateUtils.getNowDate());
-            pxWallpaperShareRewardRecordMapper.insertShareReward(record);
-        } catch (Exception e) {
-            log.error("记录分享奖励失败, userId={}", userId, e);
+        if (result == PxWallpaperDownloadService.ShareRewardResult.FAILED) {
             return AjaxResult.error("领取奖励失败，请稍后重试");
         }
         AjaxResult ajax = AjaxResult.success("分享成功，" + reward + " 次下载已到账");
         ajax.put("rewarded", reward);
-        fillDownloadStatus(ajax, userId, reward);
+        downloadService.fillDownloadStatus(ajax, userId, reward);
         return ajax;
     }
 
-    /**
-     * 填充今日下载状态（供 shareReward 等接口统一返回最新配额）
-     */
-    private void fillDownloadStatus(AjaxResult ajax, String userId, int reward) {
-        int limit = getDailyLimit();
-        int todayCount = StringUtils.isEmpty(userId) ? 0
-                : pxWallpaperDownloadRecordMapper.countTodayDownload(userId);
-        int todayReward = getTodayRewardTotal(userId);
-        int remaining = Math.max(0, limit + todayReward - todayCount);
-        ajax.put("limit", limit);
-        ajax.put("todayCount", todayCount);
-        ajax.put("todayReward", todayReward);
-        ajax.put("remaining", remaining);
-        ajax.put("reward", reward);
-        ajax.put("shareTimesUsed", getTodayShareTimes(userId));
-        ajax.put("shareTimesLimit", getShareDailyTimes());
-    }
 
     /**
      * 检查登录用户今日下载是否已达上限。达上限则写入 429 + 提醒文案并返回 false。
@@ -298,15 +238,12 @@ public class PxClientWallpaperController extends BaseController {
             // 游客不限额
             return true;
         }
-        int limit = getDailyLimit();
-        int todayCount = pxWallpaperDownloadRecordMapper.countTodayDownload(userId);
-        int todayReward = getTodayRewardTotal(userId);
-        if (todayCount >= limit + todayReward) {
+        if (downloadService.isDownloadLimitReached(userId)) {
             // 已达上限：拒绝并回写提醒文案，不输出任何下载字节
             response.setStatus(429);
             response.setContentType("application/json; charset=utf-8");
             try {
-                response.getWriter().write(AjaxResult.error(429, getDownloadRemindText()).toString());
+                response.getWriter().write(AjaxResult.error(429, downloadService.getDownloadRemindText()).toString());
             } catch (Exception e) {
                 log.warn("写入下载限额拒绝响应失败", e);
             }
@@ -315,13 +252,6 @@ public class PxClientWallpaperController extends BaseController {
         return true;
     }
 
-    /**
-     * 获取下载达上限提醒文案，未配置或为空时取默认文案
-     */
-    private String getDownloadRemindText() {
-        String text = sysConfigService.selectConfigByKey(DOWNLOAD_REMIND_CONFIG_KEY);
-        return StringUtils.isNotEmpty(text) ? text : DEFAULT_DOWNLOAD_REMIND_TEXT;
-    }
 
     /**
      * 代理下载壁纸原图
@@ -351,7 +281,7 @@ public class PxClientWallpaperController extends BaseController {
         try {
             streamFromHttp(imageUrl, response);
             // 下载成功后记录，并在响应头返回剩余次数
-            recordDownload(wallpaper, "single");
+            downloadService.recordDownload(wallpaper, "single");
             setRemainingHeader(response, 1);
         } catch (Exception e) {
             log.error("代理下载壁纸异常，地址: {}", imageUrl, e);
@@ -450,7 +380,7 @@ public class PxClientWallpaperController extends BaseController {
             }
         }
         // 批量记录下载，并在响应头返回剩余次数
-        int actualCount = recordDownloadBatch(wallpapers, "zip");
+        int actualCount = downloadService.recordDownloadBatch(wallpapers, "zip");
         setRemainingHeader(response, actualCount);
     }
 
@@ -466,166 +396,19 @@ public class PxClientWallpaperController extends BaseController {
             if (StringUtils.isEmpty(userId)) {
                 return;
             }
-            int limit = getDailyLimit();
-            int todayCount = pxWallpaperDownloadRecordMapper.countTodayDownload(userId);
-            int todayReward = getTodayRewardTotal(userId);
-            int remaining = Math.max(0, limit + todayReward - todayCount);
-            response.setHeader("X-Download-Limit", String.valueOf(limit));
-            response.setHeader("X-Download-Remaining", String.valueOf(remaining));
+            response.setHeader("X-Download-Limit", String.valueOf(downloadService.getDailyLimit()));
+            response.setHeader("X-Download-Remaining", String.valueOf(downloadService.getRemainingQuota(userId)));
         } catch (Exception e) {
             log.warn("写入下载剩余次数响应头失败", e);
         }
     }
 
-    /**
-     * 从系统参数获取每日下载上限，未配置或格式错误时取默认值 50
-     */
-    private int getDailyLimit() {
-        String config = sysConfigService.selectConfigByKey(DAILY_LIMIT_CONFIG_KEY);
-        if (StringUtils.isNotEmpty(config)) {
-            try {
-                return Integer.parseInt(config);
-            } catch (NumberFormatException e) {
-                log.warn("每日下载上限配置 {} 格式错误: {}", DAILY_LIMIT_CONFIG_KEY, config);
-            }
-        }
-        return DEFAULT_DAILY_LIMIT;
-    }
 
-    /**
-     * 从系统参数获取每次分享奖励的下载次数，未配置或格式错误时取默认值 10
-     */
-    private int getShareReward() {
-        String config = sysConfigService.selectConfigByKey(SHARE_REWARD_CONFIG_KEY);
-        if (StringUtils.isNotEmpty(config)) {
-            try {
-                return Integer.parseInt(config);
-            } catch (NumberFormatException e) {
-                log.warn("分享奖励次数配置 {} 格式错误: {}", SHARE_REWARD_CONFIG_KEY, config);
-            }
-        }
-        return DEFAULT_SHARE_REWARD;
-    }
 
-    /**
-     * 从系统参数获取每日最多可分享获奖次数（防刷，0 表示不限），
-     * 未配置或格式错误时取默认值 3
-     */
-    private int getShareDailyTimes() {
-        String config = sysConfigService.selectConfigByKey(SHARE_DAILY_TIMES_CONFIG_KEY);
-        if (StringUtils.isNotEmpty(config)) {
-            try {
-                return Integer.parseInt(config);
-            } catch (NumberFormatException e) {
-                log.warn("每日分享次数上限配置 {} 格式错误: {}", SHARE_DAILY_TIMES_CONFIG_KEY, config);
-            }
-        }
-        return DEFAULT_SHARE_DAILY_TIMES;
-    }
 
-    /**
-     * 查询某用户今日已通过分享获得的下载次数总和，未登录或异常返回 0
-     */
-    private int getTodayRewardTotal(String userId) {
-        if (StringUtils.isEmpty(userId)) {
-            return 0;
-        }
-        try {
-            Map<String, Object> map = pxWallpaperShareRewardRecordMapper.getTodayShareReward(userId);
-            if (map == null) {
-                return 0;
-            }
-            Object total = map.get("total");
-            if (total == null) {
-                return 0;
-            }
-            return ((Number) total).intValue();
-        } catch (Exception e) {
-            log.warn("查询今日分享奖励总和失败, userId={}", userId, e);
-            return 0;
-        }
-    }
 
-    /**
-     * 查询某用户今日已分享获奖的次数，未登录或异常返回 0
-     */
-    private int getTodayShareTimes(String userId) {
-        if (StringUtils.isEmpty(userId)) {
-            return 0;
-        }
-        try {
-            Map<String, Object> map = pxWallpaperShareRewardRecordMapper.getTodayShareReward(userId);
-            if (map == null) {
-                return 0;
-            }
-            Object times = map.get("times");
-            if (times == null) {
-                return 0;
-            }
-            return ((Number) times).intValue();
-        } catch (Exception e) {
-            log.warn("查询今日分享次数失败, userId={}", userId, e);
-            return 0;
-        }
-    }
 
-    /**
-     * 记录单条下载（未登录则跳过，不阻塞下载流程）
-     */
-    private void recordDownload(PxWallpaper wallpaper, String downloadType) {
-        try {
-            String userId = SecurityUtils.getUserId();
-            // 下载接口匿名可访问，未登录时 getUserId() 返回空串，跳过记录避免写入空 create_by
-            if (StringUtils.isEmpty(userId) || wallpaper == null) {
-                return;
-            }
-            PxWallpaperDownloadRecord record = new PxWallpaperDownloadRecord();
-            record.setItemId(wallpaper.getId());
-            record.setItemName(wallpaper.getName());
-            record.setItemThumbnail(wallpaper.getThumbnail());
-            record.setDownloadType(downloadType);
-            record.setCreateBy(userId);
-            record.setCreateTime(DateUtils.getNowDate());
-            pxWallpaperDownloadRecordMapper.batchInsertDownloadRecord(Collections.singletonList(record));
-        } catch (Exception e) {
-            log.warn("记录下载历史失败，wallpaperId={}", wallpaper == null ? null : wallpaper.getId(), e);
-        }
-    }
 
-    /**
-     * 批量记录下载（未登录则跳过，不阻塞下载流程）。返回实际记录的张数。
-     */
-    private int recordDownloadBatch(List<PxWallpaper> wallpapers, String downloadType) {
-        try {
-            String userId = SecurityUtils.getUserId();
-            // 下载接口匿名可访问，未登录时 getUserId() 返回空串，跳过记录避免写入空 create_by
-            if (StringUtils.isEmpty(userId) || wallpapers == null || wallpapers.isEmpty()) {
-                return 0;
-            }
-            java.util.Date now = DateUtils.getNowDate();
-            List<PxWallpaperDownloadRecord> records = new java.util.ArrayList<>();
-            for (PxWallpaper wp : wallpapers) {
-                if (wp == null || wp.getUrl() == null || wp.getUrl().trim().isEmpty()) {
-                    continue;
-                }
-                PxWallpaperDownloadRecord record = new PxWallpaperDownloadRecord();
-                record.setItemId(wp.getId());
-                record.setItemName(wp.getName());
-                record.setItemThumbnail(wp.getThumbnail());
-                record.setDownloadType(downloadType);
-                record.setCreateBy(userId);
-                record.setCreateTime(now);
-                records.add(record);
-            }
-            if (!records.isEmpty()) {
-                pxWallpaperDownloadRecordMapper.batchInsertDownloadRecord(records);
-            }
-            return records.size();
-        } catch (Exception e) {
-            log.warn("批量记录下载历史失败", e);
-            return 0;
-        }
-    }
 
     /**
      * 通过 HTTP 代理读取图片并写入响应（单张下载）
