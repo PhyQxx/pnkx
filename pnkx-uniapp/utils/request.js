@@ -84,15 +84,16 @@ const request = config => {
       resolve(res.data)
     })
       .catch(error => {
-        let {message} = error
+        // uni.request 失败对象字段为 errMsg，兼容 message，避免 undefined.includes 崩溃
+        let message = (error && (error.errMsg || error.message)) || ''
         if (message === 'Network Error') {
           message = '后端接口连接异常'
         } else if (message.includes('timeout')) {
           message = '系统接口请求超时'
-        } else if (message.includes('Request failed with status code')) {
-          message = '系统接口' + message.substr(message.length - 3) + '异常'
+        } else if (message.includes('request:fail')) {
+          message = '后端接口连接异常'
         }
-        toast(message)
+        toast(message || '请求失败')
         reject(error)
       })
   })

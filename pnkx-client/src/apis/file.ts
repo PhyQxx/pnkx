@@ -1,7 +1,8 @@
 import type { Wallpaper, WallpaperPageQuery } from '~/types/file'
 import type { Result } from '~/types'
+import { API_BASE_URL } from '~/utils/apiBase'
 
-const baseURL = (import.meta.env.VITE_APP_BASE_URL as string) || 'https://admin.pnkx.top:8/prod-api'
+const baseURL = API_BASE_URL
 
 enum Api {
   wallpaperList = '/client/wallpaper/list',
@@ -16,10 +17,11 @@ export function getWallpaperImg(params: WallpaperPageQuery) {
   })
 }
 
-// 点赞/取消点赞壁纸（登录后可用）
+// 点赞/取消点赞壁纸（登录后可用；状态变更操作使用 POST）
 export function likeWallpaper(id: number, authorization?: string) {
   return $fetch<Result<unknown> & { liked?: boolean }>(Api.wallpaperLike + id, {
     baseURL,
+    method: 'POST',
     headers: authorization ? {Authorization: authorization} : undefined
   })
 }

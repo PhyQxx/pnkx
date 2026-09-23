@@ -17,6 +17,7 @@ import com.pnkx.mapper.PxWallpaperShareRewardRecordMapper;
 import com.pnkx.service.IPxWallpaperFolderService;
 import com.pnkx.service.IPxWallpaperService;
 import com.pnkx.system.service.ISysConfigService;
+import com.pnkx.web.service.PxWallpaperLikeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -69,6 +70,9 @@ public class PxClientWallpaperController extends BaseController {
     private IPxWallpaperFolderService pxWallpaperFolderService;
 
     @Resource
+    private PxWallpaperLikeService wallpaperLikeService;
+
+    @Resource
     private PxLikeRecordMapper pxLikeRecordMapper;
 
     @Resource
@@ -107,7 +111,7 @@ public class PxClientWallpaperController extends BaseController {
     /**
      * 壁纸点赞记录类型（与文章"0"、评论"1"区分）
      */
-    private static final String WALLPAPER_LIKE_TYPE = "3";
+    private static final String WALLPAPER_LIKE_TYPE = PxWallpaperLikeService.WALLPAPER_LIKE_TYPE;
 
     /**
      * 查询壁纸列表
@@ -134,40 +138,19 @@ public class PxClientWallpaperController extends BaseController {
 
     /**
      * 壁纸点赞（切换态：已赞则取消，未赞则点赞），需登录。
-     * 复用 px_like_record（type=3）按用户精确记录，同时同步冗余 like_count 兼容旧客户端。
+     * 事务与幂等（唯一索引兜底并发重复点赞）由 PxWallpaperLikeService 保证。
      *
      * @param id 壁纸ID
      */
-    @GetMapping("/like/{id}")
+    @PostMapping("/like/{id}")
     public AjaxResult like(@PathVariable("id") Long id) {
         String userId = SecurityUtils.getUserId();
         if (userId == null) {
             return AjaxResult.error(401, "请先登录");
         }
-        PxLikeRecord param = new PxLikeRecord();
-        param.setItemId(id);
-        param.setType(WALLPAPER_LIKE_TYPE);
-        param.setCreateBy(userId);
-        PxLikeRecord existed = pxLikeRecordMapper.selectLikeByUser(param);
-        if (existed != null) {
-            // 已赞 → 取消
-            pxLikeRecordMapper.deleteLikeByUser(param);
-            pxWallpaperService.updateLikeCount(id, -1);
-            AjaxResult ajax = AjaxResult.success("已取消点赞");
-            ajax.put("liked", false);
-            return ajax;
-        }
-        // 未赞 → 点赞
-        PxWallpaper wp = pxWallpaperService.selectPxWallpaperById(id);
-        param.setCreateTime(DateUtils.getNowDate());
-        if (wp != null) {
-            param.setItemName(wp.getName());
-            param.setItemThumbnail(wp.getThumbnail());
-        }
-        pxLikeRecordMapper.insertPxLikeRecord(param);
-        pxWallpaperService.updateLikeCount(id, 1);
-        AjaxResult ajax = AjaxResult.success("点赞成功");
-        ajax.put("liked", true);
+        boolean liked = wallpaperLikeService.toggleLike(id, userId);
+        AjaxResult ajax = AjaxResult.success(liked ? "点赞成功" : "已取消点赞");
+        ajax.put("liked", liked);
         return ajax;
     }
 
