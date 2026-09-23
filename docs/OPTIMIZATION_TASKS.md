@@ -68,8 +68,8 @@
 - [ ] 5.2 核心链路补测试（登录/限额/路径校验）；手工脚本移出 test 源集（NotifyTest 已 @Ignore）（2026-09-23：文件管理器路径校验已补 8 个用例覆盖穿越向量——`SysFileManagerControllerTest`，并借此发现修复 `StringUtils.isEmpty` 对单 NUL 字符返回 true 的怪异行为；登录/限额测试需 Redis 环境，待补）
 - [x] 5.3 Flyway baseline schema + DDL 迁移入库（2026-09-23：33 个迁移脚本筛查无密钥/用户数据后入库——.gitignore 改为 `!**/db/migration/*.sql`；V1.1.3 中一条私人网盘分享链接 INSERT 已移除）
 - [x] 5.4 uniapp：确认 pnpm 为实际包管理器（node_modules 为 pnpm 结构，pnpm-lock.yaml 入库），删除本地多余的 package-lock.json 与 yarn.lock（均未被 git 跟踪）；移除 `opencode-supermemory`（全项目零引用，疑似 AI 工具误装）；编译链 alpha 版本锁定正式版未做（需 HBuilderX 真机验证，建议有条件时处理）（2026-09-23）
-- [ ] 5.5 后端上帝类拆分（2026-09-23：PxClientWallpaperController 876→659 行，配额/记录/分享奖励下沉 PxWallpaperDownloadService，行为零变更；ExcelUtil 911 行为 RuoYi 通用工具，动它风险大收益小，暂缓；后续目标 PxBookkeepingRecordServiceImpl 530 行、FtpTool 530 行）
-- [ ] 5.6 前端超大组件拆分（pnkx-ui 最大 1772 行、uniapp 最大 1584 行）
+- [x] 5.5 后端上帝类拆分（2026-09-23：PxClientWallpaperController 876→659 行；PxBookkeepingRecordServiceImpl 564→233 行（AI 能力拆出 PxBookkeepingAiService 并消除两组复制粘贴）；FtpTool 修复连接失败传播 bug + 七方法判空防御；ExcelUtil 911 行为 RuoYi 通用工具，动它风险大收益小，明确不做）
+- [ ] 5.6 前端超大组件拆分（2026-09-23：pnkx-ui record.vue 1772→870 行——747 行样式外置 + 批量记账 mixin 抽取，构建验证通过；剩余 todo/index.vue 1717、note/index.vue 1430 等与 uniapp 最大组件，随迭代渐进）
 - [x] 5.7 pnkx-ui 补 eslint+prettier（2026-09-23：`.eslintrc.cjs`（错误级仅真实缺陷/安全项，迁移债为 warn）+ `.prettierrc.json`；重写失效的 `.eslintignore`；修复全部 13 个存量错误——含订阅页调用不存在的 `exportSubscribe`、`utils/generator/js.js` 的 eval、v-for 缺 key 等；现 0 errors / 238 warnings，CI 已接入 lint 门禁）
 - [x] 5.8 依赖升级：jsoup 1.10.3 → 1.17.2（CVE）；json-lib 2.4 → 移除，WxLoginController 迁移 fastjson2；devtools 实际已是 optional 且 Spring Boot repackage 默认排除，无需改（2026-09-23）
 - [x] 5.9 异常处理规范化：11 处 printStackTrace → log.error（含补 Logger 声明）；CommonController 上传失败不再向客户端返回 e.getMessage()；ExceptionUtil 的 StringWriter 用法为正常实现保留（2026-09-23）
