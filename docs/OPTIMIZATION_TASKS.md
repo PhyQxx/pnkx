@@ -59,7 +59,7 @@
 
 - [x] 4.1 uniapp upload.js 401 跳转 `/pages/login/login` → `/pages/login`（2026-09-22）
 - [x] 4.2 uniapp 错误处理崩溃：request.js/upload.js fail 分支改 `error.errMsg || error.message`；upload.js JSON.parse 包 try/catch（2026-09-22）
-- [ ] 4.3 AI 聊天 XHR（`api/px/ai/chat.js`）→ uni.request + enableChunked 跨端方案
+- [x] 4.3 AI 聊天 XHR（`api/px/ai/chat.js`）→ 跨端流式方案（2026-09-23：条件编译——H5 保留 XHR，App/小程序走 uni.request + enableChunked + onChunkReceived；手写 UTF-8 解码器带跨 chunk 多字节前缀缓冲，Node 验证含 emoji/硬切场景通过；**需真机回归 App 与小程序端**）
 - [x] 4.4 `pages/index.vue` 富文本 slice(10) 魔法数字 → 正则提取 img src（2026-09-22）
 
 ## 阶段五：工程化与代码质量（长期）
