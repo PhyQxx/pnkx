@@ -124,7 +124,12 @@ export default {
             rules: [],
             rulesLoading: false,
             ws: null,
-            pollTimer: null
+            pollTimer: null,
+            // WebSocket 重连：指数退避（1s 起，上限 60s）
+            reconnectDelay: 1000,
+            reconnectTimer: null,
+            // 组件销毁标记：阻止销毁后继续重连
+            wsClosing: false
         }
     },
     computed: {
@@ -144,9 +149,13 @@ export default {
         this.connectWebSocket()
     },
     beforeUnmount() {
+        // 标记关闭，阻断重连调度
+        this.wsClosing = true
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
         if (this.pollTimer) clearInterval(this.pollTimer)
         if (this.ws) {
             try {
+                this.ws.onclose = null
                 this.ws.onmessage = null
                 this.ws.close()
             } catch (e) {
@@ -256,18 +265,39 @@ export default {
         /**
          * 建立 WebSocket 连接，接收后端推送的实时提醒。
          * key 为 userId（与后端 WebSocketController.sendOneMessage 一致）。
+         * 断线后指数退避重连（1s→2s→…→上限 60s），网络恢复自动续上；轮询始终兜底。
          */
         connectWebSocket() {
-            if (!this.userId) return
+            if (!this.userId || this.wsClosing) return
             const base = import.meta.env.VUE_APP_SOCKET || (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
             try {
                 this.ws = new WebSocket(`${base}/websocket/${this.userId}?token=${getToken()}`)
+                this.ws.onopen = () => {
+                    this.reconnectDelay = 1000
+                }
                 this.ws.onmessage = (event) => {
                     this.handleWsMessage(event.data)
                 }
+                this.ws.onclose = () => {
+                    this.scheduleReconnect()
+                }
+                this.ws.onerror = () => {
+                    // onerror 后必然触发 onclose，统一由 onclose 处理重连
+                }
             } catch (e) {
                 console.warn('提醒 WebSocket 连接失败，已降级为轮询', e)
+                this.scheduleReconnect()
             }
+        },
+        /**
+         * 指数退避重连调度
+         */
+        scheduleReconnect() {
+            if (this.wsClosing) return
+            if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+            const delay = this.reconnectDelay || 1000
+            this.reconnectDelay = Math.min(delay * 2, 60000)
+            this.reconnectTimer = setTimeout(() => this.connectWebSocket(), delay)
         },
         handleWsMessage(raw) {
             try {

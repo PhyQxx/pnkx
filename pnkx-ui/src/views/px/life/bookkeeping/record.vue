@@ -22,6 +22,16 @@
             @keyup.enter="listRecord"
           >
         </div>
+        <el-button
+            class="export-btn"
+            size="small"
+            text
+            :loading="exportLoading"
+            title="按当前筛选条件导出 Excel"
+            @click="handleExport"
+        >
+          <svg-icon icon-class="download" style="margin-right: 2px" />导出
+        </el-button>
       </div>
 
       <!-- 筛选区域 -->
@@ -479,6 +489,9 @@
     </transition>
         </div>
       </el-tab-pane>
+      <el-tab-pane label="周期记账" name="recurring">
+        <recurring-panel v-if="activeTab === 'recurring'" />
+      </el-tab-pane>
       <el-tab-pane label="账户管理" name="account">
         <bk-account v-if="activeTab === 'account'" />
       </el-tab-pane>
@@ -498,6 +511,7 @@ import { getAccountList } from '@/api/px/life/bookkeeping/account'
 import {
   addRecord,
   delRecord,
+  exportRecord,
   getRecord,
   listRecord,
   updateRecord
@@ -506,12 +520,13 @@ import recordBatchMixin from './recordBatchMixin'
 import {timeFilter} from "../../../../utils/filters.js";
 import { listDay } from '@/api/px/life/commemorationDay'
 import BkAccount from './account.vue'
+import RecurringPanel from './RecurringPanel.vue'
 import BkClassification from './classification.vue'
 import BkStatistics from './statistics.vue'
 
 export default {
   name: 'Record',
-  components: { BkAccount, BkClassification, BkStatistics },
+  components: { BkAccount, BkClassification, BkStatistics, RecurringPanel },
   mixins: [recordBatchMixin],
   data() {
     return {
@@ -519,6 +534,8 @@ export default {
       activeTab: 'record',
       // 加载标志
       listLoading: false,
+      // 导出加载标志
+      exportLoading: false,
       loading: false,
       // 查询表单
       queryForm: {
@@ -658,6 +675,17 @@ export default {
     /**
      * 获取记录list
      */
+    /**
+     * 按当前筛选条件导出 Excel
+     */
+    handleExport() {
+      this.exportLoading = true
+      exportRecord({...this.queryForm, pageNum: undefined, pageSize: undefined}).then(res => {
+        this.download(res.msg)
+      }).finally(() => {
+        this.exportLoading = false
+      })
+    },
     listRecord() {
       this.listLoading = true
       listRecord(this.queryForm).then(res => {

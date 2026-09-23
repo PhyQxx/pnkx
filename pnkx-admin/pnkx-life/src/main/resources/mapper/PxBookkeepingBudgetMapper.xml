@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookkeepingBudgetMapper">
+
+    <resultMap type="PxBookkeepingBudget" id="PxBookkeepingBudgetResult">
+        <id property="id" column="id"/>
+        <result property="version" column="version"/>
+        <result property="month" column="month"/>
+        <result property="typeId" column="type_id"/>
+        <result property="amount" column="amount"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="typeName" column="type_name"/>
+    </resultMap>
+
+    <sql id="selectBudgetVo">
+        select b.id, b.version, b.month, b.type_id, b.amount,
+               b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               case when b.type_id = 0 then '总预算' else c.type_name end as type_name
+        from px_bookkeeping_budget b
+                 left join px_bookkeeping_classification c on b.type_id = c.id
+    </sql>
+
+    <select id="selectBudgetList" parameterType="PxBookkeepingBudget" resultMap="PxBookkeepingBudgetResult">
+        <include refid="selectBudgetVo"/>
+        where b.del_flag = 0
+        <if test="month != null and month != ''">and b.month = #{month}</if>
+        <if test="createBy != null and createBy != ''">and b.create_by = #{createBy}</if>
+        order by b.type_id = 0 desc, c.type_name
+    </select>
+
+    <!-- 预算 + 当月实际支出汇总（状态视图）：
+         分类预算按记录的 type 直接对齐（记账记录 type 即二级分类ID）；
+         总预算（type_id=0）取当月全部支出。 -->
+    <select id="selectBudgetStatus" parameterType="PxBookkeepingBudget" resultMap="PxBookkeepingBudgetResult">
+        select t.id, t.version, t.month, t.type_id, t.amount,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark,
+               case when t.type_id = 0 then '总预算' else t.type_name end as type_name,
+               ifnull(s.used, 0)                                                  as used,
+               t.amount - ifnull(s.used, 0)                                       as remaining,
+               least(999, round(ifnull(s.used, 0) * 100 / greatest(t.amount, 0.01))) as percent
+        from (
+                 select b.id, b.version, b.month, b.type_id, b.amount,
+                        b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+                        c.type_name
+                 from px_bookkeeping_budget b
+                          left join px_bookkeeping_classification c on b.type_id = c.id
+                 where b.del_flag = 0
+                   and b.month = #{month}
+                   and b.create_by = #{createBy}
+             ) t
+                 left join (
+                 select r.type                                  as type_id,
+                        sum(r.money)                            as used
+                 from px_bookkeeping_record r
+                 where r.del_flag = 0
+                   and r.type != 0
+                   and r.create_by = #{createBy}
+                   and DATE_FORMAT(r.pay_time, '%Y-%m') = #{month}
+                 group by r.type
+                 union all
+                 select 0                                       as type_id,
+                        sum(r.money)                            as used
+                 from px_bookkeeping_record r
+                 where r.del_flag = 0
+                   and r.type != 0
+                   and r.create_by = #{createBy}
+                   and DATE_FORMAT(r.pay_time, '%Y-%m') = #{month}
+             ) s on s.type_id = t.type_id
+        order by t.type_id = 0 desc, t.type_name
+    </select>
+
+    <select id="selectByMonthAndType" parameterType="PxBookkeepingBudget" resultMap="PxBookkeepingBudgetResult">
+        <include refid="selectBudgetVo"/>
+        where b.del_flag = 0
+          and b.month = #{month}
+          and b.type_id = #{typeId}
+          and b.create_by = #{createBy}
+        limit 1
+    </select>
+
+    <insert id="insertBudget" parameterType="PxBookkeepingBudget" useGeneratedKeys="true" keyProperty="id">
+        insert into px_bookkeeping_budget (version, month, type_id, amount, create_by, create_time, remark)
+        values (#{version}, #{month}, #{typeId}, #{amount}, #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updateBudget" parameterType="PxBookkeepingBudget">
+        update px_bookkeeping_budget
+        set amount   = #{amount},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBudgetById" parameterType="Long">
+        delete
+        from px_bookkeeping_budget
+        where id = #{id}
+    </delete>
+</mapper>

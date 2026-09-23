@@ -5,6 +5,7 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
+import com.pnkx.common.utils.ExcelUtil;
 import com.pnkx.domain.po.PxBookkeepingRecord;
 import com.pnkx.service.IPxBookkeepingRecordService;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -153,6 +155,17 @@ public class PxBookkeepingRecordController extends BaseController {
     public TableDataInfo list(PxBookkeepingRecord pxBookkeepingRecord) {
         startPage();
         return pxBookkeepingRecordService.selectPxBookkeepingRecordList(pxBookkeepingRecord);
+    }
+
+    /**
+     * 导出账单（按查询条件，通常为当月）
+     */
+    @Log(title = "记账记录", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public AjaxResult export(PxBookkeepingRecord pxBookkeepingRecord) {
+        List<PxBookkeepingRecord> list = pxBookkeepingRecordService.selectPxBookkeepingRecordAll(pxBookkeepingRecord);
+        ExcelUtil<PxBookkeepingRecord> util = new ExcelUtil<PxBookkeepingRecord>(PxBookkeepingRecord.class);
+        return util.exportExcel(list, "账单数据");
     }
 
     /**

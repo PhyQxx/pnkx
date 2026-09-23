@@ -39,6 +39,8 @@ public class PxMessageServiceImpl implements IPxMessageService {
     private ISysConfigService configService;
     @Resource
     private SysUserMapper userMapper;
+    @Resource(name = "notifyExecutor")
+    private java.util.concurrent.Executor notifyExecutor;
 
 
     /**
@@ -98,11 +100,14 @@ public class PxMessageServiceImpl implements IPxMessageService {
             sysEmail.setSubject("\uD83D\uDC49 叮咚！「Pei你看雪博客」上有人@了您");
             sysEmail.setContent(activationTemplate);
         }
-        try {
-            sysEmailService.sendMail(sysEmail);
-        } catch (Exception e) {
-            throw new ServiceException("发送邮件异常");
-        }
+        // 邮件异步发送：SMTP 故障不应阻塞用户留言/回复（此前同步发送且抛异常会导致评论失败）
+        notifyExecutor.execute(() -> {
+            try {
+                sysEmailService.sendMail(sysEmail);
+            } catch (Exception e) {
+                log.error("留言/回复通知邮件发送失败, 收件人: {}", sysEmail.getReceiverEmail(), e);
+            }
+        });
         return result;
     }
 

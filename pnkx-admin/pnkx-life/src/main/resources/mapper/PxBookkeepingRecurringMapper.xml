@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxBookkeepingRecurringMapper">
+
+    <resultMap type="PxBookkeepingRecurring" id="PxBookkeepingRecurringResult">
+        <id property="id" column="id"/>
+        <result property="version" column="version"/>
+        <result property="name" column="name"/>
+        <result property="frequency" column="frequency"/>
+        <result property="dayNumber" column="day_number"/>
+        <result property="typeDifference" column="type_difference"/>
+        <result property="type" column="type"/>
+        <result property="account" column="account"/>
+        <result property="otherAccount" column="other_account"/>
+        <result property="money" column="money"/>
+        <result property="remark" column="remark"/>
+        <result property="nextRunDate" column="next_run_date"/>
+        <result property="enabled" column="enabled"/>
+        <result property="lastRunDate" column="last_run_date"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="typeName" column="type_name"/>
+        <result property="accountName" column="account_name"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        select r.id, r.version, r.name, r.frequency, r.day_number, r.type_difference,
+               r.type, r.account, r.other_account, r.money, r.remark,
+               r.next_run_date, r.enabled, r.last_run_date,
+               r.create_by, r.create_time, r.update_by, r.update_time,
+               c.type_name, a.account_name
+        from px_bookkeeping_recurring r
+                 left join px_bookkeeping_classification c on r.type = c.id
+                 left join px_bookkeeping_account a on r.account = a.id
+    </sql>
+
+    <select id="selectRecurringList" resultMap="PxBookkeepingRecurringResult">
+        <include refid="selectVo"/>
+        where r.del_flag = 0
+        <if test="createBy != null and createBy != ''">and r.create_by = #{createBy}</if>
+        order by r.frequency, r.day_number
+    </select>
+
+    <select id="selectDueList" resultMap="PxBookkeepingRecurringResult">
+        <include refid="selectVo"/>
+        where r.del_flag = 0
+          and r.enabled = 1
+          and r.next_run_date &lt;= #{date}
+        order by r.next_run_date
+    </select>
+
+    <insert id="insertRecurring" parameterType="PxBookkeepingRecurring" useGeneratedKeys="true" keyProperty="id">
+        insert into px_bookkeeping_recurring (version, name, frequency, day_number, type_difference,
+                                               type, account, other_account, money, remark,
+                                               next_run_date, enabled, create_by, create_time)
+        values (#{version}, #{name}, #{frequency}, #{dayNumber}, #{typeDifference},
+                #{type}, #{account}, #{otherAccount}, #{money}, #{remark},
+                #{nextRunDate}, #{enabled}, #{createBy}, #{createTime})
+    </insert>
+
+    <update id="updateRecurring" parameterType="PxBookkeepingRecurring">
+        update px_bookkeeping_recurring
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="frequency != null">frequency = #{frequency},</if>
+            <if test="dayNumber != null">day_number = #{dayNumber},</if>
+            <if test="typeDifference != null">type_difference = #{typeDifference},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="account != null">account = #{account},</if>
+            <if test="otherAccount != null">other_account = #{otherAccount},</if>
+            <if test="money != null">money = #{money},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="nextRunDate != null">next_run_date = #{nextRunDate},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = now()
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="advanceRunDate">
+        update px_bookkeeping_recurring
+        set next_run_date = #{nextRunDate},
+            last_run_date = #{lastRunDate}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRecurringById">
+        delete
+        from px_bookkeeping_recurring
+        where id = #{id}
+    </delete>
+</mapper>

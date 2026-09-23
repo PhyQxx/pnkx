@@ -19,6 +19,9 @@
       </div>
     </div>
 
+    <!-- 预算面板 -->
+    <budget-panel />
+
     <!-- 折线图卡片 -->
     <div class="stats-card">
       <div class="card-header">
@@ -116,6 +119,7 @@
 
 <script>
 import LineChart from '@/views/dashboard/LineChart.vue'
+import BudgetPanel from './BudgetPanel.vue'
 import PieChart from '@/views/dashboard/PieChart.vue'
 import { colorArray } from '@/assets/js/common'
 import {
@@ -130,8 +134,7 @@ export default {
   name: 'Statistics',
   components: {
     LineChart,
-    PieChart
-  },
+    PieChart, BudgetPanel },
   data() {
     return {
       // 折线图
