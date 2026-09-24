@@ -101,11 +101,13 @@ public class PxArticleServiceImpl implements IPxArticleService {
         pxArticle.setCreateTime(DateUtils.getNowDate());
         pxArticle.setCreateBy(SecurityUtils.getUserId());
         pxArticleMapper.insertPxArticle(pxArticle);
-        // 新文章发布：异步通知邮件订阅者（失败不影响发文）
-        try {
-            emailSubscribeService.notifyNewArticle(pxArticle);
-        } catch (Exception e) {
-            log.error("触发新文章订阅通知失败", e);
+        // 仅已发布文章触发通知，私有/暂存草稿不能外发。
+        if ("1".equals(pxArticle.getState())) {
+            try {
+                emailSubscribeService.notifyNewArticle(pxArticle);
+            } catch (Exception e) {
+                log.error("触发新文章订阅通知失败", e);
+            }
         }
         return pxArticle.getId();
     }

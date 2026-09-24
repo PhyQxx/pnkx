@@ -59,7 +59,7 @@ public class PxDiaryServiceImpl implements IPxDiaryService {
      * @param pxDiary 日记
      * @return 日记
      */
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     @Override
     public List<PxDiary> selectPxDiaryList(PxDiary pxDiary) {
         return pxDiaryMapper.selectPxDiaryList(pxDiary);
@@ -121,27 +121,18 @@ public class PxDiaryServiceImpl implements IPxDiaryService {
     public List<PxDiary> retrieval(String searchCode) {
         PxDiary query = new PxDiary();
         query.setSearchValue(searchCode);
-        // 数据权限：管理员不限；否则仅本人+群组成员
-        List<Long> visibleUserIds = dataPermissionService.getVisibleUserIds();
-        if (visibleUserIds == null) {
-            query.getParams().put(DataScopeSelf.SCOPE_ALL, true);
-        } else {
-            query.getParams().put(DataScopeSelf.SCOPE_ALL, false);
-            query.getParams().put(DataScopeSelf.SCOPE_USER_IDS, visibleUserIds);
-        }
+        // 日记始终仅本人可见，家庭空间不会扩大隐私内容范围。
+        query.getParams().put(DataScopeSelf.SCOPE_ALL, false);
+        query.getParams().put(DataScopeSelf.SCOPE_USER_IDS, List.of(SecurityUtils.getUserId()));
         return pxDiaryMapper.retrieval(query);
     }
 
     @Override
     public void aiAnalysisStream(Boolean isAll, Consumer<String> onChunk, Runnable onError) {
         PxDiary query = new PxDiary();
+        query.setCreateBy(SecurityUtils.getUserId());
         if (isAll == null || !isAll) {
             query.setDate(DateUtils.getNowDate());
-            try {
-                query.setCreateBy(SecurityUtils.getUserId());
-            } catch (Exception e) {
-                logger.warn("无法获取当前用户ID", e);
-            }
         }
 
         List<PxDiary> diaryList = pxDiaryMapper.selectPxDiaryList(query);

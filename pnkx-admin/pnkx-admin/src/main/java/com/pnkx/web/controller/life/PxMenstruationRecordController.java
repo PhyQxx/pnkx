@@ -78,7 +78,8 @@ public class PxMenstruationRecordController extends BaseController {
     @Log(title = "姨妈记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody PxMenstruationRecord pxMenstruationRecord) {
-        return toAjax(pxMenstruationRecordService.insertPxMenstruationRecord(pxMenstruationRecord));
+        int rows = pxMenstruationRecordService.insertPxMenstruationRecord(pxMenstruationRecord);
+        return rows > 0 ? AjaxResult.success(pxMenstruationRecord.getId()) : AjaxResult.error();
     }
 
     /**

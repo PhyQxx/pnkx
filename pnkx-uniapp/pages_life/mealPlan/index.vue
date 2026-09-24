@@ -166,7 +166,7 @@ export default {
   },
   onLoad(options) {
     // 默认本周一为起点
-    this.weekStart = this.mondayOf(new Date())
+    this.weekStart = this.mondayOf(options.date ? this.parseDate(options.date) : new Date())
     // 从菜谱详情页带过来：待添加到膳食计划
     if (options.recipeId && options.recipeTitle) {
       this.pendingRecipe = {

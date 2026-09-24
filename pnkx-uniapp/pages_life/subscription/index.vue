@@ -51,6 +51,9 @@
             </view>
           </view>
           <view class="sub-item__actions">
+            <view class="sub-item__reminder" @click="openReminder(item)">
+              <uni-icons type="notification" size="18" color="#5B9EEE" />
+            </view>
             <view class="sub-item__toggle" @click="toggleEnabled(item)">
               <text class="sub-item__toggle-text">{{ item.enabled ? '停用' : '启用' }}</text>
             </view>
@@ -91,19 +94,31 @@
       </view>
     </uni-popup>
 
+    <ReminderSetting
+      v-if="reminderItem && reminderItem.nextPaymentDate"
+      ref="reminderSetting"
+      source-type="subscription"
+      :source-id="reminderItem.id"
+      :source-name="reminderItem.name"
+      :event-time="reminderItem.nextPaymentDate"
+    />
+
     <view class="safe-bottom"></view>
   </view>
 </template>
 
 <script>
 import { listSubscription, addSubscription, updateSubscription, delSubscription, forecast } from '@/api/px/life/subscription'
+import ReminderSetting from '@/components/ReminderSetting/index.vue'
 
 export default {
+  components: { ReminderSetting },
   data() {
     return {
       list: [],
       loading: true,
       forecast: {},
+      reminderItem: null,
       showAdd: false,
       form: { name: '', amount: 0, cycle: 'monthly', cycleInterval: 1, nextPaymentDate: '' },
       cycleOptions: [
@@ -148,6 +163,14 @@ export default {
     iconBg(item) {
       const bgs = ['rgba(91,158,238,0.12)', 'rgba(52,211,153,0.12)', 'rgba(251,191,36,0.12)', 'rgba(255,159,67,0.12)']
       return bgs[(item.id || 0) % bgs.length]
+    },
+    openReminder(item) {
+      if (!item.nextPaymentDate) {
+        uni.showToast({ title: '请先设置下次扣款日期', icon: 'none' })
+        return
+      }
+      this.reminderItem = item
+      this.$nextTick(() => this.$refs.reminderSetting.open())
     },
     async toggleEnabled(item) {
       try {

@@ -11,6 +11,7 @@ import com.pnkx.domain.po.PxBookkeepingRecord;
 import com.pnkx.mapper.PxBookkeepingBudgetMapper;
 import com.pnkx.service.IPxBookkeepingBudgetService;
 import com.pnkx.service.ReminderPushChannel;
+import com.pnkx.framework.web.service.DataPermissionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.ArrayList;
 
 /**
  * 记账预算服务实现
@@ -45,6 +47,9 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
     @Resource
     private RedisCache redisCache;
 
+    @Resource
+    private DataPermissionService dataPermissionService;
+
     /**
      * 预算提醒防重复缓存前缀（每用户每月每预算每天最多一条）
      */
@@ -57,16 +62,23 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
 
     @Override
     public List<PxBookkeepingBudget> listBudgets(String month) {
-        PxBookkeepingBudget query = new PxBookkeepingBudget();
-        query.setMonth(requireMonth(month));
-        query.setCreateBy(SecurityUtils.getUserId());
-        return budgetMapper.selectBudgetList(query);
+        String validMonth = requireMonth(month);
+        List<PxBookkeepingBudget> result = new ArrayList<>();
+        for (Long userId : visibleBudgetUsers()) {
+            PxBookkeepingBudget query = new PxBookkeepingBudget();
+            query.setMonth(validMonth);
+            query.setCreateBy(String.valueOf(userId));
+            result.addAll(budgetMapper.selectBudgetList(query));
+        }
+        return result;
     }
 
     @Override
     public List<PxBookkeepingBudget> getBudgetStatus(String month) {
-        requireMonth(month);
-        return getBudgetStatusFor(month, SecurityUtils.getUserId());
+        String validMonth = requireMonth(month);
+        List<PxBookkeepingBudget> result = new ArrayList<>();
+        for (Long userId : visibleBudgetUsers()) result.addAll(getBudgetStatusFor(validMonth, String.valueOf(userId)));
+        return result;
     }
 
     @Override
@@ -80,9 +92,12 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
         if (budget.getTypeId() == null) {
             budget.setTypeId(TOTAL_BUDGET_TYPE_ID);
         }
-        budget.setCreateBy(SecurityUtils.getUserId());
+        String ownerId = StringUtils.isEmpty(budget.getCreateBy()) ? SecurityUtils.getUserId() : budget.getCreateBy();
+        if (!dataPermissionService.canWrite(ownerId, "budget")) throw new ServiceException("预算不存在或无协作权限");
+        budget.setCreateBy(ownerId);
         PxBookkeepingBudget existed = budgetMapper.selectByMonthAndType(budget);
         if (existed != null) {
+            budget.setId(existed.getId());
             existed.setAmount(budget.getAmount());
             existed.setUpdateBy(SecurityUtils.getUserId());
             existed.setUpdateTime(DateUtils.getNowDate());
@@ -94,7 +109,10 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
 
     @Override
     public int deleteBudget(Long id) {
-        return budgetMapper.deleteBudgetById(id);
+        PxBookkeepingBudget existing = budgetMapper.selectBudgetById(id);
+        if (existing == null || !dataPermissionService.canWrite(existing.getCreateBy(), "budget"))
+            throw new ServiceException("预算不存在或无协作权限");
+        return budgetMapper.deleteBudgetById(id, existing.getCreateBy());
     }
 
     /**
@@ -123,7 +141,7 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
                 }
                 if (Boolean.TRUE.equals(budget.getExceeded())) {
                     pushBudgetAlertOnce(userId, month, budget, "exceeded");
-                } else if (budget.getPercent() != null && budget.getPercent() >= ALERT_THRESHOLD_PERCENT) {
+                } else if (shouldWarn(budget)) {
                     pushBudgetAlertOnce(userId, month, budget, "warning");
                 }
             }
@@ -173,5 +191,15 @@ public class PxBookkeepingBudgetServiceImpl implements IPxBookkeepingBudgetServi
             throw new ServiceException("月份格式应为 yyyy-MM");
         }
         return month;
+    }
+
+    private List<Long> visibleBudgetUsers() {
+        List<Long> ids = dataPermissionService.getVisibleUserIds("budget");
+        return ids == null || ids.isEmpty() ? List.of(Long.valueOf(SecurityUtils.getUserId())) : ids;
+    }
+
+    static boolean shouldWarn(PxBookkeepingBudget budget) {
+        return budget != null && !Boolean.TRUE.equals(budget.getExceeded())
+                && budget.getPercent() != null && budget.getPercent() >= ALERT_THRESHOLD_PERCENT;
     }
 }

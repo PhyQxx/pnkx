@@ -42,7 +42,7 @@ public class PxAiOperationLogServiceImpl implements IPxAiOperationLogService {
      * @return AI操作审计日志集合
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     public List<PxAiOperationLog> selectPxAiOperationLogList(PxAiOperationLog pxAiOperationLog) {
         return pxAiOperationLogMapper.selectPxAiOperationLogList(pxAiOperationLog);
     }
@@ -132,7 +132,9 @@ public class PxAiOperationLogServiceImpl implements IPxAiOperationLogService {
     }
 
     private boolean isWriteIntent(String intent, String parsedJson) {
-        if ("bookkeeping".equals(intent) || "todo".equals(intent) || "diary_write".equals(intent)) {
+        if ("bookkeeping".equals(intent) || "todo".equals(intent) || "diary_write".equals(intent)
+                || "commemoration_day".equals(intent) || "shopping_list".equals(intent)
+                || "meal_plan".equals(intent) || "content_publish".equals(intent)) {
             return true;
         }
         if (!"note".equals(intent) || parsedJson == null) {
@@ -157,6 +159,20 @@ public class PxAiOperationLogServiceImpl implements IPxAiOperationLogService {
         }
         log.setErrorMsg(errorMsg);
 
+        pxAiOperationLogMapper.updatePxAiOperationLogByRequestId(log);
+    }
+
+    @Override
+    public void finishWriteDetail(String requestId, String writeStatus, String planJson,
+                                  String resultJson, String rollbackJson, String errorMsg) {
+        PxAiOperationLog log = new PxAiOperationLog();
+        log.setRequestId(requestId);
+        log.setIsWrite(1);
+        log.setWriteStatus(writeStatus);
+        log.setPlanJson(planJson);
+        log.setResultJson(resultJson);
+        log.setRollbackJson(rollbackJson);
+        log.setErrorMsg(errorMsg);
         pxAiOperationLogMapper.updatePxAiOperationLogByRequestId(log);
     }
 }

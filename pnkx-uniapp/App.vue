@@ -1,6 +1,7 @@
 <script>
 import config from './config'
 import {getToken} from '@/utils/auth'
+import { parsePushPayload, resolvePushRoute } from '@/utils/pushRouter'
 // #ifdef APP-PLUS
 import sqliteDB from '@/utils/sqliteDB'
 import syncScheduler from '@/utils/syncScheduler'
@@ -44,15 +45,12 @@ export default {
           }
         })
         uni.onPushMessage((msg) => {
-          // 点击通知消息：透传 payload.type 可按需跳转对应页面
-          if (msg.type === 'click' && msg.data && msg.data.payload) {
-            try {
-              const payload = typeof msg.data.payload === 'string'
-                ? JSON.parse(msg.data.payload) : msg.data.payload
-              if (payload && payload.type === 'life_reminder') {
-                uni.switchTab({url: '/pages/index/index'})
-              }
-            } catch (e) { /* payload 非预期格式时忽略 */ }
+          if (msg.type === 'click') {
+            const payload = parsePushPayload(msg)
+            if (!payload) return
+            const target = resolvePushRoute(payload)
+            if (target === '/pages/index/index') uni.switchTab({ url: target })
+            else uni.navigateTo({ url: target })
           }
         })
       } catch (e) {

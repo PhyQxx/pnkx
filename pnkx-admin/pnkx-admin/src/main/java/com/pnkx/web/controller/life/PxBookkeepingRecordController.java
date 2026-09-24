@@ -161,7 +161,7 @@ public class PxBookkeepingRecordController extends BaseController {
      * 导出账单（按查询条件，通常为当月）
      */
     @Log(title = "记账记录", businessType = BusinessType.EXPORT)
-    @PostMapping("/export")
+    @RequestMapping(value = "/export", method = {RequestMethod.GET, RequestMethod.POST})
     public AjaxResult export(PxBookkeepingRecord pxBookkeepingRecord) {
         List<PxBookkeepingRecord> list = pxBookkeepingRecordService.selectPxBookkeepingRecordAll(pxBookkeepingRecord);
         ExcelUtil<PxBookkeepingRecord> util = new ExcelUtil<PxBookkeepingRecord>(PxBookkeepingRecord.class);

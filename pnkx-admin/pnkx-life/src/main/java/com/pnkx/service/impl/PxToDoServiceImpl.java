@@ -3,9 +3,14 @@ package com.pnkx.service.impl;
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.framework.web.service.DataPermissionService;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.domain.po.PxToDo;
 import com.pnkx.mapper.PxToDoMapper;
 import com.pnkx.service.IPxToDoService;
+import com.pnkx.service.IPxLifeReminderService;
+import com.pnkx.service.IPxAutomationService;
+import com.alibaba.fastjson.JSONObject;
+import com.pnkx.common.utils.SecurityUtils;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
@@ -30,6 +35,10 @@ public class PxToDoServiceImpl implements IPxToDoService {
 
     @Resource
     private DataPermissionService dataPermissionService;
+    @Resource
+    private IPxLifeReminderService lifeReminderService;
+    @Resource
+    private IPxAutomationService automationService;
 
     /**
      * 查询待办事项
@@ -49,7 +58,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 待办事项
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(module = "todo")
     public List<PxToDo> selectPxToDoList(PxToDo pxToDo) {
         if (pxToDo.getParams().containsKey("date")) {
             String date = pxToDo.getParams().get("date").toString();
@@ -94,8 +103,18 @@ public class PxToDoServiceImpl implements IPxToDoService {
      */
     @Override
     public int updatePxToDo(PxToDo pxToDo) {
+        PxToDo before = pxToDo.getId() == null ? null : pxToDoMapper.selectPxToDoById(pxToDo.getId());
+        requireSharedWrite(before);
         pxToDo.setUpdateTime(DateUtils.getNowDate());
-        return pxToDoMapper.updatePxToDo(pxToDo);
+        int rows = pxToDoMapper.updatePxToDo(pxToDo);
+        if (rows > 0 && Boolean.TRUE.equals(pxToDo.getStatus())
+                && (before == null || !Boolean.TRUE.equals(before.getStatus()))) {
+            JSONObject input = new JSONObject();
+            input.put("todoId", pxToDo.getId());
+            input.put("eventKey", "todo-completed:" + pxToDo.getId() + ":" + System.currentTimeMillis());
+            automationService.trigger("todo_completed", input);
+        }
+        return rows;
     }
 
     /**
@@ -106,7 +125,10 @@ public class PxToDoServiceImpl implements IPxToDoService {
      */
     @Override
     public int deletePxToDoByIds(Long[] ids) {
-        return pxToDoMapper.deletePxToDoByIds(ids);
+        for (Long id : ids) requireSharedWrite(pxToDoMapper.selectPxToDoById(id));
+        int rows = pxToDoMapper.deletePxToDoByIds(ids);
+        for (Long id : ids) lifeReminderService.unbindReminder("todo", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     /**
@@ -117,7 +139,10 @@ public class PxToDoServiceImpl implements IPxToDoService {
      */
     @Override
     public int deletePxToDoById(Long id) {
-        return pxToDoMapper.deletePxToDoById(id);
+        requireSharedWrite(pxToDoMapper.selectPxToDoById(id));
+        int rows = pxToDoMapper.deletePxToDoById(id);
+        lifeReminderService.unbindReminder("todo", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     /**
@@ -154,7 +179,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
     /**
      * 看板查询：返回三栏（待办/进行中/已完成）
      */
-    @DataScopeSelf
+    @DataScopeSelf(module = "todo")
     @Override
     public Map<String, Object> selectKanbanList(PxToDo pxToDo) {
         List<PxToDo> all = pxToDoMapper.selectKanbanList(pxToDo);
@@ -208,8 +233,14 @@ public class PxToDoServiceImpl implements IPxToDoService {
             if (t.getId() == null) {
                 continue;
             }
+            requireSharedWrite(pxToDoMapper.selectPxToDoById(t.getId()));
             count += pxToDoMapper.updateKanbanSort(t.getId(), t.getKanbanStatus(), t.getSortOrder());
         }
         return count;
+    }
+
+    private void requireSharedWrite(PxToDo todo) {
+        if (todo == null || !dataPermissionService.canWrite(todo.getCreateBy(), "todo"))
+            throw new ServiceException("记录不存在或无权操作");
     }
 }

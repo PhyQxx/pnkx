@@ -24,7 +24,9 @@ public class IntentDetectionService {
             "analysis", List.of("消费分析", "本月花了", "账单", "花销"),
             "commemoration_day", List.of("纪念日", "周年", "生日", "恋爱", "结婚", "在一起"),
             "shopping_list", List.of("购物清单", "买东西", "超市", "买菜", "加入清单", "要买的"),
-            "meal_plan", List.of("膳食计划", "吃什么", "明天吃", "菜谱", "食谱", "这周吃")
+            "meal_plan", List.of("膳食计划", "吃什么", "明天吃", "这周吃"),
+            "life_catalog", List.of("查订阅", "预算多少", "阅读计划", "查菜谱", "日历安排"),
+            "content_publish", List.of("转成博客", "博客草稿", "读书笔记", "发布日记", "发布笔记")
     );
 
     public String buildPrompt(List<IntentHandler> handlers) {

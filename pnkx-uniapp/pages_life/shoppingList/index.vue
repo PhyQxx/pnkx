@@ -21,6 +21,9 @@
             </view>
             <text class="card__progress-text">{{ progress(item).done }}/{{ progress(item).total }}</text>
           </view>
+          <text class="card__plan" @click.stop="schedule(item)">
+            {{ item.plannedDate ? '计划 ' + item.plannedDate : '设置采购日期' }}
+          </text>
         </view>
         <view class="card__arrow">›</view>
       </view>
@@ -51,6 +54,17 @@
       ></uni-popup-dialog>
     </uni-popup>
 
+    <uni-popup ref="schedulePopup" type="dialog">
+      <view class="schedule-popup">
+        <text class="schedule-popup__title">采购计划</text>
+        <uni-datetime-picker v-model="schedulingDate" type="date" :clear-icon="false" />
+        <view class="schedule-popup__actions">
+          <text @click="$refs.schedulePopup.close()">取消</text>
+          <text class="primary" @click="saveSchedule">保存</text>
+        </view>
+      </view>
+    </uni-popup>
+
     <view class="safe-bottom"></view>
   </view>
 </template>
@@ -59,7 +73,8 @@
 import {
   listShoppingList,
   listShoppingItem,
-  addShoppingList
+  addShoppingList,
+  updateShoppingList
 } from '@/api/px/life/shoppingList'
 
 export default {
@@ -69,7 +84,9 @@ export default {
       loading: true,
       showCreate: false,
       // 缓存每个清单的进度（id -> {done, total}）
-      progressCache: {}
+      progressCache: {},
+      schedulingItem: null,
+      schedulingDate: ''
     }
   },
   onLoad() {
@@ -113,6 +130,35 @@ export default {
       uni.navigateTo({
         url: '/pages_life/shoppingList/detail?id=' + item.id + '&name=' + encodeURIComponent(item.name)
       })
+    },
+    schedule(item) {
+      this.schedulingItem = item
+      this.schedulingDate = item.plannedDate || this.today()
+      this.$refs.schedulePopup.open()
+    },
+    today() {
+      const d = new Date()
+      const pad = value => String(value).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    },
+    async saveSchedule() {
+      if (!this.schedulingItem) return
+      try {
+        const item = this.schedulingItem
+        await updateShoppingList({
+          id: item.id,
+          name: item.name,
+          icon: item.icon,
+          orderNum: item.orderNum,
+          remark: item.remark,
+          plannedDate: this.schedulingDate || null
+        })
+        this.$refs.schedulePopup.close()
+        uni.showToast({ title: '计划已更新', icon: 'success' })
+        this.loadList()
+      } catch (e) {
+        uni.showToast({ title: '更新失败', icon: 'none' })
+      }
     },
     async handleCreate(name) {
       if (!name || !name.trim()) {
@@ -237,6 +283,38 @@ export default {
     margin-left: $spacing-sm;
   }
 }
+
+.card__plan {
+  display: inline-block;
+  margin-top: 10rpx;
+  color: $primary;
+  font-size: $font-mini;
+}
+
+.schedule-popup {
+  width: 560rpx;
+  padding: 32rpx;
+  border-radius: $radius-lg;
+  background: $bg-card;
+}
+
+.schedule-popup__title {
+  display: block;
+  margin-bottom: 24rpx;
+  color: $text-primary;
+  font-size: $font-h3;
+  font-weight: $font-weight-semibold;
+}
+
+.schedule-popup__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 40rpx;
+  margin-top: 28rpx;
+  color: $text-secondary;
+}
+
+.schedule-popup__actions .primary { color: $primary; }
 
 .empty {
   display: flex;

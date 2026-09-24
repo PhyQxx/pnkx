@@ -47,6 +47,13 @@
 		</view>
 
 		<view class="form-section">
+			<view class="form-item">
+				<view class="form-label">目标读完日期</view>
+				<uni-datetime-picker v-model="formData.targetFinishDate" type="date" :clear-icon="true" />
+			</view>
+		</view>
+
+		<view class="form-section">
 			<view class="form-item textarea-item">
 				<view class="form-label">简介</view>
 				<textarea
@@ -122,7 +129,8 @@ export default {
 				title: '',
 				author: '',
 				description: '',
-				status: 'reading'
+				status: 'reading',
+				targetFinishDate: ''
 			},
 			statusOptions: [
 				{ value: 'reading', label: '在读' },
@@ -206,7 +214,8 @@ export default {
 					title: this.formData.title.trim(),
 					author: (this.formData.author || '').trim(),
 					description: this.formData.description || '',
-					status: this.formData.status || 'reading'
+					status: this.formData.status || 'reading',
+					targetFinishDate: this.formData.targetFinishDate || null
 				}
 				if (this.isEdit) payload.id = this.formData.id
 				const fn = this.isEdit ? updateBook : addBook

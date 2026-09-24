@@ -114,6 +114,15 @@
           </view>
         </view>
 
+        <!-- 可选：关联纪念日（仅收支记录） -->
+        <picker v-if="active !== '2'" :range="commemorationLabels" :value="commemorationIndex" @change="onCommemorationChange">
+          <view class="account-select">
+            <view class="account-icon"><text>🎁</text></view>
+            <view class="account-label">{{ selectedCommemorationName }}</view>
+            <view class="account-arrow"><uni-icons type="arrowright" size="12"/></view>
+          </view>
+        </picker>
+
         <!-- 备注输入 -->
         <view class="note-section">
           <input
@@ -210,6 +219,7 @@
 import {getClassificationList} from "@/api/px/life/bookkeeping/classification";
 import {getAccountList} from "@/api/px/life/bookkeeping/account";
 import {addRecord, aiParse, delRecord, getRecord, updateRecord} from "@/api/px/life/bookkeeping/record";
+import {listDay} from "@/api/px/life/commemorationDay";
 import upload from "@/utils/upload";
 import Calculator from "@/pages_life/components/Calculator/index.vue";
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue';
@@ -248,6 +258,7 @@ export default {
         type: '',
         account: '',
         otherAccount: '',
+        commemorationDayId: null,
         typeDifference: '1',
       },
       // 账户选择弹窗当前作用目标：account=普通账户 out=转出 in=转入
@@ -270,6 +281,8 @@ export default {
       showAiInput: false,
       aiInputText: '',
       aiParsing: false,
+      commemorationDays: [],
+      commemorationIndex: 0,
     }
   },
   computed: {
@@ -314,12 +327,21 @@ export default {
       const index = this.typeTabs.findIndex(tab => tab.value === this.active);
       const step = 100 / this.typeTabs.length;
       return `left: ${index * step}%;`;
+    },
+    commemorationLabels() {
+      return ['不关联纪念日'].concat(this.commemorationDays.map(item => item.name));
+    },
+    selectedCommemorationName() {
+      return this.commemorationLabels[this.commemorationIndex] || '不关联纪念日';
     }
   },
   onLoad(option) {
     // 获取编辑记录 ID
     if (option && option.recordId) {
       this.recordForm.id = option.recordId;
+    }
+    if (option && option.date && !option.recordId) {
+      this.recordForm.payTime = new Date(option.date + 'T12:00:00');
     }
     this.initData();
   },
@@ -366,6 +388,7 @@ export default {
     async initData() {
       this.isInitializing = true;
       try {
+        await this.loadCommemorationDays();
         // 获取记录信息（编辑模式）
         if (this.recordForm.id) {
           const res = await getRecord(this.recordForm.id);
@@ -378,6 +401,7 @@ export default {
           };
           this.money = String(this.recordForm.money || 0);
           this.recordForm.typeDifference = this.active;
+          this.syncCommemorationIndex();
           // 设置图片列表
           this.imageList = res.data.images ? res.data.images.split(',').filter(item => item) : [];
           // 设置分类选中
@@ -409,6 +433,25 @@ export default {
       } finally {
         this.isInitializing = false;
       }
+    },
+    async loadCommemorationDays() {
+      try {
+        const res = await listDay({pageNum: 1, pageSize: 100});
+        this.commemorationDays = res.rows || res.data || [];
+        this.syncCommemorationIndex();
+      } catch (e) {
+        this.commemorationDays = [];
+      }
+    },
+    syncCommemorationIndex() {
+      const index = this.commemorationDays.findIndex(item => item.id === this.recordForm.commemorationDayId);
+      this.commemorationIndex = index >= 0 ? index + 1 : 0;
+    },
+    onCommemorationChange(e) {
+      this.commemorationIndex = Number(e.detail.value);
+      this.recordForm.commemorationDayId = this.commemorationIndex === 0
+        ? null
+        : this.commemorationDays[this.commemorationIndex - 1].id;
     },
     /**
      * 设置默认选中

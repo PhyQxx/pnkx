@@ -7,9 +7,12 @@ import com.pnkx.service.AiLifeReportDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,26 +42,19 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         data.put("reportType", reportType);
 
         LocalDate now = LocalDate.now();
-        LocalDate startDate;
-        if ("week".equals(period)) {
-            startDate = now.minusWeeks(1);
-        } else if ("year".equals(period)) {
-            startDate = now.withDayOfYear(1);
-        } else {
-            startDate = now.minusMonths(1);
-        }
+        LocalDate startDate = calculateStartDate(period, now);
         
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         data.put("dateRange", new String[]{startDate.format(dtf), now.format(dtf)});
 
         // 1. 记账数据
-        data.put("bookkeeping", getBookkeepingData(userId, startDate));
+        data.put("bookkeeping", getBookkeepingData(userId, startDate, now, "year".equals(period)));
 
         // 2. 日记数据
-        data.put("diary", getDiaryData(userId, startDate));
+        data.put("diary", getDiaryData(userId, startDate, now));
 
         // 3. 待办数据
-        data.put("todo", getTodoData(userId, startDate));
+        data.put("todo", getTodoData(userId, startDate, now));
 
         // 4. 纪念日
         data.put("commemorationDay", getCommemorationData(userId));
@@ -69,43 +65,77 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         return data;
     }
 
-    private JSONObject getBookkeepingData(String userId, LocalDate startDate) {
+    static LocalDate calculateStartDate(String period, LocalDate now) {
+        if ("week".equals(period)) {
+            return now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+        if ("year".equals(period)) {
+            return now.withDayOfYear(1);
+        }
+        return now.withDayOfMonth(1);
+    }
+
+    private JSONObject getBookkeepingData(String userId, LocalDate startDate, LocalDate endDate,
+                                          boolean includeMonthlyExpense) {
+        String start = startDate.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String end = endDate.plusDays(1).atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        Map<String, Object> counts = bookkeepingMapper.selectLifeReportCounts(userId, start, end);
+        List<Map<String, Object>> groups = bookkeepingMapper.selectLifeReportExpenseGroups(userId, start, end);
         JSONObject obj = new JSONObject();
-        PxBookkeepingRecord query = new PxBookkeepingRecord();
-        query.setCreateBy(userId);
-        List<PxBookkeepingRecord> records = bookkeepingMapper.selectPxBookkeepingRecordList(query);
-        
+        obj.put("totalExpense", decimal(counts, "totalExpense"));
+        obj.put("recordCount", number(counts, "recordCount").longValue());
+        obj.put("expenseCount", number(counts, "expenseCount").longValue());
+        Map<String, Double> byType = new java.util.HashMap<>();
+        double[] monthly = new double[12];
+        for (Map<String, Object> row : groups) {
+            double amount = number(row, "expense").doubleValue();
+            byType.merge(String.valueOf(mapValue(row, "typeName")), amount, Double::sum);
+            Object monthNo = mapValue(row, "monthNo");
+            if (monthNo != null) monthly[Integer.parseInt(String.valueOf(monthNo)) - 1] += amount;
+        }
+        obj.put("topTypes", byType.entrySet().stream().sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(5).map(entry -> {
+                    JSONObject item = new JSONObject();
+                    item.put("typeName", entry.getKey());
+                    item.put("expense", Math.round(entry.getValue() * 100) / 100.0);
+                    return item;
+                }).collect(Collectors.toList()));
+        if (includeMonthlyExpense) {
+            List<Double> values = new ArrayList<>();
+            for (double amount : monthly) values.add(Math.round(amount * 100) / 100.0);
+            obj.put("monthlyExpense", values);
+        }
+        return obj;
+    }
+
+    static JSONObject summarizeBookkeepingRecords(List<PxBookkeepingRecord> records, LocalDate startDate,
+                                                   LocalDate endDate, boolean includeMonthlyExpense) {
+        JSONObject obj = new JSONObject();
         LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endExclusive = endDate.plusDays(1).atStartOfDay();
         List<PxBookkeepingRecord> periodRecords = records.stream()
-                .filter(r -> r.getPayTime() != null && r.getPayTime().after(java.sql.Timestamp.valueOf(startDateTime)))
+                .filter(r -> r.getPayTime() != null
+                        && !r.getPayTime().before(java.sql.Timestamp.valueOf(startDateTime))
+                        && r.getPayTime().before(java.sql.Timestamp.valueOf(endExclusive)))
+                .collect(Collectors.toList());
+        List<PxBookkeepingRecord> expenseRecords = periodRecords.stream()
+                .filter(AiLifeReportDataServiceImpl::isExpenseRecord)
                 .collect(Collectors.toList());
 
-        double totalExpense = periodRecords.stream()
-                .filter(r -> r.getTypeObject() != null && ("支出".equals(r.getTypeObject().getTypeDifference()) || "1".equals(r.getTypeObject().getTypeDifference())))
-                .mapToDouble(r -> {
-                    try {
-                        return Double.parseDouble(r.getMoney());
-                    } catch (Exception e) {
-                        return 0.0;
-                    }
-                })
+        double totalExpense = expenseRecords.stream()
+                .mapToDouble(AiLifeReportDataServiceImpl::moneyValue)
                 .sum();
-        
+
         obj.put("totalExpense", Math.round(totalExpense * 100) / 100.0);
         obj.put("recordCount", periodRecords.size());
+        obj.put("expenseCount", expenseRecords.size());
 
         // 支出分类 Top5（周/月/年报通用）
         Map<String, Double> typeExpense = new java.util.LinkedHashMap<>();
-        for (PxBookkeepingRecord r : periodRecords) {
-            if (r.getTypeObject() == null || r.getMoney() == null) {
-                continue;
-            }
+        for (PxBookkeepingRecord r : expenseRecords) {
             String typeName = r.getTypeObject().getTypeName() != null
                     ? r.getTypeObject().getTypeName() : "未分类";
-            try {
-                typeExpense.merge(typeName, Double.parseDouble(r.getMoney()), Double::sum);
-            } catch (NumberFormatException ignored) {
-            }
+            typeExpense.merge(typeName, moneyValue(r), Double::sum);
         }
         List<JSONObject> topTypes = typeExpense.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
@@ -120,19 +150,13 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         obj.put("topTypes", topTypes);
 
         // 年报专属：12 个月支出分布
-        if (startDate.getDayOfYear() == 1) {
+        if (includeMonthlyExpense) {
             double[] monthly = new double[12];
-            for (PxBookkeepingRecord r : periodRecords) {
-                if (r.getPayTime() == null || r.getMoney() == null || r.getTypeObject() == null) {
-                    continue;
-                }
+            for (PxBookkeepingRecord r : expenseRecords) {
                 int month = new java.sql.Date(r.getPayTime().getTime()).toLocalDate().getMonthValue();
-                try {
-                    monthly[month - 1] += Double.parseDouble(r.getMoney());
-                } catch (NumberFormatException ignored) {
-                }
+                monthly[month - 1] += moneyValue(r);
             }
-            List<Double> monthlyList = new java.util.ArrayList<>();
+            List<Double> monthlyList = new ArrayList<>();
             for (double v : monthly) {
                 monthlyList.add(Math.round(v * 100) / 100.0);
             }
@@ -141,37 +165,38 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         return obj;
     }
 
-    private JSONObject getDiaryData(String userId, LocalDate startDate) {
+    private static boolean isExpenseRecord(PxBookkeepingRecord record) {
+        if (record == null || record.getTypeObject() == null || record.getMoney() == null) {
+            return false;
+        }
+        String difference = record.getTypeObject().getTypeDifference();
+        return "支出".equals(difference) || "1".equals(difference);
+    }
+
+    private static double moneyValue(PxBookkeepingRecord record) {
+        try {
+            return Double.parseDouble(record.getMoney());
+        } catch (NumberFormatException ignored) {
+            return 0.0;
+        }
+    }
+
+    private JSONObject getDiaryData(String userId, LocalDate startDate, LocalDate endDate) {
         JSONObject obj = new JSONObject();
-        PxDiary query = new PxDiary();
-        query.setCreateBy(userId);
-        List<PxDiary> records = diaryMapper.selectPxDiaryList(query);
-
-        LocalDateTime startDateTime = startDate.atStartOfDay();
-        List<PxDiary> periodRecords = records.stream()
-                .filter(r -> r.getCreateTime() != null && r.getCreateTime().after(java.sql.Timestamp.valueOf(startDateTime)))
-                .collect(Collectors.toList());
-
-        obj.put("count", periodRecords.size());
-        obj.put("samples", periodRecords.stream().limit(3).map(PxDiary::getContent).collect(Collectors.toList()));
+        String start = sqlTime(startDate);
+        String end = sqlTime(endDate.plusDays(1));
+        obj.put("count", diaryMapper.countForLifeReport(userId, start, end));
+        obj.put("samples", diaryMapper.selectSamplesForLifeReport(userId, start, end, 3)
+                .stream().map(PxDiary::getContent).collect(Collectors.toList()));
         return obj;
     }
 
-    private JSONObject getTodoData(String userId, LocalDate startDate) {
+    private JSONObject getTodoData(String userId, LocalDate startDate, LocalDate endDate) {
         JSONObject obj = new JSONObject();
-        PxToDo query = new PxToDo();
-        query.setCreateBy(userId);
-        List<PxToDo> records = todoMapper.selectPxToDoList(query);
-
-        LocalDateTime startDateTime = startDate.atStartOfDay();
-        List<PxToDo> periodRecords = records.stream()
-                .filter(r -> r.getCreateTime() != null && r.getCreateTime().after(java.sql.Timestamp.valueOf(startDateTime)))
-                .collect(Collectors.toList());
-        long done = periodRecords.stream().filter(r -> r.getStatus() != null && r.getStatus()).count();
-        long undone = periodRecords.stream().filter(r -> r.getStatus() == null || !r.getStatus()).count();
-
-        obj.put("done", done);
-        obj.put("undone", undone);
+        Map<String, Object> counts = todoMapper.selectStatusCountsForLifeReport(
+                userId, sqlTime(startDate), sqlTime(endDate.plusDays(1)));
+        obj.put("done", number(counts, "done").longValue());
+        obj.put("undone", number(counts, "undone").longValue());
         return obj;
     }
 
@@ -192,5 +217,29 @@ public class AiLifeReportDataServiceImpl implements AiLifeReportDataService {
         obj.put("hasData", !records.isEmpty());
         obj.put("nonMedicalSummary", "仅做生活记录提醒，不提供医疗判断");
         return obj;
+    }
+
+    private static String sqlTime(LocalDate date) {
+        return date.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    private static Number number(Map<String, Object> map, String key) {
+        if (map == null) return 0;
+        Object value = mapValue(map, key);
+        if (value instanceof Number number) return number;
+        try { return Double.parseDouble(String.valueOf(value)); } catch (Exception ignored) { return 0; }
+    }
+
+    private static double decimal(Map<String, Object> map, String key) {
+        return Math.round(number(map, key).doubleValue() * 100) / 100.0;
+    }
+
+    private static Object mapValue(Map<String, Object> map, String key) {
+        if (map == null) return null;
+        Object value = map.get(key);
+        if (value == null) value = map.get(key.toLowerCase());
+        if (value == null) value = map.entrySet().stream().filter(entry -> key.equalsIgnoreCase(entry.getKey()))
+                .map(Map.Entry::getValue).findFirst().orElse(null);
+        return value;
     }
 }

@@ -13,6 +13,8 @@ import sqliteDB from '@/utils/sqliteDB'
 
 /** URL 前缀 → 本地表名 映射（按长度降序匹配最长前缀） */
 const URL_TABLE_MAP = {
+  '/bookkeeping/recurring': 'px_bookkeeping_recurring',
+  '/bookkeeping/budget': 'px_bookkeeping_budget',
   '/note/folder': 'px_note_folder',
   '/note': 'px_note',
   '/bookkeeping/classification': 'px_bookkeeping_classification',
@@ -21,6 +23,13 @@ const URL_TABLE_MAP = {
   '/admin/diary': 'px_diary',
   '/admin/toDo': 'px_todo',
   '/commemorationDay': 'px_commemoration_day',
+  '/myTool/menstruationRecord': 'px_menstruation_record',
+  '/shoppingList': 'px_shopping_list',
+  '/shoppingItem': 'px_shopping_item',
+  '/mealPlan': 'px_meal_plan',
+  '/subscription': 'px_subscription',
+  '/recipe': 'px_recipe',
+  '/myBook': 'px_book',
   '/px/card/listRecord': 'px_card_record',
   '/px/card/getToDoCard': 'px_card_record',
   '/px/card': 'px_card',
@@ -38,7 +47,7 @@ const offlineProxy = {
     const method = (config.method || 'get').toLowerCase()
 
     // 只读请求 → 从本地读取
-    if (method === 'get' || method === 'delete') {
+    if (method === 'get') {
       return this.readLocal(config)
     }
 
@@ -62,8 +71,11 @@ const offlineProxy = {
       let data = []
 
       if (query.id) {
-        // 单条查询：/admin/diary/123
-        const row = await sqliteDB.getById(tableName, query.id)
+        // URL 中是服务端 ID；兼容尚未同步、只有本地主键的记录。
+        const rows = await sqliteDB.selectSql(
+          `SELECT * FROM ${tableName} WHERE _server_id = ${sqliteDB._escapeValue(query.id)} OR id = ${sqliteDB._escapeValue(query.id)} LIMIT 1`
+        )
+        const row = rows?.[0] || null
         data = row ? [row] : []
         return Promise.resolve({ code: 200, msg: 'offline', data: row, rows: data })
       }
@@ -165,8 +177,52 @@ const offlineProxy = {
       const now = new Date().toISOString()
 
       // 构建本地记录
+      const requestData = { ...(config.data || {}) }
+      const urlId = this._parseIdFromUrl(config.url)
+
+      // 阅读进度 URL 使用章节 ID，无法直接对应本地书籍主键；保留操作并在联网后回放。
+      if (method === 'put' && config.url.includes('/myBook/progress/')) {
+        await offlineQueue.enqueue({
+          id: clientUuid,
+          tableName,
+          method,
+          url: config.url,
+          payload: requestData,
+          status: 'pending',
+          createdAt: now
+        })
+        return Promise.resolve({ code: 200, msg: 'offline_queued', taskId: clientUuid })
+      }
+
+      // “清空已勾选”是按清单批量删除，URL 尾部是 listId，不是 itemId。
+      if (method === 'delete' && config.url.includes('/shoppingItem/clearChecked/')) {
+        await sqliteDB.update('px_shopping_item', {
+          del_flag: 1,
+          _sync_status: 0,
+          _updated_at: now,
+          update_time: now
+        }, { list_id: urlId, checked: 1 })
+        await offlineQueue.enqueue({
+          id: clientUuid,
+          tableName,
+          method,
+          url: config.url,
+          payload: requestData,
+          status: 'pending',
+          createdAt: now
+        })
+        return Promise.resolve({ code: 200, msg: 'offline_queued', taskId: clientUuid })
+      }
+      let localRow = null
+      if (urlId) {
+        const rows = await sqliteDB.selectSql(
+          `SELECT * FROM ${tableName} WHERE _server_id = ${sqliteDB._escapeValue(urlId)} OR id = ${sqliteDB._escapeValue(urlId)} LIMIT 1`
+        )
+        localRow = rows?.[0] || null
+      }
+      const serverId = localRow?._server_id || requestData.id || urlId
       const record = {
-        ...(config.data || {}),
+        ...requestData,
         client_uuid: clientUuid,
         _sync_status: 0,
         _server_id: null,
@@ -176,16 +232,42 @@ const offlineProxy = {
       }
 
       if (method === 'post') {
-        // 新增
-        await sqliteDB.insert(tableName, record)
+        // 预算接口是按“用户 + 月份 + 分类”保存；离线重复编辑应覆盖本地项而非制造重复行。
+        if (tableName === 'px_bookkeeping_budget' && requestData.month) {
+          const typeId = requestData.typeId ?? requestData.type_id ?? 0
+          const rows = await sqliteDB.query(tableName, { month: requestData.month, type_id: typeId }, '', 1)
+          if (rows?.[0]) {
+            localRow = rows[0]
+            delete record.id
+            await sqliteDB.update(tableName, record, { id: localRow.id })
+          } else {
+            await sqliteDB.insert(tableName, record)
+          }
+        } else {
+          await sqliteDB.insert(tableName, record)
+        }
       } else if (method === 'put') {
         // 修改
-        const id = record.id || this._parseIdFromUrl(config.url)
+        const id = localRow?.id || record.id || urlId
         if (id) {
           delete record.id  // id 不应被更新
           await sqliteDB.update(tableName, record, { id })
         }
+      } else if (method === 'delete') {
+        if (!localRow) {
+          return Promise.resolve({ code: 404, msg: 'offline_record_not_found' })
+        }
+        await sqliteDB.update(tableName, {
+          del_flag: 1,
+          _sync_status: 0,
+          _updated_at: now,
+          update_time: now
+        }, { id: localRow.id })
       }
+
+      const payload = { ...requestData }
+      const resolvedServerId = localRow?._server_id || serverId
+      if (resolvedServerId) payload.id = resolvedServerId
 
       // 进同步队列
       await offlineQueue.enqueue({
@@ -193,7 +275,7 @@ const offlineProxy = {
         tableName,
         method,
         url: config.url,
-        payload: config.data,
+        payload,
         status: 'pending',
         createdAt: now
       })
@@ -550,6 +632,7 @@ const offlineProxy = {
   /** 从 API URL 解析出本地表名（最长前缀匹配） */
   _parseTableName(url) {
     if (!url) return null
+    if (url.startsWith('/myBook/chapter') || url.startsWith('/myBook/txt')) return null
     for (const key of SORTED_URL_KEYS) {
       if (url.startsWith(key)) {
         return URL_TABLE_MAP[key]

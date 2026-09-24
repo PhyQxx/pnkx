@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.pnkx.system.domain.SysDataGroup;
 import com.pnkx.system.domain.SysDataGroupMember;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 数据权限群组 数据层
@@ -83,4 +84,23 @@ public interface SysDataGroupMapper {
      * @return 可见 userId 集合
      */
     public List<Long> selectVisibleUserIds(Long userId);
+
+    List<Long> selectVisibleUserIdsByModule(@Param("userId") Long userId, @Param("module") String module);
+
+    List<SysDataGroupMember> selectMembers(Long groupId);
+
+    int leaveMember(@Param("groupId") Long groupId, @Param("userId") Long userId);
+
+    int updateOwner(@Param("groupId") Long groupId, @Param("ownerUserId") Long ownerUserId,
+                    @Param("updateBy") String updateBy);
+
+    int updateMemberRole(@Param("groupId") Long groupId, @Param("userId") Long userId,
+                         @Param("role") String role);
+
+    int insertMemberAudit(@Param("groupId") Long groupId, @Param("userId") Long userId,
+                          @Param("action") String action, @Param("operatorId") Long operatorId,
+                          @Param("ownershipPolicy") String ownershipPolicy, @Param("detailJson") String detailJson);
+
+    int countSharedMembership(@Param("userId") Long userId, @Param("ownerId") Long ownerId,
+                              @Param("module") String module);
 }

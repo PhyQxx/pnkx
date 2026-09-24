@@ -10,16 +10,20 @@ import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.domain.po.PxLifeReminder;
 import com.pnkx.domain.po.PxToDo;
+import com.pnkx.domain.po.PxReminderPreference;
 import com.pnkx.service.AiLifeReminderDataService;
 import com.pnkx.service.IPxLifeReminderService;
 import com.pnkx.service.IPxToDoService;
 import com.pnkx.service.WxSubscribeMessageService;
+import com.pnkx.service.CalendarAggregateService;
 import com.pnkx.system.service.ISysConfigService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Value;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
+import com.pnkx.common.exception.ServiceException;
 
 /**
  * @author PHY
@@ -42,6 +46,8 @@ public class PxReminderController extends BaseController {
     private IPxToDoService pxToDoService;
     @Resource
     private ISysConfigService configService;
+    @Resource
+    private CalendarAggregateService calendarAggregateService;
     @Value("${wx.subscribe.templates.commemoration:}")
     private String commemorationTemplateId;
     @Value("${wx.subscribe.templates.menstruation:}")
@@ -76,6 +82,7 @@ public class PxReminderController extends BaseController {
         menstruationAssistantSetting.put("duration", configService.selectConfigByKey("ymsc"));
         menstruationAssistantSetting.put("state", configService.selectConfigByKey("ymdqzt"));
         result.put("menstruationAssistantSetting", menstruationAssistantSetting);
+        result.put("timeline", calendarAggregateService.getTodayCockpit(userId));
         return AjaxResult.success(result);
     }
 
@@ -86,6 +93,7 @@ public class PxReminderController extends BaseController {
      */
     @GetMapping("/list")
     public TableDataInfo list(PxLifeReminder pxLifeReminder) {
+        pxLifeReminder.setUserId(SecurityUtils.getUserId());
         startPage();
         List<PxLifeReminder> list = lifeReminderService.selectPxLifeReminderList(pxLifeReminder);
         return getDataTable(list);
@@ -96,7 +104,7 @@ public class PxReminderController extends BaseController {
      */
     @GetMapping("/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id) {
-        return AjaxResult.success(lifeReminderService.selectPxLifeReminderById(id));
+        return AjaxResult.success(requireReminderOwner(id));
     }
 
     /**
@@ -105,6 +113,8 @@ public class PxReminderController extends BaseController {
     @Log(title = "提醒配置", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody PxLifeReminder pxLifeReminder) {
+        pxLifeReminder.setUserId(SecurityUtils.getUserId());
+        pxLifeReminder.setCreateBy(SecurityUtils.getUserId());
         return toAjax(lifeReminderService.insertPxLifeReminder(pxLifeReminder));
     }
 
@@ -114,6 +124,9 @@ public class PxReminderController extends BaseController {
     @Log(title = "提醒配置", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody PxLifeReminder pxLifeReminder) {
+        requireReminderOwner(pxLifeReminder.getId());
+        pxLifeReminder.setUserId(SecurityUtils.getUserId());
+        pxLifeReminder.setUpdateBy(SecurityUtils.getUserId());
         return toAjax(lifeReminderService.updatePxLifeReminder(pxLifeReminder));
     }
 
@@ -123,6 +136,7 @@ public class PxReminderController extends BaseController {
     @Log(title = "提醒配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids) {
+        for (Long id : ids) requireReminderOwner(id);
         return toAjax(lifeReminderService.deletePxLifeReminderByIds(ids));
     }
 
@@ -136,6 +150,11 @@ public class PxReminderController extends BaseController {
     @Log(title = "提醒绑定", businessType = BusinessType.INSERT)
     @PostMapping("/bind")
     public AjaxResult bind(@RequestBody PxLifeReminder pxLifeReminder) {
+        pxLifeReminder.setUserId(SecurityUtils.getUserId());
+        pxLifeReminder.setCreateBy(SecurityUtils.getUserId());
+        if (pxLifeReminder.getEnabled() == null) {
+            pxLifeReminder.setEnabled(true);
+        }
         return toAjax(lifeReminderService.bindReminder(pxLifeReminder));
     }
 
@@ -146,7 +165,7 @@ public class PxReminderController extends BaseController {
     @DeleteMapping("/unbind")
     public AjaxResult unbind(@RequestParam("sourceType") String sourceType,
                              @RequestParam("sourceId") Long sourceId) {
-        return toAjax(lifeReminderService.unbindReminder(sourceType, sourceId));
+        return toAjax(lifeReminderService.unbindReminder(sourceType, sourceId, SecurityUtils.getUserId()));
     }
 
     // ==================== 通知中心 ====================
@@ -180,6 +199,22 @@ public class PxReminderController extends BaseController {
         return toAjax(lifeReminderService.deleteNotification(SecurityUtils.getUserId(), id));
     }
 
+    @PostMapping("/notifications/{id}/retry")
+    public AjaxResult retryNotification(@PathVariable Long id) {
+        return toAjax(lifeReminderService.retryNotification(SecurityUtils.getUserId(), id));
+    }
+
+    @GetMapping("/preference")
+    public AjaxResult preference() {
+        return AjaxResult.success(lifeReminderService.getPreference(SecurityUtils.getUserId()));
+    }
+
+    @PutMapping("/preference")
+    public AjaxResult savePreference(@RequestBody PxReminderPreference preference) {
+        preference.setUserId(SecurityUtils.getUserId());
+        return toAjax(lifeReminderService.savePreference(preference));
+    }
+
     @GetMapping("/wechat-subscription")
     public AjaxResult wechatSubscription() {
         return AjaxResult.success(wxSubscribeMessageService.getChoices(Long.valueOf(SecurityUtils.getUserId())));
@@ -199,5 +234,13 @@ public class PxReminderController extends BaseController {
         boolean accepted = body.getBooleanValue("accepted");
         wxSubscribeMessageService.saveChoice(Long.valueOf(SecurityUtils.getUserId()), templateType, accepted);
         return AjaxResult.success();
+    }
+
+    private PxLifeReminder requireReminderOwner(Long id) {
+        PxLifeReminder reminder = id == null ? null : lifeReminderService.selectPxLifeReminderById(id);
+        if (reminder == null || !Objects.equals(SecurityUtils.getUserId(), reminder.getUserId())) {
+            throw new ServiceException("提醒不存在或无权访问");
+        }
+        return reminder;
     }
 }

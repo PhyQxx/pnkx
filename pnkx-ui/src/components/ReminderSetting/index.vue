@@ -63,7 +63,7 @@
 
 <script>
 import dayjs from 'dayjs'
-import {bindReminder, unbindReminder} from '@/api/px/life/reminder'
+import {bindReminder, listReminder, unbindReminder} from '@/api/px/life/reminder'
 
 export default {
     name: 'ReminderSetting',
@@ -132,7 +132,19 @@ export default {
         open() {
             this.visible = true
         },
-        handleOpen() {
+        async handleOpen() {
+            this.loading = true
+            try {
+                const res = await listReminder({sourceType: this.sourceType, sourceId: this.sourceId, pageNum: 1, pageSize: 1})
+                const current = (res.rows || [])[0]
+                this.hasBound = !!current
+                if (current) {
+                    this.form.leadMinutes = current.leadMinutes ?? 60
+                    this.form.enabled = current.enabled !== false
+                }
+            } finally {
+                this.loading = false
+            }
             // 初始化自定义分钟
             if (this.form.leadMinutes === -1) {
                 this.customMinutes = this.bound?.leadMinutes || 30
@@ -145,7 +157,6 @@ export default {
             return {
                 sourceType: this.sourceType,
                 sourceId: this.sourceId,
-                userId: String(this.$store.getters.id),
                 leadMinutes: minutes,
                 enabled: this.form.enabled,
                 remindTime: this.computedRemindTime

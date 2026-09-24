@@ -2,6 +2,7 @@ package com.pnkx.service;
 
 import com.pnkx.domain.po.PxLifeNotification;
 import com.pnkx.domain.po.PxLifeReminder;
+import com.pnkx.domain.po.PxReminderPreference;
 
 import java.util.List;
 
@@ -79,7 +80,7 @@ public interface IPxLifeReminderService {
      * @param sourceId   来源实体ID
      * @return 结果
      */
-    int unbindReminder(String sourceType, Long sourceId);
+    int unbindReminder(String sourceType, Long sourceId, String userId);
 
     /**
      * 查询用户的通知列表（通知中心）
@@ -107,6 +108,12 @@ public interface IPxLifeReminderService {
     int markRead(String userId, Long[] ids);
 
     int deleteNotification(String userId, Long id);
+
+    int retryNotification(String userId, Long id);
+
+    PxReminderPreference getPreference(String userId);
+
+    int savePreference(PxReminderPreference preference);
 
     /**
      * 调度入口：扫描到期提醒并分发投递（WebSocket + 邮件），记录投递日志防重发。

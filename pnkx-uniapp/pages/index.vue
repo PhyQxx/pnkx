@@ -14,9 +14,14 @@
           </view>
           <text class="greeting-header__date">{{ todayDate }}</text>
         </view>
-        <view class="greeting-header__bell" @click="navigateToReminder">
-          <svg-icon icon-class="tongzhi" size="42rpx" class-name="greeting-header__bell-icon" />
-          <view v-if="unreadCount > 0" class="greeting-header__bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
+        <view class="greeting-header__actions">
+          <view class="greeting-header__bell" @click="navigateToSearch">
+            <uni-icons type="search" size="22" color="#334155" />
+          </view>
+          <view class="greeting-header__bell" @click="navigateToReminder">
+            <svg-icon icon-class="tongzhi" size="42rpx" class-name="greeting-header__bell-icon" />
+            <view v-if="unreadCount > 0" class="greeting-header__bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
+          </view>
         </view>
       </view>
     </view>
@@ -135,6 +140,18 @@
                 <view class="reminder-item__action">
                   <text class="reminder-item__arrow">&gt;</text>
                 </view>
+              </view>
+            </view>
+
+            <view v-if="todayTimeline.length > 0" class="reminder-group">
+              <view v-for="item in todayTimeline" :key="item.sourceType + '-' + item.sourceId"
+                    class="reminder-item" @click="navigateTimeline(item)">
+                <view class="reminder-item__icon"><text>📅</text></view>
+                <view class="reminder-item__content">
+                  <text class="reminder-item__title">{{ item.title }}</text>
+                  <text class="reminder-item__desc">{{ timelineType(item.sourceType) }}</text>
+                </view>
+                <view class="reminder-item__action"><text class="reminder-item__arrow">&gt;</text></view>
               </view>
             </view>
           </view>
@@ -323,7 +340,10 @@
 				const days = this.reminderCommemorationDays || []
 				const cards = this.reminderCards || []
 				const mens = this.reminderMenstruation
-				return days.length > 0 || cards.length > 0 || (mens && mens.length > 0)
+				return days.length > 0 || cards.length > 0 || (mens && mens.length > 0) || this.todayTimeline.length > 0
+			},
+			todayTimeline() {
+				return this.reminderData?.timeline?.todayEvents || []
 			},
 			reminderCommemorationDays() {
 				if (!this.reminderData || !this.reminderData.commemorationDays) return []
@@ -402,6 +422,16 @@
         uni.navigateTo({
           url: '/pages_life/reminder/index'
         })
+      },
+      navigateToSearch() {
+        uni.navigateTo({ url: '/pages_life/search/index' })
+      },
+      timelineType(type) {
+        const labels = { todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账', subscription: '订阅扣费', meal_plan: '餐饮计划', shopping_plan: '购物计划', reading_goal: '阅读目标', life_report: '生活报告' }
+        return labels[type] || '生活事项'
+      },
+      navigateTimeline(item) {
+        if (item.appRoute) uni.navigateTo({ url: item.appRoute })
       },
       /**
        * 刷新未读通知数（首页铃铛红点）
@@ -718,6 +748,12 @@
     align-items: center;
     justify-content: center;
     margin-top: $spacing-2xs;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
   }
 
   &__bell-icon {

@@ -43,7 +43,7 @@ public class PxNoteServiceImpl implements IPxNoteService {
      * @return 笔记
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     public List<PxNoteFolder> selectPxNoteList(PxNote pxNote) {
         return pxNoteMapper.selectPxNoteList(pxNote);
     }

@@ -6,6 +6,7 @@
 
     <resultMap type="PxBookkeepingRecurring" id="PxBookkeepingRecurringResult">
         <id property="id" column="id"/>
+        <result property="clientUuid" column="client_uuid"/>
         <result property="version" column="version"/>
         <result property="name" column="name"/>
         <result property="frequency" column="frequency"/>
@@ -28,7 +29,7 @@
     </resultMap>
 
     <sql id="selectVo">
-        select r.id, r.version, r.name, r.frequency, r.day_number, r.type_difference,
+        select r.id, r.client_uuid, r.version, r.name, r.frequency, r.day_number, r.type_difference,
                r.type, r.account, r.other_account, r.money, r.remark,
                r.next_run_date, r.enabled, r.last_run_date,
                r.create_by, r.create_time, r.update_by, r.update_time,
@@ -45,6 +46,17 @@
         order by r.frequency, r.day_number
     </select>
 
+    <select id="selectByClientUuid" resultMap="PxBookkeepingRecurringResult">
+        <include refid="selectVo"/>
+        where r.client_uuid = #{clientUuid}
+        limit 1
+    </select>
+
+    <select id="selectById" resultMap="PxBookkeepingRecurringResult">
+        <include refid="selectVo"/>
+        where r.id = #{id} and r.create_by = #{userId} and r.del_flag = 0
+    </select>
+
     <select id="selectDueList" resultMap="PxBookkeepingRecurringResult">
         <include refid="selectVo"/>
         where r.del_flag = 0
@@ -54,10 +66,10 @@
     </select>
 
     <insert id="insertRecurring" parameterType="PxBookkeepingRecurring" useGeneratedKeys="true" keyProperty="id">
-        insert into px_bookkeeping_recurring (version, name, frequency, day_number, type_difference,
+        insert into px_bookkeeping_recurring (client_uuid, version, name, frequency, day_number, type_difference,
                                                type, account, other_account, money, remark,
                                                next_run_date, enabled, create_by, create_time)
-        values (#{version}, #{name}, #{frequency}, #{dayNumber}, #{typeDifference},
+        values (#{clientUuid}, #{version}, #{name}, #{frequency}, #{dayNumber}, #{typeDifference},
                 #{type}, #{account}, #{otherAccount}, #{money}, #{remark},
                 #{nextRunDate}, #{enabled}, #{createBy}, #{createTime})
     </insert>
@@ -79,7 +91,7 @@
             <if test="updateBy != null">update_by = #{updateBy},</if>
             update_time = now()
         </trim>
-        where id = #{id}
+        where id = #{id} and create_by = #{updateBy}
     </update>
 
     <update id="advanceRunDate">
@@ -89,9 +101,8 @@
         where id = #{id}
     </update>
 
-    <delete id="deleteRecurringById">
-        delete
-        from px_bookkeeping_recurring
-        where id = #{id}
-    </delete>
+    <update id="deleteRecurringById">
+        update px_bookkeeping_recurring set del_flag = 1, update_time = now()
+        where id = #{id} and create_by = #{userId}
+    </update>
 </mapper>

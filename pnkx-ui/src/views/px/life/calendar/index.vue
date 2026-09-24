@@ -95,6 +95,8 @@
             <span class="legend-item"><span class="legend-dot event-commemoration"></span>纪念日</span>
             <span class="legend-item"><span class="legend-dot event-menstruation"></span>经期</span>
             <span class="legend-item"><span class="legend-dot event-bookkeeping"></span>记账</span>
+            <span class="legend-item"><span class="legend-dot event-subscription"></span>订阅</span>
+            <span class="legend-item"><span class="legend-dot event-meal_plan"></span>餐饮计划</span>
         </div>
     </div>
 </template>
@@ -342,6 +344,18 @@ export default {
     background: rgba(64, 158, 255, 0.15);
     color: #409eff;
     border-left: 3px solid #409eff;
+}
+
+.event-subscription {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border-left: 3px solid #f59e0b;
+}
+
+.event-meal_plan {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+    border-left: 3px solid #10b981;
 }
 
 .event-more {

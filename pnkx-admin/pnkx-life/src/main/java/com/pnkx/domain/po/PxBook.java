@@ -1,6 +1,7 @@
 package com.pnkx.domain.po;
 
 import com.pnkx.common.core.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.Date;
@@ -12,6 +13,7 @@ public class PxBook extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+    private String clientUuid;
     @NotBlank(message = "书名不能为空")
     private String title;
     private String author;
@@ -23,9 +25,13 @@ public class PxBook extends BaseEntity {
     private Long lastReadChapterId;
     private String lastReadChapterName;
     private Date lastReadTime;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date targetFinishDate;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getClientUuid() { return clientUuid; }
+    public void setClientUuid(String clientUuid) { this.clientUuid = clientUuid; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getAuthor() { return author; }
@@ -46,4 +52,6 @@ public class PxBook extends BaseEntity {
     public void setLastReadChapterName(String lastReadChapterName) { this.lastReadChapterName = lastReadChapterName; }
     public Date getLastReadTime() { return lastReadTime; }
     public void setLastReadTime(Date lastReadTime) { this.lastReadTime = lastReadTime; }
+    public Date getTargetFinishDate() { return targetFinishDate; }
+    public void setTargetFinishDate(Date targetFinishDate) { this.targetFinishDate = targetFinishDate; }
 }

@@ -145,6 +145,42 @@ const offlineQueue = {
     // #ifndef APP-PLUS
     return []
     // #endif
+  },
+
+  async retry(taskId) {
+    // #ifdef APP-PLUS
+    await sqliteDB.executeSql(
+      `UPDATE _sync_queue SET status = 'pending', retry_count = 0, error_msg = NULL WHERE id = ${sqliteDB._escapeValue(taskId)}`
+    )
+    // #endif
+  },
+
+  async discard(taskId, removeLocal = false) {
+    // #ifdef APP-PLUS
+    const rows = await sqliteDB.selectSql(
+      `SELECT table_name, payload FROM _sync_queue WHERE id = ${sqliteDB._escapeValue(taskId)} LIMIT 1`
+    )
+    if (rows?.[0]?.table_name) {
+      const payload = JSON.parse(rows[0].payload || '{}')
+      await sqliteDB.executeSql(
+        `DELETE FROM ${rows[0].table_name} WHERE client_uuid = ${sqliteDB._escapeValue(taskId)} AND _server_id IS NULL`
+      )
+      if (removeLocal && payload.id) {
+        await sqliteDB.executeSql(
+          `DELETE FROM ${rows[0].table_name} WHERE _server_id = ${sqliteDB._escapeValue(payload.id)}`
+        )
+      }
+    }
+    await sqliteDB.executeSql(`DELETE FROM _sync_queue WHERE id = ${sqliteDB._escapeValue(taskId)}`)
+    // #endif
+  },
+
+  async replacePayload(taskId, payload) {
+    // #ifdef APP-PLUS
+    await sqliteDB.executeSql(
+      `UPDATE _sync_queue SET payload = ${sqliteDB._escapeValue(JSON.stringify(payload || {}))}, status = 'pending', retry_count = 0, error_msg = NULL WHERE id = ${sqliteDB._escapeValue(taskId)}`
+    )
+    // #endif
   }
 }
 

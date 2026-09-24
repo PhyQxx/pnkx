@@ -37,15 +37,40 @@ public class WebSocketReminderPushChannel implements ReminderPushChannel {
             return;
         }
         log.info("【提醒推送】向用户 {} 发送实时提醒", userName);
-        // 站内 WebSocket（在线送达）
+        pushWebSocket(userName, payload);
+        if (isAppPushEnabled()) {
+            try {
+                pushApp(userName, payload);
+            } catch (Exception e) {
+                // 聚合推送至少保证 WebSocket 已送达；统一提醒引擎会直接调用 pushApp 并记录可重试失败。
+                log.warn("【提醒推送】App 通道投递失败, user={}", userName, e);
+            }
+        }
+    }
+
+    @Override
+    public void pushWebSocket(String userName, String payload) {
         webSocketController.sendOneMessage(userName, payload);
-        // App 离线推送兜底（未配置 uniPush 时静默跳过；在线设备收锁屏通知亦为正常体验）
+    }
+
+    @Override
+    public void pushApp(String userName, String payload) {
         try {
             com.alibaba.fastjson.JSONObject msg = com.alibaba.fastjson.JSON.parseObject(payload);
-            uniPushService.sendToUser(userName, msg.getString("title"), msg.getString("content"),
-                    java.util.Collections.singletonMap("type", msg.getString("type")));
+            java.util.Map<String, String> data = new java.util.HashMap<>();
+            data.put("type", msg.getString("type"));
+            data.put("sourceType", msg.getString("sourceType"));
+            data.put("sourceId", msg.getString("sourceId"));
+            uniPushService.sendToUser(userName, msg.getString("title"), msg.getString("content"), data);
         } catch (Exception e) {
-            log.warn("【提醒推送】离线推送失败（不影响站内推送）, user={}", userName, e);
+            log.warn("【提醒推送】离线推送失败, user={}", userName, e);
+            // 交由提醒服务记录失败状态，使通知中心能够展示并重试。
+            throw new IllegalStateException("UniPush 推送失败", e);
         }
+    }
+
+    @Override
+    public boolean isAppPushEnabled() {
+        return uniPushService.enabled();
     }
 }

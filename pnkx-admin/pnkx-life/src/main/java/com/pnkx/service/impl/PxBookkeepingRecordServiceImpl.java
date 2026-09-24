@@ -162,7 +162,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         return rows;
     }
 
-    @DataScopeSelf(alias = "r")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public TableDataInfo selectPxBookkeepingRecordList(PxBookkeepingRecord pxBookkeepingRecord) {
         List<PxBookkeepingRecord> list = pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
@@ -180,7 +180,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         return rspData;
     }
 
-    @DataScopeSelf(alias = "r")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public List<PxBookkeepingRecord> selectPxBookkeepingRecordAll(PxBookkeepingRecord pxBookkeepingRecord) {
         return pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);

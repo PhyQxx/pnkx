@@ -19,6 +19,24 @@
           <view>清理缓存</view>
         </view>
       </view>
+      <view class="list-cell list-cell-arrow" @click="handleSync">
+        <view class="menu-item-box">
+          <uni-icons type="loop" size="20" color="#4F86F7" />
+          <view class="sync-label">离线同步与冲突</view>
+        </view>
+      </view>
+      <view class="list-cell list-cell-arrow" @click="handleAutomation">
+        <view class="menu-item-box">
+          <uni-icons type="gear" size="20" color="#6C63FF" />
+          <view class="sync-label">生活自动化</view>
+        </view>
+      </view>
+      <view class="list-cell list-cell-arrow" @click="handleFamily">
+        <view class="menu-item-box">
+          <uni-icons type="staff" size="20" color="#E5943B" />
+          <view class="sync-label">家庭与情侣空间</view>
+        </view>
+      </view>
     </view>
     <view class="logout-section">
       <view class="logout-btn" @click="handleLogout">
@@ -73,6 +91,15 @@ export default {
           this.$refs.updateDialog.close();
         }
       });
+    },
+    handleSync() {
+      this.$tab.navigateTo('/pages_system/mine/setting/sync')
+    },
+    handleAutomation() {
+      this.$tab.navigateTo('/pages_life/automation/index')
+    },
+    handleFamily() {
+      this.$tab.navigateTo('/pages_system/mine/setting/family')
     },
     backgroundDownload() {
       this.$refs.updateDialog.close();
@@ -188,4 +215,6 @@ export default {
   color: #4F86F7;
   font-size: 32rpx;
 }
+
+.sync-label { margin-left: 10rpx; }
 </style>

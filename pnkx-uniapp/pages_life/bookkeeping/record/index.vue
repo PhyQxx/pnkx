@@ -1,6 +1,10 @@
 <template>
   <view class="record-list subpage-shell">
     <view class="header">
+      <view class="export-action" @click="handleExport">
+        <uni-icons type="download" size="18" color="#ffffff" />
+        <text>导出</text>
+      </view>
       <view class="month-selector">
         <view class="arrow" @click="changeMonth(-1)">
           <view class="arrow__btn">
@@ -106,7 +110,7 @@
 </template>
 
 <script>
-import { listRecord, delRecord } from "@/api/px/life/bookkeeping/record";
+import { listRecord, delRecord, downloadRecordExport } from "@/api/px/life/bookkeeping/record";
 
 export default {
   name: "RecordList",
@@ -279,6 +283,24 @@ export default {
     handleAdd() {
       this.$tab.navigateTo('/pages_life/bookkeeping/record/add');
     },
+    async handleExport() {
+      const year = this.currentMonth.getFullYear();
+      const month = String(this.currentMonth.getMonth() + 1).padStart(2, '0');
+      uni.showLoading({title: '正在导出'});
+      try {
+        const filePath = await downloadRecordExport({payTime: `${year}-${month}`});
+        uni.openDocument({
+          filePath,
+          fileType: 'xlsx',
+          showMenu: true,
+          fail() { uni.showToast({title: '文件已下载，请到下载目录查看', icon: 'none'}); }
+        });
+      } catch (e) {
+        uni.showToast({title: '导出失败，请稍后重试', icon: 'none'});
+      } finally {
+        uni.hideLoading();
+      }
+    },
     handleSwipeClick(record, e) {
       const index = e.content.index;
       if (index === 0) {
@@ -324,10 +346,24 @@ export default {
   flex-direction: column;
 
   .header {
+    position: relative;
     background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
     padding: $spacing-lg;
     color: $text-inverse;
     flex-shrink: 0;
+
+    .export-action {
+      position: absolute;
+      top: $spacing-md;
+      right: $page-padding;
+      display: flex;
+      align-items: center;
+      gap: 6rpx;
+      padding: 10rpx 18rpx;
+      border-radius: $radius-full;
+      background: rgba(255, 255, 255, 0.16);
+      font-size: $font-caption;
+    }
 
     .month-selector {
       display: flex;

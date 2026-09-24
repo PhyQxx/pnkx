@@ -17,6 +17,9 @@
         <result property="isWrite" column="is_write"/>
         <result property="writeStatus" column="write_status"/>
         <result property="parsedJson" column="parsed_json"/>
+        <result property="planJson" column="plan_json"/>
+        <result property="resultJson" column="result_json"/>
+        <result property="rollbackJson" column="rollback_json"/>
         <result property="errorMsg" column="error_msg"/>
         <result property="durationMs" column="duration_ms"/>
         <result property="createBy" column="create_by"/>
@@ -27,7 +30,7 @@
     </resultMap>
 
     <sql id="selectPxAiOperationLogVo">
-        select id, request_id, user_id, question, intent, confidence, model_id, model_key, is_stream, is_write, write_status, parsed_json, error_msg, duration_ms, create_by, create_time, update_by, update_time, remark from px_ai_operation_log
+        select id, request_id, user_id, question, intent, confidence, model_id, model_key, is_stream, is_write, write_status, parsed_json, plan_json, result_json, rollback_json, error_msg, duration_ms, create_by, create_time, update_by, update_time, remark from px_ai_operation_log
     </sql>
 
     <select id="selectPxAiOperationLogList" parameterType="com.pnkx.domain.po.PxAiOperationLog" resultMap="PxAiOperationLogResult">
@@ -72,6 +75,9 @@
             <if test="isWrite != null">is_write,</if>
             <if test="writeStatus != null">write_status,</if>
             <if test="parsedJson != null">parsed_json,</if>
+            <if test="planJson != null">plan_json,</if>
+            <if test="resultJson != null">result_json,</if>
+            <if test="rollbackJson != null">rollback_json,</if>
             <if test="errorMsg != null">error_msg,</if>
             <if test="durationMs != null">duration_ms,</if>
             <if test="createBy != null">create_by,</if>
@@ -92,6 +98,9 @@
             <if test="isWrite != null">#{isWrite},</if>
             <if test="writeStatus != null">#{writeStatus},</if>
             <if test="parsedJson != null">#{parsedJson},</if>
+            <if test="planJson != null">#{planJson},</if>
+            <if test="resultJson != null">#{resultJson},</if>
+            <if test="rollbackJson != null">#{rollbackJson},</if>
             <if test="errorMsg != null">#{errorMsg},</if>
             <if test="durationMs != null">#{durationMs},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -116,6 +125,9 @@
             <if test="isWrite != null">is_write = #{isWrite},</if>
             <if test="writeStatus != null">write_status = #{writeStatus},</if>
             <if test="parsedJson != null">parsed_json = #{parsedJson},</if>
+            <if test="planJson != null">plan_json = #{planJson},</if>
+            <if test="resultJson != null">result_json = #{resultJson},</if>
+            <if test="rollbackJson != null">rollback_json = #{rollbackJson},</if>
             <if test="errorMsg != null">error_msg = #{errorMsg},</if>
             <if test="durationMs != null">duration_ms = #{durationMs},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
@@ -133,6 +145,9 @@
             <if test="isWrite != null">is_write = #{isWrite},</if>
             <if test="writeStatus != null">write_status = #{writeStatus},</if>
             <if test="parsedJson != null">parsed_json = #{parsedJson},</if>
+            <if test="planJson != null">plan_json = #{planJson},</if>
+            <if test="resultJson != null">result_json = #{resultJson},</if>
+            <if test="rollbackJson != null">rollback_json = #{rollbackJson},</if>
             <if test="errorMsg != null">error_msg = #{errorMsg},</if>
             <if test="durationMs != null">duration_ms = #{durationMs},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>

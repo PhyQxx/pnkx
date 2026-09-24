@@ -60,7 +60,8 @@ public class PxBookController extends BaseController {
     @PostMapping
     public AjaxResult add(@Valid @RequestBody PxBook book) {
         book.setCreateBy(SecurityUtils.getUserId());
-        return toAjax(bookService.insertBook(book));
+        int rows = bookService.insertBook(book);
+        return rows > 0 ? AjaxResult.success(book.getId()) : AjaxResult.error();
     }
 
     @Log(title = "我的书城", businessType = BusinessType.UPDATE)

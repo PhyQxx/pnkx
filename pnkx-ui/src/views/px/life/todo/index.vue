@@ -242,6 +242,13 @@
               <div class="detail-actions">
                 <el-button
                   size="small"
+                  :disabled="!toDoDetails.planEndTime"
+                  @click="$refs.todoReminder.open()"
+                >
+                  设置提醒
+                </el-button>
+                <el-button
+                  size="small"
                   type="danger"
                                     @click="handleDelete(toDoDetails)"
                 >
@@ -392,6 +399,14 @@
         </div>
       </div>
     </transition>
+    <ReminderSetting
+      v-if="toDoDetails.id"
+      ref="todoReminder"
+      source-type="todo"
+      :source-id="toDoDetails.id"
+      :source-name="toDoDetails.content"
+      :event-time="toDoDetails.planEndTime"
+    />
         </div>
       </el-tab-pane>
       <el-tab-pane label="看板视图" name="kanban">
@@ -407,10 +422,11 @@ import { addDo, delDo, getDo, listDo, updateDo, getLabelList } from '@/api/px/li
 import Editor from '@/components/Editor'
 import Pagination from '@/components/Pagination'
 import TodoKanban from './kanban.vue'
+import ReminderSetting from '@/components/ReminderSetting'
 
 export default {
   name: 'index',
-  components: { Editor, Pagination, TodoKanban },
+  components: { Editor, Pagination, TodoKanban, ReminderSetting },
   data() {
     return {
       // 当前激活的 tab

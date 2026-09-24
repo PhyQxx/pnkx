@@ -43,6 +43,16 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
     @Resource
     private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
     @Resource
+    private PxSubscriptionMapper pxSubscriptionMapper;
+    @Resource
+    private PxMealPlanMapper pxMealPlanMapper;
+    @Resource
+    private PxShoppingListMapper pxShoppingListMapper;
+    @Resource
+    private PxBookMapper pxBookMapper;
+    @Resource
+    private PxLifeReportHistoryMapper pxLifeReportHistoryMapper;
+    @Resource
     private DataPermissionService dataPermissionService;
 
     /**
@@ -82,6 +92,37 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             log.error("聚合记账事件失败", e);
         }
 
+        // 5. 订阅扣费
+        try {
+            events.addAll(buildSubscriptionEvents(start, end));
+        } catch (Exception e) {
+            log.error("聚合订阅事件失败", e);
+        }
+
+        // 6. 餐饮计划
+        try {
+            events.addAll(buildMealPlanEvents(start, end));
+        } catch (Exception e) {
+            log.error("聚合餐饮计划失败", e);
+        }
+
+        // 7. 购物计划、阅读目标和已生成的生活报告
+        try {
+            events.addAll(buildShoppingPlanEvents(start, end));
+        } catch (Exception e) {
+            log.error("聚合购物计划失败", e);
+        }
+        try {
+            events.addAll(buildReadingGoalEvents(userId, start, end));
+        } catch (Exception e) {
+            log.error("聚合阅读目标失败", e);
+        }
+        try {
+            events.addAll(buildLifeReportEvents(userId, start, end));
+        } catch (Exception e) {
+            log.error("聚合生活报告失败", e);
+        }
+
         // 按日期排序
         events.sort(Comparator.comparing(CalendarEventVo::getDate));
         return events;
@@ -109,7 +150,9 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
                 vo.setTitle("📋 " + truncate(t.getContent(), 20));
                 vo.setDate(java.sql.Date.valueOf(d));
                 vo.setColor("todo");
+                vo.setStatus("pending");
                 vo.setRoute("/mytool/todo");
+                vo.setAppRoute("/pages_life/todo/edit?id=" + t.getId());
                 events.add(vo);
             } catch (Exception ignore) {
             }
@@ -159,7 +202,9 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
         vo.setTitle("🎉 " + day.getName());
         vo.setDate(java.sql.Date.valueOf(d));
         vo.setColor("commemoration");
+        vo.setStatus("info");
         vo.setRoute("/commemorationDay");
+        vo.setAppRoute("/pages_life/commemorationDay/add?id=" + day.getId());
         return vo;
     }
 
@@ -169,7 +214,8 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
     private List<CalendarEventVo> buildMenstruationEvents(LocalDate start, LocalDate end) {
         PxMenstruationRecord query = new PxMenstruationRecord();
         attachDataScope(query);
-        List<PxMenstruationRecord> list = pxMenstruationRecordMapper.selectPxMenstruationRecordList(query);
+        // 月度列表 SQL 要求传入基准月份；聚合日历需要先取权限范围内记录，再按 start/end 精确过滤。
+        List<PxMenstruationRecord> list = pxMenstruationRecordMapper.getPxMenstruationRecordList(query);
         List<CalendarEventVo> events = new ArrayList<>();
         for (PxMenstruationRecord r : list) {
             if (r.getDate() == null) continue;
@@ -181,7 +227,9 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             vo.setTitle("💗 经期记录");
             vo.setDate(java.sql.Date.valueOf(d));
             vo.setColor("menstruation");
+            vo.setStatus("info");
             vo.setRoute("/mytool/menstruationAssistant");
+            vo.setAppRoute("/pages_life/menstruationAssistant/index");
             events.add(vo);
         }
         return events;
@@ -214,10 +262,129 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             vo.setTitle("💰 大额支出 ¥" + r.getMoney());
             vo.setDate(java.sql.Date.valueOf(d));
             vo.setColor("bookkeeping");
+            vo.setStatus("completed");
             vo.setRoute("/mytool/bookkeeping/record");
+            vo.setAppRoute("/pages_life/bookkeeping/record/index");
             events.add(vo);
         }
         return events;
+    }
+
+    private List<CalendarEventVo> buildSubscriptionEvents(LocalDate start, LocalDate end) {
+        PxSubscription query = new PxSubscription();
+        query.setEnabled(true);
+        attachDataScope(query);
+        List<CalendarEventVo> events = new ArrayList<>();
+        for (PxSubscription subscription : pxSubscriptionMapper.selectPxSubscriptionList(query)) {
+            if (subscription.getNextPaymentDate() == null) continue;
+            LocalDate date = subscription.getNextPaymentDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (date.isBefore(start) || date.isAfter(end)) continue;
+            CalendarEventVo vo = new CalendarEventVo();
+            vo.setSourceType("subscription");
+            vo.setSourceId(subscription.getId());
+            vo.setTitle("💳 " + subscription.getName() + " ¥" + subscription.getAmount());
+            vo.setDate(java.sql.Date.valueOf(date));
+            vo.setColor("subscription");
+            vo.setStatus("pending");
+            vo.setRoute("/mytool/subscription");
+            vo.setAppRoute("/pages_life/subscription/index?highlight=" + subscription.getId());
+            events.add(vo);
+        }
+        return events;
+    }
+
+    private List<CalendarEventVo> buildMealPlanEvents(LocalDate start, LocalDate end) {
+        PxMealPlan query = new PxMealPlan();
+        attachDataScope(query);
+        List<CalendarEventVo> events = new ArrayList<>();
+        for (PxMealPlan plan : pxMealPlanMapper.selectPxMealPlanList(query)) {
+            if (plan.getPlanDate() == null) continue;
+            LocalDate date = plan.getPlanDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (date.isBefore(start) || date.isAfter(end)) continue;
+            CalendarEventVo vo = new CalendarEventVo();
+            vo.setSourceType("meal_plan");
+            vo.setSourceId(plan.getId());
+            vo.setTitle("🍽️ " + plan.getTitle());
+            vo.setDate(java.sql.Date.valueOf(date));
+            vo.setColor("meal_plan");
+            vo.setStatus("pending");
+            vo.setRoute("/mytool/mealPlan");
+            vo.setAppRoute("/pages_life/mealPlan/index");
+            events.add(vo);
+        }
+        return events;
+    }
+
+    private List<CalendarEventVo> buildShoppingPlanEvents(LocalDate start, LocalDate end) {
+        PxShoppingList query = new PxShoppingList();
+        attachDataScope(query);
+        List<CalendarEventVo> events = new ArrayList<>();
+        for (PxShoppingList list : pxShoppingListMapper.selectPxShoppingListList(query)) {
+            if (list.getPlannedDate() == null) continue;
+            LocalDate date = list.getPlannedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (date.isBefore(start) || date.isAfter(end)) continue;
+            CalendarEventVo vo = new CalendarEventVo();
+            vo.setSourceType("shopping_plan");
+            vo.setSourceId(list.getId());
+            vo.setTitle("🛒 " + list.getName());
+            vo.setDate(java.sql.Date.valueOf(date));
+            vo.setColor("shopping_plan");
+            vo.setStatus("pending");
+            vo.setRoute("/mytool/shoppingList");
+            vo.setAppRoute("/pages_life/shoppingList/detail?id=" + list.getId()
+                    + "&name=" + java.net.URLEncoder.encode(list.getName(), java.nio.charset.StandardCharsets.UTF_8));
+            events.add(vo);
+        }
+        return events;
+    }
+
+    private List<CalendarEventVo> buildReadingGoalEvents(String userId, LocalDate start, LocalDate end) {
+        PxBook query = new PxBook();
+        query.setCreateBy(userId);
+        query.setStatus("reading");
+        List<CalendarEventVo> events = new ArrayList<>();
+        for (PxBook book : pxBookMapper.selectBookList(query)) {
+            if (book.getTargetFinishDate() == null) continue;
+            LocalDate date = book.getTargetFinishDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (date.isBefore(start) || date.isAfter(end)) continue;
+            CalendarEventVo vo = new CalendarEventVo();
+            vo.setSourceType("reading_goal");
+            vo.setSourceId(book.getId());
+            vo.setTitle("📚 读完《" + truncate(book.getTitle(), 16) + "》");
+            vo.setDate(java.sql.Date.valueOf(date));
+            vo.setColor("reading_goal");
+            vo.setStatus("pending");
+            vo.setRoute("/myBook");
+            vo.setAppRoute("/pages_life/book/detail?id=" + book.getId());
+            events.add(vo);
+        }
+        return events;
+    }
+
+    private List<CalendarEventVo> buildLifeReportEvents(String userId, LocalDate start, LocalDate end) {
+        List<CalendarEventVo> events = new ArrayList<>();
+        for (PxLifeReportHistory report : pxLifeReportHistoryMapper.selectRecent(userId, 100)) {
+            if (report.getCreateTime() == null) continue;
+            LocalDate date = report.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (date.isBefore(start) || date.isAfter(end)) continue;
+            CalendarEventVo vo = new CalendarEventVo();
+            vo.setSourceType("life_report");
+            vo.setSourceId(report.getId());
+            vo.setTitle("✨ " + reportTypeLabel(report.getReportType()) + "生活报告");
+            vo.setDate(java.sql.Date.valueOf(date));
+            vo.setColor("life_report");
+            vo.setStatus("completed");
+            vo.setRoute("/mytool/lifeReport");
+            vo.setAppRoute("/pages_life/report/index?historyId=" + report.getId());
+            events.add(vo);
+        }
+        return events;
+    }
+
+    private String reportTypeLabel(String type) {
+        if ("expense".equals(type)) return "消费";
+        if ("mood".equals(type)) return "情绪";
+        return "综合";
     }
 
     /**
@@ -294,6 +461,10 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             log.error("查询下一纪念日失败", e);
             result.put("nextCommemoration", null);
         }
+
+        List<CalendarEventVo> todayEvents = getMonthEvents(userId, today.format(DF), today.format(DF));
+        result.put("todayEvents", todayEvents);
+        result.put("todayEventCount", todayEvents.size());
 
         return result;
     }

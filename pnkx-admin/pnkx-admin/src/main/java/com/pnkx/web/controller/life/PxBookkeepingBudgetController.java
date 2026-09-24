@@ -48,7 +48,8 @@ public class PxBookkeepingBudgetController extends BaseController {
     @Log(title = "记账预算", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult save(@RequestBody PxBookkeepingBudget budget) {
-        return toAjax(budgetService.saveBudget(budget));
+        int rows = budgetService.saveBudget(budget);
+        return rows > 0 ? AjaxResult.success(budget.getId()) : AjaxResult.error();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author PHY
@@ -88,6 +90,7 @@ public class PxRecipeServiceImpl implements IPxRecipeService {
      */
     @Override
     public int updatePxRecipe(PxRecipe pxRecipe) {
+        requireOwner(pxRecipeMapper.selectPxRecipeById(pxRecipe.getId()));
         pxRecipe.setUpdateTime(DateUtils.getNowDate());
         int rows = pxRecipeMapper.updatePxRecipe(pxRecipe);
         if (pxRecipe.getIngredients() != null) {
@@ -108,6 +111,7 @@ public class PxRecipeServiceImpl implements IPxRecipeService {
      */
     @Override
     public int deletePxRecipeByIds(Long[] ids) {
+        for (Long id : ids) requireOwner(pxRecipeMapper.selectPxRecipeById(id));
         return pxRecipeMapper.deletePxRecipeByIds(ids);
     }
 
@@ -119,7 +123,14 @@ public class PxRecipeServiceImpl implements IPxRecipeService {
      */
     @Override
     public int deletePxRecipeById(Long id) {
+        requireOwner(pxRecipeMapper.selectPxRecipeById(id));
         return pxRecipeMapper.deletePxRecipeById(id);
+    }
+
+    private void requireOwner(PxRecipe entity) {
+        if (entity == null || !Objects.equals(SecurityUtils.getUserId(), entity.getCreateBy())) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
     }
 
     /**

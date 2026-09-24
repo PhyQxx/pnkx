@@ -5,7 +5,11 @@ import com.pnkx.common.utils.DateUtils;
 import com.pnkx.domain.po.PxCommemorationDay;
 import com.pnkx.mapper.PxCommemorationDayMapper;
 import com.pnkx.service.IPxCommemorationDayService;
+import com.pnkx.service.IPxLifeReminderService;
+import com.pnkx.common.utils.SecurityUtils;
 import org.springframework.stereotype.Service;
+import com.pnkx.framework.web.service.DataPermissionService;
+import com.pnkx.common.exception.ServiceException;
 
 import jakarta.annotation.Resource;
 import java.util.List;
@@ -20,6 +24,9 @@ import java.util.List;
 public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService {
     @Resource
     private PxCommemorationDayMapper pxCommemorationDayMapper;
+    @Resource
+    private IPxLifeReminderService lifeReminderService;
+    @Resource private DataPermissionService dataPermissionService;
 
     /**
      * 查询纪念日
@@ -39,7 +46,7 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      * @return 纪念日
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(module = "commemoration")
     public List<PxCommemorationDay> selectPxCommemorationDayList(PxCommemorationDay pxCommemorationDay) {
         return pxCommemorationDayMapper.selectPxCommemorationDayList(pxCommemorationDay);
     }
@@ -53,6 +60,7 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int insertPxCommemorationDay(PxCommemorationDay pxCommemorationDay) {
+        if (pxCommemorationDay.getCreateBy() == null) pxCommemorationDay.setCreateBy(SecurityUtils.getUserId());
         pxCommemorationDay.setCreateTime(DateUtils.getNowDate());
         return pxCommemorationDayMapper.insertPxCommemorationDay(pxCommemorationDay);
     }
@@ -65,6 +73,7 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int updatePxCommemorationDay(PxCommemorationDay pxCommemorationDay) {
+        requireSharedWrite(pxCommemorationDayMapper.selectPxCommemorationDayById(pxCommemorationDay.getId()));
         pxCommemorationDay.setUpdateTime(DateUtils.getNowDate());
         return pxCommemorationDayMapper.updatePxCommemorationDay(pxCommemorationDay);
     }
@@ -77,7 +86,10 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int deletePxCommemorationDayByIds(Long[] ids) {
-        return pxCommemorationDayMapper.deletePxCommemorationDayByIds(ids);
+        for (Long id : ids) requireSharedWrite(pxCommemorationDayMapper.selectPxCommemorationDayById(id));
+        int rows = pxCommemorationDayMapper.deletePxCommemorationDayByIds(ids);
+        for (Long id : ids) lifeReminderService.unbindReminder("commemoration", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     /**
@@ -88,7 +100,10 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int deletePxCommemorationDayById(Long id) {
-        return pxCommemorationDayMapper.deletePxCommemorationDayById(id);
+        requireSharedWrite(pxCommemorationDayMapper.selectPxCommemorationDayById(id));
+        int rows = pxCommemorationDayMapper.deletePxCommemorationDayById(id);
+        lifeReminderService.unbindReminder("commemoration", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     /**
@@ -96,9 +111,14 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      * @param pxCommemorationDay
      * @return
      */
-    @DataScopeSelf
+    @DataScopeSelf(module = "commemoration")
     @Override
     public List<PxCommemorationDay> getCommemorationDayList(PxCommemorationDay pxCommemorationDay) {
         return pxCommemorationDayMapper.getCommemorationDayList(pxCommemorationDay);
+    }
+
+    private void requireSharedWrite(PxCommemorationDay day) {
+        if (day == null || !dataPermissionService.canWrite(day.getCreateBy(), "commemoration"))
+            throw new ServiceException("记录不存在或无权操作");
     }
 }

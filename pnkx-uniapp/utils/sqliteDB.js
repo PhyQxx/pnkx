@@ -17,7 +17,7 @@
 
 const DB_NAME = '_pnkx_offline'
 const DB_PATH = '_doc/pnkx_offline.db'
-const DB_VERSION = 13 // 数据库版本号，结构变更时递增
+const DB_VERSION = 16 // 数据库版本号，结构变更时递增
 
 let dbOpened = false
 let openPromise = null  // 缓存 open promise，防止竞态重复打开
@@ -47,6 +47,15 @@ const TABLE_COLUMNS = {
   px_bookkeeping_account: ['id', 'version', 'account_type', 'account_icon', 'account_name', 'balance', 'inflow', 'flow_out', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', 'client_uuid', '_sync_status', '_server_id', '_updated_at'],
   // 笔记文件夹 — Mapper: name, parent_id, password, `order`, del_flag, version, note_count
   px_note_folder: ['id', 'name', 'parent_id', 'password', 'order', 'del_flag', 'version', 'note_count', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', 'client_uuid', '_sync_status', '_server_id', '_updated_at'],
+  px_shopping_list: ['id', 'name', 'icon', 'order_num', 'planned_date', 'version', 'client_uuid', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_shopping_item: ['id', 'list_id', 'name', 'quantity', 'classification_id', 'checked', 'added_from_meal', 'sort_order', 'version', 'client_uuid', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_recipe: ['id', 'title', 'url', 'notes', 'servings', 'version', 'client_uuid', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_meal_plan: ['id', 'plan_date', 'meal_type', 'recipe_id', 'title', 'notes', 'sort_order', 'version', 'client_uuid', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_subscription: ['id', 'name', 'amount', 'cycle', 'cycle_interval', 'next_payment_date', 'account_id', 'classification_id', 'payment_method', 'logo', 'reminder_lead_days', 'enabled', 'version', 'client_uuid', 'del_flag', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_menstruation_record: ['id', 'user_id', 'date', 'type', 'mood', 'make_love', 'temperature', 'weight', 'state', 'version', 'items', 'results', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_bookkeeping_budget: ['id', 'version', 'month', 'type_id', 'amount', 'type_name', 'used', 'remaining', 'percent', 'exceeded', 'del_flag', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_bookkeeping_recurring: ['id', 'version', 'name', 'frequency', 'day_number', 'type_difference', 'type', 'account', 'other_account', 'money', 'next_run_date', 'enabled', 'last_run_date', 'type_name', 'account_name', 'del_flag', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_book: ['id', 'title', 'author', 'description', 'status', 'target_finish_date', 'del_flag', 'chapter_count', 'first_chapter_id', 'last_read_chapter_id', 'last_read_chapter_name', 'last_read_time', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
   // 菜单（只读缓存）
   px_menu: ['id', 'menu_id', 'menu_name', 'parent_id', 'parent_name', 'path', 'icon', 'is_app', 'app_path', '_sync_status'],
   _sync_queue: ['id', 'table_name', 'method', 'url', 'payload', 'status', 'retry_count', 'created_at', 'error_msg'],
@@ -63,6 +72,7 @@ const CAMEL_TO_SNAKE = {
   updateBy: 'update_by',
   updateTime: 'update_time',
   orderNum: 'order_num',
+  plannedDate: 'planned_date',
   clientUuid: 'client_uuid',
   delFlag: 'del_flag',
   // 笔记
@@ -97,6 +107,32 @@ const CAMEL_TO_SNAKE = {
   // 笔记文件夹
   parentId: 'parent_id',
   noteCount: 'note_count',
+  listId: 'list_id',
+  classificationId: 'classification_id',
+  addedFromMeal: 'added_from_meal',
+  sortOrder: 'sort_order',
+  planDate: 'plan_date',
+  mealType: 'meal_type',
+  recipeId: 'recipe_id',
+  cycleInterval: 'cycle_interval',
+  nextPaymentDate: 'next_payment_date',
+  accountId: 'account_id',
+  paymentMethod: 'payment_method',
+  reminderLeadDays: 'reminder_lead_days',
+  userId: 'user_id',
+  makeLove: 'make_love',
+  typeId: 'type_id',
+  typeName: 'type_name',
+  dayNumber: 'day_number',
+  typeDifference: 'type_difference',
+  nextRunDate: 'next_run_date',
+  lastRunDate: 'last_run_date',
+  lastReadChapterId: 'last_read_chapter_id',
+  lastReadChapterName: 'last_read_chapter_name',
+  lastReadTime: 'last_read_time',
+  targetFinishDate: 'target_finish_date',
+  chapterCount: 'chapter_count',
+  firstChapterId: 'first_chapter_id',
   // 卡券 — 字段名与 JSON key 相同，无需映射
   // 纪念日 — date/repeat 直接就是数据库列名，无需映射
   // 菜单
@@ -223,6 +259,8 @@ const sqliteDB = {
         'px_diary', 'px_todo', 'px_bookkeeping_record',
         'px_note', 'px_note_folder', 'px_commemoration_day', 'px_card', 'px_card_record', 'px_menu',
         'px_bookkeeping_classification', 'px_bookkeeping_account',
+        'px_shopping_list', 'px_shopping_item', 'px_recipe', 'px_meal_plan', 'px_subscription',
+        'px_menstruation_record', 'px_bookkeeping_budget', 'px_bookkeeping_recurring', 'px_book',
         '_sync_cursor', '_db_meta'
       ]
       for (const t of dropTables) {
@@ -467,6 +505,15 @@ const sqliteDB = {
         _server_id INTEGER,
         _updated_at DATETIME
       )`,
+      `CREATE TABLE IF NOT EXISTS px_shopping_list (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, icon TEXT, order_num INTEGER, planned_date TEXT, version TEXT, client_uuid TEXT UNIQUE, del_flag INTEGER DEFAULT 0, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_shopping_item (id INTEGER PRIMARY KEY AUTOINCREMENT, list_id INTEGER, name TEXT, quantity TEXT, classification_id INTEGER, checked INTEGER, added_from_meal INTEGER, sort_order INTEGER, version TEXT, client_uuid TEXT UNIQUE, del_flag INTEGER DEFAULT 0, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_recipe (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, url TEXT, notes TEXT, servings INTEGER, version TEXT, client_uuid TEXT UNIQUE, del_flag INTEGER DEFAULT 0, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_meal_plan (id INTEGER PRIMARY KEY AUTOINCREMENT, plan_date TEXT, meal_type INTEGER, recipe_id INTEGER, title TEXT, notes TEXT, sort_order INTEGER, version TEXT, client_uuid TEXT UNIQUE, del_flag INTEGER DEFAULT 0, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_subscription (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, amount TEXT, cycle TEXT, cycle_interval INTEGER, next_payment_date TEXT, account_id INTEGER, classification_id INTEGER, payment_method TEXT, logo TEXT, reminder_lead_days INTEGER, enabled INTEGER, version TEXT, client_uuid TEXT UNIQUE, del_flag INTEGER DEFAULT 0, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_menstruation_record (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, date TEXT, type TEXT, mood TEXT, make_love INTEGER, temperature REAL, weight REAL, state TEXT, version TEXT, items TEXT, results TEXT, client_uuid TEXT UNIQUE, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_bookkeeping_budget (id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT, month TEXT, type_id INTEGER, amount TEXT, type_name TEXT, used TEXT, remaining TEXT, percent INTEGER, exceeded INTEGER, del_flag INTEGER DEFAULT 0, client_uuid TEXT UNIQUE, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_bookkeeping_recurring (id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT, name TEXT, frequency TEXT, day_number INTEGER, type_difference TEXT, type INTEGER, account INTEGER, other_account INTEGER, money TEXT, next_run_date TEXT, enabled INTEGER, last_run_date TEXT, type_name TEXT, account_name TEXT, del_flag INTEGER DEFAULT 0, client_uuid TEXT UNIQUE, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
+      `CREATE TABLE IF NOT EXISTS px_book (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT, description TEXT, status TEXT, target_finish_date TEXT, del_flag INTEGER DEFAULT 0, chapter_count INTEGER, first_chapter_id INTEGER, last_read_chapter_id INTEGER, last_read_chapter_name TEXT, last_read_time DATETIME, client_uuid TEXT UNIQUE, create_by TEXT, create_time DATETIME, update_by TEXT, update_time DATETIME, remark TEXT, _sync_status INTEGER DEFAULT 0, _server_id INTEGER, _updated_at DATETIME)`,
       `CREATE TABLE IF NOT EXISTS _sync_queue (
         id VARCHAR(36) PRIMARY KEY,
         table_name VARCHAR(50),

@@ -38,7 +38,8 @@ public class PxBookkeepingRecurringController extends BaseController {
     @Log(title = "周期记账", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody PxBookkeepingRecurring recurring) {
-        return toAjax(recurringService.add(recurring));
+        int rows = recurringService.add(recurring);
+        return rows > 0 ? AjaxResult.success(recurring.getId()) : AjaxResult.error();
     }
 
     /**

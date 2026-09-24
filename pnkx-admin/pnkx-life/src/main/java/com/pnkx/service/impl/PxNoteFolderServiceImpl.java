@@ -50,7 +50,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      * @return 笔记文件夹
      */
     @Override
-    @DataScopeSelf(alias = "f")
+    @DataScopeSelf(alias = "f", onlySelf = true)
     public List<PxNoteFolder> selectPxNoteFolderList(PxNoteFolder pxNoteFolder) {
         List<PxNoteFolder> result = new ArrayList<>();
         List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(pxNoteFolder);

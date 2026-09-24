@@ -126,6 +126,7 @@ export default {
       this.isEditMode = false
       uni.setNavigationBarTitle({ title: '写日记' })
       this.initNewDiary()
+      if (options.date) this.diaryForm.date = options.date
     }
   },
   onNavigationBarButtonTap(e) {

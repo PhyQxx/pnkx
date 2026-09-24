@@ -1,6 +1,7 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
@@ -9,6 +10,7 @@ import com.pnkx.domain.po.PxSubscription;
 import com.pnkx.mapper.PxBookkeepingRecordMapper;
 import com.pnkx.mapper.PxSubscriptionMapper;
 import com.pnkx.service.IPxSubscriptionService;
+import com.pnkx.service.IPxLifeReminderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 订阅管理 Service 实现
@@ -37,13 +40,15 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
     private PxSubscriptionMapper pxSubscriptionMapper;
     @Resource
     private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
+    @Resource
+    private IPxLifeReminderService lifeReminderService;
 
     @Override
     public PxSubscription selectPxSubscriptionById(Long id) {
         return pxSubscriptionMapper.selectPxSubscriptionById(id);
     }
 
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     @Override
     public List<PxSubscription> selectPxSubscriptionList(PxSubscription pxSubscription) {
         return pxSubscriptionMapper.selectPxSubscriptionList(pxSubscription);
@@ -67,18 +72,35 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
 
     @Override
     public int updatePxSubscription(PxSubscription pxSubscription) {
+        requireOwner(pxSubscriptionMapper.selectPxSubscriptionById(pxSubscription.getId()));
         pxSubscription.setUpdateTime(DateUtils.getNowDate());
-        return pxSubscriptionMapper.updatePxSubscription(pxSubscription);
+        int rows = pxSubscriptionMapper.updatePxSubscription(pxSubscription);
+        if (Boolean.FALSE.equals(pxSubscription.getEnabled())) {
+            lifeReminderService.unbindReminder("subscription", pxSubscription.getId(), SecurityUtils.getUserId());
+        }
+        return rows;
     }
 
     @Override
     public int deletePxSubscriptionByIds(Long[] ids) {
-        return pxSubscriptionMapper.deletePxSubscriptionByIds(ids);
+        for (Long id : ids) requireOwner(pxSubscriptionMapper.selectPxSubscriptionById(id));
+        int rows = pxSubscriptionMapper.deletePxSubscriptionByIds(ids);
+        for (Long id : ids) lifeReminderService.unbindReminder("subscription", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     @Override
     public int deletePxSubscriptionById(Long id) {
-        return pxSubscriptionMapper.deletePxSubscriptionById(id);
+        requireOwner(pxSubscriptionMapper.selectPxSubscriptionById(id));
+        int rows = pxSubscriptionMapper.deletePxSubscriptionById(id);
+        lifeReminderService.unbindReminder("subscription", id, SecurityUtils.getUserId());
+        return rows;
+    }
+
+    private void requireOwner(PxSubscription entity) {
+        if (entity == null || !Objects.equals(SecurityUtils.getUserId(), entity.getCreateBy())) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
     }
 
     @Override

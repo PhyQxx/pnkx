@@ -46,6 +46,9 @@ public @interface DataScopeSelf {
      */
     boolean onlySelf() default false;
 
+    /** 业务共享域；非空时仅扩展到显式开启该域的家庭/情侣空间成员。 */
+    String module() default "";
+
     /**
      * params 中存放可见 userId 集合的 key。
      */

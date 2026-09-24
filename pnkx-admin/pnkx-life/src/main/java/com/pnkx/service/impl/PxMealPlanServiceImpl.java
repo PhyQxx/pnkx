@@ -1,21 +1,26 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.domain.po.PxMealPlan;
 import com.pnkx.domain.po.PxRecipeIngredient;
 import com.pnkx.domain.po.PxShoppingItem;
+import com.pnkx.domain.po.PxShoppingList;
 import com.pnkx.mapper.PxMealPlanMapper;
 import com.pnkx.mapper.PxRecipeIngredientMapper;
 import com.pnkx.mapper.PxShoppingItemMapper;
+import com.pnkx.mapper.PxShoppingListMapper;
 import com.pnkx.service.IPxMealPlanService;
 import org.springframework.stereotype.Service;
+import com.pnkx.framework.web.service.DataPermissionService;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author PHY
@@ -33,6 +38,9 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
 
     @Resource
     private PxShoppingItemMapper pxShoppingItemMapper;
+    @Resource
+    private PxShoppingListMapper pxShoppingListMapper;
+    @Resource private DataPermissionService dataPermissionService;
 
     /**
      * 查询餐饮计划
@@ -52,7 +60,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      * @return 餐饮计划
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(module = "meal")
     public List<PxMealPlan> selectPxMealPlanList(PxMealPlan pxMealPlan) {
         return pxMealPlanMapper.selectPxMealPlanList(pxMealPlan);
     }
@@ -87,6 +95,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int updatePxMealPlan(PxMealPlan pxMealPlan) {
+        requireOwner(pxMealPlanMapper.selectPxMealPlanById(pxMealPlan.getId()));
         pxMealPlan.setUpdateTime(DateUtils.getNowDate());
         return pxMealPlanMapper.updatePxMealPlan(pxMealPlan);
     }
@@ -99,6 +108,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int deletePxMealPlanByIds(Long[] ids) {
+        for (Long id : ids) requireOwner(pxMealPlanMapper.selectPxMealPlanById(id));
         return pxMealPlanMapper.deletePxMealPlanByIds(ids);
     }
 
@@ -110,7 +120,14 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int deletePxMealPlanById(Long id) {
+        requireOwner(pxMealPlanMapper.selectPxMealPlanById(id));
         return pxMealPlanMapper.deletePxMealPlanById(id);
+    }
+
+    private void requireOwner(PxMealPlan entity) {
+        if (entity == null || !dataPermissionService.canWrite(entity.getCreateBy(), "meal")) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
     }
 
     /**
@@ -135,7 +152,16 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int transferToShopping(Long listId, String startDate, String endDate) {
-        List<PxMealPlan> mealPlans = pxMealPlanMapper.selectByDateRange(startDate, endDate);
+        String userId = SecurityUtils.getUserId();
+        PxShoppingList target = pxShoppingListMapper.selectPxShoppingListById(listId);
+        if (target == null || !dataPermissionService.canWrite(target.getCreateBy(), "shopping")) {
+            throw new ServiceException("购物清单不存在或无权操作");
+        }
+        List<PxMealPlan> mealPlans = new ArrayList<>();
+        List<Long> visibleUsers = dataPermissionService.getVisibleUserIds("meal");
+        if (visibleUsers == null || visibleUsers.isEmpty()) visibleUsers = List.of(Long.valueOf(userId));
+        for (Long visibleUser : visibleUsers)
+            mealPlans.addAll(pxMealPlanMapper.selectByDateRangeForUser(startDate, endDate, String.valueOf(visibleUser)));
         List<PxShoppingItem> shoppingItems = new ArrayList<>();
         for (PxMealPlan mealPlan : mealPlans) {
             if (mealPlan.getRecipeId() == null) {
@@ -151,6 +177,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
                 shoppingItem.setChecked(false);
                 shoppingItem.setAddedFromMeal(true);
                 shoppingItem.setCreateTime(DateUtils.getNowDate());
+                shoppingItem.setCreateBy(userId);
                 shoppingItems.add(shoppingItem);
             }
         }

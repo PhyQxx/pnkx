@@ -116,6 +116,7 @@
 import { getDiaryAnalysisData } from '@/api/px/life/diaryAnalysis'
 import config from '@/config'
 import { getToken } from '@/utils/auth'
+import { createSseParser } from '@/utils/sseParser'
 
 const baseUrl = config.baseUrl
 
@@ -248,34 +249,21 @@ export default {
     },
     async readStreamResponse({ onChunk, completionPromise }) {
       let fullContent = ''
-      let eventLines = []
-      onChunk((chunk) => {
-          const lines = chunk.split('\n')
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            eventLines.push(line.substring(5))
-          } else if (line === '' && eventLines.length > 0) {
-            const data = eventLines.join('\n')
-            eventLines = []
-            if (data === '[DONE]') continue
-            fullContent += data
-            this.aiResult = this.formatMarkdown(fullContent)
-          }
-        }
+      const parser = createSseParser((data) => {
+        fullContent += data
+        this.aiResult = this.formatMarkdown(fullContent)
       })
+      onChunk((chunk) => parser.push(chunk))
       try { await completionPromise } catch (e) {}
-      if (eventLines.length > 0) {
-        const data = eventLines.join('\n').trim()
-        if (data && data !== '[DONE]') fullContent += data
-      }
+      parser.finish()
       this.aiResult = this.formatMarkdown(fullContent || '') || '<p>AI 暂时无法分析，请稍后再试。</p>'
     },
     formatMarkdown(content) {
       if (!content) return ''
       let html = content
       html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong></strong>')
-        html = html.replace(/\*([^*\n]+?)\*/g, '<em></em>')
+      html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+      html = html.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
       const lines = html.split(/\r?\n/)
       const result = []
       for (const line of lines) {

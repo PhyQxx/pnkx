@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxReminderPreferenceMapper">
+    <resultMap id="PreferenceResult" type="PxReminderPreference">
+        <id property="userId" column="user_id"/>
+        <result property="websocketEnabled" column="websocket_enabled"/>
+        <result property="emailEnabled" column="email_enabled"/>
+        <result property="pushEnabled" column="push_enabled"/>
+        <result property="quietStart" column="quiet_start"/>
+        <result property="quietEnd" column="quiet_end"/>
+    </resultMap>
+    <select id="selectByUserId" resultMap="PreferenceResult">
+        select user_id, websocket_enabled, email_enabled, push_enabled,
+               time_format(quiet_start, '%H:%i') quiet_start,
+               time_format(quiet_end, '%H:%i') quiet_end
+        from px_reminder_preference where user_id = #{userId}
+    </select>
+    <insert id="upsert" parameterType="PxReminderPreference">
+        insert into px_reminder_preference(user_id, websocket_enabled, email_enabled, push_enabled, quiet_start, quiet_end, update_time)
+        values(#{userId}, #{websocketEnabled}, #{emailEnabled}, #{pushEnabled}, #{quietStart}, #{quietEnd}, now())
+        on duplicate key update websocket_enabled = values(websocket_enabled), email_enabled = values(email_enabled),
+            push_enabled = values(push_enabled), quiet_start = values(quiet_start), quiet_end = values(quiet_end), update_time = now()
+    </insert>
+</mapper>

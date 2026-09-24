@@ -5,6 +5,7 @@ import com.pnkx.domain.po.PxBookkeepingRecord;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author PHY
@@ -110,4 +111,8 @@ public interface PxBookkeepingRecordMapper {
      * 增量查询记账记录（离线同步用）
      */
     List<PxBookkeepingRecord> selectIncremental(@Param("createBy") String createBy, @Param("since") String since, @Param("offset") int offset, @Param("limit") int limit);
+
+    Map<String, Object> selectLifeReportCounts(@Param("userId") String userId, @Param("start") String start, @Param("end") String end);
+
+    List<Map<String, Object>> selectLifeReportExpenseGroups(@Param("userId") String userId, @Param("start") String start, @Param("end") String end);
 }

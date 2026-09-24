@@ -13,6 +13,10 @@
         <view v-if="tab.value === 'unread' && unreadCount > 0" class="tabs__badge">{{ unreadCount }}</view>
       </view>
     </view>
+    <view class="preference-entry" @click="openPreference">
+      <text>提醒渠道与免打扰</text>
+      <uni-icons type="right" size="16" color="#94A3B8" />
+    </view>
 
     <!-- Notifications -->
     <view class="list" v-if="filteredList.length > 0">
@@ -34,6 +38,7 @@
               </view>
               <text class="notice__content">{{ item.content }}</text>
               <text class="notice__time">{{ formatTime(item.sendTime) }}</text>
+              <text v-if="item.status === '1'" class="notice__retry" @click.stop="retry(item)">发送失败，点击重试</text>
             </view>
           </view>
         </uni-swipe-action-item>
@@ -57,7 +62,7 @@
 </template>
 
 <script>
-import { getNotifications, getUnreadCount, markRead, deleteNotification } from '@/api/px/life/reminder'
+import { getNotifications, getUnreadCount, markRead, deleteNotification, retryNotification } from '@/api/px/life/reminder'
 
 export default {
   data() {
@@ -89,6 +94,9 @@ export default {
     switchTab(value) {
       this.currentTab = value
     },
+    openPreference() {
+      uni.navigateTo({ url: '/pages_life/reminder/settings' })
+    },
     async loadData() {
       const [listRes, countRes] = await Promise.all([
         getNotifications(),
@@ -118,12 +126,27 @@ export default {
         item.status = '2'
         this.unreadCount = Math.max(0, this.unreadCount - 1)
       }
-      uni.showModal({
-        title: item.title || '通知',
-        content: item.content || '暂无内容',
-        showCancel: false,
-        confirmText: '知道了'
-      })
+      const target = this.noticeTarget(item)
+      if (target) {
+        uni.navigateTo({ url: target })
+        return
+      }
+      uni.showModal({ title: item.title || '通知', content: item.content || '暂无内容', showCancel: false })
+    },
+    async retry(item) {
+      await retryNotification(item.id)
+      item.status = '0'
+      uni.showToast({ title: '已重新发送', icon: 'success' })
+    },
+    noticeTarget(item) {
+      if (!item.sourceId && item.sourceType !== 'menstruation') return ''
+      const routes = {
+        todo: `/pages_life/todo/edit?id=${item.sourceId}`,
+        commemoration: `/pages_life/commemorationDay/add?id=${item.sourceId}`,
+        subscription: `/pages_life/subscription/index?highlight=${item.sourceId}`,
+        menstruation: '/pages_life/menstruationAssistant/index'
+      }
+      return routes[item.sourceType] || ''
     },
     handleSwipe(e, item) {
       // 左滑按钮索引
@@ -169,6 +192,8 @@ export default {
   background: $bg-page;
   padding-bottom: 160rpx;
 }
+
+.preference-entry { display: flex; align-items: center; justify-content: space-between; margin: 20rpx $page-padding 0; padding: 24rpx; border-radius: $radius-lg; background: $bg-card; color: $text-secondary; font-size: $font-caption; box-shadow: $shadow-card; }
 
 /* Tabs */
 .tabs {
@@ -299,10 +324,13 @@ export default {
   }
 
   &__time {
+    display: block;
     font-size: $font-mini;
     color: $text-tertiary;
     margin-top: $spacing-xs;
   }
+
+  &__retry { display: block; margin-top: 8rpx; color: $danger; font-size: $font-caption; }
 }
 
 /* Empty */

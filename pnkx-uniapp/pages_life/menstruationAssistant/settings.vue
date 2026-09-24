@@ -34,6 +34,14 @@
           <text class="setting-card__unit">天</text>
         </view>
       </view>
+
+      <view v-if="lastStart && predictedDate" class="setting-card" @click="$refs.reminderSetting.open()">
+        <view class="setting-card__main">
+          <text class="setting-card__label">下次经期提醒</text>
+          <text class="setting-card__tip">预测日期 {{ predictedDate }}，可设置提前提醒</text>
+        </view>
+        <uni-icons type="right" size="18" color="#8EA0B8" />
+      </view>
     </view>
 
     <view class="info-section">
@@ -62,20 +70,43 @@
     <view class="bottom-bar">
       <button class="save-btn" @click="handleSave">保存设置</button>
     </view>
+    <ReminderSetting
+      v-if="lastStart && predictedDate"
+      ref="reminderSetting"
+      source-type="menstruation"
+      :source-id="lastStart.id"
+      source-name="下次经期"
+      :event-time="predictedDate"
+    />
   </view>
 </template>
 
 <script>
+import { getLastStartDate } from '@/api/px/life/menstruationRecord'
+import ReminderSetting from '@/components/ReminderSetting/index.vue'
+
 export default {
   name: 'MenstruationAssistantSettings',
+  components: { ReminderSetting },
   data() {
     return {
       cycle: 28,
-      duration: 5
+      duration: 5,
+      lastStart: null
+    }
+  },
+  computed: {
+    predictedDate() {
+      if (!this.lastStart || !this.lastStart.date) return ''
+      const date = new Date(String(this.lastStart.date).replace(/-/g, '/'))
+      date.setDate(date.getDate() + Number(this.cycle || 28))
+      const pad = value => String(value).padStart(2, '0')
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
     }
   },
   onLoad() {
     this.loadSettings()
+    this.loadLastStart()
   },
   methods: {
     loadSettings() {
@@ -83,6 +114,15 @@ export default {
       const duration = uni.getStorageSync('menstruation_duration')
       if (cycle) this.cycle = parseInt(cycle)
       if (duration) this.duration = parseInt(duration)
+    },
+
+    async loadLastStart() {
+      try {
+        const response = await getLastStartDate()
+        this.lastStart = response.data || null
+      } catch (error) {
+        console.error('加载最近经期记录失败', error)
+      }
     },
 
     handleSave() {

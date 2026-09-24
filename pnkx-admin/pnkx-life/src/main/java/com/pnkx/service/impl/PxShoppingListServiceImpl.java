@@ -1,6 +1,7 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
@@ -9,9 +10,11 @@ import com.pnkx.mapper.PxShoppingItemMapper;
 import com.pnkx.mapper.PxShoppingListMapper;
 import com.pnkx.service.IPxShoppingListService;
 import org.springframework.stereotype.Service;
+import com.pnkx.framework.web.service.DataPermissionService;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author PHY
@@ -26,6 +29,7 @@ public class PxShoppingListServiceImpl implements IPxShoppingListService {
 
     @Resource
     private PxShoppingItemMapper pxShoppingItemMapper;
+    @Resource private DataPermissionService dataPermissionService;
 
     /**
      * 查询购物清单
@@ -45,7 +49,7 @@ public class PxShoppingListServiceImpl implements IPxShoppingListService {
      * @return 购物清单
      */
     @Override
-    @DataScopeSelf
+    @DataScopeSelf(module = "shopping")
     public List<PxShoppingList> selectPxShoppingListList(PxShoppingList pxShoppingList) {
         return pxShoppingListMapper.selectPxShoppingListList(pxShoppingList);
     }
@@ -80,6 +84,7 @@ public class PxShoppingListServiceImpl implements IPxShoppingListService {
      */
     @Override
     public int updatePxShoppingList(PxShoppingList pxShoppingList) {
+        requireOwner(pxShoppingListMapper.selectPxShoppingListById(pxShoppingList.getId()));
         pxShoppingList.setUpdateTime(DateUtils.getNowDate());
         return pxShoppingListMapper.updatePxShoppingList(pxShoppingList);
     }
@@ -92,6 +97,7 @@ public class PxShoppingListServiceImpl implements IPxShoppingListService {
      */
     @Override
     public int deletePxShoppingListByIds(Long[] ids) {
+        for (Long id : ids) requireOwner(pxShoppingListMapper.selectPxShoppingListById(id));
         for (Long id : ids) {
             pxShoppingItemMapper.deleteByListId(id);
         }
@@ -106,7 +112,14 @@ public class PxShoppingListServiceImpl implements IPxShoppingListService {
      */
     @Override
     public int deletePxShoppingListById(Long id) {
+        requireOwner(pxShoppingListMapper.selectPxShoppingListById(id));
         pxShoppingItemMapper.deleteByListId(id);
         return pxShoppingListMapper.deletePxShoppingListById(id);
+    }
+
+    private void requireOwner(PxShoppingList entity) {
+        if (entity == null || !dataPermissionService.canWrite(entity.getCreateBy(), "shopping")) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
     }
 }

@@ -102,6 +102,18 @@
           }
         },
         {
+          "path": "mine/setting/sync",
+          "style": {
+            "navigationBarTitleText": "离线同步"
+          }
+        },
+        {
+          "path": "mine/setting/family",
+          "style": {
+            "navigationBarTitleText": "家庭与情侣空间"
+          }
+        },
+        {
           "path": "mine/help/index",
           "style": {
             "navigationBarTitleText": "常见问题"
@@ -142,6 +154,12 @@
           "style": {
             "navigationBarTitleText": "我的书城",
             "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "reminder/settings",
+          "style": {
+            "navigationBarTitleText": "提醒偏好"
           }
         },
         {
@@ -191,6 +209,12 @@
           }
         },
         {
+          "path": "search/index",
+          "style": {
+            "navigationBarTitleText": "全局搜索"
+          }
+        },
+        {
           "path": "bookkeeping/account/index",
           "style": {
             "navigationBarTitleText": "账户管理"
@@ -229,6 +253,18 @@
           "path": "bookkeeping/statistics/index",
           "style": {
             "navigationBarTitleText": "账目统计"
+          }
+        },
+        {
+          "path": "bookkeeping/budget/index",
+          "style": {
+            "navigationBarTitleText": "预算管理"
+          }
+        },
+        {
+          "path": "bookkeeping/recurring/index",
+          "style": {
+            "navigationBarTitleText": "周期记账"
           }
         },
         {
@@ -504,6 +540,12 @@
           "path": "subscription/index",
           "style": {
             "navigationBarTitleText": "订阅管理"
+          }
+        },
+        {
+          "path": "automation/index",
+          "style": {
+            "navigationBarTitleText": "生活自动化"
           }
         }
       ]

@@ -5,6 +5,7 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.domain.BaseEntity;
 import com.pnkx.common.enums.BusinessType;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.domain.po.*;
 import com.pnkx.service.*;
@@ -26,6 +27,20 @@ public class PxOfflineController extends BaseController {
 
     @Resource
     private IPxOfflineSyncService offlineSyncService;
+    @Resource
+    private com.pnkx.mapper.PxExtendedOfflineMapper extendedOfflineMapper;
+
+    private static final Map<String, String> EXTENDED_SYNC_TABLES = Map.ofEntries(
+            Map.entry("shoppingList", "px_shopping_list"),
+            Map.entry("shoppingItem", "px_shopping_item"),
+            Map.entry("recipe", "px_recipe"),
+            Map.entry("mealPlan", "px_meal_plan"),
+            Map.entry("subscription", "px_subscription"),
+            Map.entry("menstruation", "px_menstruation_record"),
+            Map.entry("budget", "px_bookkeeping_budget"),
+            Map.entry("recurring", "px_bookkeeping_recurring"),
+            Map.entry("book", "px_book")
+    );
 
     @Resource
     private IPxDiaryService diaryService;
@@ -140,50 +155,78 @@ public class PxOfflineController extends BaseController {
             result.put("status", "success");
 
         } else if ("PUT".equalsIgnoreCase(method)) {
-            // PUT 操作：直接走现有更新逻辑
+            // PUT 操作：先校验记录归属，再映射完整业务字段。
             switch (tableName) {
                 case "px_diary":
                     PxDiary diary = new PxDiary();
                     if (payload.get("id") != null) diary.setId(toLong(payload.get("id")));
+                    requireOwner(diaryService.selectPxDiaryById(diary.getId()));
                     diary.setTitle((String) payload.get("title"));
                     diary.setMood((String) payload.get("mood"));
                     diary.setWeather((String) payload.get("weather"));
                     diary.setContent((String) payload.get("content"));
                     diary.setRichText((String) payload.get("richText"));
+                    if (payload.get("date") != null) diary.setDate(com.pnkx.common.utils.DateUtils.parseDate(payload.get("date")));
+                    diary.setRemark((String) payload.get("remark"));
+                    diary.setUpdateBy(SecurityUtils.getUserId());
                     diaryService.updatePxDiary(diary);
                     break;
                 case "px_todo":
                     PxToDo todo = new PxToDo();
                     if (payload.get("id") != null) todo.setId(toLong(payload.get("id")));
+                    requireOwner(toDoService.selectPxToDoById(todo.getId()));
                     todo.setContent((String) payload.get("content"));
                     todo.setPerformer((String) payload.get("performer"));
                     if (payload.get("status") != null) todo.setStatus(Boolean.parseBoolean(payload.get("status").toString()));
                     todo.setLabel((String) payload.get("label"));
+                    todo.setPlanStartTime((String) payload.get("planStartTime"));
+                    todo.setPlanEndTime((String) payload.get("planEndTime"));
+                    todo.setFinishBy((String) payload.get("finishBy"));
+                    todo.setFinishTime((String) payload.get("finishTime"));
+                    todo.setRemark((String) payload.get("remark"));
+                    todo.setUpdateBy(SecurityUtils.getUserId());
                     toDoService.updatePxToDo(todo);
                     break;
                 case "px_bookkeeping_record":
                     PxBookkeepingRecord record = new PxBookkeepingRecord();
                     if (payload.get("id") != null) record.setId(toLong(payload.get("id")));
+                    requireOwner(bookkeepingRecordService.selectPxBookkeepingRecordById(record.getId()));
                     if (payload.get("account") != null) record.setAccount(toLong(payload.get("account")));
+                    if (payload.get("otherAccount") != null) record.setOtherAccount(toLong(payload.get("otherAccount")));
                     if (payload.get("type") != null) record.setType(toLong(payload.get("type")));
                     record.setMoney((String) payload.get("money"));
+                    record.setImages((String) payload.get("images"));
+                    if (payload.get("payTime") != null) record.setPayTime(com.pnkx.common.utils.DateUtils.parseDate(payload.get("payTime")));
+                    if (payload.get("commemorationDayId") != null) record.setCommemorationDayId(toLong(payload.get("commemorationDayId")));
+                    record.setRemark((String) payload.get("remark"));
+                    record.setUpdateBy(SecurityUtils.getUserId());
                     bookkeepingRecordService.updatePxBookkeepingRecord(record);
                     break;
                 case "px_note":
                     PxNote note = new PxNote();
                     if (payload.get("id") != null) note.setId(toLong(payload.get("id")));
+                    requireOwner(noteService.selectPxNoteById(note.getId()));
                     note.setTitle((String) payload.get("title"));
                     note.setContent((String) payload.get("content"));
                     note.setRichText((String) payload.get("richText"));
                     if (payload.get("folder") != null) note.setFolder(toLong(payload.get("folder")));
+                    if (payload.get("order") != null) note.setOrder(Integer.parseInt(payload.get("order").toString()));
+                    note.setRemark((String) payload.get("remark"));
+                    note.setUpdateBy(SecurityUtils.getUserId());
                     noteService.updatePxNote(note);
                     break;
                 case "px_commemoration_day":
                     PxCommemorationDay day = new PxCommemorationDay();
                     if (payload.get("id") != null) day.setId(toLong(payload.get("id")));
+                    requireOwner(commemorationDayService.selectPxCommemorationDayById(day.getId()));
                     day.setName((String) payload.get("name"));
                     day.setIcon((String) payload.get("icon"));
-                    if (payload.get("isRepeat") != null) day.setRepeat(Boolean.parseBoolean(payload.get("isRepeat").toString()));
+                    if (payload.get("date") != null) day.setDate(com.pnkx.common.utils.DateUtils.parseDate(payload.get("date")));
+                    Object repeat = payload.containsKey("repeat") ? payload.get("repeat") : payload.get("isRepeat");
+                    if (repeat != null) day.setRepeat(Boolean.parseBoolean(repeat.toString()));
+                    if (payload.get("orderNum") != null) day.setOrderNum(toLong(payload.get("orderNum")));
+                    day.setRemark((String) payload.get("remark"));
+                    day.setUpdateBy(SecurityUtils.getUserId());
                     commemorationDayService.updatePxCommemorationDay(day);
                     break;
                 default:
@@ -202,18 +245,23 @@ public class PxOfflineController extends BaseController {
             Long deleteId = toLong(payload.get("id"));
             switch (tableName) {
                 case "px_diary":
+                    requireOwner(diaryService.selectPxDiaryById(deleteId));
                     diaryService.deletePxDiaryById(deleteId);
                     break;
                 case "px_todo":
+                    requireOwner(toDoService.selectPxToDoById(deleteId));
                     toDoService.deletePxToDoById(deleteId);
                     break;
                 case "px_bookkeeping_record":
+                    requireOwner(bookkeepingRecordService.selectPxBookkeepingRecordById(deleteId));
                     bookkeepingRecordService.deletePxBookkeepingRecordById(deleteId);
                     break;
                 case "px_note":
+                    requireOwner(noteService.selectPxNoteById(deleteId));
                     noteService.deletePxNoteById(deleteId);
                     break;
                 case "px_commemoration_day":
+                    requireOwner(commemorationDayService.selectPxCommemorationDayById(deleteId));
                     commemorationDayService.deletePxCommemorationDayById(deleteId);
                     break;
                 case "px_lovers_card":
@@ -304,6 +352,23 @@ public class PxOfflineController extends BaseController {
         return AjaxResult.success(buildSyncResult(items));
     }
 
+    @GetMapping("/sync/extended/{module}")
+    public AjaxResult syncExtended(@PathVariable String module,
+                                   @RequestParam String since,
+                                   @RequestParam(required = false, defaultValue = "0") Integer offset) {
+        String table = EXTENDED_SYNC_TABLES.get(module);
+        if (table == null) throw new ServiceException("不支持的同步模块");
+        List<Map<String, Object>> items = extendedOfflineMapper.selectIncremental(
+                table, SecurityUtils.getUserId(), since, Math.max(offset, 0), 50);
+        Map<String, Object> result = buildSyncResult(items);
+        if (!items.isEmpty()) {
+            Object lastUpdated = items.get(items.size() - 1).get("update_time");
+            if (lastUpdated == null) lastUpdated = items.get(items.size() - 1).get("create_time");
+            if (lastUpdated instanceof Date) result.put("nextSince", SYNC_DATE_FMT.format((Date) lastUpdated));
+        }
+        return AjaxResult.success(result);
+    }
+
     // ──────────── 辅助方法 ────────────
 
     private static final SimpleDateFormat SYNC_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -335,5 +400,11 @@ public class PxOfflineController extends BaseController {
     private Long toLong(Object val) {
         if (val instanceof Number) return ((Number) val).longValue();
         return Long.parseLong(val.toString());
+    }
+
+    private void requireOwner(BaseEntity entity) {
+        if (entity == null || !Objects.equals(SecurityUtils.getUserId(), entity.getCreateBy())) {
+            throw new ServiceException("无权同步该记录，记录不存在或不属于当前用户");
+        }
     }
 }

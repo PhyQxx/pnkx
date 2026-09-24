@@ -6,6 +6,7 @@
 
     <resultMap type="PxMenstruationRecord" id="PxMenstruationRecordResult">
         <result property="id" column="id"/>
+        <result property="clientUuid" column="client_uuid"/>
         <result property="userId" column="user_id"/>
         <result property="date" column="date"/>
         <result property="type" column="type"/>
@@ -26,7 +27,7 @@
 
     <sql id="selectPxMenstruationRecordVo">
         select id,
-               user_id, `date`, `type`, mood, make_love, state, items, results, temperature, weight, version, create_by, create_time, update_by, update_time, remark
+               user_id, client_uuid, `date`, `type`, mood, make_love, state, items, results, temperature, weight, version, create_by, create_time, update_by, update_time, remark
         from px_menstruation_record
     </sql>
 
@@ -99,6 +100,12 @@
         where id = #{id}
     </select>
 
+    <select id="selectByClientUuid" resultMap="PxMenstruationRecordResult">
+        <include refid="selectPxMenstruationRecordVo"/>
+        where client_uuid = #{clientUuid}
+        limit 1
+    </select>
+
     <!--APP首页获取姨妈提醒列表-->
     <select id="selectMenstruationRecordList"
             resultType="com.pnkx.domain.po.PxMenstruationRecord">
@@ -141,6 +148,7 @@
         insert into px_menstruation_record
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
+            <if test="clientUuid != null">client_uuid,</if>
             <if test="date != null">`date`,</if>
             <if test="type != null">`type`,</if>
             <if test="mood != null">mood,</if>
@@ -159,6 +167,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
+            <if test="clientUuid != null">#{clientUuid},</if>
             <if test="date != null">#{date},</if>
             <if test="type != null">#{type},</if>
             <if test="mood != null">#{mood},</if>

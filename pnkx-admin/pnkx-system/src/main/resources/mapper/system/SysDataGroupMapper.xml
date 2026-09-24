@@ -8,6 +8,10 @@
         <result property="id" column="id"/>
         <result property="groupName" column="group_name"/>
         <result property="groupCode" column="group_code"/>
+        <result property="spaceType" column="space_type"/>
+        <result property="ownerUserId" column="owner_user_id"/>
+        <result property="visibilityJson" column="visibility_json"/>
+        <result property="ownershipPolicy" column="ownership_policy"/>
         <result property="status" column="status"/>
         <result property="remark" column="remark"/>
         <result property="createBy" column="create_by"/>
@@ -17,7 +21,8 @@
     </resultMap>
 
     <sql id="selectDataGroupVo">
-        select id, group_name, group_code, status, remark, create_by, create_time, update_by, update_time
+        select id, group_name, group_code, space_type, owner_user_id, visibility_json, ownership_policy,
+               status, remark, create_by, create_time, update_by, update_time
         from px_data_group
     </sql>
 
@@ -34,6 +39,9 @@
             <if test="status != null and status != ''">
                 and status = #{status}
             </if>
+            <if test="params != null and params.currentUserId != null">
+                and id in (select group_id from px_data_group_member where user_id = #{params.currentUserId} and status = 'active')
+            </if>
         </where>
         order by create_time desc
     </select>
@@ -49,6 +57,10 @@
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="groupName != null">group_name,</if>
             <if test="groupCode != null">group_code,</if>
+            <if test="spaceType != null">space_type,</if>
+            <if test="ownerUserId != null">owner_user_id,</if>
+            <if test="visibilityJson != null">visibility_json,</if>
+            <if test="ownershipPolicy != null">ownership_policy,</if>
             <if test="status != null">status,</if>
             <if test="remark != null">remark,</if>
             <if test="createBy != null">create_by,</if>
@@ -59,6 +71,10 @@
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="groupName != null">#{groupName},</if>
             <if test="groupCode != null">#{groupCode},</if>
+            <if test="spaceType != null">#{spaceType},</if>
+            <if test="ownerUserId != null">#{ownerUserId},</if>
+            <if test="visibilityJson != null">#{visibilityJson},</if>
+            <if test="ownershipPolicy != null">#{ownershipPolicy},</if>
             <if test="status != null">#{status},</if>
             <if test="remark != null">#{remark},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -73,6 +89,10 @@
         <trim prefix="SET" suffixOverrides=",">
             <if test="groupName != null">group_name = #{groupName},</if>
             <if test="groupCode != null">group_code = #{groupCode},</if>
+            <if test="spaceType != null">space_type = #{spaceType},</if>
+            <if test="ownerUserId != null">owner_user_id = #{ownerUserId},</if>
+            <if test="visibilityJson != null">visibility_json = #{visibilityJson},</if>
+            <if test="ownershipPolicy != null">ownership_policy = #{ownershipPolicy},</if>
             <if test="status != null">status = #{status},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
@@ -91,14 +111,14 @@
     <select id="selectMemberUserIds" parameterType="Long" resultType="Long">
         select user_id
         from px_data_group_member
-        where group_id = #{groupId}
+        where group_id = #{groupId} and status = 'active'
     </select>
 
     <!-- 批量新增群组成员 -->
     <insert id="batchInsertMember" parameterType="java.util.List">
-        insert into px_data_group_member(group_id, user_id, create_time) values
+        insert into px_data_group_member(group_id, user_id, role, status, create_time) values
         <foreach collection="list" item="item" separator=",">
-            (#{item.groupId}, #{item.userId}, #{item.createTime})
+            (#{item.groupId}, #{item.userId}, #{item.role}, #{item.status}, #{item.createTime})
         </foreach>
     </insert>
 
@@ -116,8 +136,71 @@
     <select id="selectVisibleUserIds" parameterType="Long" resultType="Long">
         select distinct user_id
         from px_data_group_member
-        where group_id in (select group_id from px_data_group_member where user_id = #{userId})
+        where status = 'active' and group_id in (
+            select m.group_id from px_data_group_member m join px_data_group g on g.id = m.group_id
+            where m.user_id = #{userId} and m.status = 'active' and g.status = '0'
+        )
         union select #{userId}
+    </select>
+
+    <select id="selectVisibleUserIdsByModule" resultType="Long">
+        select distinct member.user_id
+        from px_data_group_member member
+        join px_data_group g on g.id = member.group_id
+        where member.status = 'active' and g.status = '0'
+          and member.group_id in (
+            select mine.group_id from px_data_group_member mine
+            where mine.user_id = #{userId} and mine.status = 'active'
+          )
+          and (#{module} = '' or JSON_CONTAINS(COALESCE(g.visibility_json, JSON_ARRAY()), JSON_QUOTE(#{module})))
+        union select #{userId}
+    </select>
+
+    <resultMap type="com.pnkx.system.domain.SysDataGroupMember" id="DataGroupMemberResult">
+        <result property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="leftTime" column="left_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectMembers" parameterType="Long" resultMap="DataGroupMemberResult">
+        select id, group_id, user_id, role, status, left_time, create_time
+        from px_data_group_member where group_id = #{groupId} order by status, role, create_time
+    </select>
+
+    <update id="leaveMember">
+        update px_data_group_member set status = 'left', left_time = now()
+        where group_id = #{groupId} and user_id = #{userId} and status = 'active' and role != 'owner'
+    </update>
+
+    <update id="updateOwner">
+        update px_data_group
+        set owner_user_id = #{ownerUserId}, update_by = #{updateBy}, update_time = now()
+        where id = #{groupId}
+    </update>
+
+    <update id="updateMemberRole">
+        update px_data_group_member set role = #{role}
+        where group_id = #{groupId} and user_id = #{userId} and status = 'active'
+    </update>
+
+    <insert id="insertMemberAudit">
+        insert into px_space_member_audit(group_id, user_id, action, operator_id, ownership_policy, detail_json, create_time)
+        values(#{groupId}, #{userId}, #{action}, #{operatorId}, #{ownershipPolicy}, #{detailJson}, now())
+    </insert>
+
+    <select id="countSharedMembership" resultType="int">
+        select count(distinct g.id)
+        from px_data_group g
+        join px_data_group_member requester on requester.group_id = g.id
+        join px_data_group_member owner_member on owner_member.group_id = g.id
+        where g.status = '0'
+          and requester.user_id = #{userId} and requester.status = 'active'
+          and owner_member.user_id = #{ownerId} and owner_member.status = 'active'
+          and JSON_CONTAINS(COALESCE(g.visibility_json, JSON_ARRAY()), JSON_QUOTE(#{module}))
     </select>
 
 </mapper>

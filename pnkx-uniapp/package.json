@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "test:offline": "node --test tests/offline-sync-contract.test.mjs",
+    "test:contracts": "node --test tests/*.test.mjs"
+  },
   "dependencies": {
     "@dcloudio/uni-ui": "^1.5.12",
     "dayjs": "^1.11.13",

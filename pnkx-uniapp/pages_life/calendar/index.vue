@@ -53,13 +53,20 @@
           <view class="cal-event__bar" :style="{ background: colorOf(ev.color) }"></view>
           <view class="cal-event__body">
             <text class="cal-event__title">{{ ev.title }}</text>
-            <text class="cal-event__type">{{ typeLabel(ev.sourceType) }}</text>
+            <text class="cal-event__type">{{ typeLabel(ev.sourceType) }} · {{ statusLabel(ev.status) }}</text>
           </view>
+          <text v-if="ev.sourceType === 'todo' && ev.status !== 'completed'" class="cal-event__done" @click.stop="completeTodo(ev)">完成</text>
           <text class="cal-event__arrow">›</text>
         </view>
       </view>
       <view v-else class="cal-events__empty">
         <text class="cal-events__empty-text">这天没有安排</text>
+      </view>
+      <view class="quick-actions">
+        <text class="quick-actions__item" @click="createForDate('todo')">＋待办</text>
+        <text class="quick-actions__item" @click="createForDate('bookkeeping')">＋记账</text>
+        <text class="quick-actions__item" @click="createForDate('diary')">＋日记</text>
+        <text class="quick-actions__item" @click="createForDate('meal')">调整计划</text>
       </view>
     </view>
   </view>
@@ -67,13 +74,19 @@
 
 <script>
 import { getMonthEvents } from '@/api/px/life/calendar'
+import { getDo, updateDo } from '@/api/px/life/todo'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const COLOR_MAP = {
   todo: '#6C63FF',
   commemoration: '#FF9F43',
   menstruation: '#FD6697',
-  bookkeeping: '#5B9EEE'
+  bookkeeping: '#5B9EEE',
+  subscription: '#F59E0B',
+  meal_plan: '#10B981',
+  shopping_plan: '#8B5CF6',
+  reading_goal: '#0EA5E9',
+  life_report: '#EC4899'
 }
 
 export default {
@@ -169,10 +182,36 @@ export default {
       return COLOR_MAP[color] || '#8EA0B8'
     },
     typeLabel(type) {
-      const map = { todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账' }
+      const map = { todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账', subscription: '订阅', meal_plan: '餐饮计划', shopping_plan: '购物计划', reading_goal: '阅读目标', life_report: '生活报告' }
       return map[type] || type
     },
+    statusLabel(status) {
+      return { pending: '待处理', completed: '已完成', info: '信息' }[status] || '信息'
+    },
+    async completeTodo(ev) {
+      try {
+        const response = await getDo(ev.sourceId)
+        await updateDo({ ...response.data, status: true, finishTime: new Date().toISOString() })
+        uni.showToast({ title: '待办已完成', icon: 'success' })
+        this.loadEvents()
+      } catch (e) {
+        uni.showToast({ title: '操作失败', icon: 'none' })
+      }
+    },
+    createForDate(type) {
+      const routes = {
+        todo: `/pages_life/todo/edit?date=${this.selectedDate}`,
+        bookkeeping: `/pages_life/bookkeeping/record/add?date=${this.selectedDate}`,
+        diary: `/pages_life/diary/edit?date=${this.selectedDate}`,
+        meal: `/pages_life/mealPlan/index?date=${this.selectedDate}`
+      }
+      uni.navigateTo({ url: routes[type] })
+    },
     navigateToSource(ev) {
+      if (ev.appRoute) {
+        uni.navigateTo({ url: ev.appRoute })
+        return
+      }
       const map = {
         todo: '/pages_life/todo/index',
         commemoration: '/pages_life/commemorationDay/index',
@@ -378,5 +417,31 @@ export default {
     font-size: 36rpx;
     color: $text-tertiary;
   }
+
+  &__done {
+    margin-right: 16rpx;
+    padding: 8rpx 16rpx;
+    border-radius: $radius-full;
+    background: rgba($primary, 0.12);
+    color: $primary;
+    font-size: $font-mini;
+  }
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid $gray-100;
+}
+
+.quick-actions__item {
+  padding: 10rpx 18rpx;
+  border-radius: $radius-full;
+  background: $bg-page;
+  color: $primary;
+  font-size: $font-mini;
 }
 </style>

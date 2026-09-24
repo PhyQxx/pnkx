@@ -1,18 +1,22 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.annotation.DataScopeSelf;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.common.utils.ServletUtils;
 import com.pnkx.framework.web.service.DataPermissionService;
 import com.pnkx.framework.web.service.TokenService;
 import com.pnkx.mapper.PxMenstruationRecordMapper;
 import com.pnkx.service.IPxMenstruationRecordService;
+import com.pnkx.service.IPxLifeReminderService;
 import com.pnkx.domain.po.PxMenstruationRecord;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 姨妈记录Service业务层处理
@@ -27,6 +31,8 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
 
     @Resource
     private DataPermissionService dataPermissionService;
+    @Resource
+    private IPxLifeReminderService lifeReminderService;
 
     /**
      * 查询姨妈记录
@@ -53,7 +59,7 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      * @param pxMenstruationRecord 姨妈记录
      * @return 姨妈记录
      */
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     @Override
     public List<PxMenstruationRecord> selectPxMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         pxMenstruationRecord.setUserId(Long.valueOf(SecurityUtils.getUserId()));
@@ -67,7 +73,7 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      * @param pxMenstruationRecord 姨妈记录
      * @return 姨妈记录
      */
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     @Override
     public List<PxMenstruationRecord> getPxMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         pxMenstruationRecord.setUserId(Long.valueOf(SecurityUtils.getUserId()));
@@ -83,6 +89,13 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      */
     @Override
     public int insertPxMenstruationRecord(PxMenstruationRecord pxMenstruationRecord) {
+        if (StringUtils.isNotEmpty(pxMenstruationRecord.getClientUuid())) {
+            PxMenstruationRecord existing = pxMenstruationRecordMapper.selectByClientUuid(pxMenstruationRecord.getClientUuid());
+            if (existing != null) {
+                pxMenstruationRecord.setId(existing.getId());
+                return 1;
+            }
+        }
         pxMenstruationRecord.setCreateTime(DateUtils.getNowDate());
         pxMenstruationRecord.setCreateBy(SecurityUtils.getUserId());
         return pxMenstruationRecordMapper.insertPxMenstruationRecord(pxMenstruationRecord);
@@ -96,6 +109,7 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      */
     @Override
     public int updatePxMenstruationRecord(PxMenstruationRecord pxMenstruationRecord) {
+        requireOwner(pxMenstruationRecordMapper.selectPxMenstruationRecordById(pxMenstruationRecord.getId()));
         pxMenstruationRecord.setUpdateTime(DateUtils.getNowDate());
         pxMenstruationRecord.setUpdateBy(SecurityUtils.getUserId());
         return pxMenstruationRecordMapper.updatePxMenstruationRecord(pxMenstruationRecord);
@@ -109,7 +123,10 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      */
     @Override
     public int deletePxMenstruationRecordByIds(Long[] ids) {
-        return pxMenstruationRecordMapper.deletePxMenstruationRecordByIds(ids);
+        for (Long id : ids) requireOwner(pxMenstruationRecordMapper.selectPxMenstruationRecordById(id));
+        int rows = pxMenstruationRecordMapper.deletePxMenstruationRecordByIds(ids);
+        for (Long id : ids) lifeReminderService.unbindReminder("menstruation", id, SecurityUtils.getUserId());
+        return rows;
     }
 
     /**
@@ -120,7 +137,16 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      */
     @Override
     public int deletePxMenstruationRecordById(Long id) {
-        return pxMenstruationRecordMapper.deletePxMenstruationRecordById(id);
+        requireOwner(pxMenstruationRecordMapper.selectPxMenstruationRecordById(id));
+        int rows = pxMenstruationRecordMapper.deletePxMenstruationRecordById(id);
+        lifeReminderService.unbindReminder("menstruation", id, SecurityUtils.getUserId());
+        return rows;
+    }
+
+    private void requireOwner(PxMenstruationRecord entity) {
+        if (entity == null || !Objects.equals(SecurityUtils.getUserId(), entity.getCreateBy())) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
     }
 
     /**
@@ -128,7 +154,7 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
      * @param pxMenstruationRecord
      * @return
      */
-    @DataScopeSelf
+    @DataScopeSelf(onlySelf = true)
     @Override
     public List<PxMenstruationRecord> selectMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         return pxMenstruationRecordMapper.selectMenstruationRecordList(pxMenstruationRecord);

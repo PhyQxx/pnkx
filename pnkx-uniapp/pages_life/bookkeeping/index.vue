@@ -141,6 +141,24 @@ export default {
           gradient: 'rgba(167, 139, 250, 0.15)',
           iconColor: '#7C67D9',
           path: '/pages_life/bookkeeping/statistics/index'
+        },
+        {
+          id: 5,
+          name: '预算管理',
+          desc: '控制支出',
+          icon: 'flag',
+          gradient: 'rgba(255, 107, 107, 0.13)',
+          iconColor: '#E55353',
+          path: '/pages_life/bookkeeping/budget/index'
+        },
+        {
+          id: 6,
+          name: '周期记账',
+          desc: '固定收支',
+          icon: 'loop',
+          gradient: 'rgba(52, 211, 153, 0.14)',
+          iconColor: '#22A879',
+          path: '/pages_life/bookkeeping/recurring/index'
         }
       ]
     };

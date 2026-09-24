@@ -75,4 +75,25 @@ public class DataPermissionService {
         }
         return dataGroupService.selectVisibleUserIds(userId);
     }
+
+    /** 按业务共享域获取可见用户；管理员仍返回 null。 */
+    public List<Long> getVisibleUserIds(String module) {
+        if (isDataScopeAll()) return null;
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        if (StringUtils.isNull(loginUser) || StringUtils.isNull(loginUser.getUser())
+                || StringUtils.isNull(loginUser.getUser().getUserId())) return Collections.emptyList();
+        return dataGroupService.selectVisibleUserIds(loginUser.getUser().getUserId(), module);
+    }
+
+    /** 当前用户是否可以协作写入指定所有者的共享业务数据。 */
+    public boolean canWrite(String ownerId, String module) {
+        if (ownerId == null || module == null || module.isBlank()) return false;
+        Long current = SecurityUtils.getLoginUser().getUser().getUserId();
+        if (isDataScopeAll() || String.valueOf(current).equals(ownerId)) return true;
+        try {
+            return dataGroupService.canShare(current, Long.valueOf(ownerId), module);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }

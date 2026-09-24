@@ -34,7 +34,7 @@
 // fuse is a lightweight fuzzy-search module
 // make search results more in line with expectations
 import Fuse from 'fuse.js';
-import {fullRetrieval} from "../../api";
+import {globalSearch} from "../../api";
 
 
 export default {
@@ -107,18 +107,18 @@ export default {
             this.show = false
         },
         change(query) {
-            if (query.groupName === '博客文章') {
+            if (query.type === 'article') {
                 this.$router.push('/blog/articledetails?adminArticleId='+query.id);
-            } else if (query.groupName === '待办事项') {
+            } else if (query.type === 'todo') {
                 this.$router.push('/mytool/todo?toDoId='+query.id);
-            } else if (query.groupName === '生活账本') {
+            } else if (query.type === 'bookkeeping') {
                 this.$router.push('/mytool/bookkeeping/record?recordId='+query.id);
-            } else if (query.groupName === '日记') {
-                if (query.id) {
-                    this.$router.push('/mytool/diary?diaryId=' + query.id);
-                }
-            } else if (query.groupName === '笔记') {
+            } else if (query.type === 'diary') {
+                this.$router.push('/mytool/diary?diaryId=' + query.id);
+            } else if (query.type === 'note') {
                 this.$router.push('/note?noteId='+query.id);
+            } else if (query.route) {
+                this.$router.push(query.route + (query.route.includes('?') ? '&' : '?') + 'id=' + query.id)
             }
             this.search = '';
             this.$refs.headerSearchSelect && this.$refs.headerSearchSelect.blur()
@@ -190,29 +190,15 @@ export default {
             if (query !== '') {
                 this.$debounce(() => {
                     this.retrievalLoading = true;
-                    fullRetrieval({searchCode: query}).then(res => {
-                        this.options = res.data;
-                        this.options.map(item => {
-                            if (item.label === '待办事项') {
-                                item.options.map(option => {
-                                    option.title = option.content;
-                                })
-                            }
-                            if (item.label === '生活账本') {
-                                item.options.map(option => {
-                                    option.title = `${option.typeObject && option.typeObject.typeName}${option.remark ? '-' + option.remark : ''}-${option.money}-${option.accountObject && option.accountObject.accountName}-${this.billType(option)}`;
-                                })
-                            }
-                            if (item.label === '日记') {
-                                item.options.map(option => {
-                                    option.title = option.content.replace(this.regex, "");
-                                })
-                            }
-                            if (item.label === '笔记') {
-                                item.options = item.options.filter(option => Boolean(option.content))
-                            }
-                            return item
+                    globalSearch({q: query}).then(res => {
+                        const labels = { article: '博客文章', todo: '待办事项', bookkeeping: '生活账本', diary: '日记', note: '笔记', book: '书籍', recipe: '菜谱', commemoration: '纪念日', subscription: '订阅', shopping: '购物清单' }
+                        const groups = new Map()
+                        ;(res.data || []).forEach(item => {
+                            const label = labels[item.type] || item.type
+                            if (!groups.has(label)) groups.set(label, [])
+                            groups.get(label).push(item)
                         })
+                        this.options = Array.from(groups, ([label, options]) => ({ label, options }))
                         this.retrievalLoading = false;
                     })
                 }, 1200)()

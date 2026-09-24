@@ -18,6 +18,16 @@
       </view>
     </view>
 
+    <view v-if="formData.id" class="form-section">
+      <view class="form-item" @click="$refs.reminderSetting.open()">
+        <view class="form-label">到期提醒</view>
+        <view class="form-value">
+          <text>设置提醒</text>
+          <uni-icons type="right" size="16" color="$text-disabled" />
+        </view>
+      </view>
+    </view>
+
     <view class="form-section">
       <view class="form-item">
         <view class="form-label">纪念日日期</view>
@@ -101,6 +111,15 @@
     </uni-popup>
 
     <IconPicker ref="iconPicker" v-model="formData.icon" />
+    <ReminderSetting
+      v-if="formData.id && formData.date"
+      ref="reminderSetting"
+      source-type="commemoration"
+      :source-id="formData.id"
+      :source-name="formData.name"
+      :event-time="formData.date"
+      :annual="formData.repeat"
+    />
   </view>
 </template>
 
@@ -108,12 +127,14 @@
 import { getDay, addDay, updateDay, delDay } from '@/api/px/life/commemorationDay'
 import IconPicker from '../components/IconPicker.vue'
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue'
+import ReminderSetting from '@/components/ReminderSetting/index.vue'
 
 export default {
   name: 'CommemorationDayAdd',
   components: {
     IconPicker,
-    uniPopup
+    uniPopup,
+    ReminderSetting
   },
   data() {
     return {
@@ -127,7 +148,8 @@ export default {
       },
       isEditMode: false,
       showRepeatPicker: false,
-      tempRepeat: false
+      tempRepeat: false,
+      fromNotification: false
     }
   },
   watch: {
@@ -141,6 +163,7 @@ export default {
     }
   },
   onLoad(options) {
+    this.fromNotification = options.fromNotification === '1'
     if (options.id) {
       this.isEditMode = true
       this.loadCommemorationDetail(options.id)
@@ -177,10 +200,10 @@ export default {
         }
       } catch (error) {
         console.error('加载纪念日详情失败:', error)
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        })
+        if (this.fromNotification) {
+          uni.showModal({ title: '提醒已失效', content: '对应纪念日可能已删除，将返回列表。', showCancel: false,
+            success: () => uni.redirectTo({ url: '/pages_life/commemorationDay/index' }) })
+        } else uni.showToast({ title: '加载失败', icon: 'none' })
       } finally {
         uni.hideLoading()
       }

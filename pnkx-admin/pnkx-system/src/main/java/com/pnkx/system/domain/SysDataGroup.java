@@ -38,6 +38,18 @@ public class SysDataGroup extends BaseEntity {
     @Excel(name = "群组编码")
     private String groupCode;
 
+    /** 空间类型：family/couple/project */
+    private String spaceType;
+
+    /** 空间所有者 */
+    private Long ownerUserId;
+
+    /** JSON 数组：允许共享的业务域 */
+    private String visibilityJson;
+
+    /** 成员退出后归属策略，当前固定 retain_creator */
+    private String ownershipPolicy;
+
     /**
      * 状态（0正常 1停用）
      */
@@ -48,4 +60,7 @@ public class SysDataGroup extends BaseEntity {
      * 成员用户ID列表（新增/编辑时传入，非数据库字段）
      */
     private List<Long> userIds;
+
+    /** 带角色和状态的成员详情 */
+    private List<SysDataGroupMember> members;
 }

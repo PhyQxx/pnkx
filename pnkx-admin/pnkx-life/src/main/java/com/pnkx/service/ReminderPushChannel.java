@@ -21,4 +21,11 @@ public interface ReminderPushChannel {
      * @param payload  消息内容（JSON 字符串）
      */
     void push(String userName, String payload);
+
+    default void pushWebSocket(String userName, String payload) { push(userName, payload); }
+
+    default void pushApp(String userName, String payload) { }
+
+    /** App 推送是否已具备服务端配置；未启用时不应记录为成功投递。 */
+    default boolean isAppPushEnabled() { return false; }
 }

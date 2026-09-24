@@ -51,4 +51,9 @@ public interface PxLifeNotificationMapper {
     int markRead(@Param("userId") String userId, @Param("ids") Long[] ids);
 
     int deleteByUser(@Param("userId") String userId, @Param("id") Long id);
+
+    PxLifeNotification selectByIdForUser(@Param("userId") String userId, @Param("id") Long id);
+
+    int updateStatus(@Param("userId") String userId, @Param("id") Long id, @Param("status") String status,
+                     @Param("sendTime") java.util.Date sendTime);
 }

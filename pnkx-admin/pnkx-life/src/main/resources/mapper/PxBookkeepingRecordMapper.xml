@@ -305,4 +305,25 @@
         order by COALESCE(r.update_time, r.create_time) asc
         limit #{offset}, #{limit}
     </select>
+
+    <select id="selectLifeReportCounts" resultType="java.util.Map">
+        select count(*) as recordCount,
+               sum(case when c.type_difference = '1' then 1 else 0 end) as expenseCount,
+               coalesce(sum(case when c.type_difference = '1' then cast(r.money as decimal(18,2)) else 0 end), 0) as totalExpense
+        from px_bookkeeping_record r
+        left join px_bookkeeping_classification c on c.id = r.type
+        where r.del_flag = 0 and r.create_by = #{userId}
+          and r.pay_time &gt;= #{start} and r.pay_time &lt; #{end}
+    </select>
+
+    <select id="selectLifeReportExpenseGroups" resultType="java.util.Map">
+        select coalesce(c.type_name, '未分类') as typeName,
+               date_format(r.pay_time, '%m') as monthNo,
+               sum(cast(r.money as decimal(18,2))) as expense
+        from px_bookkeeping_record r
+        left join px_bookkeeping_classification c on c.id = r.type
+        where r.del_flag = 0 and r.create_by = #{userId} and c.type_difference = '1'
+          and r.pay_time &gt;= #{start} and r.pay_time &lt; #{end}
+        group by coalesce(c.type_name, '未分类'), date_format(r.pay_time, '%m')
+    </select>
 </mapper>

@@ -58,4 +58,16 @@ public interface ISysDataGroupService {
      * @return 可见 userId 集合（含自身）
      */
     public List<Long> selectVisibleUserIds(Long userId);
+
+    /** 按业务共享域查询可见用户。 */
+    public List<Long> selectVisibleUserIds(Long userId, String module);
+
+    /** 成员主动退出；数据保留给原创建者并写审计。 */
+    int leaveGroup(Long groupId, Long userId);
+
+    /** 所有者将空间转移给一名有效成员，原所有者降为管理员。 */
+    int transferOwnership(Long groupId, Long newOwnerUserId);
+
+    /** 两个用户是否通过启用指定业务域的空间建立了共享关系。 */
+    boolean canShare(Long userId, Long ownerId, String module);
 }

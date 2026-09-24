@@ -42,3 +42,17 @@ export function delDataGroup(id) {
         method: 'delete'
     })
 }
+
+export function leaveDataGroup(id) {
+    return request({
+        url: '/system/dataGroup/' + id + '/leave',
+        method: 'post'
+    })
+}
+
+export function transferDataGroup(id, userId) {
+    return request({
+        url: '/system/dataGroup/' + id + '/transfer/' + userId,
+        method: 'post'
+    })
+}

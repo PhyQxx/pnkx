@@ -90,7 +90,7 @@ public class DataScopeSelfAspect {
 
         // 受限：自己 + 所在群组成员
         List<Long> visibleUserIds = SpringUtils.getBean(ISysDataGroupService.class)
-                .selectVisibleUserIds(currentUser.getUserId());
+                .selectVisibleUserIds(currentUser.getUserId(), dataScope.module());
         baseEntity.getParams().put(DataScopeSelf.SCOPE_ALL, false);
         baseEntity.getParams().put(DataScopeSelf.SCOPE_USER_IDS, visibleUserIds);
     }

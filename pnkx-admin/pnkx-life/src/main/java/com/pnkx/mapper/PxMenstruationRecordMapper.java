@@ -20,6 +20,8 @@ public interface PxMenstruationRecordMapper {
      */
     public PxMenstruationRecord selectPxMenstruationRecordById(Long id);
 
+    PxMenstruationRecord selectByClientUuid(@Param("clientUuid") String clientUuid);
+
     /**
      * 查询姨妈记录列表
      *

@@ -79,6 +79,7 @@
 import { getLifeReportData } from '@/api/px/life/report'
 import config from '@/config'
 import { getToken } from '@/utils/auth'
+import { createSseParser } from '@/utils/sseParser'
 
 export default {
   name: 'LifeReportIndex',
@@ -88,7 +89,8 @@ export default {
       currentType: 'summary',
       periods: [
         { label: '本周', value: 'week' },
-        { label: '本月', value: 'month' }
+        { label: '本月', value: 'month' },
+        { label: '今年', value: 'year' }
       ],
       reportTypes: [
         { label: '综合', value: 'summary' },
@@ -173,7 +175,7 @@ export default {
             diary: res.data.diary || { count: 0, samples: [] },
             todo: res.data.todo || { done: 0, undone: 0 },
             dateRange: res.data.dateRange || [],
-            commemorationDay: res.data.commememorationDay || {},
+            commemorationDay: res.data.commemorationDay || {},
             menstruation: res.data.menstruation || {}
           }
         }
@@ -193,10 +195,17 @@ export default {
       this.xhr = xhr
       var lastIndex = 0
       var fullContent = ''
-      var eventLines = []
       var lastRenderTime = 0
       var RENDER_INTERVAL = 80
       var self = this
+      var parser = createSseParser(function (data) {
+        fullContent += data
+        var now = Date.now()
+        if (now - lastRenderTime >= RENDER_INTERVAL) {
+          lastRenderTime = now
+          self.aiReportHtml = self.formatMessage(fullContent)
+        }
+      })
       xhr.open('GET', url, true)
       xhr.setRequestHeader('Authorization', 'Bearer ' + getToken())
       xhr.timeout = 120000
@@ -205,32 +214,11 @@ export default {
           var newData = xhr.responseText.substring(lastIndex)
           lastIndex = xhr.responseText.length
           if (!newData) return
-          var lines = newData.split('\n')
-          for (var i = 0; i < lines.length; i++) {
-            var line = lines[i]
-            if (line.indexOf('data:') === 0) {
-              eventLines.push(line.substring(5))
-            } else if (line === '' && eventLines.length > 0) {
-              var data = eventLines.join('\n')
-              eventLines = []
-              if (data === '[DONE]') continue
-              fullContent += data
-              var now = Date.now()
-              if (now - lastRenderTime >= RENDER_INTERVAL) {
-                lastRenderTime = now
-                self.aiReportHtml = self.formatMessage(fullContent)
-              }
-            }
-          }
+          parser.push(newData)
         }
       }
       xhr.onload = function () {
-        if (eventLines.length > 0) {
-          var remaining = eventLines.join('\n').trim()
-          if (remaining && remaining !== '[DONE]') {
-            fullContent += remaining
-          }
-        }
+        parser.finish()
         self.aiReportHtml = self.formatMessage(fullContent) || '<p>报告生成失败，请稍后重试。</p>'
         self.isStreaming = false
       }

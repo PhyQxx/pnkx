@@ -24,6 +24,9 @@ public class PxMenstruationRecord extends BaseEntity {
      */
     private Long id;
 
+    /** 离线创建幂等键。 */
+    private String clientUuid;
+
     /**
      * 用户id
      */

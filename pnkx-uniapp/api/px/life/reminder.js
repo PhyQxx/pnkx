@@ -1,5 +1,37 @@
 import request from '@/utils/request'
 
+export function listReminder(query) {
+  return request({
+    url: '/reminder/list',
+    method: 'get',
+    params: query
+  })
+}
+
+export function bindReminder(data) {
+  return request({
+    url: '/reminder/bind',
+    method: 'post',
+    data
+  })
+}
+
+export function unbindReminder(sourceType, sourceId) {
+  return request({
+    url: '/reminder/unbind',
+    method: 'delete',
+    params: { sourceType, sourceId }
+  })
+}
+
+export function getReminderPreference() {
+  return request({ url: '/reminder/preference', method: 'get' })
+}
+
+export function saveReminderPreference(data) {
+  return request({ url: '/reminder/preference', method: 'put', data })
+}
+
 // 获取今日提醒聚合数据（纪念日 / 情侣卡 / 经期 / 今日待办 / 经期配置）
 export function getTodayReminders() {
   return request({
@@ -41,3 +73,6 @@ export function deleteNotification(id) {
   })
 }
 
+export function retryNotification(id) {
+  return request({ url: '/reminder/notifications/' + id + '/retry', method: 'post' })
+}

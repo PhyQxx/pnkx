@@ -3,6 +3,7 @@
 <mapper namespace="com.pnkx.mapper.PxBookMapper">
     <resultMap id="BookResult" type="PxBook">
         <id property="id" column="id"/>
+        <result property="clientUuid" column="client_uuid"/>
         <result property="title" column="title"/>
         <result property="author" column="author"/>
         <result property="description" column="description"/>
@@ -13,6 +14,7 @@
         <result property="lastReadChapterId" column="last_read_chapter_id"/>
         <result property="lastReadChapterName" column="last_read_chapter_name"/>
         <result property="lastReadTime" column="last_read_time"/>
+        <result property="targetFinishDate" column="target_finish_date"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -21,9 +23,10 @@
     </resultMap>
 
     <sql id="bookColumns">
-        select b.id, b.title, b.author, b.description, b.status, b.del_flag,
+        select b.id, b.client_uuid, b.title, b.author, b.description, b.status, b.del_flag,
                b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
                lr.id last_read_chapter_id, lr.chapter_name last_read_chapter_name, b.last_read_time,
+               b.target_finish_date,
                (select fc.id from px_book_chapter fc where fc.book_id = b.id and fc.create_by = b.create_by
                     and fc.del_flag = '0' order by fc.chapter_no asc, fc.id asc limit 1) first_chapter_id,
                (select count(1) from px_book_chapter c where c.book_id = b.id and c.del_flag = '0') chapter_count
@@ -49,14 +52,21 @@
         where b.id = #{id} and b.create_by = #{userId} and b.del_flag = '0'
     </select>
 
+    <select id="selectByClientUuid" resultMap="BookResult">
+        <include refid="bookColumns"/>
+        where b.client_uuid = #{clientUuid}
+        limit 1
+    </select>
+
     <insert id="insertBook" parameterType="PxBook" useGeneratedKeys="true" keyProperty="id">
-        insert into px_book(title, author, description, status, del_flag, create_by, create_time, remark)
-        values(#{title}, #{author}, #{description}, #{status}, '0', #{createBy}, #{createTime}, #{remark})
+        insert into px_book(client_uuid, title, author, description, status, target_finish_date, del_flag, create_by, create_time, remark)
+        values(#{clientUuid}, #{title}, #{author}, #{description}, #{status}, #{targetFinishDate}, '0', #{createBy}, #{createTime}, #{remark})
     </insert>
 
     <update id="updateBook" parameterType="PxBook">
         update px_book
         set title = #{title}, author = #{author}, description = #{description}, status = #{status},
+            target_finish_date = #{targetFinishDate},
             update_by = #{updateBy}, update_time = #{updateTime}, remark = #{remark}
         where id = #{id} and create_by = #{updateBy} and del_flag = '0'
     </update>

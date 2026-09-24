@@ -23,6 +23,8 @@ public interface PxMealPlanMapper {
 
     /** 按日期范围查询（周视图用） */
     List<PxMealPlan> selectByDateRange(@Param("startDate") String startDate, @Param("endDate") String endDate);
+    List<PxMealPlan> selectByDateRangeForUser(@Param("startDate") String startDate, @Param("endDate") String endDate,
+                                              @Param("userId") String userId);
 
     int insertPxMealPlan(PxMealPlan pxMealPlan);
 

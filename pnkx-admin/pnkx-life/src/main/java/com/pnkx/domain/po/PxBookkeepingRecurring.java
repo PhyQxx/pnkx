@@ -22,6 +22,9 @@ public class PxBookkeepingRecurring extends BaseEntity {
      */
     private Long id;
 
+    /** 离线创建幂等键。 */
+    private String clientUuid;
+
     /**
      * 版本号
      */

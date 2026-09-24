@@ -10,6 +10,7 @@ import java.util.List;
 public interface PxBookMapper {
     List<PxBook> selectBookList(PxBook book);
     PxBook selectBookById(@Param("id") Long id, @Param("userId") String userId);
+    PxBook selectByClientUuid(@Param("clientUuid") String clientUuid);
     int insertBook(PxBook book);
     int updateBook(PxBook book);
     int deleteBooks(@Param("ids") Long[] ids, @Param("userId") String userId);

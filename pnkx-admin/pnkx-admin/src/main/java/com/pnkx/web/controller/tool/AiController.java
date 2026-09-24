@@ -7,6 +7,7 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.web.controller.tool.intent.AiPendingActionService;
+import com.pnkx.web.controller.tool.intent.AiToolRegistry;
 import com.pnkx.web.controller.tool.intent.ConfirmableIntentHandler;
 import com.pnkx.web.controller.tool.intent.IntentHandler;
 import com.pnkx.web.controller.tool.intent.IntentDetectionService;
@@ -26,8 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/ai")
@@ -53,17 +52,7 @@ public class AiController extends BaseController {
     private IntentDetectionService intentDetectionService;
 
     @Resource
-    private List<IntentHandler> handlers;
-
-    private Map<String, IntentHandler> handlerMap;
-
-    private Map<String, IntentHandler> getHandlerMap() {
-        if (handlerMap == null) {
-            handlerMap = handlers.stream()
-                    .collect(Collectors.toMap(IntentHandler::intentName, Function.identity()));
-        }
-        return handlerMap;
-    }
+    private AiToolRegistry toolRegistry;
 
     public static Long resolveModelId(Map<String, Object> body) {
         if (body == null) {
@@ -140,7 +129,7 @@ public class AiController extends BaseController {
             OutputStream out = response.getOutputStream();
 
             long tDetect = System.currentTimeMillis();
-            IntentDetectionResult detection = intentDetectionService.detect(aiClient, handlers, question);
+            IntentDetectionResult detection = intentDetectionService.detect(aiClient, toolRegistry.handlers(), question);
             logger.info("AI意图识别完成 requestId={} 耗时={}ms intent={} source={} confidence={}",
                     requestId, System.currentTimeMillis() - tDetect, detection.getIntent(), detection.getSource(), detection.getConfidence());
             String intent = detection.getIntent();
@@ -160,7 +149,7 @@ public class AiController extends BaseController {
                 return;
             }
 
-            IntentHandler handler = getHandlerMap().get(intent);
+            IntentHandler handler = toolRegistry.get(intent);
 
             JSONObject intentData = detection.getSlots() != null ? (JSONObject) detection.getSlots().clone() : new JSONObject();
             intentData.put("requestId", requestId);
@@ -177,7 +166,7 @@ public class AiController extends BaseController {
                 return;
             }
 
-            IntentHandler chatHandler = getHandlerMap().get("chat");
+            IntentHandler chatHandler = toolRegistry.get("chat");
             if (chatHandler != null) {
                 chatHandler.handle(question, intentData, out);
                 logger.info("AI回答阶段完成 requestId={} handler=chat 耗时={}ms", requestId, System.currentTimeMillis() - tHandle);
@@ -213,7 +202,9 @@ public class AiController extends BaseController {
             IntentHandler.writeSse(out, "没有待确认的草稿。");
         } else {
             pendingActionService.clearCurrent();
-            aiOperationLogService.finishWrite(pendingAction.requestId(), true, "cancelled", pendingAction.draft().toJSONString(), null);
+            aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "cancelled",
+                    pendingAction.draft().toJSONString(), statusJson("cancelled"),
+                    rollbackJson(pendingAction.draft()), null);
             IntentHandler.writeSse(out, "已取消，本次草稿不会保存。");
         }
         IntentHandler.writeSse(out, "[DONE]");
@@ -227,31 +218,65 @@ public class AiController extends BaseController {
             return;
         }
         if (pendingActionService.isExpired(pendingAction)) {
-            aiOperationLogService.finishWrite(pendingAction.requestId(), true, "expired", pendingAction.draft().toJSONString(), "draft expired");
+            aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "expired",
+                    pendingAction.draft().toJSONString(), statusJson("expired"),
+                    rollbackJson(pendingAction.draft()), "draft expired");
             pendingActionService.clearCurrent();
             IntentHandler.writeSse(out, "草稿已过期，请重新发起。");
             IntentHandler.writeSse(out, "[DONE]");
             return;
         }
 
-        IntentHandler handler = getHandlerMap().get(pendingAction.intent());
+        IntentHandler handler = toolRegistry.get(pendingAction.intent());
         if (handler instanceof ConfirmableIntentHandler confirmableIntentHandler) {
             try {
                 if (confirmableIntentHandler.confirm(pendingAction.draft(), out)) {
-                    aiOperationLogService.finishWrite(pendingAction.requestId(), true, "confirmed", pendingAction.draft().toJSONString(), null);
+                    aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "confirmed",
+                            pendingAction.draft().toJSONString(), resultJson(pendingAction.draft()),
+                            rollbackJson(pendingAction.draft()), null);
                     pendingActionService.clearCurrent();
                     return;
                 }
             } catch (Exception e) {
-                aiOperationLogService.finishWrite(pendingAction.requestId(), true, "failed", pendingAction.draft().toJSONString(), e.getMessage());
+                aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "failed",
+                        pendingAction.draft().toJSONString(), statusJson("failed"),
+                        rollbackJson(pendingAction.draft()), e.getMessage());
                 throw e;
             }
         }
 
-        aiOperationLogService.finishWrite(pendingAction.requestId(), true, "failed", pendingAction.draft().toJSONString(), "草稿已失效");
+        aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "failed",
+                pendingAction.draft().toJSONString(), statusJson("failed"),
+                rollbackJson(pendingAction.draft()), "草稿已失效");
         pendingActionService.clearCurrent();
         IntentHandler.writeSse(out, "草稿已失效，请重新发起。");
         IntentHandler.writeSse(out, "[DONE]");
+    }
+
+    @RequestMapping("/tools")
+    public AjaxResult tools() {
+        return AjaxResult.success(toolRegistry.descriptors());
+    }
+
+    private String jsonValue(JSONObject draft, String key) {
+        Object value = draft.get(key);
+        return value == null ? null : JSON.toJSONString(value);
+    }
+
+    private String resultJson(JSONObject draft) {
+        String result = jsonValue(draft, "_result");
+        return result == null ? statusJson("confirmed") : result;
+    }
+
+    private String rollbackJson(JSONObject draft) {
+        String rollback = jsonValue(draft, "_rollback");
+        return rollback == null
+                ? "{\"available\":false,\"strategy\":\"manual_compensation\"}"
+                : rollback;
+    }
+
+    private String statusJson(String status) {
+        return "{\"status\":\"" + status + "\"}";
     }
 
     private String buildUserInfoWithHistory(Map<String, Object> body) {

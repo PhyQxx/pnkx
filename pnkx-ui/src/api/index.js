@@ -12,3 +12,11 @@ export function fullRetrieval(query) {
         params: query
     })
 }
+
+export function globalSearch(query) {
+    return request({
+        url: '/admin/globalSearch',
+        method: 'get',
+        params: query
+    })
+}

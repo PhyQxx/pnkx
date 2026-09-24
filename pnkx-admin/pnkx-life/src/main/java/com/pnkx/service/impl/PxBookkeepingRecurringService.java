@@ -57,6 +57,13 @@ public class PxBookkeepingRecurringService {
      * 新增规则（下次执行日自动计算：不早于明天）
      */
     public int add(PxBookkeepingRecurring recurring) {
+        if (StringUtils.isNotEmpty(recurring.getClientUuid())) {
+            PxBookkeepingRecurring existing = recurringMapper.selectByClientUuid(recurring.getClientUuid());
+            if (existing != null) {
+                recurring.setId(existing.getId());
+                return 1;
+            }
+        }
         validate(recurring);
         recurring.setCreateBy(SecurityUtils.getUserId());
         recurring.setCreateTime(DateUtils.getNowDate());
@@ -90,6 +97,7 @@ public class PxBookkeepingRecurringService {
         PxBookkeepingRecurring rule = new PxBookkeepingRecurring();
         rule.setId(id);
         rule.setEnabled(enabled);
+        rule.setUpdateBy(SecurityUtils.getUserId());
         return recurringMapper.updateRecurring(rule);
     }
 
@@ -97,7 +105,7 @@ public class PxBookkeepingRecurringService {
      * 删除规则
      */
     public int delete(Long id) {
-        return recurringMapper.deleteRecurringById(id);
+        return recurringMapper.deleteRecurringById(id, SecurityUtils.getUserId());
     }
 
     /**

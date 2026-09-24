@@ -78,4 +78,16 @@ public class SysDataGroupController extends BaseController {
     public AjaxResult remove(@PathVariable Long id) {
         return toAjax(dataGroupService.deleteDataGroupById(id));
     }
+
+    /** 当前成员退出空间；原数据继续归原创建者，撤销后续共享访问并保留审计。 */
+    @PostMapping("/{id}/leave")
+    public AjaxResult leave(@PathVariable Long id) {
+        return toAjax(dataGroupService.leaveGroup(id, Long.valueOf(SecurityUtils.getUserId())));
+    }
+
+    /** 所有者转移后可安全退出；历史数据仍归各自创建者。 */
+    @PostMapping("/{id}/transfer/{userId}")
+    public AjaxResult transfer(@PathVariable Long id, @PathVariable Long userId) {
+        return toAjax(dataGroupService.transferOwnership(id, userId));
+    }
 }

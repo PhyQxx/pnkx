@@ -28,6 +28,12 @@ public class SysDataGroupMember {
      */
     private Long userId;
 
+    private String role;
+
+    private String status;
+
+    private Date leftTime;
+
     /**
      * 加入时间
      */

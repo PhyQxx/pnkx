@@ -19,6 +19,14 @@
       <view class="content-count">{{ todoForm.content.length }}/500</view>
     </view>
 
+    <view v-if="isEditMode && todoForm.id" class="form-section reminder-entry" @click="$refs.reminderSetting.open()">
+      <view>
+        <view class="form-label">到期提醒</view>
+        <text class="reminder-entry__hint">设置后会在通知中心和已启用渠道提醒</text>
+      </view>
+      <uni-icons type="right" size="16" color="#8EA0B8" />
+    </view>
+
     <!-- 执行者选择 -->
     <view class="form-section" @click="openPerformerPicker">
       <view class="form-label">执行者</view>
@@ -105,6 +113,14 @@
         </view>
       </view>
     </uni-popup>
+    <ReminderSetting
+      v-if="isEditMode && todoForm.id && todoForm.planEndTime"
+      ref="reminderSetting"
+      source-type="todo"
+      :source-id="todoForm.id"
+      :source-name="todoForm.content"
+      :event-time="todoForm.planEndTime"
+    />
   </view>
 </template>
 
@@ -112,11 +128,13 @@
 import { getDo, addDo, updateDo, delDo, getLabelList } from '@/api/px/life/todo'
 import { listUser } from '@/api/system/user'
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue'
+import ReminderSetting from '@/components/ReminderSetting/index.vue'
 
 export default {
   name: 'TodoEdit',
   components: {
-    uniPopup
+    uniPopup,
+    ReminderSetting
   },
   data() {
     return {
@@ -134,7 +152,8 @@ export default {
       labelList: [],
       selectedLabels: [],
       userList: [],
-      selectedUserIds: []
+      selectedUserIds: [],
+      fromNotification: false
     }
   },
   computed: {
@@ -153,11 +172,16 @@ export default {
     }
   },
   onLoad(options) {
+    this.fromNotification = options.fromNotification === '1'
     if (options.id) {
       this.isEditMode = true
       this.loadTodoDetail(options.id)
     } else {
       this.initNewTodo()
+      if (options.date) {
+        this.todoForm.planStartTime = options.date + ' 09:00:00'
+        this.todoForm.planEndTime = options.date + ' 18:00:00'
+      }
     }
     this.loadLabelList()
     this.loadUserList()
@@ -255,10 +279,10 @@ export default {
         }
       } catch (error) {
         console.error('加载待办详情失败:', error)
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        })
+        if (this.fromNotification) {
+          uni.showModal({ title: '提醒已失效', content: '对应待办可能已删除，将返回待办列表。', showCancel: false,
+            success: () => uni.redirectTo({ url: '/pages_life/todo/index' }) })
+        } else uni.showToast({ title: '加载失败', icon: 'none' })
       } finally {
         uni.hideLoading()
       }
@@ -464,6 +488,15 @@ export default {
         background-color: #FFF0F0;
       }
     }
+  }
+
+  .reminder-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .form-label { margin-bottom: 6rpx; }
+    &__hint { color: $text-tertiary; font-size: $font-caption; }
   }
 
   .picker-input {

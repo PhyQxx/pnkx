@@ -2,6 +2,7 @@ package com.pnkx;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 /**
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
  * @author phy
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@EnableScheduling
 public class PnkxApplication {
     public static void main(String[] args) {
         SpringApplication.run(PnkxApplication.class, args);

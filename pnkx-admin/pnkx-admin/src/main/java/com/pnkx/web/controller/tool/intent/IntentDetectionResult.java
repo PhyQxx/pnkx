@@ -37,6 +37,7 @@ public class IntentDetectionResult {
             return slots != null && "create".equals(slots.getString("action"));
         }
         return "bookkeeping".equals(intent) || "todo".equals(intent) || "diary_write".equals(intent)
-                || "commemoration_day".equals(intent) || "shopping_list".equals(intent) || "meal_plan".equals(intent);
+                || "commemoration_day".equals(intent) || "shopping_list".equals(intent)
+                || "meal_plan".equals(intent) || "content_publish".equals(intent);
     }
 }

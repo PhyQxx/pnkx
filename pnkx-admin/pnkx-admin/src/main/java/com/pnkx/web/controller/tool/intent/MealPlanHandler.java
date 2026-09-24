@@ -5,7 +5,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.pnkx.ai.AiClient;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.domain.po.PxMealPlan;
+import com.pnkx.domain.po.PxRecipe;
+import com.pnkx.domain.po.PxShoppingList;
 import com.pnkx.service.IPxMealPlanService;
+import com.pnkx.service.IPxRecipeService;
+import com.pnkx.service.IPxShoppingListService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +38,8 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
               "title": "菜名或餐名，如：西红柿炒蛋",
               "mealType": "餐次数字，1=早餐 2=午餐 3=晚餐 4=加餐",
               "date": "日期，yyyy-MM-dd，今天/明天/后天等都要换算成具体日期",
-              "notes": "备注，没有则为 null"
+              "notes": "备注，没有则为 null",
+              "generateShopping": "用户要求同时生成购物清单时为 true，否则 false"
             }
             今天是 %s。
             如果用户没说具体日期，默认填今天。
@@ -51,6 +56,8 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
 
     @Resource
     private IPxMealPlanService mealPlanService;
+    @Resource private IPxRecipeService recipeService;
+    @Resource private IPxShoppingListService shoppingListService;
 
     @Resource
     private AiPendingActionService pendingActionService;
@@ -62,7 +69,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
 
     @Override
     public String promptDescription() {
-        return "用户想规划某天某餐吃什么。slots: {\"title\": \"菜名\", \"mealType\": \"餐次1早2午3晚4加餐\", \"date\": \"日期\", \"notes\": \"备注\"}";
+        return "用户想规划某天某餐吃什么，或安排餐饮并生成购物清单。slots: {\"title\": \"菜名\", \"mealType\": \"餐次1早2午3晚4加餐\", \"date\": \"日期\", \"notes\": \"备注\", \"generateShopping\": false}";
     }
 
     @Override
@@ -79,6 +86,14 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
             if (title == null || title.isBlank()) {
                 return false;
             }
+            PxRecipe recipeQuery = new PxRecipe();
+            recipeQuery.setTitle(title);
+            java.util.List<PxRecipe> recipes = recipeService.selectPxRecipeList(recipeQuery);
+            if (!recipes.isEmpty()) parsed.put("recipeId", recipes.get(0).getId());
+            if (Boolean.TRUE.equals(parsed.getBoolean("generateShopping"))) {
+                java.util.List<PxShoppingList> lists = shoppingListService.selectPxShoppingListList(new PxShoppingList());
+                if (!lists.isEmpty()) parsed.put("shoppingListId", lists.get(0).getId());
+            }
 
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
@@ -92,11 +107,18 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
     @Override
     public boolean confirm(JSONObject draft, OutputStream out) {
         try {
-            int rows = mealPlanService.insertPxMealPlan(buildMealPlan(draft));
+            PxMealPlan plan = buildMealPlan(draft);
+            int rows = mealPlanService.insertPxMealPlan(plan);
             if (rows <= 0) {
                 return false;
             }
 
+            if (Boolean.TRUE.equals(draft.getBoolean("generateShopping"))
+                    && draft.getLong("shoppingListId") != null && plan.getRecipeId() != null) {
+                String date = new SimpleDateFormat("yyyy-MM-dd").format(plan.getPlanDate());
+                int items = mealPlanService.transferToShopping(draft.getLong("shoppingListId"), date, date);
+                draft.put("generatedShoppingItems", items);
+            }
             IntentHandler.writeSse(out, buildSuccessMessage(draft));
             IntentHandler.writeSse(out, "[DONE]");
             return true;
@@ -118,6 +140,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
     private PxMealPlan buildMealPlan(JSONObject parsed) {
         PxMealPlan plan = new PxMealPlan();
         plan.setTitle(parsed.getString("title"));
+        plan.setRecipeId(parsed.getLong("recipeId"));
         plan.setCreateBy(SecurityUtils.getUserId());
 
         // 日期：默认今天
@@ -172,6 +195,12 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
         }
         if (isRealValue(parsed.getString("notes"))) {
             msg.append("- 备注：").append(parsed.getString("notes")).append("\n");
+        }
+        if (Boolean.TRUE.equals(parsed.getBoolean("generateShopping"))) {
+            msg.append("- 购物清单：").append(parsed.getLong("shoppingListId") == null ? "未找到可用清单" : "同步生成").append("\n");
+        }
+        if (parsed.getInteger("generatedShoppingItems") != null) {
+            msg.append("- 已加入食材：").append(parsed.getInteger("generatedShoppingItems")).append(" 项\n");
         }
     }
 

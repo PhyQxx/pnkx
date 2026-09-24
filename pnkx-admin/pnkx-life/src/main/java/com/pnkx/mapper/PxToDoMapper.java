@@ -10,6 +10,7 @@ import com.pnkx.domain.po.PxToDo;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 待办事项Mapper接口
@@ -109,4 +110,7 @@ public interface PxToDoMapper {
      * @return 结果
      */
     int updateKanbanSort(@Param("id") Long id, @Param("kanbanStatus") Integer kanbanStatus, @Param("sortOrder") Integer sortOrder);
+
+    Map<String, Object> selectStatusCountsForLifeReport(@Param("userId") String userId,
+                                                        @Param("start") String start, @Param("end") String end);
 }

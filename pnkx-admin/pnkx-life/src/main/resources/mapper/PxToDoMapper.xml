@@ -234,4 +234,11 @@
         order by COALESCE(update_time, create_time) asc
         limit #{offset}, #{limit}
     </select>
+
+    <select id="selectStatusCountsForLifeReport" resultType="java.util.Map">
+        select sum(case when status = 1 then 1 else 0 end) as done,
+               sum(case when status is null or status = 0 then 1 else 0 end) as undone
+        from px_to_do
+        where create_by = #{userId} and create_time &gt;= #{start} and create_time &lt; #{end}
+    </select>
 </mapper>

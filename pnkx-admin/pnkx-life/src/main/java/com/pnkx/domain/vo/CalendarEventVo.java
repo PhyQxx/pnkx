@@ -42,10 +42,16 @@ public class CalendarEventVo implements Serializable {
      */
     private String color;
 
+    /** 统一状态：pending/completed/info。 */
+    private String status;
+
     /**
      * 前端路由（点击跳转）
      */
     private String route;
+
+    /** 移动端详情路由。 */
+    private String appRoute;
 
     public String getSourceType() {
         return sourceType;
@@ -87,6 +93,9 @@ public class CalendarEventVo implements Serializable {
         this.color = color;
     }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
     public String getRoute() {
         return route;
     }
@@ -94,4 +103,7 @@ public class CalendarEventVo implements Serializable {
     public void setRoute(String route) {
         this.route = route;
     }
+
+    public String getAppRoute() { return appRoute; }
+    public void setAppRoute(String appRoute) { this.appRoute = appRoute; }
 }

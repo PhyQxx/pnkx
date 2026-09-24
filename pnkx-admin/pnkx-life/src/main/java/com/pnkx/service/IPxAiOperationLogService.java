@@ -74,4 +74,8 @@ public interface IPxAiOperationLogService {
      * 完成写库记录
      */
     void finishWrite(String requestId, boolean write, String writeStatus, String parsedJson, String errorMsg);
+
+    /** 完成写操作并保存执行计划、结果和回滚信息。 */
+    void finishWriteDetail(String requestId, String writeStatus, String planJson,
+                           String resultJson, String rollbackJson, String errorMsg);
 }

@@ -53,6 +53,15 @@ public class PxAiOperationLog extends BaseEntity {
     /** 解析后的意图JSON或草稿JSON */
     private String parsedJson;
 
+    /** 确认前执行计划 */
+    private String planJson;
+
+    /** 实际执行结果 */
+    private String resultJson;
+
+    /** 回滚或补偿信息 */
+    private String rollbackJson;
+
     /** 错误信息 */
     private String errorMsg;
 

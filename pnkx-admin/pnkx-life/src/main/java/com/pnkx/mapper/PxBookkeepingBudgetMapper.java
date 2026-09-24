@@ -3,6 +3,7 @@ package com.pnkx.mapper;
 import com.pnkx.domain.po.PxBookkeepingBudget;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 记账预算 Mapper
@@ -19,6 +20,8 @@ public interface PxBookkeepingBudgetMapper {
      * @return 预算列表
      */
     List<PxBookkeepingBudget> selectBudgetList(PxBookkeepingBudget budget);
+
+    PxBookkeepingBudget selectBudgetById(Long id);
 
     /**
      * 查询某用户某月的预算及实时使用状态（已用/剩余/百分比/是否超支）
@@ -58,5 +61,5 @@ public interface PxBookkeepingBudgetMapper {
      * @param id 预算ID
      * @return 结果
      */
-    int deleteBudgetById(Long id);
+    int deleteBudgetById(@Param("id") Long id, @Param("userId") String userId);
 }

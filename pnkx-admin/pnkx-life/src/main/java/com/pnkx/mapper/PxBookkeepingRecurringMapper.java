@@ -22,6 +22,10 @@ public interface PxBookkeepingRecurringMapper {
      */
     List<PxBookkeepingRecurring> selectRecurringList(@Param("createBy") String createBy);
 
+    PxBookkeepingRecurring selectByClientUuid(@Param("clientUuid") String clientUuid);
+
+    PxBookkeepingRecurring selectById(@Param("id") Long id, @Param("userId") String userId);
+
     /**
      * 查询到期待执行的规则（enabled=1 且 next_run_date <= date）
      *
@@ -50,5 +54,5 @@ public interface PxBookkeepingRecurringMapper {
     /**
      * 删除规则（物理删除）
      */
-    int deleteRecurringById(@Param("id") Long id);
+    int deleteRecurringById(@Param("id") Long id, @Param("userId") String userId);
 }

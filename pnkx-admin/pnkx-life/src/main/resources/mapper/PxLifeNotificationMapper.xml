@@ -82,4 +82,14 @@
     <delete id="deleteByUser">
         delete from px_life_notification where user_id = #{userId} and id = #{id}
     </delete>
+
+    <select id="selectByIdForUser" resultMap="PxLifeNotificationResult">
+        select id, reminder_id, user_id, channel, source_type, source_id, title, content, send_time, status, create_time
+        from px_life_notification where user_id = #{userId} and id = #{id}
+    </select>
+
+    <update id="updateStatus">
+        update px_life_notification set status = #{status}, send_time = #{sendTime}
+        where user_id = #{userId} and id = #{id}
+    </update>
 </mapper>

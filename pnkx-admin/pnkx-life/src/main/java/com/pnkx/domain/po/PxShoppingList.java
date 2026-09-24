@@ -2,6 +2,9 @@ package com.pnkx.domain.po;
 
 import com.pnkx.common.annotation.Excel;
 import com.pnkx.common.core.domain.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.util.Date;
 
 /**
  * 购物清单对象
@@ -23,6 +26,9 @@ public class PxShoppingList extends BaseEntity {
     @Excel(name = "排序")
     private Integer orderNum;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date plannedDate;
+
     @Excel(name = "版本号")
     private String version;
 
@@ -38,6 +44,8 @@ public class PxShoppingList extends BaseEntity {
     public void setIcon(String icon) { this.icon = icon; }
     public Integer getOrderNum() { return orderNum; }
     public void setOrderNum(Integer orderNum) { this.orderNum = orderNum; }
+    public Date getPlannedDate() { return plannedDate; }
+    public void setPlannedDate(Date plannedDate) { this.plannedDate = plannedDate; }
     public String getVersion() { return version; }
     public void setVersion(String version) { this.version = version; }
     public String getClientUuid() { return clientUuid; }

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * uniPush 2.0（个推 REST v2）推送服务
  * <p>
  * 配置驱动：UNIPUSH_APPID/APPKEY/MASTERSECRET 环境变量齐全时启用，
- * 任一缺失则全部方法静默跳过（不影响任何业务主流程）。
+ * 任一缺失时视为未启用；普通业务可按能力探测跳过，显式发送调用会返回失败。
  * 鉴权 token 缓存于 Redis（个推有效期 24h，提前 1h 失效重取）。
  * <p>
  * 平台侧前置条件（仅需一次）：DCloud 开发者中心 → 应用 → uniPush 2.0 开通并绑定。
@@ -87,7 +87,8 @@ public class UniPushService {
     }
 
     /**
-     * 向用户全部在册设备推送通知（离线到达锁屏；失败静默，不影响业务）
+     * 向用户全部在册设备推送通知（离线到达锁屏）。
+     * 已启用服务但没有可投递设备或全部投递失败时抛出异常，由提醒引擎记录失败并支持重试。
      *
      * @param userId  用户ID
      * @param title   通知标题
@@ -101,11 +102,11 @@ public class UniPushService {
         }
         List<PxPushDevice> devices = pushDeviceMapper.selectByUserId(userId);
         if (devices.isEmpty()) {
-            return 0;
+            throw new IllegalStateException("用户没有已登记的推送设备");
         }
         String token = getToken();
         if (token == null) {
-            return 0;
+            throw new IllegalStateException("uniPush 鉴权失败");
         }
         int success = 0;
         for (PxPushDevice device : devices) {
@@ -139,6 +140,7 @@ public class UniPushService {
                 log.warn("uniPush 推送失败, clientId={}", device.getClientId(), e);
             }
         }
+        if (success == 0) throw new IllegalStateException("uniPush 全部设备投递失败");
         return success;
     }
 

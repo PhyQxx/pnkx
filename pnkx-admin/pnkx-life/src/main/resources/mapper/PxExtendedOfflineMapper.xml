@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.mapper.PxExtendedOfflineMapper">
+    <select id="selectIncremental" resultType="java.util.HashMap">
+        select * from ${table}
+        where create_by = #{userId}
+          and coalesce(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
+        order by coalesce(update_time, create_time) asc, id asc
+        limit #{offset}, #{limit}
+    </select>
+</mapper>

@@ -77,4 +77,9 @@ public interface PxDiaryMapper {
      * 增量查询日记（离线同步用）
      */
     List<PxDiary> selectIncremental(@Param("createBy") String createBy, @Param("since") String since, @Param("offset") int offset, @Param("limit") int limit);
+
+    long countForLifeReport(@Param("userId") String userId, @Param("start") String start, @Param("end") String end);
+
+    List<PxDiary> selectSamplesForLifeReport(@Param("userId") String userId, @Param("start") String start,
+                                             @Param("end") String end, @Param("limit") int limit);
 }

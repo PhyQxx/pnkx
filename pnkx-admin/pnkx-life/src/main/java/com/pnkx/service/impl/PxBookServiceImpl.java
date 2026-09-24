@@ -1,6 +1,7 @@
 package com.pnkx.service.impl;
 
 import com.pnkx.common.utils.DateUtils;
+import com.pnkx.common.utils.StringUtils;
 import com.pnkx.common.exception.ServiceException;
 import com.pnkx.domain.po.PxBook;
 import com.pnkx.domain.po.PxBookChapter;
@@ -57,6 +58,13 @@ public class PxBookServiceImpl implements IPxBookService {
 
     @Override
     public int insertBook(PxBook book) {
+        if (StringUtils.isNotEmpty(book.getClientUuid())) {
+            PxBook existing = bookMapper.selectByClientUuid(book.getClientUuid());
+            if (existing != null) {
+                book.setId(existing.getId());
+                return 1;
+            }
+        }
         book.setCreateTime(DateUtils.getNowDate());
         if (book.getStatus() == null) {
             book.setStatus("reading");
