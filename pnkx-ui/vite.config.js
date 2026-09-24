@@ -21,10 +21,14 @@ export default defineConfig(({ mode }) => {
         ],
         resolve: {
             extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
-            alias: {
-                '@': path.resolve(__dirname, './src'),
-                '@shikijs/core': path.resolve(__dirname, './src/shiki-shim.js')
-            }
+            alias: [
+                { find: '@', replacement: path.resolve(__dirname, './src') },
+                { find: '@shikijs/core', replacement: path.resolve(__dirname, './src/shiki-shim.js') },
+                // mermaid 的 mindmap 模块深引 cytoscape/dist/cytoscape.umd.js，
+                // 而 cytoscape>=3.34 的 exports 只给该子路径开放 require 条件，
+                // 构建时会报 "No known conditions for ./dist/cytoscape.umd.js"，重定向到 ESM 版本
+                { find: /^cytoscape\/dist\/cytoscape\.umd\.js$/, replacement: 'cytoscape/dist/cytoscape.esm.mjs' }
+            ]
         },
         css: {
             preprocessorOptions: {
