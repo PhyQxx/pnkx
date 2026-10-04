@@ -7,6 +7,7 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
@@ -49,11 +50,6 @@ public class DbBackupTask {
     private static final Logger log = LoggerFactory.getLogger(DbBackupTask.class);
 
     /**
-     * 备份在 FTP 上的目录
-     */
-    private static final String FTP_BACKUP_DIR = "pnkx-backup";
-
-    /**
      * 备份保留天数
      */
     private static final int RETENTION_DAYS = 30;
@@ -62,6 +58,18 @@ public class DbBackupTask {
      * INSERT 批量大小
      */
     private static final int BATCH_SIZE = 500;
+
+    /**
+     * 备份在 FTP 上的目录。必须位于 ftp.path（/ftp/，站点可写子树）之下：
+     * FTP 根目录对 admin 禁止建目录（MKD 返回 533），历史版本直接在根目录
+     * 建 pnkx-backup 导致每晚 storeFile 被拒（"FTP 存储备份文件失败"）
+     */
+    @Value("${ftp.path:/ftp/}")
+    private String ftpPath;
+
+    private String ftpBackupDir() {
+        return ftpPath.replaceAll("/+$", "") + "/pnkx-backup";
+    }
 
     @Resource
     private DataSource dataSource;
@@ -97,7 +105,7 @@ public class DbBackupTask {
             uploadToFtp(ftpClient, localFile, fileName);
             cleanExpiredBackups(ftpClient);
             uploaded = true;
-            log.info("备份 {} 已上传 FTP 目录 {}/", fileName, FTP_BACKUP_DIR);
+            log.info("备份 {} 已上传 FTP 目录 {}/", fileName, ftpBackupDir());
         } catch (Exception e) {
             log.error("数据库备份任务异常", e);
         } finally {
@@ -248,14 +256,22 @@ public class DbBackupTask {
     }
 
     /**
-     * 上传备份文件到 FTP 指定目录（目录不存在则创建）
+     * 上传备份文件到 FTP 指定目录（目录不存在则创建）。
+     * 建目录/切目录失败必须显式暴露——历史版本静默忽略这两步失败，
+     * 导致 storeFile 在错误的工作目录里被拒且难以排查
      */
     private void uploadToFtp(FTPClient ftpClient, File localFile, String fileName) throws Exception {
-        ftpClient.makeDirectory(FTP_BACKUP_DIR);
-        ftpClient.changeWorkingDirectory(FTP_BACKUP_DIR);
+        String dir = ftpBackupDir();
+        if (!ftpClient.changeWorkingDirectory(dir)) {
+            // 目录不存在则先创建（已存在时 MKD 返回 550，忽略）
+            ftpClient.makeDirectory(dir);
+            if (!ftpClient.changeWorkingDirectory(dir)) {
+                throw new IllegalStateException("FTP 备份目录不可用: " + dir);
+            }
+        }
         try (FileInputStream in = new FileInputStream(localFile)) {
             if (!ftpClient.storeFile(fileName, in)) {
-                throw new IllegalStateException("FTP 存储备份文件失败: " + fileName);
+                throw new IllegalStateException("FTP 存储备份文件失败: " + fileName + "（reply=" + ftpClient.getReplyCode() + "）");
             }
         }
     }
@@ -265,7 +281,7 @@ public class DbBackupTask {
      */
     private void cleanExpiredBackups(FTPClient ftpClient) {
         try {
-            ftpClient.changeWorkingDirectory(FTP_BACKUP_DIR);
+            ftpClient.changeWorkingDirectory(ftpBackupDir());
             FTPFile[] files = ftpClient.listFiles();
             LocalDate cutoff = LocalDate.now().minusDays(RETENTION_DAYS);
             SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
