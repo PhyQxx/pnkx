@@ -10,74 +10,21 @@
       <el-tab-pane label="待办列表" name="list">
         <div class="todo-container">
     <!-- 左侧导航面板 -->
-    <aside class="sidebar">
-      <!-- 搜索栏 -->
-      <div class="search-wrapper">
-        <div class="back-btn" @click="handleBack">
-          <svg-icon icon-class="back" />
-        </div>
-        <div class="search-box">
-          <svg-icon icon-class="搜索" class="search-icon" />
-          <el-select
-            v-model="toDoSearch"
-            class="search-select"
-            :remote-method="handleSearch"
-            clearable
-            :loading="searchLoading"
-            filterable
-            default-first-option
-            remote
-            placeholder="搜索待办..."
-            @change="handleChange"
-          >
-            <el-option
-              v-for="item in options"
-              :key="item.id"
-              :label="item.content"
-              :value="item.id"
-            />
-          </el-select>
-        </div>
-      </div>
-
-      <!-- 导航过滤 -->
-      <div class="nav-list">
-        <div
-          v-for="(nav, index) in navList"
-          :key="nav.key"
-          class="nav-card"
-          :class="{ active: activeNav === nav.key }"
-          @click="selectNav(nav.key)"
-        >
-          <div class="nav-icon-wrapper" :style="{ background: nav.gradient }">
-            <svg-icon :icon-class="nav.icon" class="nav-icon" />
-          </div>
-          <div class="nav-info">
-            <span class="nav-label">{{ nav.label }}</span>
-            <span class="nav-count">{{ nav.count }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 标签过滤 -->
-      <div class="tag-section">
-        <div class="section-title">标签</div>
-        <div class="tag-cloud">
-          <span
-            v-for="(tag, index) in labelOptions"
-            :key="tag"
-            class="tag-item"
-            :class="[
-              tagTypes[index % tagTypes.length],
-              { active: activeTag === tag }
-            ]"
-            @click="handleSearchByLabel(tag)"
-          >
-            {{ tag }}
-          </span>
-        </div>
-      </div>
-    </aside>
+    <todo-sidebar
+      v-model="toDoSearch"
+      :nav-list="navList"
+      :active-nav="activeNav"
+      :label-options="labelOptions"
+      :active-tag="activeTag"
+      :tag-types="tagTypes"
+      :options="options"
+      :search-loading="searchLoading"
+      @back="handleBack"
+      @search="handleSearch"
+      @change="handleChange"
+      @select-nav="selectNav"
+      @select-tag="handleSearchByLabel"
+    />
 
     <!-- 右侧主内容 -->
     <main class="main-area" v-loading="loading">
@@ -232,150 +179,18 @@
 
         <!-- 详情编辑区 -->
         <template v-else>
-          <div class="detail-panel">
-            <!-- 详情头部 -->
-            <div class="detail-header">
-              <div class="detail-back" @click="closeDetail">
-                <svg-icon icon-class="back" />
-                <span>返回列表</span>
-              </div>
-              <div class="detail-actions">
-                <el-button
-                  size="small"
-                  :disabled="!toDoDetails.planEndTime"
-                  @click="$refs.todoReminder.open()"
-                >
-                  设置提醒
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                                    @click="handleDelete(toDoDetails)"
-                >
-                  删除
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 内容输入 -->
-            <div class="detail-content-input">
-              <input
-                v-model="toDoDetails.content"
-                placeholder="待办内容..."
-                class="detail-title-input"
-              />
-            </div>
-
-            <!-- 属性区域 -->
-            <div class="detail-props">
-              <!-- 状态 -->
-              <div class="prop-row">
-                <div class="prop-label">
-                  <svg-icon icon-class="正确" class="prop-icon" />
-                  <span>状态</span>
-                </div>
-                <el-switch
-                  v-model="toDoDetails.status"
-                  active-text="已完成"
-                  inactive-text="未完成"
-                />
-              </div>
-
-              <!-- 标签 -->
-              <div class="prop-row">
-                <div class="prop-label">
-                  <svg-icon icon-class="验证码" class="prop-icon" />
-                  <span>标签</span>
-                </div>
-                <div class="prop-content">
-                  <span
-                    v-for="(tag, index) in toDoDetails.label"
-                    :key="tag"
-                    class="detail-tag"
-                    :class="tagTypes[index % tagTypes.length]"
-                  >
-                    {{ tag }}
-                    <el-icon class="tag-close" @click="handleDeleteLabel(tag)"><Close /></el-icon>
-                  </span>
-                  <el-select
-                    v-model="newLabel"
-                    @change="handleChangeLabel"
-                    filterable
-                    allow-create
-                    placeholder="添加标签"
-                    size="small"
-                    class="tag-select"
-                  >
-                    <el-option
-                      v-for="item in labelOptions"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
-                  </el-select>
-                </div>
-              </div>
-
-              <!-- 执行者 -->
-              <div class="prop-row">
-                <div class="prop-label">
-                  <svg-icon icon-class="用户" class="prop-icon" />
-                  <span>执行者</span>
-                </div>
-                <div class="prop-content">
-                  <el-select
-                    v-model="toDoDetails.performer"
-                    multiple
-                    placeholder="请选择执行者"
-                    size="small"
-                    class="full-select"
-                  >
-                    <el-option
-                      v-for="item in userList"
-                      :key="item.userId"
-                      :label="item.nickName"
-                      :value="item.userId"
-                    />
-                  </el-select>
-                </div>
-              </div>
-
-              <!-- 时间 -->
-              <div class="prop-row">
-                <div class="prop-label">
-                  <svg-icon icon-class="时间" class="prop-icon" />
-                  <span>计划时间</span>
-                </div>
-                <div class="prop-content">
-                  <el-date-picker
-                    v-model="toDoDetailsTime"
-                    type="datetimerange"
-                    :picker-options="pickerOptions"
-                    range-separator="至"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    align="right"
-                    size="small"
-                    class="full-select"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- 备注 -->
-            <div class="detail-editor">
-              <editor
-                ref="editor"
-                :height="300"
-                v-model="toDoDetails.remark"
-              />
-            </div>
-
-            <!-- 浮动保存按钮 -->
-            <div class="fab-save" @click="saveToDo" title="保存">
-              <svg-icon icon-class="保存" />
-            </div>
-          </div>
+          <todo-detail
+            :to-do-details="toDoDetails"
+            v-model:time="toDoDetailsTime"
+            :label-options="labelOptions"
+            :user-list="userList"
+            :tag-types="tagTypes"
+            :picker-options="pickerOptions"
+            @close="detailVisible = false"
+            @save="saveToDo"
+            @delete="handleDelete(toDoDetails)"
+            @open-reminder="$refs.todoReminder.open()"
+          />
         </template>
       </div>
     </main>
@@ -419,14 +234,15 @@
 <script>
 import { listUser } from '@/api/system/user'
 import { addDo, delDo, getDo, listDo, updateDo, getLabelList } from '@/api/px/life/todo'
-import Editor from '@/components/Editor'
 import Pagination from '@/components/Pagination'
 import TodoKanban from './kanban.vue'
+import TodoSidebar from './components/TodoSidebar.vue'
+import TodoDetail from './components/TodoDetail.vue'
 import ReminderSetting from '@/components/ReminderSetting'
 
 export default {
   name: 'index',
-  components: { Editor, Pagination, TodoKanban, ReminderSetting },
+  components: { Pagination, TodoKanban, TodoSidebar, TodoDetail, ReminderSetting },
   data() {
     return {
       // 当前激活的 tab
@@ -523,8 +339,6 @@ export default {
         pageNum: 1,
         pageSize: 10
       },
-      // 新增标签
-      newLabel: '',
       // 待选择标签
       labelOptions: [],
       // 右键菜单标志
@@ -577,25 +391,12 @@ export default {
       this.detailVisible = false
     },
     /**
-     * 新加待办标签
-     */
-    handleChangeLabel(value) {
-      if (!this.toDoDetails.label) this.toDoDetails.label = []
-      this.toDoDetails.label.push(value)
-    },
-    /**
      * 获取待办标签
      */
     getLabelList() {
       getLabelList().then(res => {
         this.labelOptions = res.data
       })
-    },
-    /**
-     * 删除待办标签
-     */
-    handleDeleteLabel(tag) {
-      this.toDoDetails.label.splice(this.toDoDetails.label.indexOf(tag), 1)
     },
     /**
      * 选择待办
@@ -703,7 +504,6 @@ export default {
       this.toDoFlag = false
       getDo(toDo.id).then(res => {
         this.toDoDetails = res.data
-        this.newLabel = ''
         this.toDoDetails.performer = this.toDoDetails.performer
           ? this.toDoDetails.performer.split(',').map(item => Number(item))
           : []
@@ -883,259 +683,6 @@ export default {
   height: 100%;
   background: var(--bg-body);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-}
-
-// 左侧边栏
-.sidebar {
-  width: 320px;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border-primary);
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  z-index: 10;
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-primary);
-    border-radius: 3px;
-
-    &:hover {
-      background: var(--text-tertiary);
-    }
-  }
-}
-
-// 搜索栏
-.search-wrapper {
-  padding: var(--space-5);
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  border-bottom: 1px solid var(--border-primary);
-
-  .back-btn {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    cursor: pointer;
-    transition: all var(--duration-normal) var(--ease-default);
-    box-shadow: var(--shadow-sm);
-
-    &:hover {
-      background: var(--color-primary);
-      color: white;
-      transform: translateX(-2px);
-    }
-
-    .svg-icon {
-      font-size: 18px;
-    }
-  }
-
-  .search-box {
-    flex: 1;
-    position: relative;
-
-    .search-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: var(--text-base);
-      color: var(--text-tertiary);
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .search-select {
-      width: 100%;
-
-      ::v-deep .el-input__inner {
-        height: 40px;
-        padding: 0 var(--space-4) 0 42px;
-        border: none;
-        border-radius: var(--radius-md);
-        background: var(--bg-card);
-        font-size: var(--text-sm);
-        color: var(--text-primary);
-        box-shadow: var(--shadow-sm);
-
-        &::placeholder {
-          color: var(--text-tertiary);
-        }
-
-        &:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.12), var(--shadow-md);
-        }
-      }
-    }
-  }
-}
-
-// 导航列表
-.nav-list {
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.nav-card {
-  display: flex;
-  align-items: center;
-  padding: 14px var(--space-4);
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-default);
-  box-shadow: var(--shadow-sm);
-  border-left: 3px solid transparent;
-
-  &:hover {
-    transform: translateX(4px);
-    box-shadow: var(--shadow-md);
-    background: var(--bg-hover);
-  }
-
-  &.active {
-    background: var(--bg-hover);
-    border-left-color: var(--color-primary);
-  }
-
-  .nav-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    margin-right: 14px;
-
-    .nav-icon {
-      font-size: 18px;
-      color: white;
-    }
-  }
-
-  .nav-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .nav-label {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--text-primary);
-    }
-
-    .nav-count {
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
-      background: var(--bg-hover);
-      padding: 2px 10px;
-      border-radius: 12px;
-      min-width: 28px;
-      text-align: center;
-    }
-  }
-}
-
-// 标签区域
-.tag-section {
-  padding: var(--space-5) var(--space-4);
-
-  .section-title {
-    font-size: var(--text-xs);
-    font-weight: var(--font-semibold);
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 14px;
-  }
-
-  .tag-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
-}
-
-.tag-item {
-  display: inline-block;
-  padding: 4px 14px;
-  border-radius: 16px;
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-default);
-  border: 1px solid transparent;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &.active {
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.25);
-    transform: scale(1.05);
-  }
-
-  &.success {
-    background: rgba(103, 194, 58, 0.1);
-    color: #67c23a;
-    border-color: rgba(103, 194, 58, 0.2);
-  }
-
-  &.warning {
-    background: rgba(230, 162, 60, 0.1);
-    color: #e6a23c;
-    border-color: rgba(230, 162, 60, 0.2);
-  }
-
-  &.danger {
-    background: rgba(245, 108, 108, 0.1);
-    color: #f56c6c;
-    border-color: rgba(245, 108, 108, 0.2);
-  }
-
-  &.info {
-    background: rgba(144, 147, 153, 0.1);
-    color: #909399;
-    border-color: rgba(144, 147, 153, 0.2);
-  }
-
-  // default
-  background: rgba(64, 158, 255, 0.1);
-  color: var(--color-primary);
-  border-color: rgba(64, 158, 255, 0.2);
-
-  &.success {
-    background: rgba(103, 194, 58, 0.1);
-    color: #67c23a;
-    border-color: rgba(103, 194, 58, 0.2);
-  }
-
-  &.active {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-  }
 }
 
 // 右侧主区域
@@ -1462,195 +1009,6 @@ export default {
   }
 }
 
-// ===== 详情面板 =====
-.detail-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) 24px;
-  border-bottom: 1px solid var(--border-primary);
-  background: var(--bg-card);
-
-  .detail-back {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    transition: all var(--duration-normal) var(--ease-default);
-
-    &:hover {
-      background: var(--bg-hover);
-      color: var(--color-primary);
-    }
-  }
-}
-
-.detail-content-input {
-  padding: var(--space-5) 24px 8px;
-
-  .detail-title-input {
-    width: 100%;
-    font-size: var(--text-xl);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
-    border: none;
-    background: transparent;
-    padding: var(--space-2) 0;
-    border-bottom: 2px solid transparent;
-    transition: all var(--duration-normal) var(--ease-default);
-
-    &::placeholder {
-      color: var(--text-tertiary);
-    }
-
-    &:focus {
-      outline: none;
-      border-bottom-color: var(--color-primary);
-    }
-  }
-}
-
-// 属性区域
-.detail-props {
-  padding: var(--space-4) 24px;
-
-  .prop-row {
-    display: flex;
-    align-items: center;
-    padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--border-primary);
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .prop-label {
-      width: 100px;
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--text-secondary);
-      flex-shrink: 0;
-
-      .prop-icon {
-        font-size: var(--text-base);
-      }
-    }
-
-    .prop-content {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-
-      .detail-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1);
-        padding: 4px 12px;
-        border-radius: 14px;
-        font-size: var(--text-xs);
-
-        &.success {
-          background: rgba(103, 194, 58, 0.1);
-          color: #67c23a;
-        }
-
-        &.warning {
-          background: rgba(230, 162, 60, 0.1);
-          color: #e6a23c;
-        }
-
-        &.danger {
-          background: rgba(245, 108, 108, 0.1);
-          color: #f56c6c;
-        }
-
-        &.info {
-          background: rgba(144, 147, 153, 0.1);
-          color: #909399;
-        }
-
-        background: rgba(64, 158, 255, 0.1);
-        color: var(--color-primary);
-
-        .tag-close {
-          cursor: pointer;
-          font-size: var(--text-xs);
-          margin-left: 2px;
-
-          &:hover {
-            color: #f56c6c;
-          }
-        }
-      }
-
-      .tag-select {
-        width: 140px;
-      }
-
-      .full-select {
-        width: 100%;
-      }
-    }
-  }
-}
-
-// 编辑器
-.detail-editor {
-  flex: 1;
-  padding: 0 24px 24px;
-  min-height: 300px;
-}
-
-// 浮动保存按钮
-.fab-save {
-  position: fixed;
-  right: 32px;
-  bottom: 32px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-lg);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-default);
-  z-index: 100;
-
-  .svg-icon {
-    font-size: var(--text-xl);
-  }
-
-  &:hover {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: var(--shadow-lg);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
 
 // 右键菜单
 .context-menu {
