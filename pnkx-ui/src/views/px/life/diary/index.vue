@@ -12,103 +12,23 @@
         <!-- ==================== 现代分栏视图 ==================== -->
         <template v-if="viewMode === 'modern'">
             <!-- 左侧列表面板 -->
-            <aside class="sidebar">
-                <!-- 搜索栏 -->
-                <div class="search-wrapper">
-                    <div class="search-box">
-                        <svg-icon icon-class="搜索" class="search-icon"/>
-                        <input
-                            v-model="searchCode"
-                            placeholder="搜索日记..."
-                            class="search-input"
-                        >
-                    </div>
-                </div>
-
-                <!-- 日记列表 -->
-                <div
-                    v-loading="listLoading"
-                    class="diary-list"
-                    @contextmenu.prevent.stop="handleContextMenu($event, null)"
-                >
-                    <div v-if="filteredList.length < 1" class="empty-state">
-                        <svg-icon icon-class="备注" class="empty-icon"/>
-                        <p>暂无日记</p>
-                        <p class="hint">右键或点击右下角按钮新增</p>
-                    </div>
-
-                    <transition-group v-else name="diary-list" tag="div" class="diary-items">
-                        <div
-                            v-for="(item, index) in filteredList"
-                            :key="item.id"
-                            class="diary-card"
-                            :class="{ active: active && active.id === item.id }"
-                            :style="{ animationDelay: `${index * 0.05}s` }"
-                            @contextmenu.prevent.stop="handleContextMenu($event, item)"
-                            @click="handleSelect(item)"
-                        >
-                            <div class="card-icon-wrapper">
-                                <svg-icon :icon-class="item.mood || '备注'" class="card-icon"/>
-                            </div>
-                            <div class="card-info">
-                                <div class="card-date">{{ item.date }}</div>
-                                <div class="card-preview">{{ item.content && item.content.replace(regex, '') }}</div>
-                            </div>
-                            <div class="card-meta">
-                                <svg-icon v-if="item.weather" :icon-class="item.weather" class="meta-icon"/>
-                                <svg-icon v-if="item.mood" :icon-class="item.mood" class="meta-icon mood"/>
-                            </div>
-                        </div>
-                    </transition-group>
-                </div>
-            </aside>
+            <diary-sidebar
+                v-model="searchCode"
+                :list="filteredList"
+                :list-loading="listLoading"
+                :active-id="active && active.id"
+                :regex="regex"
+                @select="handleSelect"
+                @contextmenu="handleContextMenu"
+            />
 
             <!-- 右侧详情面板 -->
-            <main v-loading="loading" class="detail-area">
-                <!-- 空状态 -->
-                <div v-if="!active" class="empty-detail">
-                    <svg-icon icon-class="备注" class="empty-detail-icon"/>
-                    <p>选择一条日记查看详情</p>
-                </div>
-
-                <!-- 日记详情 -->
-                <div v-else class="diary-detail">
-                    <!-- 头部信息 -->
-                    <div class="detail-header">
-                        <div class="detail-icon-wrapper">
-                            <svg-icon :icon-class="active.mood || '备注'" class="detail-icon"/>
-                        </div>
-                        <div class="detail-title-section">
-                            <h2 class="detail-date">{{ active.date }}</h2>
-                            <div class="detail-tags">
-                <span v-if="active.mood" class="tag mood-tag">
-                  <svg-icon :icon-class="active.mood" class="tag-icon"/>
-                  心情
-                </span>
-                                <span v-if="active.weather" class="tag weather-tag">
-                  <svg-icon :icon-class="active.weather" class="tag-icon"/>
-                  天气
-                </span>
-                            </div>
-                        </div>
-                        <div class="detail-actions">
-                            <el-button type="primary" size="small" @click="handleEdit">
-                                <svg-icon icon-class="编辑" class="action-icon"/>
-                                编辑
-                            </el-button>
-                            <el-button type="danger" size="small" @click="handleDeleteFromDetail">
-                                <svg-icon icon-class="删除" class="action-icon"/>
-                                删除
-                            </el-button>
-                        </div>
-                    </div>
-
-                    <!-- 日记内容 -->
-                    <div class="detail-body">
-                        <div class="detail-content" v-html="sanitizeHtml(active.content)"/>
-                    </div>
-                </div>
-            </main>
+            <diary-detail-panel
+                :active="active"
+                :loading="loading"
+                @edit="handleEdit"
+                @delete="handleDeleteFromDetail"
+            />
         </template>
 
         <!-- ==================== 日历视图 ==================== -->
@@ -174,73 +94,15 @@
         </div>
 
         <!-- 日记编辑抽屉 -->
-        <el-drawer
+        <diary-drawer
+            ref="diaryDrawer"
+            v-model:visible="diaryVisible"
             :title="drawerTitle"
-            size="50%"
-            destroy-on-close
-            v-model="diaryVisible"
-            :before-close="saveDairy"
-            custom-class="modern-drawer"
-        >
-            <el-form ref="form" v-loading="saveLoading" :model="diary" :rules="diaryRules"
-                     class="diary-form modern-form">
-                <div class="diary-meta-row">
-                    <el-form-item label="心情" prop="mood" class="meta-item">
-                        <el-popover
-                            placement="bottom-start"
-                            width="460"
-                            trigger="click"
-                            @show="$refs['feelingSelect'].reset()"
-                        >
-                            <icon-select ref="feelingSelect" prefix="x-" @selected="feelingSelected"/>
-                            <template #reference>
-                                <el-input v-model="diary.mood" placeholder="点击选择心情" readonly>
-                                    <template #prefix>
-                                        <svg-icon
-                                            v-if="diary.mood"
-                                            :icon-class="diary.mood"
-                                            class="el-input__icon"
-                                            style="height: 32px;width: 16px;"
-                                        />
-                                        <el-icon v-else>
-                                            <Search/>
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </template>
-                        </el-popover>
-                    </el-form-item>
-                    <el-form-item label="天气" class="meta-item weather-item" prop="weather">
-                        <el-popover
-                            placement="bottom-start"
-                            width="460"
-                            trigger="click"
-                            @show="$refs['weatherSelect'].reset()"
-                        >
-                            <icon-select ref="weatherSelect" prefix="w-" @selected="weatherSelected"/>
-                            <template #reference>
-                                <el-input v-model="diary.weather" placeholder="点击选择天气" readonly>
-                                    <template #prefix>
-                                        <svg-icon
-                                            v-if="diary.weather"
-                                            :icon-class="diary.weather"
-                                            class="el-input__icon"
-                                            style="height: 32px;width: 16px;"
-                                        />
-                                        <el-icon v-else>
-                                            <Search/>
-                                        </el-icon>
-                                    </template>
-                                </el-input>
-                            </template>
-                        </el-popover>
-                    </el-form-item>
-                </div>
-                <el-form-item v-if="diaryVisible" prop="content">
-                    <editor ref="editor" v-model="diary.content" :height="600" />
-                </el-form-item>
-            </el-form>
-        </el-drawer>
+            :diary="diary"
+            :save-loading="saveLoading"
+            :rules="diaryRules"
+            @before-close="saveDairy"
+        />
 
         <!-- 右键菜单（仅现代视图） -->
         <transition name="context-menu">
@@ -271,16 +133,16 @@
 </template>
 
 <script>
-import IconSelect from '@/components/IconSelect/index.vue'
-import {sanitizeHtml} from '@/utils/sanitizeHtml'
 import {addDiary, delDiary, getDiary, listDiary, retrievalDiary, updateDiary} from '@/api/px/life/diary'
-import Editor from '@/components/Editor/index.vue'
 import Calendar from './calendar.vue'
 import DiaryAnalysis from './analysis.vue'
+import DiarySidebar from './components/DiarySidebar.vue'
+import DiaryDetailPanel from './components/DiaryDetailPanel.vue'
+import DiaryDrawer from './components/DiaryDrawer.vue'
 
 export default {
     name: 'Diary',
-    components: {IconSelect, Editor, Calendar, DiaryAnalysis},
+    components: {Calendar, DiaryAnalysis, DiarySidebar, DiaryDetailPanel, DiaryDrawer},
     data() {
         return {
             // 当前激活的 tab
@@ -487,18 +349,6 @@ export default {
             }
         },
         /**
-         * 心情图标选择
-         */
-        feelingSelected(name) {
-            this.diary.mood = name
-        },
-        /**
-         * 天气图标选择
-         */
-        weatherSelected(name) {
-            this.diary.weather = name
-        },
-        /**
          * 保存日记
          */
         saveDairy(done) {
@@ -513,7 +363,7 @@ export default {
                 this.diary = {}
                 return
             }
-            this.$refs.form.validate(valid => {
+            this.$refs.diaryDrawer.validate(valid => {
                 if (valid) {
                     this.saveLoading = true
                     if (this.diary.id) {
@@ -614,345 +464,6 @@ export default {
     background: var(--bg-body);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     position: relative;
-}
-
-// ==================== 现代视图 ====================
-
-// 左侧边栏
-.sidebar {
-    width: 360px;
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border-right: 1px solid var(--border-primary);
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    z-index: 10;
-}
-
-// 搜索栏
-.search-wrapper {
-    padding: var(--space-5);
-    border-bottom: 1px solid var(--border-primary);
-
-    .search-box {
-        position: relative;
-        display: flex;
-        align-items: center;
-
-        .search-icon {
-            position: absolute;
-            left: 14px;
-            font-size: var(--text-base);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }
-
-        .search-input {
-            width: 100%;
-            height: 40px;
-            padding: 0 var(--space-4) 0 42px;
-            border: none;
-            border-radius: var(--radius-md);
-            background: var(--bg-hover);
-            font-size: var(--text-sm);
-            color: var(--text-primary);
-            box-shadow: var(--shadow-sm);
-            transition: all var(--duration-normal) var(--ease-default);
-
-            &::placeholder {
-                color: var(--text-tertiary);
-            }
-
-            &:focus {
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.12), var(--shadow-md);
-            }
-        }
-    }
-}
-
-// 日记列表
-.diary-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-4);
-
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: var(--border-primary);
-        border-radius: 3px;
-
-        &:hover {
-            background: var(--text-tertiary);
-        }
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: var(--text-tertiary);
-
-        .empty-icon {
-            font-size: 64px;
-            opacity: 0.3;
-            margin-bottom: var(--space-4);
-        }
-
-        p {
-            margin: var(--space-1) 0;
-        }
-
-        .hint {
-            font-size: var(--text-xs);
-            opacity: 0.7;
-        }
-    }
-
-    .diary-items {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-    }
-}
-
-// 日记卡片
-.diary-card {
-    display: flex;
-    align-items: center;
-    padding: 14px var(--space-4);
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--duration-normal) var(--ease-default);
-    box-shadow: var(--shadow-sm);
-    border-left: 3px solid transparent;
-    animation: fadeSlideIn 0.4s var(--ease-default) forwards;
-    opacity: 0;
-
-    &.active {
-        background: var(--bg-hover);
-        border-left-color: var(--color-primary);
-    }
-
-    &:hover {
-        transform: translateX(4px);
-        box-shadow: var(--shadow-md);
-        background: var(--bg-hover);
-    }
-
-    .card-icon-wrapper {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--color-primary);
-        border-radius: var(--radius-sm);
-        margin-right: var(--space-3);
-        flex-shrink: 0;
-
-        .card-icon {
-            font-size: var(--text-lg);
-            color: white;
-        }
-    }
-
-    .card-info {
-        flex: 1;
-        min-width: 0;
-
-        .card-date {
-            font-size: var(--text-sm);
-            font-weight: var(--font-semibold);
-            color: var(--text-primary);
-            margin-bottom: var(--space-1);
-        }
-
-        .card-preview {
-            font-size: var(--text-xs);
-            color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-    }
-
-    .card-meta {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-1);
-        flex-shrink: 0;
-        margin-left: var(--space-3);
-
-        .meta-icon {
-            font-size: 18px;
-
-            &.mood {
-                font-size: var(--text-base);
-            }
-        }
-    }
-}
-
-@keyframes fadeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-// 右侧详情区域
-.detail-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.empty-detail {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-tertiary);
-
-    .empty-detail-icon {
-        font-size: 80px;
-        opacity: 0.2;
-        margin-bottom: var(--space-5);
-    }
-
-    p {
-        font-size: var(--text-base);
-    }
-}
-
-// 日记详情
-.diary-detail {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-.detail-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5);
-    padding: 28px 32px 20px;
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border-primary);
-
-    .detail-icon-wrapper {
-        width: 56px;
-        height: 56px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--color-primary);
-        border-radius: var(--radius-md);
-        flex-shrink: 0;
-        box-shadow: var(--shadow-md);
-
-        .detail-icon {
-            font-size: 28px;
-            color: white;
-        }
-    }
-
-    .detail-title-section {
-        flex: 1;
-        min-width: 0;
-
-        .detail-date {
-            font-size: var(--text-xl);
-            font-weight: var(--font-semibold);
-            color: var(--text-primary);
-            margin: 0 0 var(--space-2) 0;
-        }
-
-        .detail-tags {
-            display: flex;
-            gap: var(--space-2);
-
-            .tag {
-                display: inline-flex;
-                align-items: center;
-                gap: var(--space-1);
-                padding: 2px 10px;
-                border-radius: 20px;
-                font-size: var(--text-xs);
-
-                .tag-icon {
-                    font-size: var(--text-sm);
-                }
-
-                &.mood-tag {
-                    background: rgba(64, 158, 255, 0.1);
-                    color: var(--color-primary);
-                }
-
-                &.weather-tag {
-                    background: rgba(64, 158, 255, 0.06);
-                    color: var(--color-primary-600);
-                }
-            }
-        }
-    }
-
-    .detail-actions {
-        display: flex;
-        gap: var(--space-2);
-        flex-shrink: 0;
-
-        .el-button {
-            border-radius: var(--radius-sm);
-
-            .action-icon {
-                font-size: var(--text-sm);
-                margin-right: var(--space-1);
-            }
-        }
-    }
-}
-
-.detail-body {
-    flex: 1;
-    padding: 32px;
-
-    .detail-content {
-        background: var(--bg-card);
-        border-radius: var(--radius-lg);
-        padding: 32px;
-        box-shadow: var(--shadow-md);
-        line-height: 1.8;
-        color: var(--text-primary);
-        font-size: 15px;
-        min-height: 300px;
-
-        ::v-deep img {
-            max-width: 100%;
-            border-radius: var(--radius-sm);
-        }
-    }
 }
 
 // ==================== 日历视图 ====================
@@ -1119,81 +630,6 @@ export default {
 .context-menu-leave-to {
     opacity: 0;
     transform: scale(0.95) translateY(-8px);
-}
-
-// 列表动画
-.diary-list-enter-active,
-.diary-list-leave-active {
-    transition: all var(--duration-normal) var(--ease-default);
-}
-
-.diary-list-enter,
-.diary-list-leave-to {
-    opacity: 0;
-    transform: translateX(-20px);
-}
-
-// ==================== 抽屉样式覆盖 ====================
-
-::v-deep .modern-drawer {
-    .el-drawer__header {
-        padding: var(--space-5) 24px var(--space-4);
-        border-bottom: 1px solid var(--border-primary);
-        background: var(--bg-card);
-        margin-bottom: 0;
-
-        > :first-child {
-            font-size: var(--text-lg);
-            font-weight: var(--font-semibold);
-            color: var(--text-primary);
-        }
-    }
-
-    .el-drawer__body {
-        padding: 0;
-    }
-}
-
-// 表单样式
-.diary-form {
-    padding: var(--space-5) 24px;
-
-    .diary-meta-row {
-        display: flex;
-        gap: var(--space-4);
-
-        .meta-item {
-            flex: 1;
-        }
-
-        .weather-item {
-            margin-left: 0;
-        }
-    }
-}
-
-.modern-form {
-    ::v-deep .el-form-item {
-        margin-bottom: var(--space-5);
-
-        .el-form-item__label {
-            font-size: var(--text-sm);
-            font-weight: var(--font-semibold);
-            color: var(--text-secondary);
-            padding-bottom: var(--space-2);
-        }
-
-        .el-input__inner {
-            border-radius: var(--radius-sm);
-            border-color: var(--border-primary);
-            transition: all var(--duration-normal) var(--ease-default);
-
-            &:focus {
-                border-color: var(--color-primary);
-                box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.12);
-            }
-        }
-    }
 }
 
 // Loading 美化
