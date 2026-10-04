@@ -51,6 +51,14 @@ unpackage/
 build/
 
 # =====================
+# 本地敏感配置（数据库等生产凭据，绝不入库）
+# 注意：pnkx-ui 的 .env.development/.env.production 与 pnkx-client 的
+# .env.dev/.env.prod 是有意随仓库维护的（仅含非敏感地址），不做全局 *.env 忽略
+# =====================
+.wp_db.env
+*.env.local
+
+# =====================
 # 数据库脚本：散落的 SQL（数据导出/临时脚本）不入库，
 # 但 Flyway 迁移脚本（纯 DDL + 结构数据，已脱敏）随仓库维护，
 # 保证新环境 clone 后即可建库启动

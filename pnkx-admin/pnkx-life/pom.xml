@@ -27,6 +27,11 @@
             <groupId>com.pnkx</groupId>
             <artifactId>pnkx-framework</artifactId>
         </dependency>
+        <!-- AI基础设施模块（AiClient，记账AI解析/日记分析使用）-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-ai</artifactId>
+        </dependency>
         <!-- AgentScope Java AI框架 -->
         <dependency>
             <groupId>io.agentscope</groupId>
@@ -36,7 +41,6 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.10.3</version>
         </dependency>
 
         <dependency>

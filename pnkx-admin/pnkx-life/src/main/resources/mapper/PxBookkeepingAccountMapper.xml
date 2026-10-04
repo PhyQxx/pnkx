@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxBookkeepingAccountMapper">
+<mapper namespace="com.pnkx.life.mapper.PxBookkeepingAccountMapper">
 
     <resultMap type="PxBookkeepingAccount" id="PxBookkeepingAccountResult">
         <result property="id" column="id"/>
@@ -130,9 +130,9 @@
             <if test="accountName != null  and accountName != ''">and account_name like concat('%', #{accountName},
                 '%')
             </if>
-            <if test="balance != null  and balance != ''">and balance = #{balance}</if>
-            <if test="inflow != null  and inflow != ''">and inflow = #{inflow}</if>
-            <if test="flowOut != null  and flowOut != ''">and flow_out = #{flowOut}</if>
+            <if test="balance != null">and balance = #{balance}</if>
+            <if test="inflow != null">and inflow = #{inflow}</if>
+            <if test="flowOut != null">and flow_out = #{flowOut}</if>
             <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
             <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
                 and create_by in
@@ -149,7 +149,7 @@
     </select>
 
     <!--查询最近使用账户列表-->
-    <select id="getLatelyAccountList" parameterType="com.pnkx.domain.po.PxBookkeepingClassification"
+    <select id="getLatelyAccountList" parameterType="com.pnkx.life.domain.po.PxBookkeepingClassification"
             resultMap="PxBookkeepingAccountResult">
         SELECT a.id,
                account_icon,

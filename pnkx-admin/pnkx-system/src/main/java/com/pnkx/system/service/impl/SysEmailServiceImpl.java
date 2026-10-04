@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import jakarta.mail.MessagingException;
@@ -95,33 +94,42 @@ public class SysEmailServiceImpl implements ISysEmailService {
     }
 
     @Override
-    @Transactional
     public void sendMail(SysEmail email) throws MessagingException {
-        // 判断是否开启飞书通知
+        // 飞书通知是外部 HTTP 调用，不放在任何数据库事务内（慢调用会长期占用连接）
         String feishuNotifyEnable = sysConfigService.selectConfigByKey("sys.notify.feishu.enable");
         if (StringUtils.isNotEmpty(feishuNotifyEnable) && "true".equals(feishuNotifyEnable)) {
             // 飞书通知
             String feishuWebhookUrl = sysConfigService.selectConfigByKey("sys.notify.feishu.webhook");
             FeishuISysNotify.sendNotification(feishuWebhookUrl, email.getSubject(), "");
         }
-        
+
         // 判断是否开启邮件通知
         String emailNotifyEnable = sysConfigService.selectConfigByKey("sys.notify.email.enable");
         if (StringUtils.isEmpty(emailNotifyEnable) || "true".equals(emailNotifyEnable)) { // 默认开启
+            // 先落库（单条 insert 自身原子，发送失败也不应回滚——失败记录同样需要留痕），
+            // 再在事务外执行 SMTP 慢调用
             sysEmailMapper.insertSysEmail(email);
-            String[] to = EmailUtils.validEmail(email.getReceiverEmail());
-            if (to != null && to.length > 0) {
-                MimeMessage message = javaMailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true);
-                helper.setFrom(from);
-                helper.setTo(to);
-                if (StringUtils.isNotEmpty(email.getCcEmail())) {
-                    helper.setCc(Objects.requireNonNull(EmailUtils.validEmail(email.getCcEmail())));
-                }
-                helper.setSubject(email.getSubject());
-                helper.setText(email.getContent(), true);
-                javaMailSender.send(message);
-            }
+            sendEmailMessage(email);
         }
+    }
+
+    /**
+     * 组装并发送 MIME 邮件（纯外部 IO，不持有数据库事务）
+     */
+    private void sendEmailMessage(SysEmail email) throws MessagingException {
+        String[] to = EmailUtils.validEmail(email.getReceiverEmail());
+        if (to == null || to.length == 0) {
+            return;
+        }
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setFrom(from);
+        helper.setTo(to);
+        if (StringUtils.isNotEmpty(email.getCcEmail())) {
+            helper.setCc(Objects.requireNonNull(EmailUtils.validEmail(email.getCcEmail())));
+        }
+        helper.setSubject(email.getSubject());
+        helper.setText(email.getContent(), true);
+        javaMailSender.send(message);
     }
 }

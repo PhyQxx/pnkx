@@ -2,10 +2,10 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxBookkeepingStatisticsMapper">
+<mapper namespace="com.pnkx.life.mapper.PxBookkeepingStatisticsMapper">
 
     <!--统计每月日消费折线图-->
-    <select id="getLineChartByDay" resultType="map" parameterType="com.pnkx.domain.po.PxBookkeepingRecord">
+    <select id="getLineChartByDay" resultType="map" parameterType="com.pnkx.life.domain.po.PxBookkeepingRecord">
         SELECT
             date,
             COALESCE( i.unmber, 0 ) inflowMoney,

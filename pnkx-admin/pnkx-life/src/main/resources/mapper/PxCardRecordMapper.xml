@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxCardRecordMapper">
+<mapper namespace="com.pnkx.life.mapper.PxCardRecordMapper">
 
     <resultMap type="PxCardRecord" id="PxCardRecordResult">
         <result property="id" column="id"/>
@@ -44,7 +44,7 @@
                               left join sys_user u on r.user_id = u.user_id
     </sql>
 
-    <select id="selectPxCardRecordList" parameterType="com.pnkx.domain.vo.PxCardRecordVo" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+    <select id="selectPxCardRecordList" parameterType="com.pnkx.life.domain.vo.PxCardRecordVo" resultType="com.pnkx.life.domain.vo.PxCardRecordVo">
         <include refid="selectPxCardRecordVo"/>
         <where>
             <if test="cardName != null ">
@@ -71,13 +71,13 @@
     </select>
 
     <select id="selectPxCardRecordById" parameterType="Long"
-            resultType="com.pnkx.domain.vo.PxCardRecordVo">
+            resultType="com.pnkx.life.domain.vo.PxCardRecordVo">
         <include refid="selectPxCardRecordVo"/>
         where r.id = #{id}
     </select>
 
     <!--获取待处理的卡券-->
-    <select id="getToDoCard" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+    <select id="getToDoCard" resultType="com.pnkx.life.domain.vo.PxCardRecordVo">
         select r.id,
                c.title cardName,
                u.nick_name userName,
@@ -102,7 +102,7 @@
     </select>
 
     <!--获取使用中（未完结）的卡券记录：待确认 或 已确认待评分 -->
-    <select id="getUsingCardRecord" resultType="com.pnkx.domain.vo.PxCardRecordVo">
+    <select id="getUsingCardRecord" resultType="com.pnkx.life.domain.vo.PxCardRecordVo">
         <include refid="selectPxCardRecordVo"/>
         where (r.score is null or r.score = 0)
         order by r.create_time desc

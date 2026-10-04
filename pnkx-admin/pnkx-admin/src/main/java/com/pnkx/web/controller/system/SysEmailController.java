@@ -11,7 +11,6 @@ import com.pnkx.system.service.ISysEmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -80,7 +79,6 @@ public class SysEmailController extends BaseController {
 
     @Operation(summary = "发送HTML邮件")
     @PostMapping("/sendHtmlEmail")
-    @Transactional()
     public AjaxResult sendHtmlEmail(@RequestBody SysEmail email) {
         try {
             sysEmailService.sendMail(email);

@@ -1,0 +1,36 @@
+package com.pnkx.life.mapper;
+
+import com.pnkx.life.domain.po.PxMealPlan;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.Date;
+import java.util.List;
+
+/**
+ * 餐饮计划 Mapper
+ *
+ * @author PHY
+ * @date 2026/07/05
+ */
+@Mapper
+public interface PxMealPlanMapper {
+    PxMealPlan selectPxMealPlanById(Long id);
+
+    PxMealPlan selectByClientUuid(String clientUuid);
+
+    List<PxMealPlan> selectPxMealPlanList(PxMealPlan pxMealPlan);
+
+    /** 按日期范围查询（周视图用） */
+    List<PxMealPlan> selectByDateRange(@Param("startDate") String startDate, @Param("endDate") String endDate);
+    List<PxMealPlan> selectByDateRangeForUser(@Param("startDate") String startDate, @Param("endDate") String endDate,
+                                              @Param("userId") String userId);
+
+    int insertPxMealPlan(PxMealPlan pxMealPlan);
+
+    int updatePxMealPlan(PxMealPlan pxMealPlan);
+
+    int deletePxMealPlanById(Long id);
+
+    int deletePxMealPlanByIds(Long[] ids);
+}

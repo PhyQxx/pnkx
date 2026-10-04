@@ -1,6 +1,6 @@
 package com.pnkx.quartz.task;
 
-import com.pnkx.service.impl.PxBookkeepingRecurringService;
+import com.pnkx.life.service.impl.PxBookkeepingRecurringService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

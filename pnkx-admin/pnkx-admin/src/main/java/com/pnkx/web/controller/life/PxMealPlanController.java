@@ -5,8 +5,8 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
-import com.pnkx.domain.po.PxMealPlan;
-import com.pnkx.service.IPxMealPlanService;
+import com.pnkx.life.domain.po.PxMealPlan;
+import com.pnkx.life.service.IPxMealPlanService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxAiOperationLogMapper">
+<mapper namespace="com.pnkx.life.mapper.PxAiOperationLogMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxAiOperationLog" id="PxAiOperationLogResult">
+    <resultMap type="com.pnkx.life.domain.po.PxAiOperationLog" id="PxAiOperationLogResult">
         <result property="id" column="id"/>
         <result property="requestId" column="request_id"/>
         <result property="userId" column="user_id"/>
@@ -33,7 +33,7 @@
         select id, request_id, user_id, question, intent, confidence, model_id, model_key, is_stream, is_write, write_status, parsed_json, plan_json, result_json, rollback_json, error_msg, duration_ms, create_by, create_time, update_by, update_time, remark from px_ai_operation_log
     </sql>
 
-    <select id="selectPxAiOperationLogList" parameterType="com.pnkx.domain.po.PxAiOperationLog" resultMap="PxAiOperationLogResult">
+    <select id="selectPxAiOperationLogList" parameterType="com.pnkx.life.domain.po.PxAiOperationLog" resultMap="PxAiOperationLogResult">
         <include refid="selectPxAiOperationLogVo"/>
         <where>
             <if test="requestId != null  and requestId != ''"> and request_id = #{requestId}</if>
@@ -61,7 +61,7 @@
         where request_id = #{requestId}
     </select>
 
-    <insert id="insertPxAiOperationLog" parameterType="com.pnkx.domain.po.PxAiOperationLog" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertPxAiOperationLog" parameterType="com.pnkx.life.domain.po.PxAiOperationLog" useGeneratedKeys="true" keyProperty="id">
         insert into px_ai_operation_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="requestId != null and requestId != ''">request_id,</if>
@@ -111,7 +111,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxAiOperationLog" parameterType="com.pnkx.domain.po.PxAiOperationLog">
+    <update id="updatePxAiOperationLog" parameterType="com.pnkx.life.domain.po.PxAiOperationLog">
         update px_ai_operation_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="requestId != null and requestId != ''">request_id = #{requestId},</if>
@@ -137,7 +137,7 @@
         where id = #{id}
     </update>
 
-    <update id="updatePxAiOperationLogByRequestId" parameterType="com.pnkx.domain.po.PxAiOperationLog">
+    <update id="updatePxAiOperationLogByRequestId" parameterType="com.pnkx.life.domain.po.PxAiOperationLog">
         update px_ai_operation_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="intent != null">intent = #{intent},</if>

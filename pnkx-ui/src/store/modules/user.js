@@ -1,5 +1,11 @@
 import {login, logout, getInfo} from '@/api/login'
 import {getToken, setToken, removeToken} from '@/utils/auth'
+import {FTP_SITE_URL} from '@/assets/js/common'
+
+/**
+ * 未设置头像时的默认头像（FTP 图床）
+ */
+const DEFAULT_AVATAR = FTP_SITE_URL + '/ftp/avatar/%E7%94%A8%E6%88%B7-15006732580-%E5%A4%B4%E5%83%8F-4.png'
 
 const user = {
     state: {
@@ -68,7 +74,7 @@ const user = {
                     if (user.avatar.indexOf('http') !== -1) {
                         header = user.avatar
                     }
-                    const avatar = user.avatar === "" ? 'https://ftp.pnkx.top:8/ftp/avatar/%E7%94%A8%E6%88%B7-15006732580-%E5%A4%B4%E5%83%8F-4.png' : header;
+                    const avatar = user.avatar === "" ? DEFAULT_AVATAR : header;
                     if (res.roles && res.roles.length > 0) { // 验证返回的roles是否是一个非空数组
                         commit('SET_ROLES', res.roles)
                         commit('SET_PERMISSIONS', res.permissions)

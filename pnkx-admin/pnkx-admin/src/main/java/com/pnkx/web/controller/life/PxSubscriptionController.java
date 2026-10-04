@@ -5,8 +5,8 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
-import com.pnkx.domain.po.PxSubscription;
-import com.pnkx.service.IPxSubscriptionService;
+import com.pnkx.life.domain.po.PxSubscription;
+import com.pnkx.life.service.IPxSubscriptionService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

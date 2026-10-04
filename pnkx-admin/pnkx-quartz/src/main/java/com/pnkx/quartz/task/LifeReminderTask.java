@@ -1,6 +1,6 @@
 package com.pnkx.quartz.task;
 
-import com.pnkx.service.IPxLifeReminderService;
+import com.pnkx.life.service.IPxLifeReminderService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

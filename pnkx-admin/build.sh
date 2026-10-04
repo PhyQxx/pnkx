@@ -22,5 +22,14 @@ if docker ps -a --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q 
 fi
 # 启动新的容器
 echo "启动新的 $CONTAINER_NAME 容器..."
-docker run --name pnkx-admin -p 8068:8068 -d pnkx-admin -v /volume3/docker/pnkx/uploadPath:/app/uploadPath
+# 注意：-v / -e 等选项必须写在镜像名之前，否则会被 docker 当作容器启动命令，挂载与变量均不生效
+ENV_FILE_ARGS=""
+if [ -f prod.env ]; then
+    ENV_FILE_ARGS="--env-file prod.env"
+fi
+docker run --name pnkx-admin -p 8068:8068 -d \
+    $ENV_FILE_ARGS \
+    -v /volume3/docker/pnkx/uploadPath:/app/uploadPath \
+    -e PNKX_PROFILE=/app/uploadPath \
+    pnkx-admin
 echo "运行容器成功"

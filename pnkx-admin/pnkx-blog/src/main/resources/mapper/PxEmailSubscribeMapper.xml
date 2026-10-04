@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxEmailSubscribeMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxEmailSubscribeMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxEmailSubscribe" id="PxEmailSubscribeResult">
+    <resultMap type="com.pnkx.blog.domain.po.PxEmailSubscribe" id="PxEmailSubscribeResult">
         <result property="id" column="id"/>
         <result property="subscribeMail" column="subscribe_mail"/>
         <result property="version" column="version"/>
@@ -32,7 +32,7 @@
         where id = #{id}
     </select>
 
-    <select id="selectPxEmailSubscribeList" parameterType="com.pnkx.domain.po.PxEmailSubscribe"
+    <select id="selectPxEmailSubscribeList" parameterType="com.pnkx.blog.domain.po.PxEmailSubscribe"
             resultMap="PxEmailSubscribeResult">
         <include refid="selectPxEmailSubscribeVo"/>
         <where>
@@ -41,7 +41,7 @@
         </where>
     </select>
 
-    <insert id="insertPxEmailSubscribe" parameterType="com.pnkx.domain.po.PxEmailSubscribe" useGeneratedKeys="true"
+    <insert id="insertPxEmailSubscribe" parameterType="com.pnkx.blog.domain.po.PxEmailSubscribe" useGeneratedKeys="true"
             keyProperty="id">
         insert into px_subscribe
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -64,7 +64,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxEmailSubscribe" parameterType="com.pnkx.domain.po.PxEmailSubscribe">
+    <update id="updatePxEmailSubscribe" parameterType="com.pnkx.blog.domain.po.PxEmailSubscribe">
         update px_subscribe
         <trim prefix="SET" suffixOverrides=",">
             <if test="subscribeMail != null">subscribe_mail = #{subscribeMail},</if>

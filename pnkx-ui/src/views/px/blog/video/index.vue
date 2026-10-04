@@ -122,7 +122,7 @@
                             size="small"
                             type="text"
                             icon="Share"
-                            @click="$copyText('https://pnkx.top/videos/' + scope.row.id)"
+                            @click="$copyText(blogUrl + 'videos/' + scope.row.id)"
                         >分享
                         </el-button>
                         <el-button
@@ -270,6 +270,8 @@ export default {
     },
     data() {
         return {
+            // 博客前台地址（拼视频公开链接）
+            blogUrl: BLOG_URL,
             // 新增标签
             newLabel: '',
             // 待选择标签

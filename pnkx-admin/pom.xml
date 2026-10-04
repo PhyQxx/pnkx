@@ -32,6 +32,8 @@
         <velocity.version>2.3</velocity.version>
         <jwt.version>0.12.6</jwt.version>
         <agentscope.version>1.0.11</agentscope.version>
+        <jsoup.version>1.17.2</jsoup.version>
+        <okhttp.version>4.12.0</okhttp.version>
         <lombok.version>1.18.38</lombok.version>
     </properties>
 
@@ -60,6 +62,20 @@
                 <groupId>eu.bitwalker</groupId>
                 <artifactId>UserAgentUtils</artifactId>
                 <version>${bitwalker.version}</version>
+            </dependency>
+
+            <!-- HTML 解析（全模块统一版本，修复 1.10.3/1.13.1 的已知 CVE） -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+            </dependency>
+
+            <!-- HTTP 客户端（chat 模块消息推送，3.x 已 EOL） -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
 
             <!-- MyBatis-Plus (Spring Boot 3 兼容，内含 MyBatis 与 mybatis-spring-boot-starter) -->
@@ -221,6 +237,13 @@
                 <version>${pnkx.version}</version>
             </dependency>
 
+            <!--AI基础设施模块-->
+            <dependency>
+                <groupId>com.pnkx</groupId>
+                <artifactId>pnkx-ai</artifactId>
+                <version>${pnkx.version}</version>
+            </dependency>
+
             <!-- 通用工具-->
             <dependency>
                 <groupId>com.pnkx</groupId>
@@ -239,6 +262,7 @@
         <module>pnkx-life</module>
         <module>pnkx-material</module>
         <module>pnkx-chat</module>
+        <module>pnkx-ai</module>
         <module>pnkx-generator</module>
         <module>pnkx-quartz</module>
         <module>pnkx-admin</module>

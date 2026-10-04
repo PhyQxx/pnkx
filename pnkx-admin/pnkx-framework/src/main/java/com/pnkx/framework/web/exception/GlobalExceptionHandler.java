@@ -72,8 +72,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public AjaxResult handleException(Exception e) {
+        // 未分类异常的 message 可能含 SQL 片段、类名等内部信息，不透出给前端
         log.error(e.getMessage(), e);
-        return AjaxResult.error(e.getMessage());
+        return AjaxResult.error("系统繁忙，请稍后重试");
     }
 
     /**

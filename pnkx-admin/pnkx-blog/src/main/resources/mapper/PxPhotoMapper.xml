@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxPhotoMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxPhotoMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxPhoto" id="PxPhotoResult">
+    <resultMap type="com.pnkx.blog.domain.po.PxPhoto" id="PxPhotoResult">
         <result property="id" column="id"/>
         <result property="name" column="name"/>
         <result property="photoBase64" column="photo_base64"/>
@@ -35,7 +35,7 @@
         from px_photo
     </sql>
 
-    <select id="selectPxPhotoList" parameterType="com.pnkx.domain.po.PxPhoto" resultMap="PxPhotoResult">
+    <select id="selectPxPhotoList" parameterType="com.pnkx.blog.domain.po.PxPhoto" resultMap="PxPhotoResult">
         <include refid="selectPxPhotoVo"/>
         <where>
             <if test="name != null  and name != ''">and name like concat('%', #{name}, '%')</if>
@@ -59,7 +59,7 @@
         where id = #{id}
     </select>
 
-    <insert id="insertPxPhoto" parameterType="com.pnkx.domain.po.PxPhoto">
+    <insert id="insertPxPhoto" parameterType="com.pnkx.blog.domain.po.PxPhoto">
         insert into px_photo
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -91,7 +91,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxPhoto" parameterType="com.pnkx.domain.po.PxPhoto">
+    <update id="updatePxPhoto" parameterType="com.pnkx.blog.domain.po.PxPhoto">
         update px_photo
         <trim prefix="SET" suffixOverrides=",">
             <if test="name != null">name = #{name},</if>

@@ -71,7 +71,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int pauseJob(SysJob job) throws SchedulerException {
         Long jobId = job.getJobId();
         String jobGroup = job.getJobGroup();
@@ -89,7 +89,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int resumeJob(SysJob job) throws SchedulerException {
         Long jobId = job.getJobId();
         String jobGroup = job.getJobGroup();
@@ -107,7 +107,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteJob(SysJob job) throws SchedulerException {
         Long jobId = job.getJobId();
         String jobGroup = job.getJobGroup();
@@ -125,7 +125,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteJobByIds(Long[] jobIds) throws SchedulerException {
         for (Long jobId : jobIds) {
             SysJob job = jobMapper.selectJobById(jobId);
@@ -139,7 +139,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int changeStatus(SysJob job) throws SchedulerException {
         int rows = 0;
         String status = job.getStatus();
@@ -157,7 +157,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void run(SysJob job) throws SchedulerException {
         Long jobId = job.getJobId();
         String jobGroup = job.getJobGroup();
@@ -174,7 +174,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertJob(SysJob job) throws SchedulerException, TaskException {
         job.setStatus(ScheduleConstants.Status.PAUSE.getValue());
         int rows = jobMapper.insertJob(job);
@@ -190,7 +190,7 @@ public class SysJobServiceImpl implements ISysJobService {
      * @param job 调度信息
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateJob(SysJob job) throws SchedulerException, TaskException {
         SysJob properties = selectJobById(job.getJobId());
         int rows = jobMapper.updateJob(job);

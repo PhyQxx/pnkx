@@ -3,8 +3,8 @@ package com.pnkx.web.controller.life;
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
-import com.pnkx.domain.po.PxAutomationRule;
-import com.pnkx.service.IPxAutomationService;
+import com.pnkx.life.domain.po.PxAutomationRule;
+import com.pnkx.life.service.IPxAutomationService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 

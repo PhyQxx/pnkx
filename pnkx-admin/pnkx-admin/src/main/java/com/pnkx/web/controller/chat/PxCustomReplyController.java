@@ -6,8 +6,8 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxCustomReplyRule;
-import com.pnkx.service.IPxCustomReplyService;
+import com.pnkx.chat.domain.po.PxCustomReplyRule;
+import com.pnkx.chat.service.IPxCustomReplyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 

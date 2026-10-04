@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxVideoMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxVideoMapper">
     <resultMap type="PxVideo" id="PxVideoResult">
         <result property="id" column="id"/>
         <result property="title" column="title"/>

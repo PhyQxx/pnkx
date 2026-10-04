@@ -29,7 +29,7 @@
                             <el-icon><Present /></el-icon>
                             <div class="message-number margin-right">{{ article.leaveMessageNumber }}枚留言</div>
                         </div>
-                        <div class="footer-one pointer theme-blue-text" @click="$copyText(`https://pnkx.top/post/${articleId}`)">
+                        <div class="footer-one pointer theme-blue-text" @click="$copyText(`${blogUrl}post/${articleId}`)">
                             <el-icon><Share /></el-icon>
                             <div class="message-number">复制分享链接</div>
                         </div>
@@ -47,11 +47,14 @@
 
 <script>
 import {getArticle} from "@/api/px/blog/article";
+import {BLOG_URL} from "@/assets/js/common";
 
 export default {
     name: 'articledetails',
     data() {
         return {
+            // 博客前台地址（拼文章公开链接）
+            blogUrl: BLOG_URL,
             //遮罩层
             loading: true,
             //文章信息

@@ -6,8 +6,8 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxDiary;
-import com.pnkx.service.IPxDiaryService;
+import com.pnkx.life.domain.po.PxDiary;
+import com.pnkx.life.service.IPxDiaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

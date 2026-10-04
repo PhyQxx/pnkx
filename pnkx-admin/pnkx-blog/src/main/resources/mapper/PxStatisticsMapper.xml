@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxStatisticsMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxStatisticsMapper">
 
     <!--获取统计数据-->
     <select id="getStatistics" resultType="map">
@@ -13,7 +13,7 @@
     </select>
 
     <!--获取文章饼型图数据-->
-    <select id="getArticlePieData" resultType="com.pnkx.domain.po.PxArticleType">
+    <select id="getArticlePieData" resultType="com.pnkx.blog.domain.po.PxArticleType">
         SELECT count(*) articleNumber,
             d.dict_value typeCode,
             d.dict_label typeName
@@ -176,7 +176,7 @@
     </select>
 
     <!--地区统计-->
-    <select id="getRegionStatisticsData" resultType="map" parameterType="com.pnkx.domain.po.PxStatistics">
+    <select id="getRegionStatisticsData" resultType="map" parameterType="com.pnkx.blog.domain.po.PxStatistics">
         select province name, count(1) value
         from px_visits
         where country = '中国'

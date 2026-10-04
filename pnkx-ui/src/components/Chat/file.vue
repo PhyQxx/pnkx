@@ -83,7 +83,7 @@
       <el-table-column align="center" label="文件名称" show-overflow-tooltip>
         <template v-slot="scope">
                     <span
-                        @click="copyCode('https://pnkx.top/prod-api/profile'+scope.row.filePath.slice(21))"
+                        @click="copyCode(blogUrl + 'prod-api/profile'+scope.row.filePath.slice(21))"
                         class="theme-blue-text">{{ scope.row.name }}</span>
         </template>
       </el-table-column>
@@ -115,11 +115,14 @@
 
 <script>
 import {listFile, getDicts} from "@/api/px/chat";
+import {BLOG_URL} from "@/assets/js/common";
 
 export default {
   name: "file",
   data() {
     return {
+      // 博客前台地址（拼聊天文件的公开访问链接）
+      blogUrl: BLOG_URL,
       // 图片格式
       photoFormat: ["bmp", "gif", "jpg", "jpeg", "png"],
       //图片列表

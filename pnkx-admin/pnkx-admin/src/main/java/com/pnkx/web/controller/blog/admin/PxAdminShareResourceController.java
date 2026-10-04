@@ -6,8 +6,8 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxShareResource;
-import com.pnkx.service.IPxShareResourceService;
+import com.pnkx.blog.domain.po.PxShareResource;
+import com.pnkx.blog.service.IPxShareResourceService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

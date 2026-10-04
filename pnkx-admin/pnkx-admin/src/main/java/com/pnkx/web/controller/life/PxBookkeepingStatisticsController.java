@@ -2,8 +2,8 @@ package com.pnkx.web.controller.life;
 
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
-import com.pnkx.domain.po.PxBookkeepingRecord;
-import com.pnkx.service.IPxBookkeepingStatisticsService;
+import com.pnkx.life.domain.po.PxBookkeepingRecord;
+import com.pnkx.life.service.IPxBookkeepingStatisticsService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

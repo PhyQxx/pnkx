@@ -26,7 +26,6 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.14.9</version>
         </dependency>
         <!-- 通用工具-->
         <dependency>
@@ -43,7 +42,7 @@
             <groupId>com.pnkx</groupId>
             <artifactId>pnkx-system</artifactId>
         </dependency>
-        <!-- 生活模块（AI客户端）-->
+        <!-- 生活模块-->
         <dependency>
             <groupId>com.pnkx</groupId>
             <artifactId>pnkx-life</artifactId>
@@ -51,6 +50,11 @@
         <dependency>
             <groupId>com.pnkx</groupId>
             <artifactId>pnkx-blog</artifactId>
+        </dependency>
+        <!-- AI基础设施模块（AiClient）-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-ai</artifactId>
         </dependency>
 
     </dependencies>

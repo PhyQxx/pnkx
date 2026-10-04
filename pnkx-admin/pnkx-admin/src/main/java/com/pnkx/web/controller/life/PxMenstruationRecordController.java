@@ -6,8 +6,8 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.service.IPxMenstruationRecordService;
-import com.pnkx.domain.po.PxMenstruationRecord;
+import com.pnkx.life.service.IPxMenstruationRecordService;
+import com.pnkx.life.domain.po.PxMenstruationRecord;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

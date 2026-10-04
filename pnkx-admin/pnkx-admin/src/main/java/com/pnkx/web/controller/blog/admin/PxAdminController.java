@@ -8,10 +8,11 @@ import com.pnkx.ai.AiClient;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
-import com.pnkx.domain.po.*;
-import com.pnkx.domain.vo.PxArticleVo;
-import com.pnkx.service.*;
-import com.pnkx.system.domain.SysNotice;
+import com.pnkx.common.utils.StringUtils;
+import com.pnkx.life.domain.po.*;
+import com.pnkx.blog.domain.po.*;
+import com.pnkx.blog.domain.vo.PxArticleVo;
+import com.pnkx.life.service.*;import com.pnkx.blog.service.*;import com.pnkx.system.domain.SysNotice;
 import com.pnkx.system.domain.SysNoticeRead;
 import com.pnkx.system.service.ISysConfigService;
 import com.pnkx.system.service.ISysNoticeService;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.Resource;
 import java.util.*;
 import java.util.stream.Stream;
-import com.pnkx.mapper.PxNoteMapper;
 
 /**
  * 管理端controller
@@ -58,7 +58,7 @@ public class PxAdminController extends BaseController {
     @Resource
     private ISysConfigService configService;
     @Resource
-    private PxNoteMapper noteMapper;
+    private IPxNoteService noteService;
     @Resource
     private IPxCommemorationDayService commemorationDayService;
     @Resource
@@ -98,12 +98,17 @@ public class PxAdminController extends BaseController {
                             "/mytool/todo", "/pages_life/todo/edit?id=" + item.getId(), item, startDate, endDate, tag));
         }
         if (matchesType(type, "diary")) {
-            pxDiaryService.retrieval(keyword).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "diary", item.getId(), item.getTitle(), "日记",
-                            "/mytool/diary", "/pages_life/diary/edit?id=" + item.getId(), item, startDate, endDate, tag));
+            pxDiaryService.retrieval(keyword).stream().limit(10).forEach(item -> {
+                // 日记表单不写 title，绝大多数行标题为空，用正文摘要兜底避免搜索结果空白
+                String title = StringUtils.isNotBlank(item.getTitle())
+                        ? item.getTitle() : diaryExcerpt(item.getContent());
+                addSearchResult(results, "diary", item.getId(), title,
+                        DateUtils.parseDateToStr("yyyy-MM-dd", item.getDate()),
+                        "/mytool/diary", "/pages_life/diary/edit?id=" + item.getId(), item, startDate, endDate, tag);
+            });
         }
         if (matchesType(type, "note")) {
-            noteMapper.searchAiNotes(userId, keyword, null, 10).forEach(item ->
+            noteService.searchNotes(userId, keyword, null, 10).forEach(item ->
                     addSearchResult(results, "note", item.getId(), item.getTitle(), "笔记",
                             "/note", "/pages_life/note/detail?id=" + item.getId(), item, startDate, endDate, tag));
         }
@@ -194,6 +199,16 @@ public class PxAdminController extends BaseController {
     private String firstNotBlank(String... values) {
         for (String value : values) if (value != null && !value.isBlank()) return value;
         return null;
+    }
+
+    /**
+     * 无标题日记的搜索展示文案：去掉 HTML 标签后截取正文摘要。
+     */
+    private String diaryExcerpt(String content) {
+        if (content == null || content.isBlank()) return "无内容";
+        String plain = content.replaceAll("(<([^>]+)>)", "").replace("&nbsp;", " ").trim();
+        if (plain.isEmpty()) return "无内容";
+        return plain.length() > 40 ? plain.substring(0, 40) + "…" : plain;
     }
 
     /** 将当前权限范围内的搜索结果交给 AI 做摘要或问答。 */

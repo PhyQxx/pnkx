@@ -6,8 +6,9 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ip.IpLocation;
 import com.pnkx.common.utils.ip.IpUtils;
-import com.pnkx.domain.po.PxVisits;
-import com.pnkx.service.IPxVisitsService;
+import com.pnkx.blog.domain.po.PxVisits;
+import com.pnkx.blog.service.IPxVisitsService;
+import com.pnkx.system.service.ISysConfigService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,8 @@ public class PxClientVisitsController extends BaseController {
 
     @Resource
     private IPxVisitsService pxVisitsService;
+    @Resource
+    private ISysConfigService sysConfigService;
 
     /**
      * 新增访客
@@ -42,7 +45,7 @@ public class PxClientVisitsController extends BaseController {
         pxVisits.setProvince(location.getProvince());
         pxVisits.setCity(location.getCity());
         pxVisits.setIsp(location.getIsp());
-        pxVisits.setLocation(IpUtils.getRectangle(ip));
+        pxVisits.setLocation(IpUtils.getRectangle(ip, sysConfigService.selectConfigByKey("sys.amap.key")));
         return toAjax(pxVisitsService.insertPxVisits(pxVisits));
     }
 }

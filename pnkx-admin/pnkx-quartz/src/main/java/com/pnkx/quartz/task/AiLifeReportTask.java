@@ -3,9 +3,9 @@ package com.pnkx.quartz.task;
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.ai.AiClient;
 import com.pnkx.common.core.domain.entity.SysUser;
-import com.pnkx.service.AiLifeReportDataService;
-import com.pnkx.domain.po.PxLifeReportHistory;
-import com.pnkx.mapper.PxLifeReportHistoryMapper;
+import com.pnkx.life.service.AiLifeReportDataService;
+import com.pnkx.life.domain.po.PxLifeReportHistory;
+import com.pnkx.life.mapper.PxLifeReportHistoryMapper;
 import com.pnkx.system.domain.SysEmail;
 import com.pnkx.system.mapper.SysUserMapper;
 import com.pnkx.system.service.ISysEmailService;
@@ -54,8 +54,6 @@ public class AiLifeReportTask {
 
     @Resource
     private SysUserMapper userMapper;
-    @Resource
-    private PxLifeReportHistoryMapper reportHistoryMapper;
 
     /**
      * 生成本周生活报告并发送邮件。
@@ -96,7 +94,7 @@ public class AiLifeReportTask {
             history.setReportType(REPORT_TYPE);
             history.setSource("scheduled");
             history.setContent(reportMarkdown);
-            reportHistoryMapper.insert(history);
+            lifeReportDataService.saveReportHistory(history);
 
             // 3. 邮件推送
             sendReportEmail(reportMarkdown, generateTime);

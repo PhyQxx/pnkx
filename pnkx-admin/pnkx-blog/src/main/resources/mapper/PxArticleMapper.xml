@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxArticleMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxArticleMapper">
 
-    <resultMap type="com.pnkx.domain.vo.PxArticleVo" id="PxArticleResult">
+    <resultMap type="com.pnkx.blog.domain.vo.PxArticleVo" id="PxArticleResult">
         <result property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="cover" column="cover"/>
@@ -80,7 +80,7 @@
             AND dict_type = 'px_article_type'
     </sql>
 
-    <select id="selectPxArticleList" parameterType="com.pnkx.domain.vo.PxArticleVo" resultMap="PxArticleResult">
+    <select id="selectPxArticleList" parameterType="com.pnkx.blog.domain.vo.PxArticleVo" resultMap="PxArticleResult">
         <include refid="selectPxArticleVo"/>
         <where>
             <if test="title != null  and title != ''">and title like concat('%', #{title}, '%')</if>
@@ -129,7 +129,7 @@
         </if>
     </select>
 
-    <select id="selectPxArticleNotContent" parameterType="com.pnkx.domain.vo.PxArticleVo"
+    <select id="selectPxArticleNotContent" parameterType="com.pnkx.blog.domain.vo.PxArticleVo"
             resultMap="PxArticleResult">
         <include refid="selectPxArticleNotContentVo"/>
         <where>
@@ -159,7 +159,7 @@
         order by create_time desc
     </select>
 
-    <insert id="insertPxArticle" parameterType="com.pnkx.domain.vo.PxArticleVo"
+    <insert id="insertPxArticle" parameterType="com.pnkx.blog.domain.vo.PxArticleVo"
             useGeneratedKeys="true" keyProperty="id">
         insert into px_article
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -198,7 +198,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxArticle" parameterType="com.pnkx.domain.vo.PxArticleVo">
+    <update id="updatePxArticle" parameterType="com.pnkx.blog.domain.vo.PxArticleVo">
         update px_article
         <trim prefix="SET" suffixOverrides=",">
             <if test="title != null and title != ''">title = #{title},</if>
@@ -246,13 +246,13 @@
     </select>
 
     <!-- 查询上一篇文章 -->
-    <select id="getLastArticleById" resultType="com.pnkx.domain.po.PxArticle">
+    <select id="getLastArticleById" resultType="com.pnkx.blog.domain.po.PxArticle">
         <include refid="selectPxArticleVo"/>
         where id &gt; #{id} order by create_time desc limit 1
     </select>
 
     <!-- 查询下一篇文章 -->
-    <select id="getNextArticleById" resultType="com.pnkx.domain.po.PxArticle">
+    <select id="getNextArticleById" resultType="com.pnkx.blog.domain.po.PxArticle">
         <include refid="selectPxArticleVo"/>
         where id &lt; #{id} order by create_time desc limit 1
     </select>

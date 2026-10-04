@@ -1,6 +1,6 @@
 package com.pnkx.web.websocket.controller;
 
-import com.pnkx.service.ReminderPushChannel;
+import com.pnkx.life.service.ReminderPushChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

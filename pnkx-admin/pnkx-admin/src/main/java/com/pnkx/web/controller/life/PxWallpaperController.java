@@ -6,16 +6,13 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxLikeRecord;
-import com.pnkx.domain.po.PxWallpaper;
-import com.pnkx.domain.po.PxWallpaperDownloadRecord;
-import com.pnkx.mapper.PxLikeRecordMapper;
-import com.pnkx.mapper.PxWallpaperDownloadRecordMapper;
-import com.pnkx.service.IPxWallpaperService;
+import com.pnkx.life.domain.po.PxWallpaper;
+import com.pnkx.life.service.IPxWallpaperService;
+import com.pnkx.web.service.PxWallpaperDownloadService;
+import com.pnkx.web.service.PxWallpaperLikeService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,12 +29,10 @@ public class PxWallpaperController extends BaseController {
     private IPxWallpaperService pxWallpaperService;
 
     @Resource
-    private PxLikeRecordMapper pxLikeRecordMapper;
+    private PxWallpaperLikeService wallpaperLikeService;
 
     @Resource
-    private PxWallpaperDownloadRecordMapper pxWallpaperDownloadRecordMapper;
-
-    private static final String WALLPAPER_LIKE_TYPE = "3";
+    private PxWallpaperDownloadService wallpaperDownloadService;
 
     /**
      * 查询壁纸列表
@@ -101,11 +96,7 @@ public class PxWallpaperController extends BaseController {
     @GetMapping("/records/likes")
     public TableDataInfo allLikes(@RequestParam(required = false) String createBy) {
         startPage();
-        PxLikeRecord param = new PxLikeRecord();
-        param.setType(WALLPAPER_LIKE_TYPE);
-        param.setCreateBy(createBy);
-        List<PxLikeRecord> list = pxLikeRecordMapper.selectRecordListWithWallpaper(param);
-        return getDataTable(list);
+        return getDataTable(wallpaperLikeService.selectAllLikes(createBy));
     }
 
     /**
@@ -114,10 +105,7 @@ public class PxWallpaperController extends BaseController {
     @GetMapping("/records/downloads")
     public TableDataInfo allDownloads(@RequestParam(required = false) String createBy) {
         startPage();
-        PxWallpaperDownloadRecord param = new PxWallpaperDownloadRecord();
-        param.setCreateBy(createBy);
-        List<PxWallpaperDownloadRecord> list = pxWallpaperDownloadRecordMapper.selectMyDownloadList(param);
-        return getDataTable(list);
+        return getDataTable(wallpaperDownloadService.selectAllDownloads(createBy));
     }
 
     /**
@@ -127,14 +115,9 @@ public class PxWallpaperController extends BaseController {
      */
     @GetMapping("/records/users")
     public AjaxResult recordUsers(@RequestParam String type) {
-        List<Map<String, Object>> users;
-        if ("download".equals(type)) {
-            users = pxWallpaperDownloadRecordMapper.selectDownloadRecordUsers();
-        } else {
-            PxLikeRecord param = new PxLikeRecord();
-            param.setType(WALLPAPER_LIKE_TYPE);
-            users = pxLikeRecordMapper.selectRecordUsers(param);
-        }
+        List<Map<String, Object>> users = "download".equals(type)
+                ? wallpaperDownloadService.selectDownloadRecordUsers()
+                : wallpaperLikeService.selectLikeRecordUsers();
         return AjaxResult.success(users);
     }
 
@@ -144,13 +127,9 @@ public class PxWallpaperController extends BaseController {
     @GetMapping("/records/statsByDate")
     public AjaxResult statsByDate(@RequestParam(required = false) String beginTime,
                                   @RequestParam(required = false) String endTime) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("likeType", WALLPAPER_LIKE_TYPE);
-        params.put("beginTime", beginTime);
-        params.put("endTime", endTime);
         AjaxResult ajax = AjaxResult.success();
-        ajax.put("like", pxLikeRecordMapper.selectRecordStatsByDate(params));
-        ajax.put("download", pxWallpaperDownloadRecordMapper.selectDownloadStatsByDate(params));
+        ajax.put("like", wallpaperLikeService.selectLikeStatsByDate(beginTime, endTime));
+        ajax.put("download", wallpaperDownloadService.selectDownloadStatsByDate(beginTime, endTime));
         return ajax;
     }
 
@@ -159,11 +138,9 @@ public class PxWallpaperController extends BaseController {
      */
     @GetMapping("/records/statsByFolder")
     public AjaxResult statsByFolder() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("likeType", WALLPAPER_LIKE_TYPE);
         AjaxResult ajax = AjaxResult.success();
-        ajax.put("like", pxLikeRecordMapper.selectRecordStatsByFolder(params));
-        ajax.put("download", pxWallpaperDownloadRecordMapper.selectDownloadStatsByFolder(params));
+        ajax.put("like", wallpaperLikeService.selectLikeStatsByFolder());
+        ajax.put("download", wallpaperDownloadService.selectDownloadStatsByFolder());
         return ajax;
     }
 
@@ -173,10 +150,7 @@ public class PxWallpaperController extends BaseController {
     @GetMapping("/records/downloadStatsByUser")
     public AjaxResult downloadStatsByUser(@RequestParam(required = false) String beginTime,
                                           @RequestParam(required = false) String endTime) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("beginTime", beginTime);
-        params.put("endTime", endTime);
-        List<Map<String, Object>> list = pxWallpaperDownloadRecordMapper.selectDownloadStatsByUser(params);
+        List<Map<String, Object>> list = wallpaperDownloadService.selectDownloadStatsByUser(beginTime, endTime);
         // 计算总下载次数
         long total = list.stream().mapToLong(m -> ((Number) m.get("count")).longValue()).sum();
         AjaxResult ajax = AjaxResult.success(list);
@@ -190,9 +164,6 @@ public class PxWallpaperController extends BaseController {
     @GetMapping("/records/downloadStatsByUserDate")
     public AjaxResult downloadStatsByUserDate(@RequestParam(required = false) String beginTime,
                                               @RequestParam(required = false) String endTime) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("beginTime", beginTime);
-        params.put("endTime", endTime);
-        return AjaxResult.success(pxWallpaperDownloadRecordMapper.selectDownloadStatsByUserDate(params));
+        return AjaxResult.success(wallpaperDownloadService.selectDownloadStatsByUserDate(beginTime, endTime));
     }
 }

@@ -3,11 +3,11 @@ package com.pnkx.web.service;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.StringUtils;
-import com.pnkx.domain.po.PxWallpaper;
-import com.pnkx.domain.po.PxWallpaperDownloadRecord;
-import com.pnkx.domain.po.PxWallpaperShareRewardRecord;
-import com.pnkx.mapper.PxWallpaperDownloadRecordMapper;
-import com.pnkx.mapper.PxWallpaperShareRewardRecordMapper;
+import com.pnkx.life.domain.po.PxWallpaper;
+import com.pnkx.life.domain.po.PxWallpaperDownloadRecord;
+import com.pnkx.life.domain.po.PxWallpaperShareRewardRecord;
+import com.pnkx.life.mapper.PxWallpaperDownloadRecordMapper;
+import com.pnkx.life.mapper.PxWallpaperShareRewardRecordMapper;
 import com.pnkx.system.service.ISysConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,6 +251,71 @@ public class PxWallpaperDownloadService {
         }
         Object value = map.get(key);
         return value == null ? 0 : ((Number) value).intValue();
+    }
+
+    // ──────────── 下载记录查询（客户端"我的" + 管理端统计） ────────────
+
+    /**
+     * 我的下载记录（分页数据源）
+     */
+    public List<PxWallpaperDownloadRecord> selectMyDownloads(String userId) {
+        PxWallpaperDownloadRecord param = new PxWallpaperDownloadRecord();
+        param.setCreateBy(userId);
+        return pxWallpaperDownloadRecordMapper.selectMyDownloadList(param);
+    }
+
+    /**
+     * 管理端：分页查询全部下载记录（可按用户筛选）
+     */
+    public List<PxWallpaperDownloadRecord> selectAllDownloads(String createBy) {
+        PxWallpaperDownloadRecord param = new PxWallpaperDownloadRecord();
+        param.setCreateBy(createBy);
+        return pxWallpaperDownloadRecordMapper.selectMyDownloadList(param);
+    }
+
+    /**
+     * 管理端：下载记录中出现过的用户（用户筛选下拉数据源）
+     */
+    public List<Map<String, Object>> selectDownloadRecordUsers() {
+        return pxWallpaperDownloadRecordMapper.selectDownloadRecordUsers();
+    }
+
+    /**
+     * 管理端：下载记录按日期趋势统计
+     */
+    public List<Map<String, Object>> selectDownloadStatsByDate(String beginTime, String endTime) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("beginTime", beginTime);
+        params.put("endTime", endTime);
+        return pxWallpaperDownloadRecordMapper.selectDownloadStatsByDate(params);
+    }
+
+    /**
+     * 管理端：下载记录按文件夹分布统计
+     */
+    public List<Map<String, Object>> selectDownloadStatsByFolder() {
+        Map<String, Object> params = new java.util.HashMap<>();
+        return pxWallpaperDownloadRecordMapper.selectDownloadStatsByFolder(params);
+    }
+
+    /**
+     * 管理端：下载记录按用户汇总统计
+     */
+    public List<Map<String, Object>> selectDownloadStatsByUser(String beginTime, String endTime) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("beginTime", beginTime);
+        params.put("endTime", endTime);
+        return pxWallpaperDownloadRecordMapper.selectDownloadStatsByUser(params);
+    }
+
+    /**
+     * 管理端：下载记录按用户+日期统计明细
+     */
+    public List<Map<String, Object>> selectDownloadStatsByUserDate(String beginTime, String endTime) {
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("beginTime", beginTime);
+        params.put("endTime", endTime);
+        return pxWallpaperDownloadRecordMapper.selectDownloadStatsByUserDate(params);
     }
 
     private int getIntConfig(String configKey, int defaultValue) {

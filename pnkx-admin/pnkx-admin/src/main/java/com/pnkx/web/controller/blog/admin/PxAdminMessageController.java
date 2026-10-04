@@ -7,8 +7,9 @@ import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ip.IpLocation;
 import com.pnkx.common.utils.ip.IpUtils;
-import com.pnkx.domain.po.PxLeaveMessage;
-import com.pnkx.service.IPxMessageService;
+import com.pnkx.blog.domain.po.PxLeaveMessage;
+import com.pnkx.blog.service.IPxMessageService;
+import com.pnkx.system.service.ISysConfigService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -27,6 +28,8 @@ public class PxAdminMessageController extends BaseController {
 
     @Resource
     private IPxMessageService pxMessageService;
+    @Resource
+    private ISysConfigService sysConfigService;
 
     /**
      * 留言
@@ -39,7 +42,7 @@ public class PxAdminMessageController extends BaseController {
         String ipAddr = IpUtils.getIpAddr(request);
         IpLocation location = IpUtils.getLocation(ipAddr);
         pxLeaveMessage.setIp(ipAddr);
-        String rectangle = IpUtils.getRectangle(ipAddr);
+        String rectangle = IpUtils.getRectangle(ipAddr, sysConfigService.selectConfigByKey("sys.amap.key"));
         pxLeaveMessage.setLocation(rectangle);
         pxLeaveMessage.setCountry(location.getCountry());
         pxLeaveMessage.setProvince(location.getProvince());

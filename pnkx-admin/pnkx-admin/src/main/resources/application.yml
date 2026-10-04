@@ -10,8 +10,8 @@ pnkx:
   demoEnabled: true
   # 验证码类型 math 数组计算 char 字符验证
   captchaType: math
-  # 上传路径（本地临时中转目录，用于分片暂存和合并）
-  profile: /tmp/pnkx
+  # 上传路径（本地临时中转目录，用于分片暂存和合并；容器部署经 PNKX_PROFILE 环境变量覆盖到挂载卷）
+  profile: ${PNKX_PROFILE:/tmp/pnkx}
   # 内部系统集成令牌：留空则完全关闭；配置后 X-Integration-Token 匹配的请求
   # 以 integration.userId 指定的用户身份通过鉴权（供 Aria Companion Hub 等可信系统使用）
   # 出厂默认关闭，生产启用必须通过 INTEGRATION_TOKEN 环境变量注入强随机值

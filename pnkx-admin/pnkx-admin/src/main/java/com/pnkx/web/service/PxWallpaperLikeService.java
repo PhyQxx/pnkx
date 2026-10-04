@@ -1,10 +1,10 @@
 package com.pnkx.web.service;
 
 import com.pnkx.common.utils.DateUtils;
-import com.pnkx.domain.po.PxLikeRecord;
-import com.pnkx.domain.po.PxWallpaper;
-import com.pnkx.mapper.PxLikeRecordMapper;
-import com.pnkx.service.IPxWallpaperService;
+import com.pnkx.blog.domain.po.PxLikeRecord;
+import com.pnkx.life.domain.po.PxWallpaper;
+import com.pnkx.blog.mapper.PxLikeRecordMapper;
+import com.pnkx.life.service.IPxWallpaperService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 壁纸点赞服务
@@ -72,5 +75,65 @@ public class PxWallpaperLikeService {
         }
         pxWallpaperService.updateLikeCount(wallpaperId, 1);
         return true;
+    }
+
+    /**
+     * 指定用户是否已点赞指定壁纸
+     */
+    public boolean isLiked(Long wallpaperId, String userId) {
+        PxLikeRecord param = new PxLikeRecord();
+        param.setItemId(wallpaperId);
+        param.setType(WALLPAPER_LIKE_TYPE);
+        param.setCreateBy(userId);
+        return pxLikeRecordMapper.selectLikeByUser(param) != null;
+    }
+
+    /**
+     * 我的壁纸点赞记录（分页数据源）
+     */
+    public List<PxLikeRecord> selectMyLikes(String userId) {
+        PxLikeRecord param = new PxLikeRecord();
+        param.setType(WALLPAPER_LIKE_TYPE);
+        param.setCreateBy(userId);
+        return pxLikeRecordMapper.selectMyRecordList(param);
+    }
+
+    /**
+     * 管理端：分页查询壁纸点赞记录（JOIN 壁纸表取名称缩略图，可按用户筛选）
+     */
+    public List<PxLikeRecord> selectAllLikes(String createBy) {
+        PxLikeRecord param = new PxLikeRecord();
+        param.setType(WALLPAPER_LIKE_TYPE);
+        param.setCreateBy(createBy);
+        return pxLikeRecordMapper.selectRecordListWithWallpaper(param);
+    }
+
+    /**
+     * 管理端：点赞记录中出现过的用户（用户筛选下拉数据源）
+     */
+    public List<Map<String, Object>> selectLikeRecordUsers() {
+        PxLikeRecord param = new PxLikeRecord();
+        param.setType(WALLPAPER_LIKE_TYPE);
+        return pxLikeRecordMapper.selectRecordUsers(param);
+    }
+
+    /**
+     * 管理端：点赞记录按日期趋势统计
+     */
+    public List<Map<String, Object>> selectLikeStatsByDate(String beginTime, String endTime) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("likeType", WALLPAPER_LIKE_TYPE);
+        params.put("beginTime", beginTime);
+        params.put("endTime", endTime);
+        return pxLikeRecordMapper.selectRecordStatsByDate(params);
+    }
+
+    /**
+     * 管理端：点赞记录按文件夹分布统计
+     */
+    public List<Map<String, Object>> selectLikeStatsByFolder() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("likeType", WALLPAPER_LIKE_TYPE);
+        return pxLikeRecordMapper.selectRecordStatsByFolder(params);
     }
 }

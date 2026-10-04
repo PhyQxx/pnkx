@@ -109,4 +109,13 @@ public class PnkxConfig {
     public static String getUploadPath() {
         return getProfile() + "/upload";
     }
+
+    /**
+     * 获取数据库备份本地暂存目录。
+     * 刻意放在 profile 的兄弟目录而非其子目录：/profile/** 被映射为匿名可访问的
+     * 静态资源（见 ResourcesConfig / SecurityConfig），全库备份文件绝不能落入该暴露范围
+     */
+    public static String getBackupPath() {
+        return getProfile() + "-backup";
+    }
 }

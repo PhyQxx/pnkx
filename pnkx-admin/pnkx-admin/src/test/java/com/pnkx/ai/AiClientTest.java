@@ -1,6 +1,6 @@
 package com.pnkx.ai;
 
-import com.pnkx.domain.po.PxAiModelConfig;
+import com.pnkx.ai.domain.po.PxAiModelConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotEquals;

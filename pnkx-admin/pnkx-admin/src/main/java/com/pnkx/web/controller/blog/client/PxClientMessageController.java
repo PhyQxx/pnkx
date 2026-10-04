@@ -2,8 +2,8 @@ package com.pnkx.web.controller.blog.client;
 
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.page.TableDataInfo;
-import com.pnkx.domain.po.PxLeaveMessage;
-import com.pnkx.service.IPxMessageService;
+import com.pnkx.blog.domain.po.PxLeaveMessage;
+import com.pnkx.blog.service.IPxMessageService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxMenstruationRecordMapper">
+<mapper namespace="com.pnkx.life.mapper.PxMenstruationRecordMapper">
 
     <resultMap type="PxMenstruationRecord" id="PxMenstruationRecordResult">
         <result property="id" column="id"/>
@@ -108,7 +108,7 @@
 
     <!--APP首页获取姨妈提醒列表-->
     <select id="selectMenstruationRecordList"
-            resultType="com.pnkx.domain.po.PxMenstruationRecord">
+            resultType="com.pnkx.life.domain.po.PxMenstruationRecord">
     <include refid="selectPxMenstruationRecordVo"/>
      where (type = 1 or type = 0)
      <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
@@ -130,7 +130,7 @@
     </select>
 
     <!-- 获取最后一次姨妈开始的记录（params 携带数据权限） -->
-    <select id="getLastStartDate" parameterType="PxMenstruationRecord" resultType="com.pnkx.domain.po.PxMenstruationRecord">
+    <select id="getLastStartDate" parameterType="PxMenstruationRecord" resultType="com.pnkx.life.domain.po.PxMenstruationRecord">
         <include refid="selectPxMenstruationRecordVo"/>
         where type = 0 and del_flag = 0
         <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->

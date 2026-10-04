@@ -7,8 +7,8 @@ import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.ai.AiClient;
-import com.pnkx.domain.po.PxAiModelConfig;
-import com.pnkx.service.IPxAiModelConfigService;
+import com.pnkx.ai.domain.po.PxAiModelConfig;
+import com.pnkx.ai.service.IPxAiModelConfigService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

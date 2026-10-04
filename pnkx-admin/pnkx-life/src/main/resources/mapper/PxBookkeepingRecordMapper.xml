@@ -2,8 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxBookkeepingRecordMapper">
-    <resultMap type="com.pnkx.domain.po.PxBookkeepingRecord" id="PxBookkeepingRecordResult">
+<mapper namespace="com.pnkx.life.mapper.PxBookkeepingRecordMapper">
+    <resultMap type="com.pnkx.life.domain.po.PxBookkeepingRecord" id="PxBookkeepingRecordResult">
         <result property="id" column="id"/>
         <result property="version" column="version"/>
         <result property="account" column="account"/>
@@ -20,26 +20,26 @@
         <result property="clientUuid" column="client_uuid"/>
         <result property="delFlag" column="del_flag"/>
         <result property="commemorationDayId" column="commemoration_day_id"/>
-        <association property="typeObject" javaType="com.pnkx.domain.po.PxBookkeepingClassification">
+        <association property="typeObject" javaType="com.pnkx.life.domain.po.PxBookkeepingClassification">
             <result property="id" column="type_id"/>
             <result property="typeIcon" column="type_icon"/>
             <result property="typeParentId" column="type_parent_id"/>
             <result property="typeName" column="type_name"/>
             <result property="typeDifference" column="type_difference"/>
         </association>
-        <association property="accountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+        <association property="accountObject" javaType="com.pnkx.life.domain.po.PxBookkeepingAccount">
             <result property="id" column="account_id"/>
             <result property="accountName" column="account_name"/>
             <result property="accountIcon" column="account_icon"/>
             <result property="accountType" column="account_type"/>
         </association>
-        <association property="otherAccountObject" javaType="com.pnkx.domain.po.PxBookkeepingAccount">
+        <association property="otherAccountObject" javaType="com.pnkx.life.domain.po.PxBookkeepingAccount">
             <result property="id" column="other_account_id"/>
             <result property="accountName" column="other_account_name"/>
             <result property="accountIcon" column="other_account_icon"/>
             <result property="accountType" column="other_account_type"/>
         </association>
-        <association property="commemorationDay" javaType="com.pnkx.domain.po.PxCommemorationDay">
+        <association property="commemorationDay" javaType="com.pnkx.life.domain.po.PxCommemorationDay">
             <result property="id" column="commemoration_id"/>
             <result property="name" column="commemoration_name"/>
             <result property="date" column="commemoration_date"/>
@@ -102,7 +102,7 @@
             </if>
             <if test="type != null  and type != ''">and r.type = #{type}</if>
             <if test="commemorationDayId != null">and r.commemoration_day_id = #{commemorationDayId}</if>
-            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <if test="money != null">and r.money = #{money}</if>
             <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
             <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
                 and r.create_by in
@@ -135,7 +135,7 @@
                 now(), 10 )
             </if>
             <if test="type != null  and type != ''">and r.type = #{type}</if>
-            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <if test="money != null">and r.money = #{money}</if>
             <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
                 and r.create_by in
                 <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
@@ -165,7 +165,7 @@
                 now(), 10 )
             </if>
             <if test="type != null  and type != ''">and r.type = #{type}</if>
-            <if test="money != null  and money != ''">and r.money = #{money}</if>
+            <if test="money != null">and r.money = #{money}</if>
             <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
                 and r.create_by in
                 <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">

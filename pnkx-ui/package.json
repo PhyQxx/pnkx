@@ -16,7 +16,7 @@
     "dependencies": {
         "@element-plus/icons-vue": "^2.3.1",
         "@videojs-player/vue": "^1.0.0",
-        "axios": "^1.7.0",
+        "axios": "^1.20.0",
         "cherry-markdown": "^0.8.19",
         "clipboard": "^2.0.11",
         "core-js": "^3.37.0",

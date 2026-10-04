@@ -43,6 +43,11 @@
             <groupId>com.pnkx</groupId>
             <artifactId>pnkx-life</artifactId>
         </dependency>
+        <!-- PxTask 在线聊天统计使用 PxChatMessageInfo（原错放于 blog，已归位 chat） -->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-chat</artifactId>
+        </dependency>
 
     </dependencies>
 

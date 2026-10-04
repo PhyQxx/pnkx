@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.pnkx.common.config.PnkxConfig;
 import com.pnkx.common.constant.Constants;
+import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.common.utils.file.FileUploadUtils;
@@ -36,7 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import static com.pnkx.web.controller.system.SysFileController.deleteFile;
+import static com.pnkx.web.service.SysFileChunkUploadService.deleteFile;
 
 /**
  * 通用请求处理
@@ -60,7 +61,7 @@ public class CommonController {
     public void fileDownload(String fileName, Boolean delete, HttpServletResponse response, HttpServletRequest request) {
         try {
             if (!FileUtils.checkAllowDownload(fileName)) {
-                throw new Exception(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
+                throw new ServiceException(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
             }
             String realFileName = System.currentTimeMillis() + fileName.substring(fileName.indexOf("_") + 1);
             String filePath = PnkxConfig.getDownloadPath() + fileName;
@@ -130,7 +131,7 @@ public class CommonController {
             throws Exception {
         try {
             if (!FileUtils.checkAllowDownload(resource)) {
-                throw new Exception(StringUtils.format("资源文件({})非法，不允许下载。 ", resource));
+                throw new ServiceException(StringUtils.format("资源文件({})非法，不允许下载。 ", resource));
             }
             // 本地资源路径
             String localPath = PnkxConfig.getProfile();

@@ -113,6 +113,13 @@
             <version>${pnkx.version}</version>
         </dependency>
 
+        <!-- AI基础设施模块（AiClient）-->
+        <dependency>
+            <groupId>com.pnkx</groupId>
+            <artifactId>pnkx-ai</artifactId>
+            <version>${pnkx.version}</version>
+        </dependency>
+
         <!--博客素材模块-->
         <dependency>
             <groupId>com.pnkx</groupId>
@@ -124,7 +131,6 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
         </dependency>
 
 

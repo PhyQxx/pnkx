@@ -2,8 +2,8 @@ package com.pnkx.web.controller.tool;
 
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.PnkxApplication;
-import com.pnkx.domain.po.PxAiOperationLog;
-import com.pnkx.service.IPxAiOperationLogService;
+import com.pnkx.life.domain.po.PxAiOperationLog;
+import com.pnkx.life.service.IPxAiOperationLogService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

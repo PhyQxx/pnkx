@@ -5,8 +5,8 @@ import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
-import com.pnkx.domain.po.PxBookkeepingClassification;
-import com.pnkx.service.IPxBookkeepingClassificationService;
+import com.pnkx.life.domain.po.PxBookkeepingClassification;
+import com.pnkx.life.service.IPxBookkeepingClassificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

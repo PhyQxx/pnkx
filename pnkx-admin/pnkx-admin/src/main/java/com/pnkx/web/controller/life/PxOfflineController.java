@@ -7,12 +7,15 @@ import com.pnkx.common.core.domain.BaseEntity;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.SecurityUtils;
-import com.pnkx.domain.po.*;
-import com.pnkx.service.*;
-import com.pnkx.service.IPxOfflineSyncService;
+import com.pnkx.life.domain.po.*;
+import com.pnkx.blog.domain.po.*;
+import com.pnkx.life.service.*;
+import com.pnkx.blog.service.*;
+import com.pnkx.life.service.IPxOfflineSyncService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,20 +30,6 @@ public class PxOfflineController extends BaseController {
 
     @Resource
     private IPxOfflineSyncService offlineSyncService;
-    @Resource
-    private com.pnkx.mapper.PxExtendedOfflineMapper extendedOfflineMapper;
-
-    private static final Map<String, String> EXTENDED_SYNC_TABLES = Map.ofEntries(
-            Map.entry("shoppingList", "px_shopping_list"),
-            Map.entry("shoppingItem", "px_shopping_item"),
-            Map.entry("recipe", "px_recipe"),
-            Map.entry("mealPlan", "px_meal_plan"),
-            Map.entry("subscription", "px_subscription"),
-            Map.entry("menstruation", "px_menstruation_record"),
-            Map.entry("budget", "px_bookkeeping_budget"),
-            Map.entry("recurring", "px_bookkeeping_recurring"),
-            Map.entry("book", "px_book")
-    );
 
     @Resource
     private IPxDiaryService diaryService;
@@ -194,7 +183,7 @@ public class PxOfflineController extends BaseController {
                     if (payload.get("account") != null) record.setAccount(toLong(payload.get("account")));
                     if (payload.get("otherAccount") != null) record.setOtherAccount(toLong(payload.get("otherAccount")));
                     if (payload.get("type") != null) record.setType(toLong(payload.get("type")));
-                    record.setMoney((String) payload.get("money"));
+                    record.setMoney(toBigDecimal(payload.get("money")));
                     record.setImages((String) payload.get("images"));
                     if (payload.get("payTime") != null) record.setPayTime(com.pnkx.common.utils.DateUtils.parseDate(payload.get("payTime")));
                     if (payload.get("commemorationDayId") != null) record.setCommemorationDayId(toLong(payload.get("commemorationDayId")));
@@ -356,10 +345,8 @@ public class PxOfflineController extends BaseController {
     public AjaxResult syncExtended(@PathVariable String module,
                                    @RequestParam String since,
                                    @RequestParam(required = false, defaultValue = "0") Integer offset) {
-        String table = EXTENDED_SYNC_TABLES.get(module);
-        if (table == null) throw new ServiceException("不支持的同步模块");
-        List<Map<String, Object>> items = extendedOfflineMapper.selectIncremental(
-                table, SecurityUtils.getUserId(), since, Math.max(offset, 0), 50);
+        List<Map<String, Object>> items = offlineSyncService.selectExtendedIncremental(
+                module, SecurityUtils.getUserId(), since, offset, 50);
         Map<String, Object> result = buildSyncResult(items);
         if (!items.isEmpty()) {
             Object lastUpdated = items.get(items.size() - 1).get("update_time");
@@ -400,6 +387,16 @@ public class PxOfflineController extends BaseController {
     private Long toLong(Object val) {
         if (val instanceof Number) return ((Number) val).longValue();
         return Long.parseLong(val.toString());
+    }
+
+    /**
+     * 离线同步金额容错转换：客户端可能传字符串或数字；空串视为未填
+     */
+    private BigDecimal toBigDecimal(Object val) {
+        if (val instanceof BigDecimal) return (BigDecimal) val;
+        if (val instanceof Number) return new BigDecimal(val.toString());
+        String text = String.valueOf(val).trim();
+        return text.isEmpty() ? null : new BigDecimal(text);
     }
 
     private void requireOwner(BaseEntity entity) {

@@ -6,9 +6,9 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxChatMessage;
-import com.pnkx.service.IPxChatMessageService;
-import com.pnkx.service.IPxChatRecordService;
+import com.pnkx.chat.domain.po.PxChatMessage;
+import com.pnkx.chat.service.IPxChatMessageService;
+import com.pnkx.chat.service.IPxChatRecordService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

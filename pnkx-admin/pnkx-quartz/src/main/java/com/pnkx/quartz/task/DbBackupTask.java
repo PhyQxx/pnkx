@@ -77,12 +77,15 @@ public class DbBackupTask {
         String fileName = String.format("pnkx-backup-%s.sql.gz", date);
         File localFile = null;
         FTPClient ftpClient = null;
+        boolean uploaded = false;
         try {
-            File tempDir = new File(PnkxConfig.getUploadPath(), "backup");
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
+            File backupDir = new File(PnkxConfig.getBackupPath());
+            if (!backupDir.exists() && !backupDir.mkdirs()) {
+                throw new IllegalStateException("备份目录创建失败: " + backupDir.getAbsolutePath());
             }
-            localFile = new File(tempDir, fileName);
+            // 清理本地过期暂存（即使上传长期失败也不至于堆积占满磁盘）
+            cleanExpiredLocalBackups(backupDir);
+            localFile = new File(backupDir, fileName);
             dumpDatabase(localFile);
             log.info("数据库逻辑备份完成：{}（{}）", fileName, humanSize(localFile.length()));
 
@@ -93,17 +96,44 @@ public class DbBackupTask {
             }
             uploadToFtp(ftpClient, localFile, fileName);
             cleanExpiredBackups(ftpClient);
+            uploaded = true;
             log.info("备份 {} 已上传 FTP 目录 {}/", fileName, FTP_BACKUP_DIR);
         } catch (Exception e) {
             log.error("数据库备份任务异常", e);
         } finally {
             ftpTool.closeFtpClient(ftpClient);
-            // 上传成功后删除本地临时文件（失败时保留，便于人工兜底）
-            if (localFile != null && localFile.exists()) {
+            // 仅在上传成功后删除本地暂存；失败时保留，便于人工兜底
+            if (uploaded && localFile != null) {
                 try {
                     Files.deleteIfExists(localFile.toPath());
                 } catch (Exception ignored) {
                 }
+            }
+        }
+    }
+
+    /**
+     * 清理本地超过保留天数的暂存备份（按文件名日期判断）
+     */
+    private void cleanExpiredLocalBackups(File backupDir) {
+        File[] files = backupDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        LocalDate cutoff = LocalDate.now().minusDays(RETENTION_DAYS);
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+        for (File file : files) {
+            String name = file.getName();
+            if (!name.startsWith("pnkx-backup-") || !name.endsWith(".sql.gz")) {
+                continue;
+            }
+            try {
+                String dateStr = name.substring("pnkx-backup-".length(), name.length() - ".sql.gz".length());
+                if (fmt.parse(dateStr).toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate().isBefore(cutoff)) {
+                    Files.deleteIfExists(file.toPath());
+                }
+            } catch (Exception ignored) {
+                // 文件名不带日期或删除失败：跳过该文件
             }
         }
     }

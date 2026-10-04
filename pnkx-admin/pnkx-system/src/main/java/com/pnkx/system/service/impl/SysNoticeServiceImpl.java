@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.pnkx.system.domain.SysNotice;
 import com.pnkx.system.mapper.SysNoticeMapper;
+import com.pnkx.system.service.ISysConfigService;
 import com.pnkx.system.service.ISysNoticeService;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,8 @@ import jakarta.servlet.http.HttpServletRequest;
 public class SysNoticeServiceImpl implements ISysNoticeService {
     @Resource
     private SysNoticeMapper noticeMapper;
+    @Resource
+    private ISysConfigService sysConfigService;
 
     /**
      * 查询公告信息
@@ -35,7 +38,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService {
      * @param noticeId 公告ID
      * @return 公告信息
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public SysNoticeVo selectNoticeById(HttpServletRequest request, Long noticeId) {
         SysNoticeRead sysNoticeRead = new SysNoticeRead();
@@ -48,7 +51,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService {
         String ipAddr = IpUtils.getIpAddr(request);
         IpLocation location = IpUtils.getLocation(ipAddr);
         sysNoticeRead.setIp(ipAddr);
-        String rectangle = IpUtils.getRectangle(ipAddr);
+        String rectangle = IpUtils.getRectangle(ipAddr, sysConfigService.selectConfigByKey("sys.amap.key"));
         sysNoticeRead.setLocation(rectangle);
         sysNoticeRead.setCountry(location.getCountry());
         sysNoticeRead.setProvince(location.getProvince());

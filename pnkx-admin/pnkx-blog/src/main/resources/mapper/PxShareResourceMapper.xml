@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxShareResourceMapper">
+<mapper namespace="com.pnkx.blog.mapper.PxShareResourceMapper">
     <resultMap type="PxShareResource" id="PxShareResourceResult">
         <result property="id" column="id"/>
         <result property="title" column="title"/>

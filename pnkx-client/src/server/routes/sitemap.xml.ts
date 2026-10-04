@@ -2,8 +2,7 @@
  * sitemap.xml：静态页面 + 全部公开文章页
  * 供搜索引擎收录
  */
-const SITE_URL = 'https://pnkx.top'
-const API_BASE = process.env.VITE_APP_BASE_URL || 'https://admin.pnkx.top:8/prod-api'
+import { SITE_URL, apiBase } from '../utils/siteConfig'
 
 interface ArticleBrief {
   id: number
@@ -14,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const staticPages = ['', '/archives', '/album', '/link', '/message', '/videos', '/share']
   let urls = staticPages.map(p => `  <url><loc>${SITE_URL}${p}</loc><changefreq>daily</changefreq></url>`).join('\n')
   try {
-    const res = await $fetch<any>(`${API_BASE}/client/article/listNotContent`, {
+    const res = await $fetch<any>(`${apiBase()}/client/article/listNotContent`, {
       params: { pageNum: 1, pageSize: 500 },
       timeout: 10000
     })

@@ -5,9 +5,8 @@ import com.pnkx.ai.AiClient;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.utils.SecurityUtils;
-import com.pnkx.service.AiLifeReportDataService;
-import com.pnkx.domain.po.PxLifeReportHistory;
-import com.pnkx.mapper.PxLifeReportHistoryMapper;
+import com.pnkx.life.service.AiLifeReportDataService;
+import com.pnkx.life.domain.po.PxLifeReportHistory;
 import io.agentscope.core.message.ContentBlock;
 import io.agentscope.core.message.TextBlock;
 import io.agentscope.core.model.ChatResponse;
@@ -42,13 +41,11 @@ public class PxLifeReportController extends BaseController {
 
     @Resource
     private AiClient aiClient;
-    @Resource
-    private PxLifeReportHistoryMapper reportHistoryMapper;
 
     @GetMapping("/history")
     public AjaxResult history(@RequestParam(defaultValue = "20") int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
-        return AjaxResult.success(reportHistoryMapper.selectRecent(SecurityUtils.getUserId().toString(), safeLimit));
+        return AjaxResult.success(lifeReportDataService.selectRecentReports(SecurityUtils.getUserId().toString(), safeLimit));
     }
 
     /**
@@ -149,7 +146,7 @@ public class PxLifeReportController extends BaseController {
                 history.setReportType(reportType);
                 history.setSource("manual");
                 history.setContent(generatedContent.toString());
-                reportHistoryMapper.insert(history);
+                lifeReportDataService.saveReportHistory(history);
             }
         } catch (Exception e) {
             logger.error("生成生活报告失败", e);

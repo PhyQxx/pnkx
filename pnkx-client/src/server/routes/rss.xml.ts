@@ -2,8 +2,7 @@
  * RSS 2.0 输出：最新 20 篇公开文章
  * 供 RSS 阅读器（Feedly/Inoreader 等）订阅
  */
-const SITE_URL = 'https://pnkx.top'
-const API_BASE = process.env.VITE_APP_BASE_URL || 'https://admin.pnkx.top:8/prod-api'
+import { SITE_URL, apiBase } from '../utils/siteConfig'
 
 interface ArticleBrief {
   id: number
@@ -23,7 +22,7 @@ function escapeXml(str: string): string {
 export default defineEventHandler(async (event) => {
   let items = ''
   try {
-    const res = await $fetch<any>(`${API_BASE}/client/article/listNotContent`, {
+    const res = await $fetch<any>(`${apiBase()}/client/article/listNotContent`, {
       params: { pageNum: 1, pageSize: 20 },
       timeout: 10000
     })

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxToDoMapper">
+<mapper namespace="com.pnkx.life.mapper.PxToDoMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxToDo" id="PxToDoResult">
+    <resultMap type="com.pnkx.life.domain.po.PxToDo" id="PxToDoResult">
         <result property="id" column="id"/>
         <result property="content" column="content"/>
         <result property="performer" column="performer"/>
@@ -51,7 +51,7 @@
         from px_to_do
     </sql>
 
-    <select id="selectPxToDoList" parameterType="com.pnkx.domain.po.PxToDo" resultMap="PxToDoResult">
+    <select id="selectPxToDoList" parameterType="com.pnkx.life.domain.po.PxToDo" resultMap="PxToDoResult">
         <include refid="selectPxToDoVo"/>
         <where>
             <if test="searchValue != null  and searchValue != ''">and (content like concat('%', #{searchValue}, '%') or remark like concat('%', #{searchValue}, '%') or label like concat('%', #{searchValue}, '%'))</if>
@@ -87,7 +87,7 @@
     </select>
 
     <!-- 看板查询：按 kanban_status 分组返回（含数据权限），排除子任务 -->
-    <select id="selectKanbanList" parameterType="com.pnkx.domain.po.PxToDo" resultMap="PxToDoResult">
+    <select id="selectKanbanList" parameterType="com.pnkx.life.domain.po.PxToDo" resultMap="PxToDoResult">
         <include refid="selectPxToDoVo"/>
         <where>
             (parent_id = 0 or parent_id is null)
@@ -124,7 +124,7 @@
     </select>
 
     <!--获取待办事项标签列表（params 携带数据权限）-->
-    <select id="getLabelList" parameterType="com.pnkx.domain.po.PxToDo" resultType="string">
+    <select id="getLabelList" parameterType="com.pnkx.life.domain.po.PxToDo" resultType="string">
         select DISTINCT label from px_to_do
         where label is not null and label != ''
         <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
@@ -136,7 +136,7 @@
         </if>
     </select>
 
-    <insert id="insertPxToDo" parameterType="com.pnkx.domain.po.PxToDo" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertPxToDo" parameterType="com.pnkx.life.domain.po.PxToDo" useGeneratedKeys="true" keyProperty="id">
         insert into px_to_do
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="content != null">content,</if>
@@ -182,7 +182,7 @@
         </trim>
     </insert>
 
-    <update id="updatePxToDo" parameterType="com.pnkx.domain.po.PxToDo">
+    <update id="updatePxToDo" parameterType="com.pnkx.life.domain.po.PxToDo">
         update px_to_do
         <trim prefix="SET" suffixOverrides=",">
             <if test="content != null">content = #{content},</if>

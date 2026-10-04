@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxWallpaperShareRewardRecordMapper">
+<mapper namespace="com.pnkx.life.mapper.PxWallpaperShareRewardRecordMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxWallpaperShareRewardRecord" id="PxWallpaperShareRewardRecordResult">
+    <resultMap type="com.pnkx.life.domain.po.PxWallpaperShareRewardRecord" id="PxWallpaperShareRewardRecordResult">
         <result property="id" column="id"/>
         <result property="rewardCount" column="reward_count"/>
         <result property="createBy" column="create_by"/>
@@ -21,7 +21,7 @@
     </select>
 
     <!-- 新增一条分享奖励记录 -->
-    <insert id="insertShareReward" parameterType="com.pnkx.domain.po.PxWallpaperShareRewardRecord" useGeneratedKeys="true"
+    <insert id="insertShareReward" parameterType="com.pnkx.life.domain.po.PxWallpaperShareRewardRecord" useGeneratedKeys="true"
             keyProperty="id">
         insert into px_wallpaper_share_reward_record(create_by, reward_count, create_time)
         values (#{createBy}, #{rewardCount}, #{createTime})

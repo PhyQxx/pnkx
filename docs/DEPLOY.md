@@ -36,9 +36,13 @@ pnkx-uniapp (uniapp 移动端，HBuilderX 发布 App/小程序/H5)
 | `FTP_HOST` / `FTP_PORT` / `FTP_USERNAME` / `FTP_PASSWORD` | FTP 存储连接 | 本机/admin/空 |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | QQ 邮箱 SMTP（注册激活 / 重置密码邮件） | 空（邮件功能不可用） |
 | `SWAGGER_ENABLED` | Swagger 文档 | false（生产保持关闭） |
-| `UNIPUSH_APPID` / `UNIPUSH_APPKEY` / `UNIPUSH_MASTERSECRET` | uniPush 2.0 App 离线推送三要素（DCloud 中心获取）；任一缺失推送整体静默跳过 | 空（不推送） |
+| `UNIPUSH_APPID` / `UNIPUSH_APPKEY` / `UNIPUSH_MASTERSECRET` | uniPush 2.0 App 离线推送三要素（DCloud 中心获取）；任一缺失时普通调度跳过 App 通道，显式重试返回失败 | 空（不推送） |
 | `DRUID_STAT_ENABLED` / `DRUID_USERNAME` / `DRUID_PASSWORD` | Druid 监控台 | false 关闭 |
 | `LOG_LEVEL` | com.pnkx 日志级别 | info |
+| `PNKX_PROFILE` | 本地上传/分片暂存目录（数据库备份暂存在其兄弟目录 `<profile>-backup`） | /tmp/pnkx |
+| `LOG_PATH` | 日志输出目录（logback） | ./logs |
+
+> 高德地图 IP 定位 key 不走环境变量：上线后在后台 **系统管理 → 参数设置** 中配置 `sys.amap.key`（Web 服务类型 key），留空则自动跳过高德定位。
 
 ### 生成强随机密钥示例
 

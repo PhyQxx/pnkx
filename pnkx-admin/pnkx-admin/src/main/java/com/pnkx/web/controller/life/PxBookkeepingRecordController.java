@@ -6,8 +6,8 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxBookkeepingRecord;
-import com.pnkx.service.IPxBookkeepingRecordService;
+import com.pnkx.life.domain.po.PxBookkeepingRecord;
+import com.pnkx.life.service.IPxBookkeepingRecordService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 

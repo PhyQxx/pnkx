@@ -4,8 +4,8 @@ import com.pnkx.common.annotation.Log;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.enums.BusinessType;
-import com.pnkx.domain.po.PxBookkeepingRecurring;
-import com.pnkx.service.impl.PxBookkeepingRecurringService;
+import com.pnkx.life.domain.po.PxBookkeepingRecurring;
+import com.pnkx.life.service.impl.PxBookkeepingRecurringService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

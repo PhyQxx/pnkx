@@ -24,9 +24,9 @@ jobs:
         working-directory: pnkx-admin
         run: mvn -B -DskipTests package
 
-      - name: 纯逻辑单元测试（无外部环境依赖；其余测试需 MySQL/Redis，仅在本地跑）
+      - name: 全量单元测试（无外部环境依赖；含 MybatisMapperBindingTest 绑定门禁，其余集成测试仅在本地跑）
         working-directory: pnkx-admin
-        run: mvn -B test -pl pnkx-life -am -Dtest=PxBookkeepingRecurringServiceTest -Dsurefire.failIfNoSpecifiedTests=false
+        run: mvn -B test
 
   pnkx-ui:
     name: 后台前端构建（Vue 3 / Vite）
@@ -50,6 +50,11 @@ jobs:
       - name: 构建
         working-directory: pnkx-ui
         run: npm run build
+
+      - name: 依赖安全审计（非阻塞，仅提醒）
+        working-directory: pnkx-ui
+        continue-on-error: true
+        run: npm audit --audit-level=high
 
   pnkx-client:
     name: 博客前台构建（Nuxt 3）
@@ -75,6 +80,11 @@ jobs:
         working-directory: pnkx-client
         run: pnpm build
 
+      - name: 依赖安全审计（非阻塞，仅提醒）
+        working-directory: pnkx-client
+        continue-on-error: true
+        run: pnpm audit --audit-level=high
+
   uniapp-deps:
     name: 移动端依赖校验（uniapp）
     runs-on: ubuntu-latest
@@ -94,3 +104,7 @@ jobs:
       - name: 依赖安装校验（构建产物由 HBuilderX 发布，不在 CI 范围）
         working-directory: pnkx-uniapp
         run: pnpm install --frozen-lockfile
+
+      - name: 离线同步契约测试
+        working-directory: pnkx-uniapp
+        run: pnpm test:contracts

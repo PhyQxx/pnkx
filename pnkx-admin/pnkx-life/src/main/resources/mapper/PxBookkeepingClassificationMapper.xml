@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxBookkeepingClassificationMapper">
+<mapper namespace="com.pnkx.life.mapper.PxBookkeepingClassificationMapper">
 
     <resultMap type="PxBookkeepingClassification" id="PxBookkeepingClassificationResult">
         <result property="id" column="id"/>
@@ -90,7 +90,7 @@
     </select>
 
     <!--查询最近使用分类列表-->
-    <select id="getLatelyTypeList" parameterType="com.pnkx.domain.po.PxBookkeepingClassification"
+    <select id="getLatelyTypeList" parameterType="com.pnkx.life.domain.po.PxBookkeepingClassification"
             resultMap="PxBookkeepingClassificationResult">
         SELECT c.id,
                type_icon,

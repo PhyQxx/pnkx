@@ -6,17 +6,17 @@ import com.pnkx.common.core.domain.entity.SysDictData;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.common.utils.ip.IpUtils;
-import com.pnkx.domain.po.PxRegion;
-import com.pnkx.domain.po.PxEmailSubscribe;
-import com.pnkx.service.IPxRegionService;
-import com.pnkx.service.IPxStatisticsService;
-import com.pnkx.service.IPxEmailSubscribeService;
+import com.pnkx.material.domain.po.PxRegion;
+import com.pnkx.blog.domain.po.PxEmailSubscribe;
+import com.pnkx.material.service.IPxRegionService;
+import com.pnkx.blog.service.IPxStatisticsService;
+import com.pnkx.blog.service.IPxEmailSubscribeService;
 import com.pnkx.system.domain.SysConfig;
 import com.pnkx.system.domain.SysFile;
 import com.pnkx.system.domain.SysNotice;
 import com.pnkx.system.domain.vo.SysNoticeVo;
 import com.pnkx.system.service.*;
-import com.pnkx.web.controller.tool.intent.ChatHandler;
+import com.pnkx.web.service.intent.ChatHandler;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -68,8 +68,8 @@ public class PxClientController extends BaseController {
         response.setHeader("X-Accel-Buffering", "no");
         OutputStream out = response.getOutputStream();
         if (StringUtils.isEmpty(question)) {
-            com.pnkx.web.controller.tool.intent.IntentHandler.writeSse(out, "请输入问题。");
-            com.pnkx.web.controller.tool.intent.IntentHandler.writeSse(out, "[DONE]");
+            com.pnkx.web.service.intent.IntentHandler.writeSse(out, "请输入问题。");
+            com.pnkx.web.service.intent.IntentHandler.writeSse(out, "[DONE]");
             return;
         }
 

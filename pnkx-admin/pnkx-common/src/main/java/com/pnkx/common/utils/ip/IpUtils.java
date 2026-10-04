@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import static java.math.BigDecimal.ZERO;
@@ -28,9 +29,10 @@ public class IpUtils
 {
 
     /**
-     * 高的地图key
+     * "系统参数 sys.amap.key 未配置"告警只打一次的标记：
+     * 访客定位是高频调用，逐次告警会刷屏日志
      */
-    private static final String GD_KEY = "828bd02670b3e277d27adb31ad31025c";
+    private static final AtomicBoolean AMAP_KEY_MISS_LOGGED = new AtomicBoolean(false);
 
     /**
      * ip正则
@@ -316,10 +318,21 @@ public class IpUtils
         return location;
     }
 
-    public static String getRectangle(String ip) {
+    /**
+     * 调用高德 IP 定位接口获取经纬度矩形范围。
+     * key 由调用方传入，取自系统参数 sys.amap.key（后台 系统管理→参数设置 可视化配置）；
+     * 未配置时跳过高德定位，返回空串
+     */
+    public static String getRectangle(String ip, String amapKey) {
+        if (StringUtils.isBlank(amapKey)) {
+            if (AMAP_KEY_MISS_LOGGED.compareAndSet(false, true)) {
+                log.warn("系统参数 sys.amap.key 未配置，跳过高德 IP 定位（后台 参数设置 中可配置）");
+            }
+            return StrUtil.EMPTY;
+        }
         RestTemplate restTemplate = new RestTemplate();
         //远程REST调用API
-        String uri = "https://restapi.amap.com/v3/ip?ip=" + ip + "&output=json&key=" + GD_KEY;
+        String uri = "https://restapi.amap.com/v3/ip?ip=" + ip + "&output=json&key=" + amapKey;
         //发送请求
         ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
         JSONObject data = (JSONObject) JSONObject.parse(response.getBody());

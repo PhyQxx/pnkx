@@ -1,6 +1,6 @@
 package com.pnkx.quartz.task;
 
-import com.pnkx.service.WxSubscribeMessageService;
+import com.pnkx.life.service.WxSubscribeMessageService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 

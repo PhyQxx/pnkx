@@ -6,10 +6,10 @@ import com.pnkx.common.core.domain.AjaxResult;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.enums.BusinessType;
 import com.pnkx.common.utils.ExcelUtil;
-import com.pnkx.domain.po.PxCardRecord;
-import com.pnkx.domain.po.PxLoversCard;
-import com.pnkx.domain.vo.PxCardRecordVo;
-import com.pnkx.service.IPxLoversCardService;
+import com.pnkx.life.domain.po.PxCardRecord;
+import com.pnkx.life.domain.po.PxLoversCard;
+import com.pnkx.life.domain.vo.PxCardRecordVo;
+import com.pnkx.life.service.IPxLoversCardService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;

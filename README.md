@@ -107,8 +107,8 @@ mvn clean install
 ```bash
 cd pnkx-ui
 npm install
-npm run dev      # 开发，访问 http://localhost:80
-npm run build:prod   # 构建生产环境
+npm run dev      # 开发
+npm run build    # 构建生产环境（vite build）
 ```
 
 ### 博客前台（pnkx-client）
@@ -183,6 +183,7 @@ pnpm build       # 构建
 │   ├── pnkx-blog/           # 博客业务
 │   ├── pnkx-life/           # 生活管理业务
 │   ├── pnkx-chat/           # AI 对话
+│   ├── pnkx-ai/             # AI 基础设施（模型客户端与模型配置）
 │   ├── pnkx-material/       # 素材文件
 │   ├── pnkx-quartz/         # 定时任务
 │   └── pnkx-generator/      # 代码生成
@@ -191,7 +192,7 @@ pnpm build       # 构建
 └── pnkx-uniapp/             # 移动端
 ```
 
-> **注意**：出于安全考虑，数据库脚本（SQL 迁移文件）未包含在本仓库中，请根据后端实体自行创建表结构。
+> **数据库初始化**：表结构由 Flyway 管理（`pnkx-admin/pnkx-admin/src/main/resources/db/migration/` 下 30+ 个迁移脚本，已脱敏），新环境配置好 MySQL 后首次启动自动建表；对已有库自动打 baseline。
 
 ## License
 

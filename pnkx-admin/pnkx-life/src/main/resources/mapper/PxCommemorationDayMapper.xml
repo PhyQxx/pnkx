@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxCommemorationDayMapper">
+<mapper namespace="com.pnkx.life.mapper.PxCommemorationDayMapper">
 
     <resultMap type="PxCommemorationDay" id="PxCommemorationDayResult">
         <result property="id" column="id"/>
@@ -60,7 +60,7 @@
     </select>
 
     <!--APP首页查询纪念日列表-->
-    <select id="getCommemorationDayList" resultType="com.pnkx.domain.po.PxCommemorationDay">
+    <select id="getCommemorationDayList" resultType="com.pnkx.life.domain.po.PxCommemorationDay">
         select id,
         name,
         icon, date, `repeat`, order_num, del_flag, version, create_by, create_time, update_by, update_time, remark

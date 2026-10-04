@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.pnkx.mapper.PxWallpaperDownloadRecordMapper">
+<mapper namespace="com.pnkx.life.mapper.PxWallpaperDownloadRecordMapper">
 
-    <resultMap type="com.pnkx.domain.po.PxWallpaperDownloadRecord" id="PxWallpaperDownloadRecordResult">
+    <resultMap type="com.pnkx.life.domain.po.PxWallpaperDownloadRecord" id="PxWallpaperDownloadRecordResult">
         <result property="id" column="id"/>
         <result property="itemId" column="item_id"/>
         <result property="itemName" column="item_name"/>
@@ -17,7 +17,7 @@
     </resultMap>
 
     <!-- 我的下载记录列表（COALESCE 兜底：缩略图为空时用壁纸原图；昵称为空时回退 create_by / 游客） -->
-    <select id="selectMyDownloadList" parameterType="com.pnkx.domain.po.PxWallpaperDownloadRecord"
+    <select id="selectMyDownloadList" parameterType="com.pnkx.life.domain.po.PxWallpaperDownloadRecord"
             resultMap="PxWallpaperDownloadRecordResult">
         select d.id, d.item_id,
                COALESCE(d.item_name, w.name)                            as item_name,
