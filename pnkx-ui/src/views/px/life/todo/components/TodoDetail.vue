@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-mutating-props -->
 <!--
  * @Author: PHY
  * @Description: 待办详情编辑面板（内容/属性/标签/备注/保存）—— 从 index.vue 拆出
@@ -151,7 +152,7 @@
 </template>
 
 <script>
-/* eslint-disable vue/no-mutating-props -- 详情对象按引用与父组件共享，字段就地编辑是该面板的既定交互（见文件头说明） */
+/* eslint-disable vue/no-mutating-props */
 import Editor from '@/components/Editor'
 
 export default {
