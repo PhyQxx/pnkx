@@ -62,6 +62,15 @@
         </view>
 
         <button @click="handleLogin" class="login-btn">登 录</button>
+
+        <!-- #ifdef MP-WEIXIN -->
+        <view class="wx-divider">
+          <view class="wx-divider-line"></view>
+          <text class="wx-divider-text">其他登录方式</text>
+          <view class="wx-divider-line"></view>
+        </view>
+        <button @click="handleWxLogin" class="wx-login-btn">快捷登录</button>
+        <!-- #endif -->
       </view>
     </view>
 
@@ -73,7 +82,8 @@
 </template>
 
 <script>
-import { getToken } from '@/utils/auth'
+import { getToken, setToken } from '@/utils/auth'
+import { getCodeImg, wxLogin } from '@/api/login'
 
 export default {
   data() {
@@ -126,6 +136,35 @@ export default {
         this.$modal.loading("登录中，请耐心等待...")
         this.pwdLogin()
       }
+    },
+    // 微信快捷登录：wx.login 拿 code 换 token
+    handleWxLogin() {
+      uni.login({
+        provider: 'weixin',
+        success: (loginRes) => {
+          if (!loginRes.code) {
+            this.$modal.msgError("微信登录失败")
+            return
+          }
+          this.$modal.loading("登录中...")
+          wxLogin(loginRes.code).then(res => {
+            this.$modal.closeLoading()
+            if (res.token) {
+              setToken(res.token)
+              this.$store.commit('SET_TOKEN', res.token)
+              this.loginSuccess()
+            } else {
+              this.$modal.msgError(res.msg || "微信登录失败")
+            }
+          }).catch(() => {
+            this.$modal.closeLoading()
+            this.$modal.msgError("网络异常，请重试")
+          })
+        },
+        fail: () => {
+          this.$modal.msgError("微信授权失败")
+        }
+      })
     },
     async pwdLogin() {
       this.$store.dispatch('Login', this.loginForm).then(() => {
@@ -328,6 +367,52 @@ export default {
   &:active {
     transform: scale(0.97);
     box-shadow: 0 4rpx 12rpx rgba(79, 134, 247, 0.25);
+  }
+
+  &::after {
+    border: none;
+  }
+}
+
+.wx-divider {
+  display: flex;
+  align-items: center;
+  margin-top: 32rpx;
+
+  .wx-divider-line {
+    flex: 1;
+    height: 1rpx;
+    background-color: #e8ecf1;
+  }
+
+  .wx-divider-text {
+    padding: 0 24rpx;
+    font-size: 24rpx;
+    color: #9ba8b7;
+  }
+}
+
+.wx-login-btn {
+  width: 100%;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07c160;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: $font-weight-semibold;
+  border: none;
+  border-radius: 16rpx;
+  margin-top: 24rpx;
+  padding: 0;
+  box-shadow: 0 6rpx 18rpx rgba(7, 193, 96, 0.3);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.25);
   }
 
   &::after {

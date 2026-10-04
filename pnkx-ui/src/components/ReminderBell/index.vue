@@ -269,9 +269,11 @@ export default {
          */
         connectWebSocket() {
             if (!this.userId || this.wsClosing) return
-            const base = import.meta.env.VUE_APP_SOCKET || (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host
+            // VUE_APP_SOCKET 本身已含 /websocket 端点路径，只需再拼 userId，避免出现 /websocket/websocket
+            const base = import.meta.env.VUE_APP_SOCKET
+                || (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/websocket'
             try {
-                this.ws = new WebSocket(`${base}/websocket/${this.userId}?token=${getToken()}`)
+                this.ws = new WebSocket(`${base}/${this.userId}?token=${getToken()}`)
                 this.ws.onopen = () => {
                     this.reconnectDelay = 1000
                 }

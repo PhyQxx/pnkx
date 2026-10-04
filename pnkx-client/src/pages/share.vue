@@ -13,7 +13,7 @@ useHead({
 
 const shareList = ref<ShareResource[]>([])
 const pending = ref(false)
-const defaultRemark = '复制这段内容打开「百度网盘APP 即可获取」'
+const buildDefaultRemark = (diskType?: string) => `复制这段内容打开「${diskType || '网盘'}APP 即可获取」`
 
 const splitTags = (tags?: string) => tags?.split(',').filter(Boolean) || []
 
@@ -72,7 +72,7 @@ const buildShareText = (item: ShareResource) => {
   ]
 
   if (item.extractCode) lines.push(`提取码:${item.extractCode}`)
-  lines.push(item.remark || defaultRemark)
+  lines.push(item.remark || buildDefaultRemark(item.diskType))
 
   return lines.join('\n')
 }
@@ -218,7 +218,7 @@ await getShareList()
               <p v-if="item.extractCode">
                 <span class="font-medium text-zinc-800 dark:text-zinc-100">提取码：</span>{{ item.extractCode }}
               </p>
-              <p class="text-zinc-500 dark:text-zinc-400">{{ item.remark || defaultRemark }}</p>
+              <p class="text-zinc-500 dark:text-zinc-400">{{ item.remark || buildDefaultRemark(item.diskType) }}</p>
             </div>
 
             <div class="flex flex-wrap gap-3 p-5">

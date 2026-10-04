@@ -456,7 +456,6 @@ export default {
          * 日历月份切换
          */
         handleDateChange(day) {
-            this.currentMonth = day
             const oldMonth = this.parseTime(this.currentMonth, '{y}-{m}')
             const newMonth = this.parseTime(day, '{y}-{m}')
             if (oldMonth !== newMonth) {

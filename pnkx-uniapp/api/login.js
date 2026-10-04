@@ -34,6 +34,18 @@ export function logout() {
   })
 }
 
+// 微信快捷登录
+export function wxLogin(code) {
+  return request({
+    'url': '/wx/login',
+    headers: {
+      isToken: false
+    },
+    'method': 'post',
+    'data': { code }
+  })
+}
+
 // 获取验证码
 export function getCodeImg() {
   return request({

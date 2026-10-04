@@ -293,7 +293,7 @@
                             v-model="item.content"
                             type="textarea"
                             :rows="7"
-                            placeholder="粘贴网盘分享文案，例如：通过百度网盘分享的图片：妖娆御姐&#10;链接:https://pan.baidu.com/s/...&#10;提取码:mb3o&#10;复制这段内容打开「百度网盘APP 即可获取」"
+                            placeholder="粘贴网盘分享文案，例如：&#10;通过百度网盘分享的图片：妖娆御姐&#10;链接:https://pan.baidu.com/s/...&#10;提取码:mb3o&#10;复制这段内容打开「百度网盘APP 即可获取」&#10;或&#10;我用夸克网盘给你分享了「爱丽丝」，点击链接或复制整段内容，打开「夸克APP」即可获取。&#10;/~2cbe3bB2UR~:/&#10;链接：https://pan.quark.cn/s/0adfb601bf0f"
                         />
                     </div>
                     <div class="import-actions">
@@ -393,7 +393,6 @@ export default {
     },
     data() {
         return {
-            defaultRemark: '复制这段内容打开「百度网盘APP 即可获取」',
             loading: true,
             ids: [],
             single: true,
@@ -441,6 +440,15 @@ export default {
         this.getList();
         this.getLabelList();
     },
+    watch: {
+        'form.diskType'(val) {
+            if (!val) return;
+            const remark = (this.form.remark || '').trim();
+            if (!remark || /^复制这段内容打开「.+APP 即可获取」$/.test(remark)) {
+                this.form.remark = this.buildDefaultRemark(val);
+            }
+        }
+    },
     methods: {
         getLabelList() {
             getShareLabelList().then(res => {
@@ -450,6 +458,9 @@ export default {
         splitTags(tags) {
             return tags ? tags.split(',').filter(Boolean) : [];
         },
+        buildDefaultRemark(diskType) {
+            return `复制这段内容打开「${diskType || '网盘'}APP 即可获取」`;
+        },
         buildShareText(row) {
             const type = row.resourceType || '文件';
             const lines = [
@@ -457,7 +468,7 @@ export default {
                 `链接:${row.shareUrl || ''}`
             ];
             if (row.extractCode) lines.push(`提取码:${row.extractCode}`);
-            lines.push(row.remark || this.defaultRemark);
+            lines.push(row.remark || this.buildDefaultRemark(row.diskType));
             return lines.join('\n');
         },
         handleOpenLink(url) {
@@ -475,6 +486,10 @@ export default {
             const url = this.extractShareUrl(text);
             if (!url || text.trim() === url) return;
             event.preventDefault();
+            const diskType = this.detectDiskType(text);
+            if (diskType !== '其它') {
+                this.form.diskType = diskType;
+            }
             const input = event.target;
             const start = input.selectionStart ?? (this.form.shareUrl || '').length;
             const end = input.selectionEnd ?? start;
@@ -518,10 +533,15 @@ export default {
                 .trim();
         },
         detectDiskType(text) {
-            if (text.includes('百度网盘') || text.includes('百度云盘')) return '百度网盘';
-            if (text.includes('阿里云盘')) return '阿里云盘';
-            if (text.includes('夸克网盘')) return '夸克网盘';
-            if (text.includes('迅雷云盘')) return '迅雷云盘';
+            const content = text || '';
+            if (/pan\.quark\.cn/i.test(content)) return '夸克网盘';
+            if (/pan\.baidu\.com/i.test(content)) return '百度网盘';
+            if (/(aliyundrive|alipan)\.com/i.test(content)) return '阿里云盘';
+            if (/pan\.xunlei\.com/i.test(content)) return '迅雷云盘';
+            if (content.includes('夸克网盘') || content.includes('夸克云盘')) return '夸克网盘';
+            if (content.includes('百度网盘') || content.includes('百度云盘')) return '百度网盘';
+            if (content.includes('阿里云盘')) return '阿里云盘';
+            if (content.includes('迅雷云盘')) return '迅雷云盘';
             return '其它';
         },
         splitTitleTags(title) {
@@ -541,13 +561,21 @@ export default {
         parseShareText(text, index) {
             const content = this.normalizeImportText(text);
             if (!content) return null;
+            const diskType = this.detectDiskType(content);
             const headerMatch = content.match(/通过(.+?)分享的(.+?)[：:](.+)/);
-            const urlMatch = content.match(/链接\s*[：:]\s*(https?:\/\/\S+)/i);
+            const quarkTitleMatch = content.match(/分享了?「([^」]+)」/);
+            const urlMatch = content.match(/链接\s*[：:]\s*(https?:\/\/\S+)/i)
+                || content.match(/(https?:\/\/\S+)/i);
             const codeMatch = content.match(/提取码\s*[：:]\s*([^\s\n]+)/i);
             const remarkMatch = content.match(/(复制这段内容打开.+)$/m);
-            const diskType = '百度网盘';
-            const resourceType = '图片';
-            const title = headerMatch ? headerMatch[3].trim() : '';
+            let title = '';
+            let resourceType = '图片';
+            if (headerMatch) {
+                title = headerMatch[3].trim();
+                resourceType = headerMatch[2].trim() || '图片';
+            } else if (quarkTitleMatch) {
+                title = quarkTitleMatch[1].trim();
+            }
             const titleTags = this.splitTitleTags(title);
             const tags = (titleTags.length ? titleTags : [diskType, '分享']).filter(Boolean).join(',');
             return {
@@ -561,7 +589,7 @@ export default {
                 tags,
                 sortOrder: index + 1,
                 status: '1',
-                remark: remarkMatch ? remarkMatch[1].trim() : this.defaultRemark
+                remark: remarkMatch ? remarkMatch[1].trim() : this.buildDefaultRemark(diskType)
             };
         },
         parseImportTexts() {
@@ -593,7 +621,7 @@ export default {
                 for (const row of this.importRows) {
                     await addShare({
                         ...row,
-                        remark: row.remark || this.defaultRemark
+                        remark: row.remark || this.buildDefaultRemark(row.diskType)
                     });
                 }
                 this.msgSuccess('批量新增成功');
@@ -621,8 +649,8 @@ export default {
             this.form = {
                 id: null,
                 title: null,
-                diskType: '百度网盘',
-                resourceType: '文件',
+                diskType: '夸克网盘',
+                resourceType: '图片',
                 shareUrl: null,
                 cover: null,
                 extractCode: null,
@@ -637,7 +665,7 @@ export default {
                 createTime: null,
                 updateBy: null,
                 updateTime: null,
-                remark: this.defaultRemark
+                remark: this.buildDefaultRemark('夸克网盘')
             };
             this.resetForm("form");
         },

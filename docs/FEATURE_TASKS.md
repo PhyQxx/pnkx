@@ -6,7 +6,7 @@
 ## A. 完善现有功能（闭环断裂项）
 
 - [x] A1 **邮件订阅闭环**（2026-09-23：新增 newArticle 邮件模板；notifyNewArticle 走 @Async("notifyExecutor") 线程池异步群发（新增 AsyncConfig）；发文入口挂触发，失败不影响发文）
-- [x] A2 **App 离线推送**（2026-09-23 代码侧就绪：px_push_device 表（V1.4.9）+ UniPushService（个推 REST v2，token Redis 缓存，未配置三要素全静默跳过）+ /system/push/device 上报接口 + WebSocketReminderPushChannel 双通道（站内 WS + 离线 uniPush）；客户端 App.vue 启动登记 clientId + 通知点击监听；**启用步骤**：DCloud 中心开通 uniPush 2.0 → HBuilderX 勾选 Push 模块 → 服务器注入 UNIPUSH_APPID/APPKEY/MASTERSECRET → 重新打包 App）
+- [x] A2 **App 离线推送**（2026-09-23 代码侧就绪：px_push_device 表（V1.4.9）+ UniPushService（个推 REST v2，token Redis 缓存，未配置三要素时普通调度按能力跳过、显式重试返回失败）+ /system/push/device 上报接口 + WebSocketReminderPushChannel 双通道（站内 WS + 离线 uniPush）；客户端 App.vue 启动登记 clientId + 通知点击监听；**启用步骤**：DCloud 中心开通 uniPush 2.0 → HBuilderX 勾选 Push 模块 → 服务器注入 UNIPUSH_APPID/APPKEY/MASTERSECRET → 重新打包 App）
 - [x] A3 **评论回复通知**（2026-09-23 更正：功能原本已存在（addMessage 回复分支+reply 模板），此前评估为误报；本轮加固——邮件改 notifyExecutor 异步发送，SMTP 故障不再阻塞评论提交（原同步发送失败会抛异常导致评论失败））
 - [x] A4 **博客传播三件套**（2026-09-23：src/server/routes/rss.xml.ts + sitemap.xml.ts（注意 srcDir=src 时 Nitro 只扫 src/server）+ public/robots.txt；文章页动态 OG/Twitter meta + 全局兜底；构建产物冒烟通过，线上文章数据已成功输出 RSS item）
 - [x] A5 WebSocket 断线自动重连（2026-09-23：ReminderBell 增加指数退避重连 1s→60s，连接成功重置；销毁标记阻断重连；轮询继续兜底）
