@@ -3,7 +3,7 @@
 --
 -- 背景：px_bookkeeping_record.money / px_bookkeeping_account.balance
 -- / px_bookkeeping_record_model.money 历史上为字符型，浮点运算产物
---（科学计数法如 1.0E-4、空串等）曾写入脏值，且 SQL 侧长期依赖
+-- （科学计数法如 1.0E-4、空串等）曾写入脏值，且 SQL 侧长期依赖
 -- cast(money as decimal(18,2)) 隐式转换。本迁移：
 --   1) 清洗无法解析为数字的脏值（置 NULL，不参与 SUM）；
 --   2) 三张表金额列统一 DECIMAL(18,2)，与既有 cast 精度一致。
