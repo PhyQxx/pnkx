@@ -3,6 +3,7 @@ package com.pnkx.quartz.task;
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.ai.AiClient;
 import com.pnkx.common.core.domain.entity.SysUser;
+import com.pnkx.common.utils.MarkdownUtils;
 import com.pnkx.life.service.AiLifeReportDataService;
 import com.pnkx.life.domain.po.PxLifeReportHistory;
 import com.pnkx.life.mapper.PxLifeReportHistoryMapper;
@@ -118,8 +119,8 @@ public class AiLifeReportTask {
         SysEmail email = new SysEmail();
         email.setReceiverEmail(user.getEmail());
         email.setSubject("【Pei你看雪】本周生活报告 " + dateLabel);
-        // Markdown 文本作为邮件正文（邮件客户端大多能较好渲染 Markdown 纯文本）
-        email.setContent(reportMarkdown);
+        // 邮件正文必须转 HTML：邮件客户端不渲染 Markdown，### ** 等标记会原样显示
+        email.setContent(MarkdownUtils.toEmailHtml(reportMarkdown, "本周生活报告 " + dateLabel));
         sysEmailService.sendMail(email);
         log.info("【AI生活报告】已发送至 {}", user.getEmail());
     }
