@@ -72,7 +72,7 @@ public class SysSsoLoginController {
             return;
         }
         response.setContentType("text/html;charset=UTF-8");
-        response.getWriter().write(renderLoginPage(safeContinue(continueUrl, loginPage), error, loggedout != null));
+        response.getWriter().write(renderLoginPage(safeContinue(continueUrl, loginPage), error, loggedout != null, doLoginPath()));
     }
 
     /**
@@ -151,6 +151,15 @@ public class SysSsoLoginController {
     }
 
     /**
+     * 登录表单提交地址：与登录页同前缀（/prod-api/sso/login → /prod-api/sso/doLogin）
+     */
+    private String doLoginPath() {
+        return loginPage.endsWith("/login")
+                ? loginPage.substring(0, loginPage.length() - "/login".length()) + "/doLogin"
+                : loginPage + "/doLogin";
+    }
+
+    /**
      * 仅允许站内相对地址，防开放重定向
      */
     private String safeContinue(String continueUrl, String fallback) {
@@ -163,7 +172,7 @@ public class SysSsoLoginController {
     /**
      * 登录页 HTML（自包含样式，无外部依赖）
      */
-    private String renderLoginPage(String continueUrl, String error, boolean loggedout) {
+    private String renderLoginPage(String continueUrl, String error, boolean loggedout, String doLoginPath) {
         String errorBanner = "";
         if (error != null) {
             errorBanner = """
@@ -217,7 +226,7 @@ public class SysSsoLoginController {
                     <div class="brand">PEI 你看雪</div>
                     <h1>统一登录</h1>
                     __ERROR_BANNER__
-                    <form method="post" action="/sso/doLogin" autocomplete="on">
+                    <form method="post" action="__DOLOGIN__" autocomplete="on">
                       <input type="hidden" name="continue" value="__CONTINUE__">
                       <div class="field">
                         <label>账号</label>
@@ -235,7 +244,8 @@ public class SysSsoLoginController {
                 </html>
                 """
                 .replace("__ERROR_BANNER__", errorBanner)
-                .replace("__CONTINUE__", escapeHtml(continueUrl));
+                .replace("__CONTINUE__", escapeHtml(continueUrl))
+                .replace("__DOLOGIN__", escapeHtml(doLoginPath));
     }
 
     private String escapeHtml(String value) {
