@@ -22,6 +22,11 @@ pnkx:
   # X-Webhook-Secret 头或 X-Webhook-Signature 头（HMAC-SHA256 hex）
   webhook:
     secret: ${WEBHOOK_SECRET:}
+  # SSO 授权服务器（单点登录身份源）：issuer 留空则按请求域名自动推断，
+  # 生产环境建议通过 SSO_ISSUER 显式指定（如 https://pnkx.top），
+  # 各接入系统以 {issuer}/.well-known/openid-configuration 发现端点
+  sso:
+    issuer: ${SSO_ISSUER:}
 
 # 开发环境配置
 server:
@@ -68,6 +73,9 @@ spring:
     restart:
       # 热部署开关
       enabled: false
+  # SSO 统一登录会话（spring-session 存储，Redis）默认 7 天免登
+  session:
+    timeout: 168h
   # 邮箱配置
   mail:
     host: smtp.qq.com

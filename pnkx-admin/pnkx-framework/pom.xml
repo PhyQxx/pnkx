@@ -59,6 +59,18 @@
             <artifactId>pnkx-system</artifactId>
         </dependency>
 
+        <!-- OAuth2/OIDC 授权服务器（SSO 身份源）：复用现有 Spring Security 用户体系 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+        </dependency>
+
+        <!-- SSO 统一登录页会话存储（Redis，与业务 JWT 令牌互不干扰） -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

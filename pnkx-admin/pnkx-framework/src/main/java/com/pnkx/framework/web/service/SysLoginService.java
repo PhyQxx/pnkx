@@ -104,17 +104,28 @@ public class SysLoginService {
      * @return
      */
     public String userNameAndPassWordLogin(String userName, String password) {
-        // 防爆破：同一账号+IP 失败次数超限后临时锁定（管理端与客户端登录共用此入口）
+        // 生成token（防爆破锁定逻辑见 guardedLogin，与 SSO 统一登录页共用）
+        return tokenService.createToken(guardedLogin(userName, password));
+    }
+
+    /**
+     * 带防爆破保护的登录动作：同一账号+IP 连续失败达到阈值后临时锁定，
+     * 成功后清除计数。供管理端/客户端登录与 SSO 统一登录页共用。
+     *
+     * @param userName 用户名
+     * @param password 密码
+     * @return 登录用户
+     */
+    public LoginUser guardedLogin(String userName, String password) {
         String failKey = LOGIN_FAIL_COUNT_KEY + userName + ":" + IpUtils.getIpAddr(ServletUtils.getRequest());
         Integer failCount = redisCache.getCacheObject(failKey);
         if (failCount != null && failCount >= LOGIN_MAX_FAIL_COUNT) {
             throw new ServiceException("登录失败次数过多，请" + LOGIN_LOCK_MINUTES + "分钟后重试");
         }
         try {
-            // 生成token
-            String token = tokenService.createToken(loginAction(userName, password));
+            LoginUser loginUser = loginAction(userName, password);
             redisCache.deleteObject(failKey);
-            return token;
+            return loginUser;
         } catch (Exception e) {
             redisCache.setCacheObject(failKey, (failCount == null ? 1 : failCount + 1),
                     LOGIN_LOCK_MINUTES, TimeUnit.MINUTES);
