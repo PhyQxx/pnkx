@@ -27,6 +27,11 @@ pnkx:
   # 各接入系统以 {issuer}/.well-known/openid-configuration 发现端点
   sso:
     issuer: ${SSO_ISSUER:}
+    # 统一登录页路径：后端经带前缀的反代（如 /prod-api）暴露时，
+    # 设为 /prod-api/sso/login 使登录重定向落在同一前缀下
+    login-page: ${SSO_LOGIN_PAGE:/sso/login}
+    # 网关前缀：登录后回跳授权端点时补回反代前缀（如 /prod-api）
+    gateway-prefix: ${SSO_GATEWAY_PREFIX:}
 
 # 开发环境配置
 server:

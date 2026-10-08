@@ -12,8 +12,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.SavedRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,10 +47,16 @@ public class SysSsoLoginController {
 
     private static final String ANONYMOUS = "anonymousUser";
 
+    /**
+     * 统一登录页路径（经 /prod-api 等带前缀反代时由环境变量覆盖）
+     */
+    @Value("${pnkx.sso.login-page:/sso/login}")
+    private String loginPage;
+
     @Resource
     private SysLoginService sysLoginService;
 
-    private final HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+    private final RequestCache requestCache = new NullRequestCache();
 
     /**
      * 统一登录页；已有 SSO 会话则直接跳转回目标地址
@@ -61,11 +68,11 @@ public class SysSsoLoginController {
                           HttpServletRequest request, HttpServletResponse response) throws IOException {
         Authentication existing = SecurityContextHolder.getContext().getAuthentication();
         if (existing != null && existing.isAuthenticated() && !ANONYMOUS.equals(existing.getName())) {
-            response.sendRedirect(safeContinue(continueUrl));
+            response.sendRedirect(safeContinue(continueUrl, loginPage));
             return;
         }
         response.setContentType("text/html;charset=UTF-8");
-        response.getWriter().write(renderLoginPage(safeContinue(continueUrl), error, loggedout != null));
+        response.getWriter().write(renderLoginPage(safeContinue(continueUrl, loginPage), error, loggedout != null));
     }
 
     /**
@@ -76,7 +83,7 @@ public class SysSsoLoginController {
                         @RequestParam(value = "password", required = false) String password,
                         @RequestParam(value = "continue", required = false) String continueUrl,
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String target = safeContinue(continueUrl);
+        String target = safeContinue(continueUrl, "/");
         if (StringUtils.isAnyBlank(username, password)) {
             redirectError(response, target);
             return;
@@ -84,14 +91,8 @@ public class SysSsoLoginController {
         try {
             LoginUser loginUser = sysLoginService.guardedLogin(username.trim(), password);
             establishSession(loginUser, request);
-            // 优先回到授权请求（由授权链入口重定向登录时缓存），其次显式 continue 地址
-            SavedRequest savedRequest = requestCache.getRequest(request, response);
-            if (savedRequest != null) {
-                requestCache.removeRequest(request, response);
-                response.sendRedirect(savedRequest.getRedirectUrl());
-            } else {
-                response.sendRedirect(target);
-            }
+            // 始终回 continue 指向的授权请求（入口点已带前缀编码），不再依赖请求缓存
+            response.sendRedirect(target);
         } catch (Exception e) {
             redirectError(response, target);
         }
@@ -107,7 +108,7 @@ public class SysSsoLoginController {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
-        response.sendRedirect("/sso/login?loggedout=1");
+        response.sendRedirect(loginPage + "?loggedout=1");
     }
 
     /**
@@ -142,7 +143,7 @@ public class SysSsoLoginController {
     }
 
     private void redirectError(HttpServletResponse response, String target) throws IOException {
-        String url = "/sso/login?error=1";
+        String url = loginPage + "?error=1";
         if (!"/".equals(target)) {
             url += "&continue=" + URLEncoder.encode(target, StandardCharsets.UTF_8);
         }
@@ -152,9 +153,9 @@ public class SysSsoLoginController {
     /**
      * 仅允许站内相对地址，防开放重定向
      */
-    private String safeContinue(String continueUrl) {
+    private String safeContinue(String continueUrl, String fallback) {
         if (StringUtils.isBlank(continueUrl) || !continueUrl.startsWith("/") || continueUrl.startsWith("//")) {
-            return "/";
+            return StringUtils.isBlank(fallback) ? "/" : fallback;
         }
         return continueUrl;
     }

@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.framework.sso.SsoAccessControlAuthenticationConverter;
+import com.pnkx.framework.sso.SsoLoginUrlEntryPoint;
 import com.pnkx.framework.sso.SsoClaimsService;
 import com.pnkx.framework.sso.SsoClientAccessService;
 import com.pnkx.framework.sso.SsoJwkService;
@@ -35,7 +36,6 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -58,13 +58,14 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @Configuration
 public class AuthorizationServerConfig {
 
-    /**
-     * 统一登录页地址
-     */
-    public static final String SSO_LOGIN_PAGE = "/sso/login";
-
     @Value("${pnkx.sso.issuer:}")
     private String issuer;
+
+    @Value("${pnkx.sso.login-page:/sso/login}")
+    private String loginPage;
+
+    @Value("${pnkx.sso.gateway-prefix:}")
+    private String gatewayPrefix;
 
     /**
      * 授权服务器过滤链（含统一登录页），优先于业务 JWT 链
@@ -89,10 +90,11 @@ public class AuthorizationServerConfig {
                 // SSO 登录态存 Redis session（spring-session-data-redis）
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .securityContext(securityContext -> securityContext.securityContextRepository(securityContextRepository()))
-                // 未认证的授权请求重定向到统一登录页
+                // 未认证的授权请求重定向到统一登录页（登录页路径/网关前缀可配，
+                // 适配 /prod-api 等带前缀反代，详见 SsoLoginUrlEntryPoint）
                 .exceptionHandling(exceptions -> exceptions
                         .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint(SSO_LOGIN_PAGE),
+                                new SsoLoginUrlEntryPoint(loginPage, gatewayPrefix),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
                 // /userinfo 端点接受 Bearer JWT
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
