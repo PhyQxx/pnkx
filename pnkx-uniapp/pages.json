@@ -157,6 +157,34 @@
           }
         },
         {
+          "path": "webArticle/index",
+          "style": {
+            "navigationBarTitleText": "网址收藏",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "webArticle/detail",
+          "style": {
+            "navigationBarTitleText": "收藏详情",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "webArticle/edit",
+          "style": {
+            "navigationBarTitleText": "编辑收藏",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "webArticle/rss",
+          "style": {
+            "navigationBarTitleText": "RSS 订阅",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
           "path": "reminder/settings",
           "style": {
             "navigationBarTitleText": "提醒偏好"

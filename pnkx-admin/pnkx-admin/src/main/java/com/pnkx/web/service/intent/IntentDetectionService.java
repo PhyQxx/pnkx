@@ -16,17 +16,18 @@ import java.util.stream.Collectors;
 public class IntentDetectionService {
     private static final Logger logger = LoggerFactory.getLogger(IntentDetectionService.class);
 
-    private static final Map<String, List<String>> KEYWORDS = Map.of(
-            "bookkeeping", List.of("花了", "消费", "支出", "收入", "微信", "支付宝", "元"),
-            "todo", List.of("提醒我", "待办", "明天", "后天", "记得"),
-            "diary_write", List.of("今天", "心情", "日记", "记录一下"),
-            "diary_analysis", List.of("日记分析", "心情趋势", "回顾日记"),
-            "analysis", List.of("消费分析", "本月花了", "账单", "花销"),
-            "commemoration_day", List.of("纪念日", "周年", "生日", "恋爱", "结婚", "在一起"),
-            "shopping_list", List.of("购物清单", "买东西", "超市", "买菜", "加入清单", "要买的"),
-            "meal_plan", List.of("膳食计划", "吃什么", "明天吃", "这周吃"),
-            "life_catalog", List.of("查订阅", "预算多少", "阅读计划", "查菜谱", "日历安排"),
-            "content_publish", List.of("转成博客", "博客草稿", "读书笔记", "发布日记", "发布笔记")
+    private static final Map<String, List<String>> KEYWORDS = Map.ofEntries(
+            Map.entry("bookkeeping", List.of("花了", "消费", "支出", "收入", "微信", "支付宝", "元")),
+            Map.entry("todo", List.of("提醒我", "待办", "明天", "后天", "记得")),
+            Map.entry("diary_write", List.of("今天", "心情", "日记", "记录一下")),
+            Map.entry("diary_analysis", List.of("日记分析", "心情趋势", "回顾日记")),
+            Map.entry("analysis", List.of("消费分析", "本月花了", "账单", "花销")),
+            Map.entry("commemoration_day", List.of("纪念日", "周年", "生日", "恋爱", "结婚", "在一起")),
+            Map.entry("shopping_list", List.of("购物清单", "买东西", "超市", "买菜", "加入清单", "要买的")),
+            Map.entry("meal_plan", List.of("膳食计划", "吃什么", "明天吃", "这周吃")),
+            Map.entry("life_catalog", List.of("查订阅", "预算多少", "阅读计划", "查菜谱", "日历安排")),
+            Map.entry("content_publish", List.of("转成博客", "博客草稿", "读书笔记", "发布日记", "发布笔记")),
+            Map.entry("web_clip", List.of("http://", "https://", "www.", "收藏链接", "收藏网址", "剪藏"))
     );
 
     public String buildPrompt(List<IntentHandler> handlers) {

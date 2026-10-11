@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.PxWebArticleMapper">
+
+    <resultMap type="PxWebArticle" id="PxWebArticleResult">
+        <result property="id" column="id"/>
+        <result property="url" column="url"/>
+        <result property="urlHash" column="url_hash"/>
+        <result property="domain" column="domain"/>
+        <result property="title" column="title"/>
+        <result property="author" column="author"/>
+        <result property="publishTime" column="publish_time"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="favicon" column="favicon"/>
+        <result property="contentText" column="content_text"/>
+        <result property="contentHtml" column="content_html"/>
+        <result property="summary" column="summary"/>
+        <result property="tags" column="tags"/>
+        <result property="category" column="category"/>
+        <result property="fetchStatus" column="fetch_status"/>
+        <result property="fetchError" column="fetch_error"/>
+        <result property="aiStatus" column="ai_status"/>
+        <result property="aiError" column="ai_error"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="aiModel" column="ai_model"/>
+        <result property="readFlag" column="read_flag"/>
+        <result property="starFlag" column="star_flag"/>
+        <result property="source" column="source"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxWebArticleVo">
+        select a.id,
+               a.url,
+               a.domain,
+               a.title,
+               a.author,
+               a.publish_time,
+               a.cover_image,
+               a.favicon,
+               a.summary,
+               a.tags,
+               a.category,
+               a.fetch_status,
+               a.fetch_error,
+               a.ai_status,
+               a.ai_error,
+               a.ai_model,
+               a.read_flag,
+               a.star_flag,
+               a.source,
+               a.del_flag,
+               a.create_by,
+               a.create_time,
+               a.update_by,
+               a.update_time,
+               a.remark
+        from px_web_article a
+    </sql>
+
+    <select id="selectPxWebArticleList" parameterType="PxWebArticle" resultMap="PxWebArticleResult">
+        <include refid="selectPxWebArticleVo"/>
+        <where>
+            a.del_flag = '0'
+            <if test="createBy != null and createBy != ''">
+                and a.create_by = #{createBy}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and (a.title like concat('%', #{keyword}, '%')
+                    or a.summary like concat('%', #{keyword}, '%')
+                    or a.url like concat('%', #{keyword}, '%')
+                    or match(a.title, a.summary, a.content_text) against(#{keyword}))
+            </if>
+            <if test="tag != null and tag != ''">
+                and find_in_set(#{tag}, a.tags)
+            </if>
+            <if test="category != null and category != ''">
+                and a.category = #{category}
+            </if>
+            <if test="domain != null and domain != ''">
+                and a.domain = #{domain}
+            </if>
+            <if test="readFlag != null and readFlag != ''">
+                and a.read_flag = #{readFlag}
+            </if>
+            <if test="starFlag != null and starFlag != ''">
+                and a.star_flag = #{starFlag}
+            </if>
+            <if test="fetchStatus != null and fetchStatus != ''">
+                and a.fetch_status = #{fetchStatus}
+            </if>
+        </where>
+        order by a.create_time desc
+    </select>
+
+    <select id="selectPxWebArticleById" resultMap="PxWebArticleResult">
+        select a.id,
+               a.url,
+               a.domain,
+               a.title,
+               a.author,
+               a.publish_time,
+               a.cover_image,
+               a.favicon,
+               a.content_text,
+               a.content_html,
+               a.summary,
+               a.tags,
+               a.category,
+               a.fetch_status,
+               a.fetch_error,
+               a.ai_status,
+               a.ai_error,
+               a.ai_model,
+               a.read_flag,
+               a.star_flag,
+               a.source,
+               a.del_flag,
+               a.create_by,
+               a.create_time,
+               a.update_by,
+               a.update_time,
+               a.remark
+        from px_web_article a
+        where a.id = #{id} and a.del_flag = '0'
+        <if test="userId != null and userId != ''">
+            and a.create_by = #{userId}
+        </if>
+    </select>
+
+    <select id="selectPxWebArticleByUrl" resultMap="PxWebArticleResult">
+        <include refid="selectPxWebArticleVo"/>
+        where a.url_hash = #{urlHash} and a.create_by = #{userId} and a.del_flag = '0' limit 1
+    </select>
+
+    <select id="selectPxWebArticleTags" resultType="String">
+        select distinct a.tags
+        from px_web_article a
+        where a.create_by = #{userId} and a.del_flag = '0' and a.tags is not null and a.tags != ''
+    </select>
+
+    <insert id="insertPxWebArticle" parameterType="PxWebArticle" useGeneratedKeys="true" keyProperty="id">
+        insert into px_web_article(url, url_hash, domain, title, fetch_status, ai_status, read_flag, star_flag, source,
+                                   del_flag, create_by, create_time, remark)
+        values(#{url}, #{urlHash}, #{domain}, #{title}, #{fetchStatus}, #{aiStatus}, '0', '0', #{source},
+                '0', #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updatePxWebArticle" parameterType="PxWebArticle">
+        update px_web_article
+        <set>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="readFlag != null and readFlag != ''">read_flag = #{readFlag},</if>
+            <if test="starFlag != null and starFlag != ''">star_flag = #{starFlag},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        </set>
+        where id = #{id} and create_by = #{updateBy} and del_flag = '0'
+    </update>
+
+    <update id="updateFetchResult" parameterType="PxWebArticle">
+        update px_web_article
+        set domain = #{domain},
+            title = #{title},
+            author = #{author},
+            publish_time = #{publishTime},
+            cover_image = #{coverImage},
+            favicon = #{favicon},
+            content_text = #{contentText},
+            content_html = #{contentHtml},
+            fetch_status = #{fetchStatus},
+            fetch_error = #{fetchError},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+    <update id="updateAiResult" parameterType="PxWebArticle">
+        update px_web_article
+        set summary = #{summary},
+            tags = #{tags},
+            category = #{category},
+            ai_status = #{aiStatus},
+            ai_error = #{aiError},
+            ai_model = #{aiModel},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+    <update id="resetFetchStatus">
+        update px_web_article
+        set fetch_status = '0', fetch_error = null, ai_status = '0', ai_error = null,
+            retry_count = 0, update_time = sysdate()
+        where id = #{id} and create_by = #{userId} and del_flag = '0'
+    </update>
+
+    <update id="resetAiStatus">
+        update px_web_article
+        set ai_status = '0', ai_error = null, retry_count = 0, update_time = sysdate()
+        where id = #{id} and create_by = #{userId} and del_flag = '0'
+    </update>
+
+    <update id="updateReadFlag">
+        update px_web_article
+        set read_flag = #{readFlag}, update_time = sysdate()
+        where id = #{id} and create_by = #{userId} and del_flag = '0'
+    </update>
+
+    <update id="updateStarFlag">
+        update px_web_article
+        set star_flag = #{starFlag}, update_time = sysdate()
+        where id = #{id} and create_by = #{userId} and del_flag = '0'
+    </update>
+
+    <delete id="deletePxWebArticleByIds">
+        update px_web_article set del_flag = '1', update_time = sysdate()
+        where create_by = #{userId} and del_flag = '0' and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectRetryCandidates" resultMap="PxWebArticleResult">
+        select a.id, a.url, a.create_by, a.fetch_status, a.ai_status
+        from px_web_article a
+        where a.del_flag = '0'
+          and a.retry_count &lt; #{maxRetry}
+          and a.update_time &lt; #{before}
+          and ((a.fetch_status = '2')
+            or (a.fetch_status = '1' and a.ai_status = '2'))
+        order by a.update_time asc
+        limit 20
+    </select>
+
+    <update id="incrementRetryCount">
+        update px_web_article
+        set retry_count = retry_count + 1, update_time = sysdate()
+        where id = #{id}
+    </update>
+
+    <select id="selectPxWebArticleExport" resultMap="PxWebArticleResult">
+        select a.id, a.url, a.domain, a.title, a.author, a.publish_time, a.summary, a.tags, a.category,
+               a.content_text, a.read_flag, a.star_flag, a.source, a.create_by, a.create_time
+        from px_web_article a
+        where a.del_flag = '0' and a.create_by = #{userId}
+        order by a.create_time asc, a.id asc
+    </select>
+
+    <select id="selectStatsOverview" resultType="java.util.HashMap">
+        select count(*)                                                            as total,
+               sum(case when a.read_flag = '0' then 1 else 0 end)                   as unread,
+               sum(case when a.star_flag = '1' then 1 else 0 end)                   as starred,
+               sum(case when a.fetch_status = '1' then 1 else 0 end)                as fetch_success,
+               sum(case when a.fetch_status = '2' then 1 else 0 end)                as fetch_failed,
+               sum(case when a.ai_status = '1' then 1 else 0 end)                   as ai_success,
+               sum(case when a.ai_status = '2' then 1 else 0 end)                   as ai_failed,
+               sum(case when a.source = '4' then 1 else 0 end)                      as from_rss,
+               sum(case when a.read_flag = '1' then 1 else 0 end)                   as readed
+        from px_web_article a
+        where a.del_flag = '0' and a.create_by = #{userId}
+    </select>
+
+    <select id="selectCategoryStats" resultType="java.util.HashMap">
+        select a.category as name, count(*) as value
+        from px_web_article a
+        where a.del_flag = '0' and a.create_by = #{userId} and a.category is not null and a.category != ''
+        group by a.category
+        order by value desc
+    </select>
+
+    <select id="selectDailyTrend" resultType="java.util.HashMap">
+        select date_format(a.create_time, '%m-%d') as date, count(*) as value
+        from px_web_article a
+        where a.del_flag = '0' and a.create_by = #{userId}
+          and a.create_time >= date_sub(curdate(), interval #{days} day)
+        group by date_format(a.create_time, '%Y-%m-%d'), date_format(a.create_time, '%m-%d')
+        order by date_format(a.create_time, '%Y-%m-%d') asc
+    </select>
+
+    <select id="selectRowsByTag" resultMap="PxWebArticleResult">
+        select a.id, a.tags
+        from px_web_article a
+        where a.del_flag = '0' and a.create_by = #{userId}
+          and a.tags is not null and a.tags != ''
+          and find_in_set(#{tag}, a.tags)
+    </select>
+
+    <update id="updateTags">
+        update px_web_article
+        set tags = #{tags}, update_by = #{updateBy}, update_time = sysdate()
+        where id = #{id} and create_by = #{updateBy} and del_flag = '0'
+    </update>
+</mapper>

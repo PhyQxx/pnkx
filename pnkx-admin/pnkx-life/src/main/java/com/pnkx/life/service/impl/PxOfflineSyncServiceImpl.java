@@ -193,7 +193,9 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
             Map.entry("menstruation", "px_menstruation_record"),
             Map.entry("budget", "px_bookkeeping_budget"),
             Map.entry("recurring", "px_bookkeeping_recurring"),
-            Map.entry("book", "px_book")
+            Map.entry("book", "px_book"),
+            Map.entry("webArticle", "px_web_article"),
+            Map.entry("webRssFeed", "px_web_rss_feed")
     );
 
     @Resource

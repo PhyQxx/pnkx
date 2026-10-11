@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.PxWebRssFeedMapper">
+
+    <resultMap type="PxWebRssFeed" id="PxWebRssFeedResult">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="url" column="url"/>
+        <result property="urlHash" column="url_hash"/>
+        <result property="enabled" column="enabled"/>
+        <result property="lastFetchTime" column="last_fetch_time"/>
+        <result property="lastFetchCount" column="last_fetch_count"/>
+        <result property="fetchError" column="fetch_error"/>
+        <result property="consecutiveFailures" column="consecutive_failures"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectPxWebRssFeedVo">
+        select f.id, f.name, f.url, f.url_hash, f.enabled, f.last_fetch_time, f.last_fetch_count,
+               f.fetch_error, f.consecutive_failures, f.del_flag, f.create_by, f.create_time, f.update_by, f.update_time, f.remark
+        from px_web_rss_feed f
+    </sql>
+
+    <select id="selectPxWebRssFeedList" parameterType="PxWebRssFeed" resultMap="PxWebRssFeedResult">
+        <include refid="selectPxWebRssFeedVo"/>
+        <where>
+            f.del_flag = '0'
+            <if test="createBy != null and createBy != ''">
+                and f.create_by = #{createBy}
+            </if>
+            <if test="name != null and name != ''">
+                and f.name like concat('%', #{name}, '%')
+            </if>
+            <if test="enabled != null and enabled != ''">
+                and f.enabled = #{enabled}
+            </if>
+        </where>
+        order by f.create_time desc
+    </select>
+
+    <select id="selectPxWebRssFeedById" resultMap="PxWebRssFeedResult">
+        <include refid="selectPxWebRssFeedVo"/>
+        where f.id = #{id} and f.del_flag = '0'
+        <if test="userId != null and userId != ''">
+            and f.create_by = #{userId}
+        </if>
+    </select>
+
+    <select id="selectEnabledFeeds" resultMap="PxWebRssFeedResult">
+        <include refid="selectPxWebRssFeedVo"/>
+        where f.del_flag = '0' and f.enabled = '1'
+    </select>
+
+    <insert id="insertPxWebRssFeed" parameterType="PxWebRssFeed" useGeneratedKeys="true" keyProperty="id">
+        insert into px_web_rss_feed(name, url, url_hash, enabled, del_flag, create_by, create_time, remark)
+        values(#{name}, #{url}, #{urlHash}, #{enabled}, '0', #{createBy}, #{createTime}, #{remark})
+    </insert>
+
+    <update id="updatePxWebRssFeed" parameterType="PxWebRssFeed">
+        update px_web_rss_feed
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="url != null and url != ''">url = #{url},</if>
+            <if test="enabled != null and enabled != ''">enabled = #{enabled},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        </set>
+        where id = #{id} and create_by = #{updateBy} and del_flag = '0'
+    </update>
+
+    <delete id="deletePxWebRssFeedByIds">
+        update px_web_rss_feed set del_flag = '1', update_time = sysdate()
+        where create_by = #{userId} and del_flag = '0' and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateFetchResult" parameterType="PxWebRssFeed">
+        update px_web_rss_feed
+        set last_fetch_time = #{lastFetchTime},
+            last_fetch_count = #{lastFetchCount},
+            fetch_error = #{fetchError},
+            consecutive_failures = #{consecutiveFailures},
+            update_time = #{updateTime}
+        <if test="enabled != null and enabled != ''">
+            , enabled = #{enabled}
+        </if>
+        where id = #{id}
+    </update>
+
+    <select id="selectPxWebRssFeedByHash" resultMap="PxWebRssFeedResult">
+        <include refid="selectPxWebRssFeedVo"/>
+        where f.url_hash = #{urlHash} and f.create_by = #{userId} and f.del_flag = '0' limit 1
+    </select>
+</mapper>

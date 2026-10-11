@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 320px;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #F2F7FE;
+            color: #303133;
+        }
+        .header {
+            padding: 14px 16px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header img { width: 22px; height: 22px; }
+        .header h1 { margin: 0; font-size: 15px; font-weight: 600; }
+        .header .settings {
+            margin-left: auto;
+            cursor: pointer;
+            font-size: 12px;
+            color: #4F86F7;
+            user-select: none;
+        }
+        .card {
+            margin: 0 12px 12px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(64, 111, 176, 0.08);
+        }
+        .page-title {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.5;
+            max-height: 40px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .page-url {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #909399;
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #DCDFE6;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 12px;
+            font-family: inherit;
+            resize: none;
+            height: 52px;
+        }
+        textarea:focus { outline: none; border-color: #4F86F7; }
+        .save-btn {
+            margin-top: 10px;
+            width: 100%;
+            height: 36px;
+            border: none;
+            border-radius: 18px;
+            background: #4F86F7;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .save-btn:disabled { opacity: 0.6; cursor: default; }
+        .save-btn:active:not(:disabled) { transform: scale(0.98); }
+        .status {
+            margin: 10px 12px 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: none;
+        }
+        .status.ok { display: block; background: #F0F9EB; color: #67C23A; }
+        .status.err { display: block; background: #FEF0F0; color: #F56C6C; }
+        .config-tip { font-size: 12px; color: #909399; line-height: 1.6; }
+        .config-tip a { color: #4F86F7; cursor: pointer; }
+        .hint { margin: 0 12px 12px; font-size: 11px; color: #C0C4CC; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="icons/icon48.png" alt="">
+        <h1>收藏到 pnkx</h1>
+        <span class="settings" id="openOptions">设置</span>
+    </div>
+    <div class="card">
+        <div class="page-title" id="pageTitle">读取中…</div>
+        <div class="page-url" id="pageUrl"></div>
+    </div>
+    <div class="card" id="remarkCard" style="display: none">
+        <textarea id="remark" placeholder="备注（可选）：为什么收藏它" maxlength="255"></textarea>
+        <button class="save-btn" id="saveBtn">收 藏</button>
+    </div>
+    <div class="card" id="configCard" style="display: none">
+        <div class="config-tip">
+            首次使用请先配置服务器地址与账号密码。<br>
+            <a id="goOptions">前往设置 →</a>
+        </div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="hint">收藏后自动抓取正文并 AI 生成摘要标签；快捷键 Ctrl/Cmd+Shift+S 可一键收藏</div>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
