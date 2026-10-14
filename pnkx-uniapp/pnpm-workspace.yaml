@@ -1,4 +1,9 @@
-# pnpm 11+ 的设置从此文件读取（package.json 的 pnpm 字段已废弃）
+# 构建脚本批准(pnpm 11/12 读 allowBuilds,pnpm 10 读 onlyBuiltDependencies,两者兼容保留)
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - core-js
