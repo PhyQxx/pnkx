@@ -36,6 +36,9 @@ importers:
       '@dcloudio/uni-cli-shared':
         specifier: ^2.0.2-5000720260410001
         version: 2.0.2-5010520260709001
+      '@dcloudio/uni-components':
+        specifier: 3.0.0-alpha-5020320260803001
+        version: 3.0.0-alpha-5020320260803001(postcss@8.5.25)(rollup@4.62.4)(vite@5.4.21(sass-embedded@1.100.0)(sass@1.100.0)(terser@5.49.1))(vue@3.4.21)
       '@dcloudio/vite-plugin-uni':
         specifier: ^3.0.0-alpha-5000720260410001
         version: 3.0.0-alpha-5020320260803001(postcss@8.5.25)(rollup@4.62.4)(vite@5.4.21(sass-embedded@1.100.0)(sass@1.100.0)(terser@5.49.1))(vue@3.4.21)
