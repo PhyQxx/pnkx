@@ -8,7 +8,7 @@
     <div
       v-if="menstruation"
       class="reminder-item"
-      @click="$router.push('/menstruationAssistant')"
+      @click="$router.push('/mytool/menstruationAssistant')"
     >
       <div class="reminder-icon menstruation-gradient">
         <i class="el-icon-female" />
