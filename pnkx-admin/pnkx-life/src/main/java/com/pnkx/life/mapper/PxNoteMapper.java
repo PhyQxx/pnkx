@@ -13,13 +13,28 @@ import java.util.List;
  * @description 描述
  */
 public interface PxNoteMapper {
+    void ensureSync(@Param("owner") String owner);
+    Long lockSync(@Param("owner") String owner);
+    Long syncPosition(@Param("owner") String owner);
+    void advanceSync(@Param("owner") String owner);
+    void recordChange(@Param("owner") String owner,@Param("id") Long id);
+    List<PxNote> changes(@Param("owner") String owner,@Param("after") long after);
+
+    void snapshot(PxNote note);
+    List<Long> historyRevisions(@Param("id") Long id, @Param("owner") String owner);
+    List<PxNote> history(@Param("id") Long id, @Param("owner") String owner);
+    PxNote historical(@Param("id") Long id, @Param("owner") String owner, @Param("revision") Long revision);
+    void pruneHistory(@Param("id") Long id, @Param("owner") String owner, @Param("before") Long before);
+
+    PxNote selectByClientUuidForUpdate(@Param("clientUuid") String clientUuid, @Param("userId") String userId);
+    PxNote selectPxNoteForUpdate(@Param("id") Long id, @Param("userId") String userId);
     /**
      * 查询笔记
      *
      * @param id 笔记ID
      * @return 笔记
      */
-    public PxNote selectPxNoteById(Long id);
+    public PxNote selectPxNoteById(@Param("id") Long id, @Param("userId") String userId);
 
     /**
      * 查询笔记列表
@@ -51,7 +66,7 @@ public interface PxNoteMapper {
      * @param id 笔记ID
      * @return 结果
      */
-    public int deletePxNoteById(Long id);
+    public int deletePxNoteById(@Param("id") Long id, @Param("userId") String userId);
 
     /**
      * 批量删除笔记
@@ -59,7 +74,7 @@ public interface PxNoteMapper {
      * @param ids 需要删除的数据主键集合
      * @return 结果
      */
-    public int deletePxNoteByIds(Long[] ids);
+    public int deletePxNoteByIds(@Param("ids") Long[] ids, @Param("userId") String userId);
 
     /**
      * AI搜索笔记
@@ -69,7 +84,9 @@ public interface PxNoteMapper {
     /**
      * 根据客户端唯一标识查询笔记（幂等去重）
      */
-    PxNote selectByClientUuid(@Param("clientUuid") String clientUuid);
+    PxNote selectByClientUuid(@Param("clientUuid") String clientUuid, @Param("userId") String userId);
+
+    List<Long> selectOwnedIds(@Param("ids") Long[] ids, @Param("userId") String userId);
 
     /**
      * 增量查询笔记（离线同步用）

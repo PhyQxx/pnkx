@@ -29,6 +29,7 @@ const offlineQueue = {
       console.log('[OfflineQueue] 任务入队:', task.id, task.url)
     } catch (e) {
       console.error('[OfflineQueue] 入队失败:', e)
+      throw e
     }
     // #endif
   },
@@ -162,6 +163,12 @@ const offlineQueue = {
     )
     if (rows?.[0]?.table_name) {
       const payload = JSON.parse(rows[0].payload || '{}')
+      if (rows[0].table_name === 'px_note') {
+        const where = payload._noteLocalId ? 'id = ' + sqliteDB._escapeValue(payload._noteLocalId) :
+          payload.id ? '_server_id = ' + sqliteDB._escapeValue(payload.id) :
+            'client_uuid = ' + sqliteDB._escapeValue(taskId)
+        await sqliteDB.executeSql('DELETE FROM px_note WHERE ' + where)
+      }
       await sqliteDB.executeSql(
         `DELETE FROM ${rows[0].table_name} WHERE client_uuid = ${sqliteDB._escapeValue(taskId)} AND _server_id IS NULL`
       )

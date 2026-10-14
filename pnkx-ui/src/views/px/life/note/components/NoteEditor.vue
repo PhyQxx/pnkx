@@ -34,8 +34,12 @@
             ref="editor"
             height="100%"
             v-model="note.richText"
+            @on-change="note.content = $event.text"
           />
         </div>
+
+        <router-link v-if="note.id" :to="`/resources/recovery?id=${note.id}`">历史版本</router-link>
+        <resource-links v-if="note.id" type="note" :id="note.id" />
 
         <!-- 浮动保存按钮 -->
         <div class="fab-save" @click="$emit('save')" title="保存 (自动保存已启用)">
@@ -48,10 +52,11 @@
 
 <script>
 import Editor from '@/components/Editor'
+import ResourceLinks from '@/components/ResourceLinks'
 
 export default {
   name: 'NoteEditor',
-  components: { Editor },
+  components: { Editor, ResourceLinks },
   emits: ['save'],
   props: {
     // 当前选中项类型：folder 显示空状态，note 显示编辑器

@@ -10,10 +10,17 @@
       <text class="section-title">同步冲突</text>
       <view v-for="item in conflicts" :key="item.id" class="conflict-card">
         <text class="conflict-card__title">{{ moduleName(item.table_name) }} · {{ item.method }}</text>
-        <text class="conflict-card__error">{{ item.error_msg || '同步失败，请选择处理方式' }}</text>
+        <text class="conflict-card__error">{{ conflictInfo(item).message || item.error_msg || '同步失败，请选择处理方式' }}</text>
         <text class="conflict-card__time">{{ item.created_at }}</text>
+        <view v-if="item.table_name === 'px_note'">
+          <text selectable>本地草稿：{{ notePayload(item).title }}
+{{ notePayload(item).content }}</text>
+          <text v-if="conflictInfo(item).current" selectable>服务端：{{ conflictInfo(item).current.title }}
+{{ conflictInfo(item).current.content }}</text>
+        </view>
         <view class="conflict-card__actions">
-          <text @click="retry(item)">重试</text>
+          <text v-if="item.table_name !== 'px_note' || !conflictInfo(item).current" @click="retry(item)">重试</text>
+          <text v-if="item.table_name === 'px_note'" @click="saveNoteCopy(item)">另存副本</text>
           <text @click="edit(item)">手工合并</text>
           <text @click="useServer(item)">使用服务端</text>
           <text class="danger" @click="discard(item)">丢弃</text>
@@ -25,7 +32,12 @@
     <uni-popup ref="mergePopup" type="bottom">
       <view class="merge-popup">
         <text class="section-title">编辑待同步数据</text>
-        <textarea v-model="mergePayload" class="merge-popup__input" maxlength="-1" />
+        <view v-if="editing && editing.table_name === 'px_note'">
+          <text>请对照服务端内容编辑，保存会校验当前服务端修订号。</text>
+          <input v-model="mergeNote.title" placeholder="笔记标题" />
+          <textarea v-model="mergeNote.content" class="merge-popup__input" maxlength="-1" />
+        </view>
+        <textarea v-else v-model="mergePayload" class="merge-popup__input" maxlength="-1" />
         <button class="sync-now" @click="saveMerge">保存并重试</button>
       </view>
     </uni-popup>
@@ -34,6 +46,7 @@
 
 <script>
 import offlineQueue from '@/utils/offlineQueue'
+import request from '@/utils/request'
 import syncScheduler from '@/utils/syncScheduler'
 
 export default {
@@ -43,11 +56,30 @@ export default {
       conflicts: [],
       syncing: false,
       editing: null,
-      mergePayload: ''
+      mergePayload: '',
+      mergeNote: {},
+      copying: false
     }
   },
   onShow() { this.load() },
   methods: {
+    conflictInfo(item) {
+      try { return JSON.parse(item.error_msg || '{}') } catch { return {} }
+    },
+    notePayload(item) {
+      try { return JSON.parse(item.payload || '{}') } catch { return {} }
+    },
+    async saveNoteCopy(item) {
+      if (this.copying) return
+      this.copying = true
+      const draft = this.notePayload(item)
+      try {
+        await request({ url: '/note', method: 'post', offline: false, data: {
+          title: (draft.title || '未命名笔记') + '（冲突副本）', content: draft.content, richText: draft.richText, folder: 0
+        } })
+        uni.showToast({ title: '副本已保存到根目录', icon: 'none' })
+      } finally { this.copying = false }
+    },
     async load() {
       this.stats = await offlineQueue.getStats()
       this.conflicts = await offlineQueue.getConflictTasks()
@@ -63,16 +95,29 @@ export default {
     async retry(item) { await offlineQueue.retry(item.id); await this.syncNow() },
     edit(item) {
       this.editing = item
+      this.mergeNote = { ...this.notePayload(item) }
+      if (item.table_name === 'px_note') {
+        const current = this.conflictInfo(item).current
+        if (!current) {
+          uni.showToast({ title: '缺少服务端版本，请保留草稿或另存副本', icon: 'none' })
+          return
+        }
+        this.mergeNote.revision = current.revision
+      }
       try { this.mergePayload = JSON.stringify(JSON.parse(item.payload || '{}'), null, 2) } catch (e) { this.mergePayload = '{}' }
       this.$refs.mergePopup.open()
     },
     async saveMerge() {
       try {
-        const payload = JSON.parse(this.mergePayload)
+        const payload = this.editing.table_name === 'px_note' ? { ...this.mergeNote } : JSON.parse(this.mergePayload)
+        if (this.editing.table_name === 'px_note') {
+          const text = (payload.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          payload.richText = text.split('\n').map(line => '<p>' + (line || '<br>') + '</p>').join('')
+        }
         await offlineQueue.replacePayload(this.editing.id, payload)
         this.$refs.mergePopup.close()
         await this.syncNow()
-      } catch (e) { uni.showToast({ title: 'JSON 格式错误', icon: 'none' }) }
+      } catch (e) { uni.showToast({ title: '合并保存失败，请检查内容后重试', icon: 'none' }) }
     },
     async useServer(item) {
       await offlineQueue.discard(item.id, true)
@@ -84,6 +129,8 @@ export default {
       uni.showModal({ title: '丢弃本地变更', content: '此操作不可撤销，确定继续？', success: async res => {
         if (!res.confirm) return
         await offlineQueue.discard(item.id)
+        await syncScheduler.resetCursors([item.table_name])
+        await syncScheduler.pullServerChanges()
         await this.load()
       } })
     }

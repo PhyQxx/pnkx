@@ -8,13 +8,13 @@
    ============================ */
 $primary: #4F86F7;
 $primary-light: #91B7FF;
-$primary-lighter: #DDEAFF;
+$primary-lighter: var(--accent-soft);
 $primary-dark: #2E65CF;
 $primary-darker: #17458F;
 $aurora-cyan: #DDF8FF;
 $aurora-lavender: #EEE7FF;
 $ice-white: #F8FBFF;
-$frost-white: rgba(255, 255, 255, 0.88);
+$frost-white: var(--bg-card);
 
 /* ============================
    Functional Colors（功能色）
@@ -64,7 +64,7 @@ $book-light: #C7D2FE;
    Neutral Colors（中性色）
    ============================ */
 $gray-50: #F8FBFF;
-$gray-100: #F1F6FD;
+$gray-100: var(--surface-2);
 $gray-200: #DFE9F6;
 $gray-300: #C8D6E8;
 $gray-400: #8EA0B8;
@@ -93,29 +93,34 @@ $theme-bookkeeping-bg-color-blue: rgba(79, 134, 247, 0.12);
 
 /* ============================
    Text Colors（文字色）
+   -- 暗色模式：核心表面/文字 token 引用 App.vue 定义的 CSS 变量，
+   -- 跟随系统 prefers-color-scheme 运行时切换（§暗色 双端）。
+   -- 注意：这些 token 不可再参与 SCSS 颜色函数（darken/rgba 求值）。
    ============================ */
-$text-primary: $gray-800;
-$text-secondary: $gray-600;
-$text-tertiary: $gray-400;
-$text-placeholder: $gray-400;
-$text-disabled: $gray-300;
+$text-primary: var(--txt-1);
+$text-secondary: var(--txt-2);
+$text-tertiary: var(--txt-3);
+$text-placeholder: var(--txt-3);
+$text-disabled: var(--txt-3);
 $text-inverse: #FFFFFF;
 
 /* ============================
    Background Colors（背景色）
    ============================ */
-$bg-page: #F2F7FE;
-$bg-card: rgba(255, 255, 255, 0.92);
-$bg-elevated: #FFFFFF;
-$bg-hover: $gray-50;
+$bg-page: var(--bg-page);
+$bg-card: var(--bg-card);
+$bg-elevated: var(--bg-elevated);
+$bg-hover: var(--bg-hover);
 $bg-mask: rgba(0, 0, 0, 0.5);
 $bg-menu: rgba(79, 134, 247, 0.08);
 
 /* ============================
    Border Colors（边框色）
    ============================ */
-$border-color: rgba(142, 174, 218, 0.26);
-$border-light: rgba(218, 232, 249, 0.72);
+$border-color: var(--bd);
+$border-color-light: var(--bd-soft);
+$bg-card-hover: var(--bg-hover);
+$border-light: var(--bd-soft);
 
 /* ============================
    Typography（排版）

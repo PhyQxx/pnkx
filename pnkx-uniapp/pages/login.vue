@@ -110,11 +110,11 @@ export default {
   methods: {
     handlePrivacy() {
       let site = this.globalConfig.appInfo.agreements[0]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      this.$tab.navigateTo(`/pages_system/common/webview/index?title=${site.title}&url=${site.url}`)
     },
     handleUserAgrement() {
       let site = this.globalConfig.appInfo.agreements[1]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      this.$tab.navigateTo(`/pages_system/common/webview/index?title=${site.title}&url=${site.url}`)
     },
     getCode() {
       getCodeImg().then(res => {
@@ -194,7 +194,7 @@ export default {
   justify-content: center;
   background:
     linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.78) 100%),
-    url('/static/images/glacier-aurora-bg.jpg') center / cover no-repeat;
+    radial-gradient(120% 55% at 20% -5%, rgba($aurora-cyan, 0.92) 0%, rgba($aurora-cyan, 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba($aurora-lavender, 0.85) 0%, rgba($aurora-lavender, 0) 62%);
   padding: 0 $page-padding;
   position: relative;
   overflow: hidden;
@@ -257,7 +257,7 @@ export default {
     width: 140rpx;
     height: 140rpx;
     border-radius: $radius-2xl;
-    background: rgba(255, 255, 255, 0.78);
+    background: var(--glass);
     padding: 16rpx;
     margin-bottom: $spacing-lg;
     box-shadow: $shadow-md;
@@ -280,11 +280,11 @@ export default {
 
 .login-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--glass);
   border-radius: $radius-2xl;
   padding: $spacing-xl $spacing-lg;
   box-shadow: $shadow-lg;
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border: 1rpx solid var(--glass-strong);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   position: relative;

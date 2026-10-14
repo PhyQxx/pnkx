@@ -10,8 +10,8 @@ page {
   color: $text-primary;
   background-color: $bg-page;
   background-image:
-    linear-gradient(180deg, rgba(244, 249, 255, 0.12) 0%, $bg-page 520rpx),
-    url('/static/images/glacier-aurora-bg.jpg');
+    linear-gradient(180deg, var(--hero-veil) 0%, var(--bg-page) 520rpx),
+    radial-gradient(120% 55% at 20% -5%, rgba(var(--aurora-1), 0.92) 0%, rgba(var(--aurora-1), 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba(var(--aurora-2), 0.85) 0%, rgba(var(--aurora-2), 0) 62%);
   background-repeat: no-repeat;
   background-position: top center;
   background-size: 100% auto;
@@ -24,8 +24,8 @@ page {
   min-height: 100vh;
   color: $text-primary;
   background:
-    linear-gradient(180deg, rgba(247, 251, 255, 0.08) 0%, $bg-page 620rpx),
-    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
+    linear-gradient(180deg, var(--hero-veil) 0%, var(--bg-page) 620rpx),
+    radial-gradient(120% 55% at 20% -5%, rgba(var(--aurora-1), 0.92) 0%, rgba(var(--aurora-1), 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba(var(--aurora-2), 0.85) 0%, rgba(var(--aurora-2), 0) 62%);
 }
 
 .frost-card,
@@ -33,7 +33,7 @@ page {
 .uni-list,
 .uni-section {
   background: $frost-white !important;
-  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  border: 1rpx solid var(--bd-soft);
   box-shadow: $shadow-card;
   -webkit-backdrop-filter: blur(24rpx);
   backdrop-filter: blur(24rpx);
@@ -57,8 +57,8 @@ page .subpage-shell:not(.reader-page) {
   min-height: 100vh;
   color: $text-primary;
   background:
-    linear-gradient(180deg, rgba(248, 251, 255, 0.04) 0%, rgba(242, 247, 254, 0.96) 600rpx, $bg-page 100%),
-    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat !important;
+    linear-gradient(180deg, var(--hero-veil) 0%, var(--bg-page) 600rpx, var(--bg-page) 100%),
+    radial-gradient(120% 55% at 20% -5%, rgba(var(--aurora-1), 0.92) 0%, rgba(var(--aurora-1), 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba(var(--aurora-2), 0.85) 0%, rgba(var(--aurora-2), 0) 62%) !important;
 }
 
 .subpage-shell {
@@ -93,8 +93,8 @@ page .subpage-shell:not(.reader-page) {
 .subpage-shell .bk-card,
 .subpage-shell .bk-menu__card,
 .subpage-shell .lm-card {
-  background: rgba(255, 255, 255, 0.88) !important;
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  background: var(--glass) !important;
+  border: 1rpx solid var(--glass-strong);
   border-radius: $radius-2xl;
   box-shadow: $shadow-card;
   -webkit-backdrop-filter: blur(24rpx);
@@ -134,7 +134,7 @@ page .subpage-shell:not(.reader-page) {
 .subpage-shell .input-wrapper,
 .subpage-shell .field-block,
 .subpage-shell .sub-popup__input {
-  background: rgba(255, 255, 255, 0.78) !important;
+  background: var(--glass) !important;
   border: 1rpx solid rgba(174, 198, 231, 0.34);
   border-radius: $radius-xl;
 }
@@ -142,7 +142,7 @@ page .subpage-shell:not(.reader-page) {
 .subpage-shell .input-wrapper:focus-within,
 .subpage-shell .field-block:focus-within,
 .subpage-shell .sub-popup__input:focus-within {
-  background: rgba(255, 255, 255, 0.96) !important;
+  background: var(--glass-strong) !important;
   border-color: rgba(79, 134, 247, 0.52);
   box-shadow: 0 0 0 5rpx rgba(79, 134, 247, 0.1);
 }
@@ -167,7 +167,7 @@ page .subpage-shell:not(.reader-page) {
 
 .subpage-shell .uni-list {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.86) !important;
+  background: var(--glass) !important;
   border-radius: $radius-2xl;
 }
 
@@ -196,7 +196,7 @@ page .subpage-shell:not(.reader-page) {
   overflow: hidden;
   color: $text-primary;
   background: rgba(248, 251, 255, 0.97) !important;
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  border: 1rpx solid var(--glass-strong);
   border-radius: $radius-2xl !important;
   box-shadow: $shadow-lg;
 }
@@ -234,7 +234,7 @@ page .subpage-shell:not(.reader-page) {
 .subpage-shell .popup-cancel,
 .subpage-shell .popup__btn--ghost {
   color: $primary !important;
-  background: rgba(255, 255, 255, 0.82) !important;
+  background: var(--glass) !important;
   border: 1rpx solid rgba(79, 134, 247, 0.28);
   border-radius: $radius-full;
 }
@@ -410,7 +410,7 @@ view, text, scroll-view {
 /* --- Card Components --- */
 .card {
   background: $frost-white;
-  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  border: 1rpx solid var(--bd-soft);
   border-radius: $radius-2xl;
   padding: $spacing-lg;
   box-shadow: $shadow-card;
@@ -616,7 +616,7 @@ view, text, scroll-view {
 
 /* --- Glass Effect --- */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }

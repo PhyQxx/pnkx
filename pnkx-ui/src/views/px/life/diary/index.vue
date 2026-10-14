@@ -28,6 +28,7 @@
                 :loading="loading"
                 @edit="handleEdit"
                 @delete="handleDeleteFromDetail"
+                @add="handleAdd"
             />
         </template>
 

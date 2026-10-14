@@ -15,6 +15,15 @@ public class PxNote extends BaseEntity
 {
     private static final long serialVersionUID=1L;
 
+    /** 服务端递增修订号，更新时提交读取到的值。 */
+    private Long syncSequence;
+    public Long getSyncSequence() { return syncSequence; }
+    public void setSyncSequence(Long syncSequence) { this.syncSequence = syncSequence; }
+    private Long revision;
+
+    public Long getRevision() { return revision; }
+    public void setRevision(Long revision) { this.revision = revision; }
+
     /** 主键 */
     private Long id;
 

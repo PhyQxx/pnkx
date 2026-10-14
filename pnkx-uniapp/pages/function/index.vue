@@ -61,6 +61,7 @@
       <text class="empty__text">暂无可用功能</text>
       <text class="empty__hint">请在后台开启 App 菜单</text>
     </view>
+    <AiBall />
   </view>
 </template>
 
@@ -87,7 +88,7 @@ export default {
   },
   methods: {
     openSearch() {
-      uni.navigateTo({ url: '/pages_system/search/index' })
+      uni.navigateTo({ url: '/pages_life/search/index' })
     },
     handleQuick(url) {
       uni.navigateTo({ url })
@@ -142,7 +143,7 @@ page {
   box-sizing: border-box;
   background:
     linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, $bg-page 650rpx),
-    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
+    radial-gradient(120% 55% at 20% -5%, rgba($aurora-cyan, 0.92) 0%, rgba($aurora-cyan, 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba($aurora-lavender, 0.85) 0%, rgba($aurora-lavender, 0) 62%);
 }
 
 .assistant-hero {
@@ -176,8 +177,8 @@ page {
     align-items: center;
     justify-content: center;
     color: $primary;
-    background: rgba(255, 255, 255, 0.84);
-    border: 1rpx solid rgba(255, 255, 255, 0.9);
+    background: var(--glass);
+    border: 1rpx solid var(--glass-strong);
     box-shadow: $shadow-md;
     backdrop-filter: blur(20rpx);
   }
@@ -187,8 +188,8 @@ page {
   margin: 18rpx 0 42rpx;
   padding: 38rpx 28rpx 28rpx;
   border-radius: $radius-2xl;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  background: var(--glass);
+  border: 1rpx solid var(--glass-strong);
   box-shadow: $shadow-card;
   backdrop-filter: blur(28rpx);
 
@@ -274,8 +275,8 @@ page {
   flex-wrap: wrap;
   margin: 0;
   padding: 28rpx 10rpx 22rpx;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1rpx solid rgba(255, 255, 255, 0.92);
+  background: var(--glass);
+  border: 1rpx solid var(--glass-strong);
   border-radius: $radius-2xl;
   box-shadow: $shadow-card;
   backdrop-filter: blur(24rpx);

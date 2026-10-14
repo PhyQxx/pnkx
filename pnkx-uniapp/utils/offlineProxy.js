@@ -1,3 +1,4 @@
+import { writeOfflineNote } from '@/utils/noteOffline'
 /**
  * 离线请求代理模块
  *
@@ -72,10 +73,13 @@ const offlineProxy = {
 
       if (query.id) {
         // URL 中是服务端 ID；兼容尚未同步、只有本地主键的记录。
-        const rows = await sqliteDB.selectSql(
-          `SELECT * FROM ${tableName} WHERE _server_id = ${sqliteDB._escapeValue(query.id)} OR id = ${sqliteDB._escapeValue(query.id)} LIMIT 1`
-        )
-        const row = rows?.[0] || null
+        const condition = tableName === 'px_note' ?
+          (config._noteLocalId ? 'id = ' + sqliteDB._escapeValue(config._noteLocalId) :
+            '_server_id = ' + sqliteDB._escapeValue(query.id)) :
+          '_server_id = ' + sqliteDB._escapeValue(query.id) + ' OR id = ' + sqliteDB._escapeValue(query.id)
+        const rows = await sqliteDB.selectSql('SELECT * FROM ' + tableName + ' WHERE ' + condition + ' LIMIT 1')
+        const adapted = tableName === 'px_note' ? await this._adaptData(config.url, tableName, rows) : rows
+        const row = adapted?.[0] || null
         data = row ? [row] : []
         return Promise.resolve({ code: 200, msg: 'offline', data: row, rows: data })
       }
@@ -173,6 +177,9 @@ const offlineProxy = {
 
     try {
       // #ifdef APP-PLUS
+      if (tableName === 'px_note') {
+        return await writeOfflineNote(config, sqliteDB, offlineQueue, () => this._uuid())
+      }
       const clientUuid = this._uuid()
       const now = new Date().toISOString()
 
@@ -296,7 +303,7 @@ const offlineProxy = {
       // #endif
     } catch (e) {
       console.error('[OfflineProxy] 离线写入失败:', config.url, e)
-      return Promise.resolve({ code: 500, msg: 'offline_write_error' })
+      throw e
     }
   },
 
@@ -308,8 +315,11 @@ const offlineProxy = {
     const tableName = this._parseTableName(config.url)
     if (!tableName) return
 
+    // Note lists contain a 300-character excerpt, never use them as editable offline bodies.
+    if (tableName === 'px_note' && !data?.data?.id) return
     // 提取数据行
     let rows = data?.rows || data?.data?.rows || (Array.isArray(data?.data) ? data.data : null)
+    if (tableName === 'px_note' && data?.data?.id) rows = [data.data]
     if (!rows || !Array.isArray(rows) || rows.length === 0) return
 
     // #ifdef APP-PLUS
@@ -395,6 +405,10 @@ const offlineProxy = {
     // 通用：蛇形字段名 → 驼峰（前端组件统一使用驼峰）
     data = data.map(row => {
       const mapped = { ...row }
+      if (tableName === 'px_note') {
+        mapped._localId = row.id
+        mapped.id = row._server_id || row.id
+      }
       for (const key of Object.keys(row)) {
         if (key.includes('_')) {
           const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())

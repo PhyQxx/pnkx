@@ -24,6 +24,26 @@ import ParentView from '@/components/ParentView/index.vue'
 
 // 公共路由
 export const constantRoutes = [
+    // 个人工作台（PRODUCT_UIUE_REDESIGN §4）：今天/生活/资料/AI，独立于 RuoYi 管理外壳
+    {
+        path: '/workbench',
+        component: () => import('@/views/workbench/layout.vue'),
+        hidden: true,
+        redirect: '/workbench/today',
+        children: [
+            { path: 'today', component: () => import('@/views/workbench/today.vue'), name: 'WorkbenchToday', meta: { title: '今天', noCache: true } },
+            { path: 'life', component: () => import('@/views/workbench/life.vue'), name: 'WorkbenchLife', meta: { title: '生活', noCache: true } },
+            { path: 'hub', component: () => import('@/views/workbench/hub.vue'), name: 'WorkbenchHub', meta: { title: '资料中心', noCache: true } },
+            { path: 'ai', component: () => import('@/views/workbench/ai.vue'), name: 'WorkbenchAi', meta: { title: 'AI 助手', noCache: true } },
+            { path: 'r/:type/:id', component: () => import('@/views/px/workspace/resolve.vue'), name: 'WorkbenchResourceResolve', meta: { title: '打开资料', noCache: true } }
+        ]
+    },
+    { path: '/r/:type/:id', component: Layout, hidden: true, children: [{ path: '', component: () => import('@/views/px/workspace/resolve.vue'), name: 'ResourceResolve', meta: { title: '打开资料', noCache: true } }] },
+    {
+        path: '/resources', component: Layout,
+        children: [{ path: 'ask', component: () => import('@/views/px/workspace/ask.vue'), name: 'WorkspaceQa', meta: { title: '资料问答', noCache: true } }, { path: 'files', component: () => import('@/views/px/workspace/files.vue'), name: 'PrivateFiles', meta: { title: '个人文件', noCache: true } }, { path: 'series', component: () => import('@/views/px/workspace/series.vue'), name: 'TodoSeries', meta: { title: '重复待办', noCache: true } }, { path: 'organize', component: () => import('@/views/px/workspace/organize.vue'), name: 'ResourceOrganize', meta: { title: '整理建议', noCache: true } }, { path: 'recovery', component: () => import('@/views/px/workspace/recovery.vue'), name: 'ResourceRecovery', meta: { title: '历史与回收站', noCache: true } }, { path: 'hub', component: () => import('@/views/px/workspace/index.vue'), name: 'ResourceWorkspace', meta: { title: '资料中心', icon: 'documentation' } }, { path: 'search', component: () => import('@/views/px/workspace/search.vue'),
+            name: 'ResourceSearch', meta: { title: '搜索资料', icon: 'search' } }]
+    },
     {
         path: '/',
         name: 'index',
@@ -61,7 +81,7 @@ export const constantRoutes = [
     {
         path: '',
         component: Layout,
-        redirect: 'index',
+        redirect: '/workbench/today',
         children: [
             {
                 path: 'index',

@@ -1,23 +1,23 @@
 package com.pnkx.life.service.impl;
 
-import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.utils.DateUtils;
-import com.pnkx.common.utils.SecurityUtils;
-import com.pnkx.common.utils.ServletUtils;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.common.utils.bean.BeanUtils;
 import com.pnkx.life.domain.po.PxNote;
 import com.pnkx.life.domain.po.PxNoteFolder;
 import com.pnkx.life.domain.vo.PxNoteFolderVo;
-import com.pnkx.framework.web.service.TokenService;
 import com.pnkx.life.mapper.PxNoteFolderMapper;
-import com.pnkx.life.mapper.PxNoteMapper;
 import com.pnkx.life.service.IPxNoteFolderService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.pnkx.life.service.NoteAccessService;
+import com.pnkx.life.service.IPxNoteService;
 
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author PHY
@@ -28,7 +28,9 @@ import java.util.List;
 @Service
 public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
     @Resource
-    private PxNoteMapper pxNoteMapper;
+    private IPxNoteService noteService;
+    @Resource
+    private NoteAccessService noteAccessService;
     @Resource
     private PxNoteFolderMapper pxNoteFolderMapper;
 
@@ -40,7 +42,9 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public PxNoteFolder selectPxNoteFolderById(Long id) {
-        return pxNoteFolderMapper.selectPxNoteFolderById(id);
+        PxNoteFolder folder = pxNoteFolderMapper.selectPxNoteFolderById(id, NoteAccessService.currentUserId());
+        if (folder == null) throw NoteAccessService.unavailable();
+        return folder;
     }
 
     /**
@@ -50,14 +54,14 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      * @return 笔记文件夹
      */
     @Override
-    @DataScopeSelf(alias = "f", onlySelf = true)
     public List<PxNoteFolder> selectPxNoteFolderList(PxNoteFolder pxNoteFolder) {
+        pxNoteFolder.setCreateBy(NoteAccessService.currentUserId());
         List<PxNoteFolder> result = new ArrayList<>();
         List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(pxNoteFolder);
         PxNote pxNote = new PxNote();
         pxNote.setFolder(pxNoteFolder.getParentId());
         pxNote.setTitle(pxNoteFolder.getName());
-        List<PxNoteFolder> pxNoteList = pxNoteMapper.selectPxNoteList(pxNote);
+        List<PxNoteFolder> pxNoteList = noteService.selectPxNoteList(pxNote);
         result.addAll(pxNoteFolderList);
         result.addAll(pxNoteList);
         return result;
@@ -72,10 +76,14 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public PxNoteFolder insertPxNoteFolder(PxNoteFolder pxNoteFolder) {
+        String userId = NoteAccessService.currentUserId();
+        noteAccessService.requireFolder(pxNoteFolder.getParentId(), userId);
+        pxNoteFolder.setId(null);
+        pxNoteFolder.setDelFlag(0);
         pxNoteFolder.setCreateTime(DateUtils.getNowDate());
-        pxNoteFolder.setCreateBy(SecurityUtils.getUserId());
+        pxNoteFolder.setCreateBy(NoteAccessService.currentUserId());
         pxNoteFolder.setUpdateTime(DateUtils.getNowDate());
-        pxNoteFolder.setUpdateBy(SecurityUtils.getUserId());
+        pxNoteFolder.setUpdateBy(NoteAccessService.currentUserId());
         pxNoteFolderMapper.insertPxNoteFolder(pxNoteFolder);
         return pxNoteFolder;
     }
@@ -87,11 +95,20 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      * @return 结果
      */
     @Override
+    @Transactional
     public PxNoteFolder updatePxNoteFolder(PxNoteFolder pxNoteFolder) {
+        String userId = NoteAccessService.currentUserId();
+        // 按固定顺序锁定目录，使两个并发移动不会互相形成父子环。
+        pxNoteFolderMapper.lockOwnedFolders(userId);
+        PxNoteFolder existing = selectPxNoteFolderById(pxNoteFolder.getId());
+        noteAccessService.requireValidParent(pxNoteFolder.getId(), pxNoteFolder.getParentId(), userId);
+        pxNoteFolder.setCreateBy(existing.getCreateBy());
+        pxNoteFolder.setCreateTime(existing.getCreateTime());
+        pxNoteFolder.setDelFlag(existing.getDelFlag());
         pxNoteFolder.setUpdateTime(DateUtils.getNowDate());
-        pxNoteFolder.setUpdateBy(SecurityUtils.getUserId());
+        pxNoteFolder.setUpdateBy(NoteAccessService.currentUserId());
         pxNoteFolderMapper.updatePxNoteFolder(pxNoteFolder);
-        return pxNoteFolder;
+        return selectPxNoteFolderById(pxNoteFolder.getId());
     }
 
     /**
@@ -101,8 +118,13 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      * @return 结果
      */
     @Override
+    @Transactional
     public int deletePxNoteFolderByIds(Long[] ids) {
-        return pxNoteFolderMapper.deletePxNoteFolderByIds(ids);
+        String userId = NoteAccessService.currentUserId();
+        Long[] uniqueIds = NoteAccessService.normalizeIds(ids);
+        pxNoteFolderMapper.lockOwnedFolders(userId);
+        NoteAccessService.requireOwnedBatch(uniqueIds, pxNoteFolderMapper.selectOwnedIds(uniqueIds, userId));
+        return pxNoteFolderMapper.deletePxNoteFolderByIds(uniqueIds, userId);
     }
 
     /**
@@ -112,8 +134,9 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      * @return 结果
      */
     @Override
+    @Transactional
     public int deletePxNoteFolderById(Long id) {
-        return pxNoteFolderMapper.deletePxNoteFolderById(id);
+        return deletePxNoteFolderByIds(new Long[]{id});
     }
 
     /**
@@ -127,21 +150,24 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
         List<PxNoteFolderVo> result = new ArrayList<>();
         PxNoteFolder params = new PxNoteFolder();
         params.setParentId(0L);
+        params.setCreateBy(NoteAccessService.currentUserId());
         List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(params);
         pxNoteFolderList.forEach(item -> {
             PxNoteFolderVo pxNoteFolderVo = new PxNoteFolderVo();
             BeanUtils.copyBeanProp(pxNoteFolderVo, item);
             result.add(pxNoteFolderVo);
         });
-        folderIter(result);
+        folderIter(result, new HashSet<>());
         return result;
     }
 
 
-    private void folderIter(List<PxNoteFolderVo> list) {
+    private void folderIter(List<PxNoteFolderVo> list, Set<Long> visited) {
         list.forEach(item -> {
+            if (!visited.add(item.getId())) return;
             PxNoteFolder pxNoteFolder = new PxNoteFolder();
             pxNoteFolder.setParentId(item.getId());
+            pxNoteFolder.setCreateBy(NoteAccessService.currentUserId());
             List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(pxNoteFolder);
             if (StringUtils.isNotEmpty(pxNoteFolderList)) {
                 List<PxNoteFolderVo> result = new ArrayList<>();
@@ -151,7 +177,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
                     result.add(pxNoteFolderVo);
                 });
                 item.setChildren(result);
-                folderIter(item.getChildren());
+                folderIter(item.getChildren(), visited);
             }
         });
     }

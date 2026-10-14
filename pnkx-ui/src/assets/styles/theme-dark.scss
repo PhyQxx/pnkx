@@ -10,15 +10,15 @@
 // ============================================
 
 // 基础颜色
-$--color-primary: #38bdf8;  // sky-400 (暗色模式下更亮)
-$--color-primary-light-1: #0ea5e9;
-$--color-primary-light-2: #0284c7;
-$--color-primary-light-3: #0369a1;
-$--color-primary-light-4: #075985;
-$--color-primary-light-5: #0c4a6e;
+$--color-primary: #6AA1F9;  // sky-400 (暗色模式下更亮)
+$--color-primary-light-1: #4F86F7;
+$--color-primary-light-2: #3B6FE0;
+$--color-primary-light-3: #2F59BD;
+$--color-primary-light-4: #284A97;
+$--color-primary-light-5: #26407B;
 $--color-primary-light-6: #082f49;
-$--color-primary-light-7: #f0f9ff;
-$--color-primary-light-8: #e0f2fe;
+$--color-primary-light-7: #F0F6FF;
+$--color-primary-light-8: #E0ECFE;
 $--color-primary-light-9: #1e293b;  // slate-800
 
 // 功能色
@@ -37,10 +37,10 @@ $--color-danger-light: #991b1b;
 $--color-danger-lighter: #7f1d1d;
 $--color-danger-extra-light: #fef2f2;
 
-$--color-info: #38bdf8;
-$--color-info-light: #075985;
-$--color-info-lighter: #0c4a6e;
-$--color-info-extra-light: #f0f9ff;
+$--color-info: #6AA1F9;
+$--color-info-light: #284A97;
+$--color-info-lighter: #26407B;
+$--color-info-extra-light: #F0F6FF;
 
 // 文字颜色
 $--color-text-primary: #f1f5f9;      // slate-100

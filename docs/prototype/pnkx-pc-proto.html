@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pei你看雪 PC 工作台重设计原型 · 高保真</title>
+<style>
+body{margin:0;background:#eef2f8;padding:16px;display:flex;justify-content:center;flex-wrap:wrap;gap:24px;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;}
+.viz-dotted-background{background-image:radial-gradient(rgba(100,116,139,.18) 1px,transparent 1px);background-size:16px 16px;}
+</style>
+</head>
+<body>
+<div id="pnkx-pc">
+<style>
+#pnkx-pc{--pnk:#4F86F7;--pnk-deep:#3B6FE0;--pnk-soft:rgba(79,134,247,.12);
+--ok:#21BA73;--warn:#F59E0B;--danger:#EF4444;
+--life:#21BA73;--rec:#8B7CF6;--res:#4F86F7;--ai:#9B6BFF;--pink:#FD6697;
+--track:rgba(100,116,139,.14);
+--ease-out:cubic-bezier(.22,1,.36,1);--ease-in:cubic-bezier(.64,0,.78,0);--spring:cubic-bezier(.34,1.56,.64,1);
+font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","SF Pro SC","Segoe UI",sans-serif;
+-webkit-font-smoothing:antialiased;font-size:13px;}
+#pnkx-pc .win{--bg1:#EAF1FB;--bg2:#F7FAFF;--txt:#1E293B;--txt2:#5B6B84;--txt3:#93A3B8;--panel:rgba(255,255,255,.72);--panel-brd:rgba(255,255,255,.65);--panel-strong:rgba(255,255,255,.9);--hover:rgba(100,116,139,.08);--skeleton:rgba(148,163,184,.16);--shadow:0 8px 28px rgba(80,110,160,.12);--shadow-lg:0 18px 48px rgba(80,110,160,.2);position:relative;height:840px;display:flex;flex-direction:column;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--txt);box-shadow:0 18px 48px rgba(15,23,42,.16),0 0 0 1px rgba(15,23,42,.06);transition:background .45s ease,color .45s ease;}
+#pnkx-pc .win[data-theme=dark]{--bg1:#0F172A;--bg2:#1E293B;--txt:#E6EDF7;--txt2:#9FB0C7;--txt3:#6B7E99;--panel:rgba(30,41,59,.72);--panel-brd:rgba(148,163,184,.14);--panel-strong:rgba(30,41,59,.94);--hover:rgba(148,163,184,.1);--skeleton:rgba(148,163,184,.12);--shadow:0 8px 28px rgba(0,0,0,.3);--shadow-lg:0 18px 48px rgba(0,0,0,.45);}
+#pnkx-pc .win::before{content:"";position:absolute;width:56%;height:60%;left:-18%;top:-30%;border-radius:50%;background:radial-gradient(closest-side,rgba(79,134,247,.14),transparent 70%);pointer-events:none;}
+#pnkx-pc .win::after{content:"";position:absolute;width:46%;height:55%;right:-14%;top:22%;border-radius:50%;background:radial-gradient(closest-side,rgba(139,124,246,.10),transparent 70%);pointer-events:none;}
+/* ---- window chrome ---- */
+#pnkx-pc .chrome{position:relative;z-index:5;display:flex;align-items:center;height:38px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--panel-brd);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);flex:none;}
+#pnkx-pc .dots{display:flex;gap:7px;}
+#pnkx-pc .dots i{width:11px;height:11px;border-radius:50%;}
+#pnkx-pc .d1{background:#FF5F57}#pnkx-pc .d2{background:#FEBC2E}#pnkx-pc .d3{background:#28C840}
+#pnkx-pc .chrome .title{position:absolute;left:50%;transform:translateX(-50%);font-size:12px;color:var(--txt2);display:flex;gap:6px;align-items:center;}
+#pnkx-pc .chrome .title b{color:var(--txt);font-weight:600;}
+#pnkx-pc .chrome .kbadge{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3);}
+#pnkx-pc .kbd{font-size:10px;padding:2px 6px;border-radius:5px;background:var(--hover);border:1px solid var(--panel-brd);color:var(--txt2);font-weight:600;}
+/* ---- layout ---- */
+#pnkx-pc .bodyframe{position:relative;z-index:2;flex:1;display:flex;min-height:0;}
+#pnkx-pc .sidebar{width:224px;flex:none;display:flex;flex-direction:column;padding:14px 12px;background:var(--panel);border-right:1px solid var(--panel-brd);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:width .28s var(--ease-out);overflow:hidden;}
+#pnkx-pc .win.collapsed .sidebar{width:64px;}
+#pnkx-pc .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 14px;}
+#pnkx-pc .logo{width:32px;height:32px;flex:none;border-radius:10px;background:linear-gradient(135deg,var(--pnk),var(--rec));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;}
+#pnkx-pc .brand b{font-size:14px;white-space:nowrap;}
+#pnkx-pc .brand span{display:block;font-size:10px;color:var(--txt3);white-space:nowrap;}
+#pnkx-pc .navlist{display:flex;flex-direction:column;gap:3px;}
+#pnkx-pc .navit{position:relative;display:flex;align-items:center;gap:11px;height:40px;padding:0 10px;border-radius:11px;border:none;background:transparent;color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s ease,color .15s ease;-webkit-tap-highlight-color:transparent;}
+#pnkx-pc .navit:hover{background:var(--hover);color:var(--txt);}
+#pnkx-pc .navit i{width:18px;height:18px;flex:none;}
+#pnkx-pc .navit.on{background:var(--pnk-soft);color:var(--pnk);}
+#pnkx-pc .navit.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--pnk);}
+#pnkx-pc .navit .nbadge{margin-left:auto;font-size:10px;font-weight:700;background:var(--danger);color:#fff;border-radius:8px;padding:1px 6px;}
+#pnkx-pc .navsec{font-size:10.5px;font-weight:700;color:var(--txt3);letter-spacing:.5px;padding:16px 10px 6px;white-space:nowrap;}
+#pnkx-pc .sidefill{flex:1;}
+#pnkx-pc .storbox{padding:10px;border-radius:12px;background:var(--hover);margin-bottom:10px;white-space:nowrap;overflow:hidden;}
+#pnkx-pc .storbox .st{font-size:11px;color:var(--txt2);display:flex;justify-content:space-between;margin-bottom:6px;}
+#pnkx-pc .storbar{height:5px;border-radius:3px;background:var(--track);overflow:hidden;}
+#pnkx-pc .storbar>span{display:block;height:100%;width:64%;border-radius:3px;background:linear-gradient(90deg,var(--pnk),var(--rec));}
+#pnkx-pc .userrow{display:flex;align-items:center;gap:10px;padding:6px;white-space:nowrap;}
+#pnkx-pc .uava{width:30px;height:30px;flex:none;border-radius:50%;background:linear-gradient(135deg,var(--pnk),var(--rec));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
+#pnkx-pc .userrow b{font-size:12.5px;display:block;}
+#pnkx-pc .userrow span{font-size:10px;color:var(--txt3);}
+#pnkx-pc .collapsebtn{border:none;background:transparent;color:var(--txt3);width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:2px auto 0;}
+#pnkx-pc .collapsebtn:hover{background:var(--hover);color:var(--txt);}
+#pnkx-pc .collapsebtn i{width:15px;height:15px;transition:transform .28s var(--ease-out);}
+#pnkx-pc .win.collapsed .collapsebtn i{transform:rotate(180deg);}
+#pnkx-pc .win.collapsed .navit span,#pnkx-pc .win.collapsed .navit .nbadge,#pnkx-pc .win.collapsed .brand b,#pnkx-pc .win.collapsed .brand span,#pnkx-pc .win.collapsed .storbox,#pnkx-pc .win.collapsed .userrow div{display:none;}
+#pnkx-pc .win.collapsed .navit{justify-content:center;padding:0;}
+#pnkx-pc .win.collapsed .brand{justify-content:center;}
+/* ---- main ---- */
+#pnkx-pc .main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;}
+#pnkx-pc .topbar{flex:none;display:flex;align-items:center;gap:12px;padding:14px 20px 0;}
+#pnkx-pc .searchpill{flex:1;max-width:520px;display:flex;align-items:center;gap:9px;height:38px;padding:0 14px;border-radius:11px;background:var(--panel);border:1px solid var(--panel-brd);color:var(--txt3);cursor:pointer;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:box-shadow .18s ease,border-color .18s ease;}
+#pnkx-pc .searchpill:hover{border-color:var(--pnk);box-shadow:0 0 0 3px var(--pnk-soft);}
+#pnkx-pc .searchpill i{width:15px;height:15px;flex:none;}
+#pnkx-pc .searchpill .kbd{margin-left:auto;}
+#pnkx-pc .tb-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+#pnkx-pc .iconbtn{position:relative;width:36px;height:36px;border-radius:11px;border:1px solid var(--panel-brd);background:var(--panel);color:var(--txt2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .15s ease,transform .12s var(--ease-out);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+#pnkx-pc .iconbtn:hover{color:var(--pnk);}
+#pnkx-pc .iconbtn:active{transform:scale(.94);}
+#pnkx-pc .iconbtn i{width:16px;height:16px;}
+#pnkx-pc .reddot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--danger);}
+#pnkx-pc .reddot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--danger);animation:ping 1.5s var(--ease-out) 1 .3s;}
+@keyframes ping{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(2.3);opacity:0}}
+#pnkx-pc .capturebtn{display:flex;align-items:center;gap:7px;height:36px;padding:0 15px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--pnk),var(--pnk-deep));color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(59,111,224,.35);transition:transform .12s var(--ease-out),box-shadow .18s ease;}
+#pnkx-pc .capturebtn:hover{box-shadow:0 8px 22px rgba(59,111,224,.45);}
+#pnkx-pc .capturebtn:active{transform:scale(.96);}
+#pnkx-pc .capturebtn i{width:15px;height:15px;}
+/* pages */
+#pnkx-pc .page[hidden],#pnkx-pc .hubpage[hidden],#pnkx-pc .aipage[hidden]{display:none!important;}
+#pnkx-pc .pages{position:relative;flex:1;min-height:0;}
+#pnkx-pc .page{position:absolute;inset:0;overflow-y:auto;padding:16px 20px 22px;scrollbar-width:thin;}
+#pnkx-pc .page::-webkit-scrollbar{width:8px;}
+#pnkx-pc .page::-webkit-scrollbar-thumb{background:var(--track);border-radius:4px;}
+#pnkx-pc .page[hidden]{display:none;}
+#pnkx-pc .page-in{animation:pcPageIn .18s var(--ease-out) both;}
+@keyframes pcPageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#pnkx-pc .stagger>*{animation:pcRise .3s var(--ease-out) both;}
+#pnkx-pc .stagger>*:nth-child(1){animation-delay:.02s}#pnkx-pc .stagger>*:nth-child(2){animation-delay:.05s}#pnkx-pc .stagger>*:nth-child(3){animation-delay:.08s}#pnkx-pc .stagger>*:nth-child(4){animation-delay:.11s}#pnkx-pc .stagger>*:nth-child(5){animation-delay:.14s}#pnkx-pc .stagger>*:nth-child(6){animation-delay:.17s}
+@keyframes pcRise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+#pnkx-pc .card{background:var(--panel);border:1px solid var(--panel-brd);border-radius:15px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:var(--shadow);}
+#pnkx-pc .hoverlift{transition:transform .16s var(--ease-out),box-shadow .18s ease;cursor:pointer;}
+#pnkx-pc .hoverlift:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+#pnkx-pc .ph{display:flex;align-items:baseline;gap:10px;padding:2px 2px 12px;}
+#pnkx-pc .ph h1{margin:0;font-size:19px;font-weight:700;}
+#pnkx-pc .ph .sub{font-size:12px;color:var(--txt2);}
+/* ---- 今天 ---- */
+#pnkx-pc .statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media (max-width:1100px){#pnkx-pc .statrow{grid-template-columns:repeat(2,1fr)}}
+#pnkx-pc .stat{padding:14px 16px;}
+#pnkx-pc .stat .lab{font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:5px;}
+#pnkx-pc .stat .lab i{width:13px;height:13px;}
+#pnkx-pc .stat .val{font-size:22px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:.2px;}
+#pnkx-pc .stat .val small{font-size:12px;color:var(--txt2);font-weight:600;}
+#pnkx-pc .stat .delta{font-size:11px;margin-top:4px;color:var(--txt3);}
+#pnkx-pc .stat .delta b{color:var(--ok);font-weight:700;}
+#pnkx-pc .todoprog{margin-top:8px;height:5px;border-radius:3px;background:var(--track);overflow:hidden;}
+#pnkx-pc .todoprog>span{display:block;height:100%;border-radius:3px;background:var(--life);transition:width .4s var(--ease-out);}
+#pnkx-pc .todaycols{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-top:12px;align-items:start;}
+@media (max-width:1100px){#pnkx-pc .todaycols{grid-template-columns:1fr}}
+#pnkx-pc .sectt{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:12px 14px 4px;}
+#pnkx-pc .sectt i{width:14px;height:14px;color:var(--pnk);}
+#pnkx-pc .sectt .more{margin-left:auto;font-size:11.5px;color:var(--txt2);font-weight:600;cursor:pointer;}
+#pnkx-pc .tl2{position:relative;margin:6px 8px 10px;padding-left:6px;}
+#pnkx-pc .tl2::before{content:"";position:absolute;left:27px;top:14px;bottom:12px;width:1.5px;background:var(--track);}
+#pnkx-pc .tlit{position:relative;display:flex;gap:12px;padding:8px 6px;border-radius:11px;transition:background .15s ease;}
+#pnkx-pc .tlit:hover{background:var(--hover);}
+#pnkx-pc .tlit .ic{position:relative;z-index:1;width:34px;height:34px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--panel-strong);border:1px solid var(--panel-brd);color:var(--txt2);}
+#pnkx-pc .tlit .ic i{width:15px;height:15px;}
+#pnkx-pc .tlit[data-k=book] .ic{color:var(--life);}
+#pnkx-pc .tlit[data-k=todo] .ic{color:var(--res);}
+#pnkx-pc .tlit[data-k=coupon] .ic{color:var(--pink);}
+#pnkx-pc .tlit[data-k=sub] .ic{color:var(--warn);}
+#pnkx-pc .tlit .bd{flex:1;min-width:0;}
+#pnkx-pc .tlit .tm{font-size:10.5px;color:var(--txt3);font-variant-numeric:tabular-nums;}
+#pnkx-pc .tlit .tt{font-size:13px;font-weight:600;margin-top:2px;display:flex;align-items:center;gap:8px;}
+#pnkx-pc .tlit .sub{font-size:11px;color:var(--txt2);margin-top:1px;}
+#pnkx-pc .tlit .amt{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;}
+#pnkx-pc .chk{width:21px;height:21px;flex:none;margin-left:auto;border-radius:7px;border:1.8px solid var(--track);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .12s var(--ease-out);}
+#pnkx-pc .chk:active{transform:scale(.86);}
+#pnkx-pc .chk svg{width:12px;height:12px;stroke:var(--pnk-deep);}
+#pnkx-pc .chk svg path{stroke-dasharray:24;stroke-dashoffset:24;}
+#pnkx-pc .chk.done{border-color:var(--res);background:var(--pnk-soft);}
+#pnkx-pc .chk.done svg path{animation:pcdraw .24s var(--ease-out) forwards;}
+@keyframes pcdraw{to{stroke-dashoffset:0}}
+#pnkx-pc .tlit.done .tt{color:var(--txt3);text-decoration:line-through;}
+#pnkx-pc .railcard{padding:14px;margin-top:12px;}
+#pnkx-pc .railcard:first-child{margin-top:0;}
+#pnkx-pc .railrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;cursor:pointer;transition:background .15s ease;}
+#pnkx-pc .railrow:hover{background:var(--hover);}
+#pnkx-pc .railrow .ri{width:30px;height:30px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+#pnkx-pc .railrow .ri i{width:14px;height:14px;}
+#pnkx-pc .railrow b{font-size:12.5px;display:block;}
+#pnkx-pc .railrow span{font-size:10.5px;color:var(--txt2);}
+#pnkx-pc .railrow>i{width:14px;height:14px;color:var(--txt3);margin-left:auto;}
+#pnkx-pc .quickgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+#pnkx-pc .qk{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:12px;background:var(--hover);border:none;color:var(--txt);font-size:11.5px;font-weight:600;cursor:pointer;transition:transform .12s var(--ease-out),background .15s ease;}
+#pnkx-pc .qk:hover{background:var(--pnk-soft);}
+#pnkx-pc .qk:active{transform:scale(.95);}
+#pnkx-pc .qk i{width:17px;height:17px;}
+/* ---- 生活 ---- */
+#pnkx-pc .lifegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media (max-width:1100px){#pnkx-pc .lifegrid{grid-template-columns:repeat(2,1fr)}}
+#pnkx-pc .mod{padding:14px 15px;display:flex;flex-direction:column;gap:8px;}
+#pnkx-pc .mod .mi{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+#pnkx-pc .mod .mi i{width:15px;height:15px;}
+#pnkx-pc .mod b{font-size:13px;}
+#pnkx-pc .mod span{font-size:11px;color:var(--txt2);font-variant-numeric:tabular-nums;}
+#pnkx-pc .m-book .mi{background:rgba(33,186,115,.14);color:var(--life);}
+#pnkx-pc .m-cal .mi{background:rgba(79,134,247,.14);color:var(--res);}
+#pnkx-pc .m-todo .mi{background:rgba(139,124,246,.14);color:var(--rec);}
+#pnkx-pc .m-diary .mi{background:rgba(253,102,151,.13);color:var(--pink);}
+#pnkx-pc table.recent{width:100%;border-collapse:collapse;font-size:12px;}
+#pnkx-pc table.recent th{text-align:left;font-size:10.5px;color:var(--txt3);font-weight:700;letter-spacing:.4px;padding:10px 14px;border-bottom:1px solid var(--track);}
+#pnkx-pc table.recent td{padding:10px 14px;border-bottom:1px solid var(--track);color:var(--txt);}
+#pnkx-pc table.recent tr:last-child td{border-bottom:none;}
+#pnkx-pc table.recent tr:hover td{background:var(--hover);}
+#pnkx-pc .tybadge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;}
+#pnkx-pc .tybadge i{width:11px;height:11px;}
+#pnkx-pc .tb-book{background:rgba(33,186,115,.13);color:var(--life);}
+#pnkx-pc .tb-diary{background:rgba(253,102,151,.12);color:var(--pink);}
+#pnkx-pc .tb-todo{background:rgba(139,124,246,.13);color:var(--rec);}
+#pnkx-pc .tb-sub{background:rgba(245,158,11,.13);color:var(--warn);}
+/* ---- 资料三栏 ---- */
+#pnkx-pc .hubpage{position:absolute;inset:0;display:flex;padding:14px 16px 16px;gap:12px;overflow:hidden;}
+#pnkx-pc .hubleft{width:216px;flex:none;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none;padding-bottom:4px;}
+#pnkx-pc .hubleft::-webkit-scrollbar{display:none;}
+#pnkx-pc .hubgroup{padding:10px 8px;}
+#pnkx-pc .hubgroup .gt{font-size:10.5px;font-weight:700;color:var(--txt3);letter-spacing:.5px;padding:2px 8px 6px;}
+#pnkx-pc .litem{position:relative;display:flex;align-items:center;gap:9px;height:34px;padding:0 9px;border-radius:9px;border:none;background:transparent;color:var(--txt2);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .14s ease,color .14s ease;width:100%;text-align:left;}
+#pnkx-pc .litem:hover{background:var(--hover);color:var(--txt);}
+#pnkx-pc .litem.on{background:var(--pnk-soft);color:var(--pnk);}
+#pnkx-pc .litem i{width:15px;height:15px;flex:none;}
+#pnkx-pc .litem .cnt{margin-left:auto;font-size:10.5px;color:var(--txt3);font-variant-numeric:tabular-nums;}
+#pnkx-pc .tagtree{padding-left:14px;}
+#pnkx-pc .litem.tlv2{height:30px;font-size:12px;font-weight:500;}
+#pnkx-pc .hubmid{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+#pnkx-pc .hubtools{display:flex;align-items:center;gap:8px;padding-bottom:10px;}
+#pnkx-pc .hubsearch{flex:1;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:11px;background:var(--panel);border:1px solid var(--panel-brd);color:var(--txt3);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+#pnkx-pc .hubsearch i{width:14px;height:14px;flex:none;}
+#pnkx-pc .chip2{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:100px;background:var(--panel);border:1px solid var(--panel-brd);font-size:11.5px;font-weight:600;color:var(--txt2);cursor:pointer;transition:background .15s ease,color .15s ease,transform .12s var(--spring);white-space:nowrap;}
+#pnkx-pc .chip2 i{width:12px;height:12px;}
+#pnkx-pc .chip2.on{background:var(--pnk);border-color:var(--pnk);color:#fff;}
+#pnkx-pc .chip2:active{transform:scale(.94);}
+#pnkx-pc .reslist{flex:1;overflow-y:auto;scrollbar-width:thin;}
+#pnkx-pc .reslist::-webkit-scrollbar{width:8px;}
+#pnkx-pc .reslist::-webkit-scrollbar-thumb{background:var(--track);border-radius:4px;}
+#pnkx-pc .resrow{position:relative;display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:13px;cursor:pointer;transition:background .14s ease;animation:pcRise .28s var(--ease-out) both;}
+#pnkx-pc .resrow:hover{background:var(--hover);}
+#pnkx-pc .resrow.on{background:var(--pnk-soft);}
+#pnkx-pc .resrow.on::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--pnk);}
+#pnkx-pc .resrow.hide2{display:none;}
+#pnkx-pc .resrow .ri{width:34px;height:34px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;}
+#pnkx-pc .resrow .ri i{width:15px;height:15px;}
+#pnkx-pc .resrow[data-type=note] .ri{background:rgba(139,124,246,.14);color:var(--rec);}
+#pnkx-pc .resrow[data-type=clip] .ri{background:rgba(79,134,247,.13);color:var(--res);}
+#pnkx-pc .resrow[data-type=file] .ri{background:rgba(33,186,115,.13);color:var(--life);}
+#pnkx-pc .resrow[data-type=todo] .ri{background:rgba(245,158,11,.14);color:var(--warn);}
+#pnkx-pc .resrow .rb{flex:1;min-width:0;}
+#pnkx-pc .resrow .rt{display:flex;align-items:center;gap:7px;}
+#pnkx-pc .resrow .rt b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pnkx-pc .resrow .sn{font-size:11.5px;color:var(--txt2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pnkx-pc .resrow .meta{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10.5px;color:var(--txt3);}
+#pnkx-pc .minitag{font-size:10px;padding:2px 7px;border-radius:100px;background:var(--track);color:var(--txt2);font-weight:600;}
+#pnkx-pc .newbadge{flex:none;font-size:9px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--ok);padding:2px 6px;border-radius:6px;}
+#pnkx-pc .hubright{width:308px;flex:none;overflow-y:auto;scrollbar-width:none;padding:16px 16px 14px;scrollbar-width:thin;}
+#pnkx-pc .hubright::-webkit-scrollbar{width:8px;}
+#pnkx-pc .hubright::-webkit-scrollbar-thumb{background:var(--track);border-radius:4px;}
+#pnkx-pc .dswap{animation:pcDetail .24s var(--ease-out) both;}
+@keyframes pcDetail{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+#pnkx-pc .dtype{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:100px;background:var(--pnk-soft);color:var(--pnk);}
+#pnkx-pc .dtype i{width:11px;height:11px;}
+#pnkx-pc .dtitle{font-size:16px;font-weight:700;line-height:1.45;margin:10px 0 4px;}
+#pnkx-pc .dmeta{font-size:11px;color:var(--txt3);}
+#pnkx-pc .dprev{font-size:12.5px;line-height:1.75;color:var(--txt2);margin-top:12px;padding:12px 13px;background:var(--hover);border-radius:11px;}
+#pnkx-pc .dsec{font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.4px;margin:16px 0 8px;}
+#pnkx-pc .dtags{display:flex;flex-wrap:wrap;gap:6px;}
+#pnkx-pc .dtag{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--res);background:var(--pnk-soft);padding:4px 10px;border-radius:100px;cursor:pointer;}
+#pnkx-pc .dtag i{width:11px;height:11px;}
+#pnkx-pc .linkrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;transition:background .14s ease;}
+#pnkx-pc .linkrow:hover{background:var(--hover);}
+#pnkx-pc .linkrow i{width:13px;height:13px;flex:none;color:var(--res);}
+#pnkx-pc .linkrow .arr{margin-left:auto;color:var(--txt3);}
+#pnkx-pc .linkrow small{display:block;font-size:10px;color:var(--txt3);font-weight:500;}
+#pnkx-pc .dacts{display:flex;gap:8px;margin-top:16px;}
+#pnkx-pc .abtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:36px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;transition:transform .12s var(--ease-out),opacity .15s ease;}
+#pnkx-pc .abtn:active{transform:scale(.96);}
+#pnkx-pc .abtn i{width:14px;height:14px;}
+#pnkx-pc .abtn.pri{background:var(--pnk);color:#fff;}
+#pnkx-pc .abtn.pri:hover{background:var(--pnk-deep);}
+#pnkx-pc .abtn.ghost{background:var(--hover);color:var(--txt);}
+#pnkx-pc .verrow{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:11.5px;color:var(--txt2);}
+#pnkx-pc .verrow:hover{background:var(--hover);cursor:pointer;}
+#pnkx-pc .verrow .vdot{width:7px;height:7px;border-radius:50%;background:var(--track);flex:none;}
+#pnkx-pc .verrow .vdot.cur{background:var(--ok);}
+#pnkx-pc .verrow span{margin-left:auto;font-size:10.5px;color:var(--txt3);}
+#pnkx-pc .hubfoot{flex:none;display:flex;align-items:center;gap:8px;padding-top:10px;font-size:11px;color:var(--txt3);}
+/* ---- AI ---- */
+#pnkx-pc .aipage{position:absolute;inset:0;display:flex;gap:12px;padding:14px 16px 16px;overflow:hidden;}
+#pnkx-pc .aichat{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+#pnkx-pc .aimhead{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;}
+#pnkx-pc .aimhead .aiic{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--ai),var(--pnk));color:#fff;display:flex;align-items:center;justify-content:center;}
+#pnkx-pc .aimhead .aiic i{width:16px;height:16px;}
+#pnkx-pc .aimhead b{font-size:14px;}
+#pnkx-pc .aimhead span{display:block;font-size:10.5px;color:var(--txt2);}
+#pnkx-pc .aiskills{display:flex;gap:8px;padding:2px 16px 10px;overflow-x:auto;scrollbar-width:none;}
+#pnkx-pc .aiskills::-webkit-scrollbar{display:none;}
+#pnkx-pc .aimsgs{flex:1;overflow-y:auto;padding:6px 16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;}
+#pnkx-pc .aimsgs::-webkit-scrollbar{width:8px;}
+#pnkx-pc .aimsgs::-webkit-scrollbar-thumb{background:var(--track);border-radius:4px;}
+#pnkx-pc .msg{max-width:76%;padding:11px 14px;border-radius:15px;font-size:13px;line-height:1.7;animation:pcRise .28s var(--ease-out) both;white-space:pre-wrap;}
+#pnkx-c .msg,#pnkx-pc .msg.u{align-self:flex-end;background:var(--pnk);color:#fff;border-bottom-right-radius:6px;}
+#pnkx-pc .msg.a{align-self:flex-start;background:var(--panel-strong);border:1px solid var(--panel-brd);border-bottom-left-radius:6px;max-width:86%;}
+#pnkx-pc .cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+#pnkx-pc .ct{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--res);background:var(--pnk-soft);border-radius:8px;padding:5px 9px;cursor:pointer;animation:pcRise .3s var(--ease-out) both;}
+#pnkx-pc .ct:nth-child(2){animation-delay:.06s}
+#pnkx-pc .ct i{width:11px;height:11px;}
+#pnkx-pc .draft{margin-top:10px;border:1px solid var(--track);border-radius:11px;padding:10px 12px;font-size:12px;color:var(--txt2);}
+#pnkx-pc .draft .dr-act{display:flex;gap:8px;margin-top:9px;}
+#pnkx-pc .draft button{flex:1;border:none;border-radius:9px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;}
+#pnkx-pc .draft .ok{background:var(--pnk);color:#fff;}
+#pnkx-pc .draft .no{background:var(--track);color:var(--txt2);}
+#pnkx-pc .cursor2{display:inline-block;width:7px;height:14px;background:var(--pnk);border-radius:2px;vertical-align:-2px;animation:blink2 1.06s steps(2) infinite;margin-left:1px;}
+@keyframes blink2{50%{opacity:0}}
+#pnkx-pc .aiinput{display:flex;align-items:center;gap:9px;margin:8px 16px 14px;padding:8px 10px 8px 15px;border-radius:100px;background:var(--panel-strong);border:1px solid var(--panel-brd);}
+#pnkx-pc .aiinput input{flex:1;border:none;background:transparent;outline:none;font-size:13px;color:var(--txt);min-width:0;font-family:inherit;}
+#pnkx-pc .aiinput input::placeholder{color:var(--txt3);}
+#pnkx-pc .roundbtn{width:34px;height:34px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:transform .12s var(--ease-out);}
+#pnkx-pc .roundbtn:active{transform:scale(.9);}
+#pnkx-pc .roundbtn.mic{background:transparent;color:var(--txt2);}
+#pnkx-pc .roundbtn.send{background:var(--pnk);color:#fff;}
+#pnkx-pc .roundbtn i{width:15px;height:15px;}
+#pnkx-pc .airail{width:250px;flex:none;padding:14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;scrollbar-width:none;}
+#pnkx-pc .airail::-webkit-scrollbar{display:none;}
+/* ---- overlays ---- */
+#pnkx-pc .ovclip{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:60;}
+#pnkx-pc .ovclip>*{pointer-events:auto;}
+#pnkx-pc .mask2{position:absolute;inset:0;background:rgba(15,23,42,.4);opacity:0;pointer-events:none!important;transition:opacity .18s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+#pnkx-pc .mask2.show{opacity:1;pointer-events:auto!important;}
+#pnkx-pc .palette{position:absolute;left:50%;top:11%;transform:translateX(-50%) scale(.96);width:min(560px,88%);border-radius:16px;background:var(--panel-strong);border:1px solid var(--panel-brd);box-shadow:var(--shadow-lg);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);opacity:0;pointer-events:none!important;transition:opacity .16s ease,transform .2s var(--ease-out);overflow:hidden;}
+#pnkx-pc .palette.show{opacity:1;transform:translateX(-50%);pointer-events:auto!important;}
+#pnkx-pc .palin{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--track);}
+#pnkx-pc .palin i{width:16px;height:16px;color:var(--txt3);flex:none;}
+#pnkx-pc .palin input{flex:1;border:none;outline:none;background:transparent;font-size:14px;color:var(--txt);font-family:inherit;}
+#pnkx-pc .palin .kbd{flex:none;}
+#pnkx-pc .palbody{max-height:330px;overflow-y:auto;padding:8px;scrollbar-width:thin;}
+#pnkx-pc .palgroup{font-size:10.5px;font-weight:700;color:var(--txt3);letter-spacing:.5px;padding:8px 10px 4px;}
+#pnkx-pc .palrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:600;transition:background .12s ease;}
+#pnkx-pc .palrow:hover,#pnkx-pc .palrow.sel{background:var(--pnk-soft);}
+#pnkx-pc .palrow i{width:15px;height:15px;flex:none;color:var(--txt2);}
+#pnkx-pc .palrow .ph2{margin-left:auto;font-size:10.5px;color:var(--txt3);font-weight:500;}
+#pnkx-pc .modal2{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.94);width:min(400px,90%);border-radius:16px;background:var(--panel-strong);border:1px solid var(--panel-brd);box-shadow:var(--shadow-lg);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);opacity:0;pointer-events:none!important;transition:opacity .18s ease,transform .22s var(--spring);padding:18px;}
+#pnkx-pc .modal2.show{opacity:1;transform:translate(-50%,-50%);pointer-events:auto!important;}
+#pnkx-pc .modal2 h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px;}
+#pnkx-pc .modal2 h3 i{width:16px;height:16px;color:var(--life);}
+#pnkx-pc .mcats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+#pnkx-pc .amt2{display:flex;align-items:baseline;gap:5px;margin-bottom:14px;}
+#pnkx-pc .amt2 .cur{font-size:15px;font-weight:700;color:var(--txt2);}
+#pnkx-pc .amt2 input{flex:1;border:none;outline:none;background:transparent;font-size:30px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;min-width:0;font-family:inherit;}
+#pnkx-pc .mdate{font-size:11px;color:var(--txt2);background:var(--hover);padding:5px 11px;border-radius:100px;}
+#pnkx-pc .macts{display:flex;gap:9px;margin-top:4px;}
+#pnkx-pc .toast2{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);display:flex;align-items:center;gap:9px;background:rgba(15,23,42,.9);color:#fff;padding:11px 16px;border-radius:100px;font-size:12.5px;font-weight:600;opacity:0;pointer-events:none!important;transition:opacity .2s ease,transform .24s var(--spring);white-space:nowrap;}
+#pnkx-pc .toast2.show{opacity:1;transform:translate(-50%,0);pointer-events:auto!important;}
+#pnkx-pc .toast2 i{width:15px;height:15px;color:#7DD3A8;flex:none;}
+#pnkx-pc .toast2 .undo2{border:none;background:rgba(255,255,255,.16);color:#fff;font-size:11.5px;font-weight:700;border-radius:100px;padding:5px 12px;cursor:pointer;}
+@media (prefers-reduced-motion:reduce){#pnkx-pc *{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+</style>
+
+<div class="win" id="pc-win" data-theme="light" data-page="today">
+  <div class="chrome">
+    <span class="dots"><i class="d1"></i><i class="d2"></i><i class="d3"></i></span>
+    <span class="title"><b>Pei你看雪 · 工作台</b><span>pnkx.top</span></span>
+    <span class="kbadge">全局搜索 <span class="kbd">⌘ K</span></span>
+  </div>
+
+  <div class="bodyframe">
+    <!-- ============ 侧边栏 ============ -->
+    <aside class="sidebar">
+      <div class="brand"><span class="logo">P</span><div><b>Pei你看雪</b><span>个人 · 知识工作台</span></div></div>
+      <div class="navlist">
+        <button class="navit on" data-page="today"><i data-lucide="sun" aria-hidden="true"></i><span>今天</span></button>
+        <button class="navit" data-page="life"><i data-lucide="flower" aria-hidden="true"></i><span>生活</span></button>
+        <button class="navit" data-page="hub"><i data-lucide="folder" aria-hidden="true"></i><span>资料</span><em class="nbadge" style="font-style:normal">5</em></button>
+        <button class="navit" data-page="ai"><i data-lucide="sparkles" aria-hidden="true"></i><span>AI 助手</span></button>
+      </div>
+      <div class="navsec">内容发布</div>
+      <div class="navlist">
+        <button class="navit" data-toast="原型演示：打开博客管理（文章/相册/留言）"><i data-lucide="pen-line" aria-hidden="true"></i><span>博客</span></button>
+        <button class="navit" data-toast="原型演示：打开系统管理"><i data-lucide="settings" aria-hidden="true"></i><span>系统管理</span></button>
+      </div>
+      <div class="sidefill"></div>
+      <div class="storbox"><div class="st"><span>私有空间</span><span>3.2/5 GB</span></div><div class="storbar"><span></span></div></div>
+      <div class="userrow"><span class="uava">P</span><div><b>pei你看雪</b><span>离线已同步 · 刚刚</span></div></div>
+      <button class="collapsebtn" id="pc-collapse" aria-label="折叠侧边栏"><i data-lucide="chevrons-left" aria-hidden="true"></i></button>
+    </aside>
+
+    <!-- ============ 主区 ============ -->
+    <div class="main">
+      <div class="topbar">
+        <div class="searchpill" id="pc-openpal"><i data-lucide="search" aria-hidden="true"></i>搜索笔记、剪藏、账单、待办… 或输入指令<span class="kbd">⌘ K</span></div>
+        <div class="tb-actions">
+          <button class="iconbtn" id="pc-theme" aria-label="切换深色模式"><i data-lucide="moon" aria-hidden="true"></i></button>
+          <button class="iconbtn" data-toast="原型演示：通知中心（3 条未读）" aria-label="通知"><i data-lucide="bell" aria-hidden="true"></i><span class="reddot"></span></button>
+          <button class="capturebtn" id="pc-capture"><i data-lucide="plus" aria-hidden="true"></i>快捷录入</button>
+        </div>
+      </div>
+
+      <div class="pages">
+        <!-- ====== 今天 ====== -->
+        <section class="page" id="pc-today" aria-label="今天">
+          <div class="ph"><h1>晚上好，佩豪</h1><span class="sub">10月12日 星期一 · 在一起 1234 天</span></div>
+          <div class="stagger">
+            <div class="statrow">
+              <div class="card stat"><div class="lab"><i data-lucide="wallet" aria-hidden="true"></i>今日支出</div><div class="val" id="pc-spend">¥86.50</div><div class="delta">本周 <b>↓12%</b> · 预算余 ¥388</div></div>
+              <div class="card stat"><div class="lab"><i data-lucide="list-checks" aria-hidden="true"></i>今日待办</div><div class="val"><span id="pc-todoN">3</span><small id="pc-todoT"> / 7 项</small></div><div class="todoprog"><span id="pc-prog" style="width:43%"></span></div></div>
+              <div class="card stat hoverlift" id="pc-gohub"><div class="lab"><i data-lucide="inbox" aria-hidden="true"></i>待整理资料</div><div class="val">5<small> 条</small></div><div class="delta">含 3 条整理建议</div></div>
+              <div class="card stat hoverlift" id="pc-goai"><div class="lab"><i data-lucide="activity" aria-hidden="true"></i>本周报告</div><div class="val">86<small> 分生活指数</small></div><div class="delta"><b>AI</b> 已生成 · 点击查看</div></div>
+            </div>
+            <div class="todaycols">
+              <div class="card" style="min-height:200px">
+                <div class="sectt"><i data-lucide="history" aria-hidden="true"></i>今日时间轴<span class="more">全部 →</span></div>
+                <div class="tl2" id="pc-timeline">
+                  <div class="tlit" data-k="book"><div class="ic"><i data-lucide="utensils" aria-hidden="true"></i></div><div class="bd"><div class="tm">08:30 · 记账 · 微信</div><div class="tt">早餐 · 豆浆油条<span class="amt">¥12.00</span></div></div></div>
+                  <div class="tlit" data-k="todo"><div class="ic"><i data-lucide="list-checks" aria-hidden="true"></i></div><div class="bd"><div class="tm">09:00 · 待办</div><div class="tt">回复合作邮件<button class="chk" aria-label="完成待办" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></button></div></div></div>
+                  <div class="tlit" data-k="book"><div class="ic"><i data-lucide="utensils" aria-hidden="true"></i></div><div class="bd"><div class="tm">12:15 · 记账 · 微信</div><div class="tt">午餐 · 兰州拉面<span class="amt">¥32.00</span></div></div></div>
+                  <div class="tlit" data-k="sub"><div class="ic"><i data-lucide="repeat" aria-hidden="true"></i></div><div class="bd"><div class="tm">14:00 · 订阅扣费</div><div class="tt">iCloud+ 200G<span class="amt">¥6.00</span></div></div></div>
+                  <div class="tlit" data-k="todo"><div class="ic"><i data-lucide="list-checks" aria-hidden="true"></i></div><div class="bd"><div class="tm">18:30 · 待办 · 重复系列「健身」</div><div class="tt">健身 30 分钟<button class="chk" aria-label="完成待办" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg></button></div></div></div>
+                  <div class="tlit" data-k="coupon"><div class="ic"><i data-lucide="ticket" aria-hidden="true"></i></div><div class="bd"><div class="tm">20:00 · 情侣卡券</div><div class="tt">「一次肩颈按摩」待确认</div><div class="sub">来自小雪 · 使用后请对方确认</div></div></div>
+                </div>
+              </div>
+              <div class="stagger">
+                <div class="card railcard">
+                  <div class="sectt" style="padding:0 0 6px"><i data-lucide="book-open" aria-hidden="true"></i>继续阅读<span class="more" id="pc-gohub2">资料 →</span></div>
+                  <div class="railrow"><span class="ri" style="background:rgba(79,134,247,.13);color:var(--res)"><i data-lucide="bookmark" aria-hidden="true"></i></span><div style="min-width:0"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Java 内存模型完全解析</b><span>剪藏 · 读到 40%</span></div><i data-lucide="chevron-right" aria-hidden="true"></i></div>
+                  <div class="railrow"><span class="ri" style="background:rgba(139,124,246,.13);color:var(--rec)"><i data-lucide="file-text" aria-hidden="true"></i></span><div style="min-width:0"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">《置身事内》读书笔记</b><span>笔记 · 星标</span></div><i data-lucide="chevron-right" aria-hidden="true"></i></div>
+                </div>
+                <div class="card railcard">
+                  <div class="sectt" style="padding:0 0 6px"><i data-lucide="zap" aria-hidden="true"></i>快捷录入</div>
+                  <div class="quickgrid">
+                    <button class="qk" data-act="记一笔"><i data-lucide="wallet" style="color:var(--life)" aria-hidden="true"></i>记一笔</button>
+                    <button class="qk" data-act="加待办"><i data-lucide="list-checks" style="color:var(--rec)" aria-hidden="true"></i>加待办</button>
+                    <button class="qk" data-act="写日记"><i data-lucide="book-open" style="color:var(--pink)" aria-hidden="true"></i>写日记</button>
+                    <button class="qk" data-act="剪藏链接"><i data-lucide="bookmark" style="color:var(--res)" aria-hidden="true"></i>剪藏</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====== 生活 ====== -->
+        <section class="page" id="pc-life" hidden aria-label="生活">
+          <div class="ph"><h1>生活</h1><span class="sub">高频直达 · 其余功能收进生活管家</span></div>
+          <div class="stagger">
+            <div class="lifegrid">
+              <div class="card mod m-book hoverlift"><span class="mi"><i data-lucide="wallet" aria-hidden="true"></i></span><b>生活账本</b><span>本月支出 ¥2,341 · 预算 62%</span></div>
+              <div class="card mod m-cal hoverlift"><span class="mi"><i data-lucide="calendar" aria-hidden="true"></i></span><b>家庭日历</b><span>今天 3 个事项 · 本周 11 个</span></div>
+              <div class="card mod m-todo hoverlift"><span class="mi"><i data-lucide="list-checks" aria-hidden="true"></i></span><b>待办事项</b><span>3 项待完成 · 2 个系列</span></div>
+              <div class="card mod m-diary hoverlift"><span class="mi"><i data-lucide="book-open" aria-hidden="true"></i></span><b>我的日记</b><span>连续 12 天 · 本周 5 篇</span></div>
+            </div>
+            <div class="card" style="margin-top:12px">
+              <div class="sectt"><i data-lucide="layout-grid" aria-hidden="true"></i>生活管家<span class="more">15 项功能 →</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px 10px 12px" id="pc-manager">
+                <div class="railrow"><span class="ri" style="background:rgba(79,134,247,.13);color:var(--res)"><i data-lucide="calendar" aria-hidden="true"></i></span><div><b>家庭日历</b><span>月视图聚合</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(33,186,115,.13);color:var(--life)"><i data-lucide="shopping-cart" aria-hidden="true"></i></span><div><b>购物清单</b><span>2 项待买</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(245,158,11,.14);color:var(--warn)"><i data-lucide="utensils" aria-hidden="true"></i></span><div><b>菜谱 · 膳食</b><span>本周三餐已排</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(148,163,184,.16);color:var(--txt2)"><i data-lucide="repeat" aria-hidden="true"></i></span><div><b>订阅管理</b><span>月 ¥68 · 下周扣费</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(253,102,151,.13);color:var(--pink)"><i data-lucide="heart" aria-hidden="true"></i></span><div><b>纪念日</b><span>3 个 · 下个 10-24</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(253,102,151,.10);color:var(--pink)"><i data-lucide="ticket" aria-hidden="true"></i></span><div><b>情侣卡券</b><span>1 张待确认</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(155,107,255,.13);color:var(--ai)"><i data-lucide="flower" aria-hidden="true"></i></span><div><b>姨妈助手</b><span>周期第 14 天</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(33,186,115,.13);color:var(--life)"><i data-lucide="book" aria-hidden="true"></i></span><div><b>我的书城</b><span>在读 2 本</span></div></div>
+                <div class="railrow"><span class="ri" style="background:rgba(245,158,11,.14);color:var(--warn)"><i data-lucide="zap" aria-hidden="true"></i></span><div><b>自动化 · 报告</b><span>4 条规则运行中</span></div></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px">
+              <div class="sectt"><i data-lucide="activity" aria-hidden="true"></i>最近记录<span class="more">全部 →</span></div>
+              <table class="recent">
+                <thead><tr><th>时间</th><th>类型</th><th>内容</th><th style="text-align:right">金额</th></tr></thead>
+                <tbody>
+                  <tr><td>今天 12:15</td><td><span class="tybadge tb-book"><i data-lucide="wallet" aria-hidden="true"></i>记账</span></td><td>午餐 · 兰州拉面</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">¥32.00</td></tr>
+                  <tr><td>今天 08:30</td><td><span class="tybadge tb-book"><i data-lucide="wallet" aria-hidden="true"></i>记账</span></td><td>早餐 · 豆浆油条</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">¥12.00</td></tr>
+                  <tr><td>昨天 21:40</td><td><span class="tybadge tb-diary"><i data-lucide="book-open" aria-hidden="true"></i>日记</span></td><td>「周末复盘：重读资料中心方案」</td><td style="text-align:right;color:var(--txt3)">—</td></tr>
+                  <tr><td>昨天 09:00</td><td><span class="tybadge tb-todo"><i data-lucide="list-checks" aria-hidden="true"></i>待办</span></td><td>NAS 数据备份检查 · 已完成</td><td style="text-align:right;color:var(--txt3)">—</td></tr>
+                  <tr><td>10-10 14:00</td><td><span class="tybadge tb-sub"><i data-lucide="repeat" aria-hidden="true"></i>订阅</span></td><td>Netflix 标准档</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700">¥45.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====== 资料三栏 ====== -->
+        <section class="hubpage" id="pc-hub" hidden aria-label="资料">
+          <div class="hubleft">
+            <div class="card hubgroup">
+              <div class="gt">视图</div>
+              <button class="litem on" data-view="inbox"><i data-lucide="inbox" aria-hidden="true"></i>收件箱<span class="cnt">5</span></button>
+              <button class="litem" data-view="all"><i data-lucide="layers" aria-hidden="true"></i>全部资料<span class="cnt">12</span></button>
+              <button class="litem" data-view="read"><i data-lucide="book-open" aria-hidden="true"></i>继续阅读<span class="cnt">3</span></button>
+              <button class="litem" data-toast="原型演示：回收站（笔记/文件/剪藏可恢复）"><i data-lucide="trash-2" aria-hidden="true"></i>回收站</button>
+            </div>
+            <div class="card hubgroup">
+              <div class="gt">类型</div>
+              <button class="litem" data-type="note"><i data-lucide="file-text" aria-hidden="true"></i>笔记<span class="cnt">12</span></button>
+              <button class="litem" data-type="clip"><i data-lucide="bookmark" aria-hidden="true"></i>剪藏<span class="cnt">23</span></button>
+              <button class="litem" data-type="file"><i data-lucide="folder" aria-hidden="true"></i>文件<span class="cnt">8</span></button>
+              <button class="litem" data-type="todo"><i data-lucide="list-checks" aria-hidden="true"></i>待办<span class="cnt">6</span></button>
+            </div>
+            <div class="card hubgroup">
+              <div class="gt">标签</div>
+              <button class="litem" data-tag="学习"><i data-lucide="tag" aria-hidden="true"></i>学习<span class="cnt">9</span></button>
+              <div class="tagtree">
+                <button class="litem tlv2" data-tag="Java"><i data-lucide="tag" aria-hidden="true"></i>Java<span class="cnt">4</span></button>
+                <button class="litem tlv2" data-tag="前端"><i data-lucide="tag" aria-hidden="true"></i>前端<span class="cnt">3</span></button>
+              </div>
+              <button class="litem" data-tag="运维"><i data-lucide="tag" aria-hidden="true"></i>运维<span class="cnt">6</span></button>
+              <button class="litem" data-tag="工作"><i data-lucide="tag" aria-hidden="true"></i>工作<span class="cnt">5</span></button>
+            </div>
+            <div class="card hubgroup" style="cursor:pointer" id="pc-organize">
+              <div class="gt">整理建议</div>
+              <div class="railrow" style="padding:6px 8px"><span class="ri" style="background:rgba(245,158,11,.14);color:var(--warn)"><i data-lucide="wand-2" aria-hidden="true"></i></span><div><b>3 条建议待处理</b><span>重复合并 · 补标题 · 打标签</span></div></div>
+            </div>
+          </div>
+
+          <div class="hubmid">
+            <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:10px;min-height:0">
+              <div class="hubtools">
+                <div class="hubsearch" style="cursor:text"><i data-lucide="search" aria-hidden="true"></i><input id="pc-hubq" placeholder="搜索资料正文…" style="flex:1;border:none;outline:none;background:transparent;color:var(--txt);font-size:12.5px;font-family:inherit"></div>
+                <button class="chip2 on" data-f="all">全部</button>
+                <button class="chip2" data-f="clip">剪藏</button>
+                <button class="chip2" data-f="note">笔记</button>
+                <button class="chip2" id="pc-newnote"><i data-lucide="plus" aria-hidden="true"></i>新建笔记</button>
+              </div>
+              <div class="reslist" id="pc-reslist"></div>
+              <div class="hubfoot"><span id="pc-rescount"></span><span style="margin-left:auto">标签统一 · 双链引用 · 版本历史 · 回收站</span></div>
+            </div>
+          </div>
+
+          <div class="card hubright" id="pc-detail"></div>
+        </section>
+
+        <!-- ====== AI ====== -->
+        <section class="aipage" id="pc-ai" hidden aria-label="AI 助手">
+          <div class="card aichat">
+            <div class="aimhead"><span class="aiic"><i data-lucide="sparkles" aria-hidden="true"></i></span><div><b>AI 助手</b><span>统一入口 · 记账 / 查资料 / 报告 / 剪藏整理 / 自动化</span></div></div>
+            <div class="aiskills">
+              <button class="chip2" data-q="帮我把昨天午饭记一笔">记一笔</button>
+              <button class="chip2" data-q="我的资料里有哪些讲 Java 并发的？">查资料</button>
+              <button class="chip2" data-q="给我讲讲这周的生活报告">生活周报</button>
+              <button class="chip2" data-q="总结一下我收藏的动效文章">总结剪藏</button>
+            </div>
+            <div class="aimsgs" id="pc-msgs">
+              <div class="msg a">晚上好 👏 我是你的统一 AI 助手。记账、查资料、周报、剪藏整理都能一句话完成；所有写操作都会先生成草稿，确认后才落库。</div>
+            </div>
+            <div class="aiinput"><button class="roundbtn mic" aria-label="语音输入"><i data-lucide="mic" aria-hidden="true"></i></button><input id="pc-aiin" placeholder="问我任何事，或直接说「午饭花了 30」…"><button class="roundbtn send" id="pc-aisend" aria-label="发送"><i data-lucide="arrow-right" aria-hidden="true"></i></button></div>
+          </div>
+          <div class="card airail">
+            <div class="sectt" style="padding:2px 2px 6px"><i data-lucide="zap" aria-hidden="true"></i>技能</div>
+            <div class="railrow"><span class="ri" style="background:rgba(33,186,115,.13);color:var(--life)"><i data-lucide="wallet" aria-hidden="true"></i></span><div><b>记账解析</b><span>「午饭花了30」→ 草稿</span></div></div>
+            <div class="railrow"><span class="ri" style="background:rgba(79,134,247,.13);color:var(--res)"><i data-lucide="folder" aria-hidden="true"></i></span><div><b>资料问答</b><span>带引用的 RAG 检索</span></div></div>
+            <div class="railrow"><span class="ri" style="background:rgba(139,124,246,.13);color:var(--rec)"><i data-lucide="activity" aria-hidden="true"></i></span><div><b>生活报告</b><span>周 / 月 / 年度分析</span></div></div>
+            <div class="railrow"><span class="ri" style="background:rgba(253,102,151,.12);color:var(--pink)"><i data-lucide="bookmark" aria-hidden="true"></i></span><div><b>剪藏整理</b><span>AI 摘要 · 标签 · 分类</span></div></div>
+            <div class="sectt" style="padding:8px 2px 6px"><i data-lucide="gauge" aria-hidden="true"></i>本月用量</div>
+            <div style="font-size:11.5px;color:var(--txt2);padding:0 2px;line-height:1.9">对话 46 次<br>资料问答 18 次 · 引用 41 条<br>草稿确认率 92%</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- overlays -->
+  <div class="ovclip">
+    <div class="mask2" id="pc-mask"></div>
+    <div class="palette" id="pc-pal" role="dialog" aria-label="全局搜索">
+      <div class="palin"><i data-lucide="search" aria-hidden="true"></i><input id="pc-palin" placeholder="搜索资料、生活记录，或输入指令，如「记一笔」…"><span class="kbd">Esc</span></div>
+      <div class="palbody" id="pc-palbody"></div>
+    </div>
+    <div class="modal2" id="pc-modal" role="dialog" aria-label="记一笔">
+      <h3><i data-lucide="wallet" aria-hidden="true"></i>记一笔</h3>
+      <div class="mcats" id="pc-mcats"><button class="chip2 on">餐饮</button><button class="chip2">交通</button><button class="chip2">购物</button><button class="chip2">日用</button><button class="chip2">娱乐</button></div>
+      <div class="amt2"><span class="cur">¥</span><input id="pc-amt" inputmode="decimal" placeholder="0.00"><span class="mdate">今天</span></div>
+      <div class="macts"><button class="abtn ghost" id="pc-mcancel">取消</button><button class="abtn pri" id="pc-msave" disabled>保存</button></div>
+    </div>
+    <div class="toast2" id="pc-toast"><i data-lucide="check" aria-hidden="true"></i><span id="pc-toasttxt"></span><button class="undo2" id="pc-undo2" hidden>撤销</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+var R=function(id){return document.getElementById(id)};
+var win=R('pc-win');
+var state={page:'today',theme:'light',view:'inbox',type:'all',tag:'',q:'',sel:0,spend:86.5,done:3,total:7};
+try{var ws=window.zcode&&window.zcode.widgetState&&window.zcode.widgetState.privateContent;if(ws&&ws.pc){state.theme=ws.pc.theme||'light';if(ws.pc.page)state.page=ws.pc.page;}}catch(e){}
+function save(){try{window.zcode.setWidgetState({privateContent:{pc:{page:state.page,theme:state.theme}}}).catch(function(){})}catch(e){}}
+
+/* ---------- toast ---------- */
+var tEl=R('pc-toast'),tTx=R('pc-toasttxt'),tUn=R('pc-undo2'),tT=null,tFn=null;
+function toast(txt,undo){tTx.textContent=txt;tUn.hidden=!undo;tFn=undo||null;tEl.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){tEl.classList.remove('show')},undo?5000:2200);}
+tUn.onclick=function(){tEl.classList.remove('show');if(tFn)tFn();};
+
+/* ---------- theme ---------- */
+R('pc-theme').onclick=function(){var d=win.dataset.theme!=='dark';win.dataset.theme=d?'dark':'light';state.theme=d?'dark':'light';save();toast(d?'已切换至深色模式':'已切换至浅色模式');};
+if(state.theme==='dark')win.dataset.theme='dark';
+
+/* ---------- nav ---------- */
+function applyChrome(){
+  var its=win.querySelectorAll('.navit');
+  for(var i=0;i<its.length;i++){var b=its[i],on=b.dataset.page===state.page;b.classList.toggle('on',on&&!!b.dataset.page);}
+  win.dataset.page=state.page;
+}
+function switchPage(p){
+  if(p===state.page)return;
+  state.page=p;applyChrome();save();
+  var pages={today:'pc-today',life:'pc-life',hub:'pc-hub',ai:'pc-ai'};
+  for(var k in pages){R(pages[k]).hidden=(k!==p);}
+  var pg=R(pages[p]);pg.classList.remove('page-in');void pg.offsetWidth;pg.classList.add('page-in');
+  var st=pg.querySelector('.stagger');if(st){st.classList.remove('stagger');void st.offsetWidth;st.classList.add('stagger');}
+}
+var navs=win.querySelectorAll('.navit');
+for(var n=0;n<navs.length;n++){(function(b){b.onclick=function(){
+  if(b.dataset.page)switchPage(b.dataset.page);
+  else if(b.dataset.toast)toast(b.dataset.toast);
+};})(navs[n]);}
+R('pc-gohub').onclick=function(){switchPage('hub')};
+R('pc-gohub2').onclick=function(){switchPage('hub')};
+R('pc-goai').onclick=function(){switchPage('ai')};
+R('pc-collapse').onclick=function(){win.classList.toggle('collapsed');};
+
+/* ---------- count up ---------- */
+function countUp(el,from,to,fmt){var t0=null;function st2(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/400);p=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*p);if(p<1)requestAnimationFrame(st2);}requestAnimationFrame(st2);}
+function renderSpend(){R('pc-spend').textContent='¥'+state.spend.toFixed(2);}
+function renderTodo(){R('pc-todoN').textContent=state.done;R('pc-prog').style.width=Math.min(100,state.done/state.total*100)+'%';}
+
+/* ---------- today checkbox ---------- */
+var chks=win.querySelectorAll('#pc-timeline .chk');
+for(var c=0;c<chks.length;c++){(function(btn){
+  btn.onclick=function(ev){ev.stopPropagation();
+    var it=btn.closest('.tlit'),was=btn.classList.contains('done');
+    btn.classList.toggle('done');it.classList.toggle('done');btn.setAttribute('aria-pressed',String(!was));
+    var old=state.done;state.done+=was?-1:1;renderTodo();
+    countUp(R('pc-todoN'),old,state.done,function(v){return Math.round(v)});
+    if(!was)toast('待办已完成，很棒',function(){btn.classList.remove('done');it.classList.remove('done');var o=state.done;state.done-=1;renderTodo();countUp(R('pc-todoN'),o,state.done,function(v){return Math.round(v)});});
+  };
+})(chks[c]);}
+
+/* ---------- 快捷录入 ---------- */
+var qks=win.querySelectorAll('.qk');
+for(var q=0;q<qks.length;q++){(function(b){b.onclick=function(){if(b.dataset.act==='记一笔')openModal();else toast('原型演示：'+b.dataset.act);};})(qks[q]);}
+R('pc-capture').onclick=function(){openPal('记一笔')};
+
+/* ---------- 记一笔 modal ---------- */
+var mask=R('pc-mask'),modal=R('pc-modal'),amtIn=R('pc-amt'),saveBtn=R('pc-msave');
+function openModal(){mask.classList.add('show');modal.classList.add('show');amtIn.value='';saveBtn.disabled=true;setTimeout(function(){amtIn.focus();},180);}
+function closeModal(){mask.classList.remove('show');modal.classList.remove('show');}
+mask.onclick=function(){closeModal();closePal();};
+R('pc-mcancel').onclick=closeModal;
+var mcats=R('pc-mcats');
+mcats.onclick=function(ev){var b=ev.target.closest('.chip2');if(!b)return;var all=mcats.querySelectorAll('.chip2');for(var i=0;i<all.length;i++)all[i].classList.remove('on');b.classList.add('on');};
+amtIn.addEventListener('input',function(){saveBtn.disabled=!(parseFloat(amtIn.value)>0);});
+amtIn.addEventListener('keydown',function(e){if(e.key==='Enter'&&!saveBtn.disabled)saveBtn.click();});
+saveBtn.onclick=function(){
+  var v=parseFloat(amtIn.value);if(!(v>0))return;
+  var cat=mcats.querySelector('.chip2.on').textContent;
+  closeModal();
+  var old=state.spend;state.spend+=v;countUp(R('pc-spend'),old,state.spend,function(x){return '¥'+x.toFixed(2)});
+  if(state.page!=='today')switchPage('today');
+  var tl=R('pc-timeline'),first=tl.querySelector('.tlit');
+  var div=document.createElement('div');div.className='tlit';div.setAttribute('data-k','book');
+  div.innerHTML='<div class="ic"><i data-lucide="wallet"></i></div><div class="bd"><div class="tm">刚刚 · 记账 · 快捷录入</div><div class="tt">'+cat+'<span class="amt">¥'+v.toFixed(2)+'</span></div></div>';
+  tl.insertBefore(div,first);
+  if(window.lucide)lucide.createIcons({attrs:{width:15,height:15}});
+  toast('已记录 '+cat+' ¥'+v.toFixed(2),function(){var o=state.spend;state.spend-=v;countUp(R('pc-spend'),o,state.spend,function(x){return '¥'+x.toFixed(2)});div.remove();});
+};
+
+/* ---------- 资料中心 ---------- */
+var RES=[
+ {type:'clip',inbox:1,read:0,title:'Java 内存模型完全解析',sn:'happens-before 规则、volatile 语义与内存屏障的完整梳理，附 JMM 图示……',tags:['Java','学习'],time:'2 小时前',meta:'剪藏 · AI 摘要已生成',links:['学习 Java 并发的 7 个要点'],back:['周会纪要 10-10'],prev:'本文系统梳理了 JMM 的核心规则：happens-before 传递性、volatile 的内存语义、final 域重排序限制。第三节的内存屏障图解直接回答了之前在笔记里记的 DoublyCheckedLocking 疑问……',ver:[['当前版本','10-11 22:40'],['AI 摘要更新','10-11 22:41'],['初始剪藏','10-12 19:02']]},
+ {type:'note',inbox:1,read:0,title:'NAS 部署踩坑记录',sn:'Jpom 部署 pnkx 后端：JDK21 镜像、Flyway 迁移、备份策略与回滚要点……',tags:['运维','NAS'],time:'10-11',meta:'笔记 · 3 条反向链接',links:['pnkx 备份策略'],back:['Java 内存模型完全解析','周会纪要 10-10'],prev:'一、镜像选择：eclipse-temurin:21-jre 比 alpine 稳定；二、迁移顺序 V1.6.4→V1.7.3 必须按序执行，任何一步失败先回滚客户端入口再处理；三、数据库备份 gzip 后约 84MB……',ver:[['当前版本','10-11 20:15'],['恢复自 v6','10-11 20:10'],['编辑','10-11 19:44']]},
+ {type:'file',inbox:1,read:0,title:'产品重设计方案.pdf',sn:'2.4 MB · 功能模块划分 / 信息架构 / 设计系统 / 动效规范',tags:['工作'],time:'昨天',meta:'文件 · 2.4 MB',links:[],back:['周会纪要 10-10'],prev:'PDF 文件仅支持预览。可在移动端查看，或下载后打开。归属：工作/产品。',ver:[['当前版本','昨天 16:20']]},
+ {type:'clip',inbox:1,read:1,title:'CSS 动效性能优化指南',sn:'合成层、will-change 的正确用法，transform/opacity 之外的属性为何掉帧……',tags:['前端','动效'],time:'10-10',meta:'剪藏 · 读到 60%',links:['CSS 动效性能优化指南'],back:[],prev:'浏览器的渲染管线：Style → Layout → Paint → Composite。只有 compositor 层属性（transform / opacity）能绕过 Layout 与 Paint；top/left 触发 Layout，box-shadow 触发 Paint……',ver:[['当前版本','10-10 14:00'],['初始剪藏','10-10 13:58']]},
+ {type:'todo',inbox:1,read:0,title:'整理本周照片',sn:'周日截止 · 家庭相册归档与精选',tags:['家庭'],time:'10-09',meta:'待办 · 周日截止',links:[],back:[],prev:'待办事项。来自生活管家「家庭」分组，周日到期前会通过提醒中心推送。',ver:[['当前版本','10-09 09:00']]},
+ {type:'note',inbox:0,read:1,title:'《置身事内》读书笔记',sn:'第三章：政府与土地财政——基础设施投资的资金闭环……',tags:['阅读'],time:'10-08',meta:'笔记 · 星标',links:['pnkx 备份策略'],back:['CSS 动效性能优化指南'],prev:'土地财政的本质是把未来的土地收益证券化，用于当期基建投资。城投公司的角色、预算软约束的成因……可整理为博客草稿发布。',ver:[['当前版本','10-08 21:12'],['编辑','10-08 20:50']]},
+ {type:'clip',inbox:0,read:1,title:'自部署 NAS 的 10 个实践',sn:'冷备份、健康检查、Docker 网络与证书续期的实战清单……',tags:['运维','NAS'],time:'10-06',meta:'剪藏 · 已读',links:['NAS 部署踩坑记录'],back:['pnkx 备份策略'],prev:'1. 冷备份至少两份异地；2. 健康检查脚本放 cron 而非依靠记忆；3. 证书用 acme.sh 自动续期并加失败告警……',ver:[['当前版本','10-06 11:30']]},
+ {type:'note',inbox:0,read:0,title:'周会纪要 10-10',sn:'本周：资料中心标签回填完成 92%，壁纸收藏并入资源状态待办……',tags:['工作'],time:'10-10',meta:'笔记',links:['产品重设计方案.pdf'],back:[],prev:'一、标签回填进度 92%，预计周三完成后下线旧字段；二、剪藏 starFlag/readFlag 迁移 px_resource_state 下周启动；三、壁纸「我的喜欢」并入统一收藏……',ver:[['当前版本','10-10 23:01']]}
+];
+var TYPEIC={note:'file-text',clip:'bookmark',file:'folder',todo:'list-checks'};
+var TYPENA={note:'笔记',clip:'剪藏',file:'文件',todo:'待办'};
+function resMatch(r){
+  if(state.view==='inbox'&&!r.inbox)return false;
+  if(state.view==='read'&&!r.read)return false;
+  if(state.type!=='all'&&r.type!==state.type)return false;
+  if(state.tag&&r.tags.join(',').indexOf(state.tag)<0)return false;
+  if(state.q&&(r.title+r.sn).toLowerCase().indexOf(state.q.toLowerCase())<0)return false;
+  return true;
+}
+function renderList(){
+  var box=R('pc-reslist');box.innerHTML='';
+  var shown=0;
+  for(var i=0;i<RES.length;i++){
+    var r=RES[i];if(!resMatch(r))continue;
+    var d=document.createElement('div');d.className='resrow'+(i===state.sel?' on':'');d.setAttribute('data-type',r.type);d.setAttribute('data-i',i);
+    d.style.animationDelay=(Math.min(shown,6)*0.03)+'s';
+    var isNew=r._new?'<span class="newbadge">NEW</span>':'';
+    var tags='';for(var t=0;t<r.tags.length&&t<2;t++)tags+='<span class="minitag">'+r.tags[t]+'</span>';
+    d.innerHTML='<div class="ri"><i data-lucide="'+TYPEIC[r.type]+'"></i></div><div class="rb"><div class="rt"><b>'+r.title+'</b>'+isNew+'</div><div class="sn">'+r.sn+'</div><div class="meta">'+tags+'<span>·</span><span>'+r.time+'</span>'+(r.inbox?'<span>·</span><span style="color:var(--pnk);font-weight:700">收件箱</span>':'')+'</div></div>';
+    d.onclick=(function(idx){return function(){state.sel=idx;renderList();renderDetail();};})(i);
+    box.appendChild(d);shown++;
+  }
+  R('pc-rescount').textContent='显示 '+shown+' / '+RES.length+' 条资源';
+  if(window.lucide)lucide.createIcons({attrs:{width:15,height:15}});
+  if(!shown){box.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3);font-size:12.5px">没有符合条件的资料</div>';}
+}
+function renderDetail(){
+  var r=RES[state.sel],box=R('pc-detail');
+  var tags='';for(var i=0;i<r.tags.length;i++)tags+='<span class="dtag"><i data-lucide="tag"></i>'+r.tags[i]+'</span>';
+  var links='';for(var j=0;j<r.links.length;j++)links+='<div class="linkrow"><i data-lucide="link"></i>'+r.links[j]+'<small>引用</small><i class="arr" data-lucide="chevron-right"></i></div>';
+  var backs='';for(var k=0;k<r.back.length;k++)backs+='<div class="linkrow"><i data-lucide="corner-up-left"></i>'+r.back[k]+'<small>被引用于</small><i class="arr" data-lucide="chevron-right"></i></div>';
+  var vers='';for(var v=0;v<r.ver.length;v++)vers+='<div class="verrow"><span class="vdot'+(v===0?' cur':'')+'"></span>'+r.ver[v][0]+'<span>'+r.ver[v][1]+'</span></div>';
+  var canCvt=r.type==='clip';
+  box.innerHTML='<div class="dswap"><span class="dtype"><i data-lucide="'+TYPEIC[r.type]+'"></i>'+TYPENA[r.type]+(r.inbox?' · 收件箱':'')+'</span>'
+   +'<div class="dtitle">'+r.title+'</div><div class="dmeta">'+r.meta+' · 归属本人 · revision '+(37+r.sel)+'</div>'
+   +'<div class="dprev">'+r.prev+'</div>'
+   +(tags?'<div class="dsec">标签</div><div class="dtags">'+tags+'</div>':'')
+   +(links?'<div class="dsec">引用</div>'+links:'')
+   +(backs?'<div class="dsec">反向链接</div>'+backs:'')
+   +'<div class="dsec">版本历史 · 最近 '+r.ver.length+' 版</div>'+vers
+   +'<div class="dacts">'+(canCvt?'<button class="abtn pri" id="pc-cvt"><i data-lucide="file-text"></i>转为笔记</button>':'<button class="abtn pri" data-t2="原型演示：进入编辑器"><i data-lucide="pencil"></i>编辑</button>')+'<button class="abtn ghost" data-t2="原型演示：加入待办"><i data-lucide="list-checks"></i>转待办</button></div></div>';
+  var t2s=box.querySelectorAll('[data-t2]');
+  for(var m=0;m<t2s.length;m++)t2s[m].onclick=(function(b){return function(){toast(b.getAttribute('data-t2'));};})(t2s[m]);
+  var cv=box.querySelector('#pc-cvt');
+  if(cv)cv.onclick=function(){
+    cv.style.pointerEvents='none';cv.innerHTML='<i data-lucide="loader"></i>转换中…';if(window.lucide)lucide.createIcons({attrs:{width:14,height:14}});
+    setTimeout(function(){
+      RES[state.sel].type='note';RES[state.sel]._new=true;RES[state.sel].inbox=1;RES[state.sel].meta='笔记 · 来自剪藏 '+RES[state.sel].time;
+      RES[state.sel].title=RES[state.sel].title.replace(/^笔记 · /,'');
+      renderList();renderDetail();
+      toast('已转换为笔记并进入收件箱',null);
+    },900);
+  };
+  if(window.lucide)lucide.createIcons({attrs:{width:13,height:13}});
+}
+/* 左栏筛选 */
+var lis=win.querySelectorAll('.hubleft .litem');
+for(var L=0;L<lis.length;L++){(function(b){
+  b.onclick=function(){
+    if(b.dataset.toast){toast(b.dataset.toast);return;}
+    if(b.dataset.view){state.view=b.dataset.view;state.type='all';state.tag='';}
+    else if(b.dataset.type){state.type=b.dataset.type;state.view='all';state.tag='';}
+    else if(b.dataset.tag){var t=b.dataset.tag;if(state.tag===t){state.tag='';}else state.tag=t;state.view='all';state.type='all';}
+    var all=win.querySelectorAll('.hubleft .litem');
+    for(var i=0;i<all.length;i++){
+      var a=all[i];var on=false;
+      if(a.dataset.view)on=(a.dataset.view===state.view);
+      else if(a.dataset.type)on=(state.type!=='all'&&a.dataset.type===state.type);
+      else if(a.dataset.tag)on=(!!state.tag&&a.dataset.tag===state.tag);
+      a.classList.toggle('on',on);
+    }
+    state.sel=0;var found=0;for(var r2=0;r2<RES.length;r2++){if(resMatch(RES[r2])){found=r2;break;}}
+    state.sel=found;renderList();renderDetail();
+  };
+})(lis[L]);}
+/* 类型 chips */
+var chips=win.querySelectorAll('.hubtools .chip2[data-f]');
+for(var C=0;C<chips.length;C++){(function(b){b.onclick=function(){
+  var all=win.querySelectorAll('.hubtools .chip2[data-f]');for(var i=0;i<all.length;i++)all[i].classList.remove('on');b.classList.add('on');
+  state.type=b.dataset.f;state.view='all';var found=0;for(var r2=0;r2<RES.length;r2++){if(resMatch(RES[r2])){found=r2;break;}}
+  state.sel=found;renderList();renderDetail();
+};})(chips[C]);}
+R('pc-newnote').onclick=function(){toast('原型演示：新建笔记（Quill 编辑器）');};
+R('pc-organize').onclick=function(){toast('原型演示：整理建议（重复合并 / 补标题 / 打标签）');};
+R('pc-hubq').addEventListener('input',function(){state.q=this.value;var found=0;for(var r2=0;r2<RES.length;r2++){if(resMatch(RES[r2])){found=r2;break;}}state.sel=found;renderList();renderDetail();});
+/* manager rows toast */
+var mgrs=win.querySelectorAll('#pc-manager .railrow');
+for(var g=0;g<mgrs.length;g++)mgrs[g].onclick=function(){toast('原型演示：进入'+this.querySelector('b').textContent);};
+
+/* ---------- 命令面板 ---------- */
+var PAL=[
+ {g:'快速操作',ic:'plus',t:'记一笔',h:'⌘1',act:function(){closePal();openModal();}},
+ {g:'快速操作',ic:'plus',t:'新建笔记',h:'⌘2',act:function(){closePal();switchPage('hub');toast('原型演示：新建笔记');}},
+ {g:'快速操作',ic:'bookmark',t:'剪藏链接…',h:'⌘3',act:function(){closePal();toast('原型演示：粘贴链接后 AI 抓取');}},
+ {g:'快速操作',ic:'moon',t:'切换深色模式',h:'',act:function(){closePal();R('pc-theme').click();}},
+ {g:'资料',ic:'bookmark',t:'Java 内存模型完全解析',h:'剪藏 · 2 小时前',act:function(){closePal();state.sel=0;switchPage('hub');renderList();renderDetail();}},
+ {g:'资料',ic:'file-text',t:'NAS 部署踩坑记录',h:'笔记 · 10-11',act:function(){closePal();state.sel=1;switchPage('hub');renderList();renderDetail();}},
+ {g:'资料',ic:'file-text',t:'周会纪要 10-10',h:'笔记 · 10-10',act:function(){closePal();state.sel=7;switchPage('hub');renderList();renderDetail();}},
+ {g:'生活记录',ic:'wallet',t:'午餐 · 兰州拉面 ¥32.00',h:'记账 · 今天 12:15',act:function(){closePal();switchPage('life');}},
+ {g:'生活记录',ic:'list-checks',t:'健身 30 分钟',h:'待办 · 18:30',act:function(){closePal();switchPage('today');}},
+ {g:'页面',ic:'folder',t:'打开资料中心',h:'',act:function(){closePal();switchPage('hub');}},
+ {g:'页面',ic:'sparkles',t:'打开 AI 助手',h:'',act:function(){closePal();switchPage('ai');}}
+];
+var pal=R('pc-pal'),palin=R('pc-palin'),palbody=R('pc-palbody');
+function openPal(seed){pal.classList.add('show');mask.classList.add('show');palin.value=seed||'';renderPal();setTimeout(function(){palin.focus();},120);}
+function closePal(){pal.classList.remove('show');if(!modal.classList.contains('show'))mask.classList.remove('show');}
+R('pc-openpal').onclick=function(){openPal('');};
+function renderPal(){
+  var q=palin.value.trim().toLowerCase();
+  palbody.innerHTML='';var lastG='',n=0;
+  for(var i=0;i<PAL.length;i++){
+    var p=PAL[i];
+    if(q&&p.t.toLowerCase().indexOf(q)<0&&p.g.indexOf(q)<0)continue;
+    if(p.g!==lastG){var gh=document.createElement('div');gh.className='palgroup';gh.textContent=p.g;palbody.appendChild(gh);lastG=p.g;}
+    var d=document.createElement('div');d.className='palrow';d.innerHTML='<i data-lucide="'+p.ic+'"></i>'+p.t+'<span class="ph2">'+(p.h||'')+'</span>';
+    d.onclick=p.act;palbody.appendChild(d);n++;
+  }
+  if(!n)palbody.innerHTML='<div style="padding:26px;text-align:center;color:var(--txt3);font-size:12.5px">没有匹配结果，回车将全局搜索</div>';
+  if(window.lucide)lucide.createIcons({attrs:{width:15,height:15}});
+}
+palin.addEventListener('input',renderPal);
+palin.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=palbody.querySelector('.palrow');if(f)f.click();}if(e.key==='Escape')closePal();});
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();pal.classList.contains('show')?closePal():openPal('');}
+  if(e.key==='Escape'){closePal();closeModal();}
+});
+
+/* ---------- AI ---------- */
+var msgs=R('pc-msgs');
+var replies=[
+ {q:'帮我把昨天午饭记一笔',re:'好的，已经按你的默认习惯填好草稿 ✅\n分类「餐饮」· 金额 ¥32.00 · 账户「微信」· 昨天 12:15。确认后才会入账。',draft:{t:'草稿：餐饮 · ¥32.00 · 昨天 12:15 · 微信'}},
+ {q:'我的资料里有哪些讲 Java 并发的？',re:'在你的资料里找到 2 条与 Java 并发相关的内容：\n《Java 内存模型完全解析》— happens-before 与 volatile 语义（读到 40%）；\n《NAS 部署踩坑记录》第 3 节 — 线程池参数调优实践。',cites:['Java 内存模型完全解析','NAS 部署踩坑记录']},
+ {q:'给我讲讲这周的生活报告',re:'本周报告出炉 📊\n支出 ¥412（环比 ↓12%），大头是餐饮 ¥186；日记 5 篇，情绪整体积极；待办完成率 86%；卡券用了 1 张；读书 4.5 小时。下周二订阅将扣费 ¥68（Netflix）。',cites:['本周生活报告 · 10-06 ~ 10-12']},
+ {q:'总结一下我收藏的动效文章',re:'你收藏的 3 篇动效文章核心结论：\n1. 只动 transform / opacity，其余属性都会触发重排或重绘；\n2. 120 / 240 / 360ms 三档时长覆盖绝大多数场景；\n3. 列表进场 stagger 最多 6 张，超过即关。已可一键存为笔记。',cites:['CSS 动效性能优化指南','自部署 NAS 的 10 个实践']}
+];
+var rIdx=0;
+function ask(q2){
+  var u=document.createElement('div');u.className='msg u';u.textContent=q2;msgs.appendChild(u);
+  var a=document.createElement('div');a.className='msg a';a.innerHTML='<span class="cursor2"></span>';msgs.appendChild(a);
+  msgs.scrollTop=msgs.scrollHeight;
+  var hit=null;for(var i=0;i<replies.length;i++)if(replies[i].q===q2)hit=replies[i];
+  var r=hit||replies[(rIdx++)%replies.length];
+  var txt=r.re,k=0;
+  var timer=setInterval(function(){
+    k+=2;var done=k>=txt.length;
+    a.textContent=txt.slice(0,done?txt.length:k);
+    if(!done){var cu=document.createElement('span');cu.className='cursor2';a.appendChild(cu);}
+    msgs.scrollTop=msgs.scrollHeight;
+    if(done){clearInterval(timer);finish(a,r);}
+  },24);
+}
+function finish(a,r){
+  if(r.cites){var cd=document.createElement('div');cd.className='cites';
+    for(var i=0;i<r.cites.length;i++){var s=document.createElement('button');s.className='ct';s.innerHTML='<i data-lucide="link"></i>'+r.cites[i];s.onclick=function(){toast('原型演示：跳转引用来源');};cd.appendChild(s);}
+    a.appendChild(cd);}
+  if(r.draft){var d=document.createElement('div');d.className='draft';
+    d.innerHTML=r.draft.t+'<div class="dr-act"><button class="ok">确认入账</button><button class="no">取消</button></div>';
+    d.querySelector('.ok').onclick=function(){toast('已入账 ✓ 账本 · 微信 −¥32.00');d.remove();};
+    d.querySelector('.no').onclick=function(){d.remove();};
+    a.appendChild(d);}
+  if(window.lucide)lucide.createIcons({attrs:{width:11,height:11}});
+  msgs.scrollTop=msgs.scrollHeight;
+}
+var skills=win.querySelectorAll('.aiskills .chip2');
+for(var s2=0;s2<skills.length;s2++)skills[s2].onclick=function(){ask(this.dataset.q);};
+R('pc-aisend').onclick=function(){var v=R('pc-aiin').value.trim();if(v){R('pc-aiin').value='';ask(v);}};
+R('pc-aiin').addEventListener('keydown',function(e){if(e.key==='Enter')R('pc-aisend').click();});
+
+/* ---------- init ---------- */
+applyChrome();
+var pages0={today:'pc-today',life:'pc-life',hub:'pc-hub',ai:'pc-ai'};
+for(var pk in pages0)R(pages0[pk]).hidden=(pk!==state.page);
+if(state.page!=='today'){var pg0=R(pages0[state.page]);pg0.classList.add('page-in');}
+renderSpend();renderTodo();renderList();renderDetail();
+save();
+})();
+</script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>

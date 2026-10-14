@@ -1,10 +1,11 @@
 <template>
   <view class="record-list">
     <no-data v-if="!recordList || recordList.length < 1"/>
-    <uni-card v-else v-for="day in recordList" :key="day.id" :title="day.accountName"
+    <uni-card v-else v-for="(day, idx) in recordList" :key="day.id" :title="day.accountName"
               :extra="moneyFilter(day.balance)"
               margin="0"
-              class="record-card">
+              class="record-card"
+              :class="{ 'record-card--grow': highlightDate && day.payTime === highlightDate && idx === 0 }">
       <template v-slot:title>
         <view class="date">
           <view class="left">
@@ -66,6 +67,7 @@
 export default {
   name: "RecordList",
   props: {
+    highlightDate: { type: String, default: null },
     recordList: {
       type: Array,
       default: () => []
@@ -229,5 +231,16 @@ export default {
 
     }
   }
+}
+
+/* 记一笔完成：顶部生长进场 + 高亮渐隐（§7.4.2） */
+.record-card--grow {
+  animation: record-grow 1.2s $ease-spring both;
+}
+
+@keyframes record-grow {
+  0% { opacity: 0; transform: translateY(-18rpx) scaleY(0.6); box-shadow: 0 0 0 6rpx rgba(79, 134, 247, 0.35); }
+  45% { opacity: 1; transform: none; box-shadow: 0 0 0 6rpx rgba(79, 134, 247, 0.28); }
+  100% { opacity: 1; transform: none; box-shadow: $shadow-card; }
 }
 </style>

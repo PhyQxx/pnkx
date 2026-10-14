@@ -68,6 +68,15 @@
       </view>
 
       <!-- 删除按钮 -->
+      <button v-if="noteForm.id && !noteForm._localId" size="mini" @click="openHistory">历史版本</button>
+      <resource-links v-if="noteForm.id && !noteForm._localId" type="note" :id="noteForm.id" />
+      <view v-if="conflict" class="conflict-panel">
+        <text>服务端已有更新，当前草稿已保留。</text>
+        <text selectable>{{ conflict.title }}
+{{ conflict.content }}</text>
+        <button @click="saveCopy">草稿另存为新笔记</button>
+        <button @click="loadServerVersion">放弃草稿并加载服务端版本</button>
+      </view>
       <view class="delete-section" v-if="noteForm.id">
         <button class="delete-btn" @click="handleDelete">删除笔记</button>
       </view>
@@ -115,9 +124,10 @@
 </template>
 
 <script>
+import request from '@/utils/request'
+import ResourceLinks from '@/components/resource-links/index.vue'
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue'
 import {
-  getNote,
   addNote,
   updateNote,
   delNote,
@@ -127,12 +137,13 @@ import {
 export default {
   name: 'NoteDetail',
   components: {
-    uniPopup
+    uniPopup, ResourceLinks
   },
   data() {
     return {
       // 笔记ID（编辑模式）
       noteId: null,
+      localId: null,
       // 表单数据
       noteForm: {
         id: null,
@@ -144,10 +155,23 @@ export default {
       },
       // 原始数据（用于判断是否修改）
       originalData: null,
+      saving: false,
+      conflict: null,
+      draftReady: false,
       // 文件夹树
       folderTree: [],
       // 临时选中的文件夹ID
       tempFolderId: 0
+    }
+  },
+  watch: {
+    noteForm: {
+      deep: true,
+      handler(value) {
+        if (!this.draftReady) return
+        const key = this.draftKey()
+        if (key) uni.setStorageSync(key, JSON.stringify(value))
+      }
     }
   },
   computed: {
@@ -166,6 +190,7 @@ export default {
     }
   },
   onLoad(options) {
+    this.localId = options.localId || null
     if (options.id) {
       this.noteId = options.id
       this.loadNoteDetail()
@@ -173,7 +198,11 @@ export default {
       this.noteForm.folder = parseInt(options.folder)
       this.tempFolderId = this.noteForm.folder
     }
+    if (!options.id) this.restoreDraft()
     this.loadFolderTree()
+  },
+  onShow() {
+    if (this.noteId && this.originalData && !this.hasChanges()) this.loadNoteDetail()
   },
   onNavigationBarButtonTap(e) {
     if (e.index === 0) {
@@ -181,16 +210,58 @@ export default {
     }
   },
   methods: {
+    openHistory() { uni.navigateTo({ url: `/pages_life/workspace/recovery?id=${this.noteForm.id}` }) },
+    draftKey() {
+      const user = this.$store.state.user.id
+      return user ? 'note-draft:' + user + ':' + (this.localId ? 'local-' + this.localId : this.noteId || 'new') : null
+    },
+    restoreDraft() {
+      const key = this.draftKey()
+      try {
+        const cached = key && uni.getStorageSync(key)
+        if (cached) {
+          const draft = JSON.parse(cached)
+          if (this.noteForm.id && draft.revision !== this.noteForm.revision) this.conflict = this.noteForm
+          this.noteForm = draft
+          uni.showToast({ title: '已恢复本地草稿', icon: 'none' })
+        }
+      } catch { /* Keep server data if local storage is unreadable. */ }
+      this.draftReady = true
+    },
+    async loadServerVersion() {
+      const answer = await this.$dialog.confirm({ title: '放弃草稿', message: '确认放弃本地草稿并重新加载？' })
+      if (answer === false) return
+      const res = await request({ url: '/note/' + this.noteForm.id, method: 'get', offline: false })
+      this.draftReady = false
+      this.noteForm = res.data
+      this.originalData = JSON.parse(JSON.stringify(res.data))
+      this.conflict = null
+      const key = this.draftKey()
+      if (key) uni.removeStorageSync(key)
+      this.$nextTick(() => { this.draftReady = true })
+    },
+    async saveCopy() {
+      if (this.saving) return
+      this.saving = true
+      try {
+        const res = await addNote({ title: this.noteForm.title + '（冲突副本）',
+          content: this.noteForm.content, richText: this.noteForm.richText, folder: 0 })
+        if (res.code !== 200) throw new Error(res.msg)
+        uni.showToast({ title: '已保存副本', icon: 'success' })
+      } catch { uni.showToast({ title: '副本保存失败，草稿已保留', icon: 'none' }) }
+      finally { this.saving = false }
+    },
     /**
      * 加载笔记详情
      */
     async loadNoteDetail() {
       try {
         uni.showLoading({ title: '加载中' })
-        const res = await getNote(this.noteId)
+        const res = await request({ url: '/note/' + this.noteId, method: 'get', _noteLocalId: this.localId })
         this.noteForm = res.data;
         this.tempFolderId = this.noteForm.folder
         this.originalData = JSON.parse(JSON.stringify(this.noteForm))
+        this.restoreDraft()
       } catch (error) {
         console.error('加载笔记失败:', error)
         uni.showToast({ title: '加载失败', icon: 'none' })
@@ -301,12 +372,18 @@ export default {
      * 保存
      */
     async handleSave() {
+      if (this.saving) return
+      if (this.conflict) {
+        uni.showToast({ title: '请先处理版本冲突，草稿已保留', icon: 'none' })
+        return
+      }
       // 验证标题
       if (!this.noteForm.title || !this.noteForm.title.trim()) {
         uni.showToast({ title: '请输入笔记标题', icon: 'none' })
         return
       }
 
+      this.saving = true
       try {
         uni.showLoading({ title: '保存中' })
 
@@ -316,22 +393,42 @@ export default {
           folder: this.noteForm.folder || 0
         }
 
+        const submitted = JSON.stringify(this.noteForm)
+        if (data.content !== this.originalData?.content) {
+          const escaped = (data.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          data.richText = escaped.split('\n').map(line => '<p>' + (line || '<br>') + '</p>').join('')
+        }
+        let saved
         if (this.noteForm.id) {
-          await updateNote(data)
+          const res = await updateNote(data)
+          saved = res.data
+          if (res.code !== 200) throw new Error(res.msg)
           uni.showToast({ title: '修改成功', icon: 'success' })
         } else {
-          await addNote(data)
+          const res = await addNote(data)
+          saved = res.data
+          if (res.code !== 200) throw new Error(res.msg)
           uni.showToast({ title: '创建成功', icon: 'success' })
         }
 
-        // 延迟返回，让用户看到提示
-        setTimeout(() => {
-          uni.navigateBack()
-        }, 500)
+        if (JSON.stringify(this.noteForm) !== submitted) {
+          this.noteForm.id = saved.id
+          this.noteForm.revision = saved.revision
+          if (saved._localId) this.noteForm._localId = saved._localId
+          uni.showToast({ title: '已保存提交内容，后续编辑请再次保存', icon: 'none' })
+          return
+        }
+        this.draftReady = false
+        const key = this.draftKey()
+        if (key) uni.removeStorageSync(key)
+        // 草稿已确认持久化后返回。
+        uni.navigateBack()
       } catch (error) {
         console.error('保存失败:', error)
-        uni.showToast({ title: '保存失败', icon: 'none' })
+        this.conflict = error.current || null
+        uni.showToast({ title: error.code === 409 ? '版本冲突，草稿已保留' : '保存失败，草稿已保留', icon: 'none' })
       } finally {
+        this.saving = false
         uni.hideLoading()
       }
     },
@@ -340,6 +437,7 @@ export default {
      * 删除
      */
     async handleDelete() {
+      if (this.saving) return
       try {
         await this.$dialog.confirm({
           title: '删除确认',
@@ -360,6 +458,7 @@ export default {
           console.error('删除失败:', error)
         }
       } finally {
+        this.saving = false
         uni.hideLoading()
       }
     }

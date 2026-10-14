@@ -27,6 +27,7 @@
                 </el-option>
             </el-option-group>
         </el-select>
+        <el-button v-if="show" text @click="$router.push({ path: '/resources/search', query: { q: lastQuery } })">筛选与全部结果</el-button>
     </div>
 </template>
 
@@ -42,6 +43,9 @@ export default {
     data() {
         return {
             search: '',
+            lastQuery: '',
+            timer: null,
+            sequence: 0,
             options: [],
             searchPool: [],
             show: false,
@@ -75,6 +79,11 @@ export default {
     mounted() {
         this.searchPool = this.generateRoutes(this.routes)
     },
+    beforeUnmount() {
+        clearTimeout(this.timer)
+        this.sequence++
+        document.body.removeEventListener('click', this.close)
+    },
     methods: {
         /**
          * 翻译账单类型
@@ -107,6 +116,12 @@ export default {
             this.show = false
         },
         change(query) {
+            if (query.route) {
+                this.$router.push(query.route)
+                this.search = ''
+                this.close()
+                return
+            }
             if (query.type === 'article') {
                 this.$router.push('/blog/articledetails?adminArticleId='+query.id);
             } else if (query.type === 'todo') {
@@ -187,24 +202,29 @@ export default {
          * 搜索防抖
          */
         querySearch(query) {
-            if (query !== '') {
-                this.$debounce(() => {
-                    this.retrievalLoading = true;
-                    globalSearch({q: query}).then(res => {
-                        const labels = { article: '博客文章', todo: '待办事项', bookkeeping: '生活账本', diary: '日记', note: '笔记', book: '书籍', recipe: '菜谱', commemoration: '纪念日', subscription: '订阅', shopping: '购物清单' }
-                        const groups = new Map()
-                        ;(res.data || []).forEach(item => {
-                            const label = labels[item.type] || item.type
-                            if (!groups.has(label)) groups.set(label, [])
-                            groups.get(label).push(item)
-                        })
-                        this.options = Array.from(groups, ([label, options]) => ({ label, options }))
-                        this.retrievalLoading = false;
-                    })
-                }, 1200)()
-            } else {
-                this.options = [];
+            clearTimeout(this.timer)
+            const sequence = ++this.sequence
+            this.lastQuery = query
+            if (!query.trim()) {
+                this.options = []
+                this.retrievalLoading = false
+                return
             }
+            this.timer = setTimeout(async () => {
+                this.retrievalLoading = true
+                try {
+                    const res = await globalSearch({ q: query })
+                    if (sequence !== this.sequence) return
+                    const labels = { article: '博客文章', todo: '待办事项', bookkeeping: '生活账本', diary: '日记', file: '文件', note: '笔记', book: '书籍', recipe: '菜谱', commemoration: '纪念日', subscription: '订阅', shopping: '购物清单', webArticle: '剪藏' }
+                    const groups = new Map()
+                    ;(res.data || []).forEach(item => {
+                        const label = labels[item.type] || item.type
+                        if (!groups.has(label)) groups.set(label, [])
+                        groups.get(label).push(item)
+                    })
+                    this.options = Array.from(groups, ([label, options]) => ({ label, options }))
+                } finally { if (sequence === this.sequence) this.retrievalLoading = false }
+            }, 350)
         },
         ishttp(url) {
             return url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1

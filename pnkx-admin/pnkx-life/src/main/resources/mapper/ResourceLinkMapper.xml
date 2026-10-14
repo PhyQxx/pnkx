@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.ResourceLinkMapper">
+    <resultMap id="link" type="com.pnkx.life.service.workspace.ResourceLink">
+        <result property="ownerId" column="owner_id"/><result property="sourceType" column="source_type"/><result property="sourceId" column="source_id"/>
+        <result property="targetType" column="target_type"/><result property="targetId" column="target_id"/><result property="relationType" column="relation_type"/>
+    </resultMap>
+    <insert id="add">insert ignore into px_resource_link(owner_id,source_type,source_id,target_type,target_id,relation_type) values(#{ownerId},#{sourceType},#{sourceId},#{targetType},#{targetId},#{relationType})</insert>
+    <delete id="remove">delete from px_resource_link where owner_id=#{ownerId} and source_type=#{sourceType} and source_id=#{sourceId} and target_type=#{targetType} and target_id=#{targetId} and relation_type='related'</delete>
+    <select id="outgoing" resultMap="link">select * from px_resource_link where source_type=#{type} and source_id=#{id} and owner_id=#{owner} order by create_time,target_type,target_id</select>
+    <select id="incoming" resultMap="link">select * from px_resource_link where target_type=#{type} and target_id=#{id} and owner_id=#{owner} order by create_time,source_type,source_id</select>
+    <delete id="clearBody">delete from px_resource_link where owner_id=#{owner} and source_type=#{type} and source_id=#{id} and relation_type='body'</delete>
+    <insert id="visit">insert into px_resource_state(user_id,resource_type,resource_id,last_opened_at) values(#{owner},#{type},#{id},CURRENT_TIMESTAMP) on duplicate key update last_opened_at=CURRENT_TIMESTAMP</insert>
+    <insert id="inbox">insert into px_resource_state(user_id,resource_type,resource_id,inbox) values(#{owner},#{type},#{id},#{inbox}) on duplicate key update inbox=#{inbox}</insert>
+    <insert id="starState">insert into px_resource_state(user_id,resource_type,resource_id,starred) values(#{owner},'webArticle',#{id},#{starred}) on duplicate key update starred=#{starred}</insert>
+    <insert id="openState">insert into px_resource_state(user_id,resource_type,resource_id,opened) values(#{owner},'webArticle',#{id},#{opened}) on duplicate key update opened=#{opened}</insert>
+    <resultMap id="actionResult" type="java.util.HashMap"><result property="sourceId" column="source_id" javaType="java.lang.Long"/><result property="targetType" column="target_type" javaType="java.lang.String"/><result property="targetId" column="target_id" javaType="java.lang.Long"/></resultMap>
+    <select id="action" resultMap="actionResult">select source_id,target_type,target_id from px_resource_action where owner_id=#{owner} and request_id=#{requestId}</select>
+    <insert id="actionSave">insert into px_resource_action(owner_id,request_id,source_type,source_id,target_type,target_id) values(#{owner},#{requestId},'webArticle',#{sourceId},#{targetType},#{targetId})</insert>
+</mapper>

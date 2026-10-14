@@ -46,7 +46,7 @@ class MybatisMapperBindingTest {
      */
     private static final List<String> DOMAIN_PACKAGES = Arrays.asList(
             "com.pnkx.life.domain", "com.pnkx.blog.domain", "com.pnkx.chat.domain",
-            "com.pnkx.material.domain", "com.pnkx.ai.domain", "com.pnkx.system.domain",
+            "com.pnkx.ai.domain", "com.pnkx.system.domain",
             "com.pnkx.common.core.domain", "com.pnkx.framework.web.domain", "com.pnkx.generator.domain",
             "com.pnkx.quartz.domain");
 

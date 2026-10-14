@@ -217,116 +217,8 @@
       </el-dropdown>
     </div>
 
-    <!-- 新增/修改记录弹窗 -->
-    <el-dialog
-      :title="recordTitle"
-      v-model="record"
-      width="520px"
-      custom-class="modern-dialog"
-      :modal-append-to-body="true"
-      @closed="resetRecordForm"
-    >
-      <el-tabs v-model="recordForm.typeDifference" class="modern-tabs" @tab-click="init">
-        <el-tab-pane label="支出" name="1" :disabled="Boolean(recordForm.id)" />
-        <el-tab-pane label="收入" name="0" :disabled="Boolean(recordForm.id)" />
-        <el-tab-pane label="转账" name="2" :disabled="Boolean(recordForm.id)" />
-      </el-tabs>
-      <el-form ref="recordForm" :model="recordForm" :rules="rules" label-position="top" class="modern-form">
-        <el-form-item v-if="recordForm.typeDifference !== '2'" label="分类" prop="type">
-          <el-cascader
-            :key="1"
-            v-model="recordForm.type"
-            :options="typeList"
-            :props="typeProps"
-            :show-all-levels="false"
-            placeholder="请选择分类"
-            style="width: 100%"
-            @change="selectTypeTargetAdd"
-          />
-        </el-form-item>
-        <el-form-item v-if="recordForm.typeDifference !== '2'" label="账户" prop="account">
-          <el-cascader
-            :key="2"
-            v-model="recordForm.account"
-            :options="accountList"
-            :props="accountProps"
-            :show-all-levels="false"
-            placeholder="请选择账户"
-            style="width: 100%"
-            @change="selectAccountTargetAdd"
-          />
-        </el-form-item>
-        <el-form-item v-if="recordForm.typeDifference === '2'" label="转出账户" prop="account">
-          <el-cascader
-            :key="3"
-            v-model="recordForm.account"
-            :options="accountList"
-            :props="accountProps"
-            :show-all-levels="false"
-            placeholder="请选择转出账户"
-            style="width: 100%"
-            @change="selectAccountTargetAdd"
-          />
-        </el-form-item>
-        <el-form-item v-if="recordForm.typeDifference === '2'" label="转入账户" prop="otherAccount">
-          <el-cascader
-            :key="4"
-            v-model="recordForm.otherAccount"
-            :options="accountList"
-            :props="accountProps"
-            :show-all-levels="false"
-            placeholder="请选择转入账户"
-            style="width: 100%"
-            @change="selectOtherAccountTargetAdd"
-          />
-        </el-form-item>
-        <el-form-item label="金额" prop="money">
-          <div class="money-input-wrapper">
-            <span class="money-preview">{{ recordForm.money }}</span>
-            <el-input v-model="money" class="money-input" placeholder="请输入金额" />
-          </div>
-        </el-form-item>
-        <el-form-item label="时间">
-          <el-date-picker
-            v-model="recordForm.payTime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            type="datetime"
-            placeholder="请选择时间"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item v-if="recordForm.typeDifference === '1'" label="关联纪念日">
-          <el-select
-            v-model="recordForm.commemorationDayId"
-            clearable
-            filterable
-            placeholder="可选；礼物分类保存时也会自动匹配"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="day in commemorationDayList"
-              :key="day.id"
-              :label="day.name"
-              :value="day.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input
-            v-model="recordForm.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button class="btn-cancel" @click="record = false">取消</el-button>
-          <el-button type="primary" class="btn-confirm" @click="addRecord">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <!-- 新增/修改记录弹窗（共用组件，快捷录入亦复用） -->
+    <record-form-dialog v-model="record" :edit-data="editData" @saved="listRecord" />
 
     <!-- 批量记账弹窗 -->
     <el-dialog
@@ -518,7 +410,7 @@ import {
 } from '@/api/px/life/bookkeeping/record'
 import recordBatchMixin from './recordBatchMixin'
 import {timeFilter} from "../../../../utils/filters.js";
-import { listDay } from '@/api/px/life/commemorationDay'
+import RecordFormDialog from '@/components/RecordFormDialog/index.vue'
 import BkAccount from './account.vue'
 import RecurringPanel from './RecurringPanel.vue'
 import BkClassification from './classification.vue'
@@ -526,7 +418,7 @@ import BkStatistics from './statistics.vue'
 
 export default {
   name: 'Record',
-  components: { BkAccount, BkClassification, BkStatistics, RecurringPanel },
+  components: { RecordFormDialog, BkAccount, BkClassification, BkStatistics, RecurringPanel },
   mixins: [recordBatchMixin],
   data() {
     return {
@@ -550,42 +442,14 @@ export default {
       // 分页
       total: 0,
       MoneyTotal: '',
-      // 记录金额
-      money: '',
-      // 表单数据
-      recordForm: {
-        typeDifference: '1',
-        payTime: this.parseTime(new Date()),
-        type: '',
-        account: '',
-        otherAccount: '',
-        commemorationDayId: null,
-        money: 0,
-        remark: ''
-      },
-      // 分类下拉
+      // 查询筛选/批量弹窗用的下拉数据
       typeList: [],
-      typeProps: {
-        value: 'id',
-        label: 'typeName'
-      },
-      // 账户下拉
+      typeProps: { value: 'id', label: 'typeName' },
       accountList: [],
-      commemorationDayList: [],
-      accountProps: {
-        value: 'id',
-        label: 'accountName'
-      },
-      // 校验规则
-      rules: {
-        type: { required: true, message: '请选择分类', trigger: 'change' },
-        account: { required: true, message: '请选择账户', trigger: 'change' },
-        otherAccount: { required: true, message: '请选择账户', trigger: 'change' },
-        money: { required: true, message: '请输入金额', trigger: 'blur' }
-      },
-      // 弹窗
+      accountProps: { value: 'id', label: 'accountName' },
+      // 弹窗（共用组件 RecordFormDialog）
       record: false,
-      recordTitle: '',
+      editData: null,
       recordData: [],
       // 右键菜单
       contextMenuVisible: false,
@@ -593,12 +457,6 @@ export default {
       contextMenuItems: [],
       // 当前选中
       active: null
-    }
-  },
-  watch: {
-    money(value) {
-      // eslint-disable-next-line no-eval
-      this.recordForm.money = eval(value)
     }
   },
   async mounted() {
@@ -648,28 +506,16 @@ export default {
     init() {
       this.listClassification()
       this.listAccount()
-      this.listCommemorationDays()
       this.listRecord()
     },
-    /**
-     * 获取分类数据
-     */
     listClassification() {
-      getClassificationList({ typeDifference: this.recordForm.typeDifference }).then(res => {
+      getClassificationList({ typeDifference: this.queryForm.typeDifference || '1' }).then(res => {
         this.typeList = res.data
       })
     },
-    /**
-     * 获取账户数据
-     */
     listAccount() {
       getAccountList().then(res => {
         this.accountList = res.data
-      })
-    },
-    listCommemorationDays() {
-      listDay({ pageNum: 1, pageSize: 200 }).then(res => {
-        this.commemorationDayList = res.rows || res.data || []
       })
     },
     /**
@@ -716,60 +562,10 @@ export default {
       this.listRecord()
     },
     /**
-     * 弹窗获取分类选中节点的目标值
-     */
-    selectTypeTargetAdd(item) {
-      this.recordForm.type = item[1]
-    },
-    /**
-     * 弹窗获取账户选中节点的目标值
-     */
-    selectAccountTargetAdd(item) {
-      this.recordForm.account = item[1]
-    },
-    /**
-     * 弹窗获取转入账户选中节点的目标值
-     */
-    selectOtherAccountTargetAdd(item) {
-      this.recordForm.otherAccount = item[1]
-    },
-    /**
      * 打开新增记录弹窗
      */
     openRecord() {
-      this.recordTitle = '新增记录'
       this.record = true
-    },
-    /**
-     * 新增/修改账户记录
-     */
-    addRecord() {
-      this.$refs.recordForm.validate(valid => {
-        if (valid) {
-          if (this.recordForm.typeDifference === '2') {
-            this.recordForm.type = 0
-          }
-          if (this.recordForm.account === this.recordForm.otherAccount) {
-            this.$message.warning('转出账户和转入账户不能相同')
-            return
-          }
-          if (this.recordForm.id) {
-            updateRecord(this.recordForm).then(() => {
-              this.record = false
-              this.$notify.success('修改记录成功')
-              this.listRecord()
-              this.resetRecordForm()
-            })
-          } else {
-            addRecord(this.recordForm).then(() => {
-              this.record = false
-              this.$notify.success('新增记录成功')
-              this.listRecord()
-              this.resetRecordForm()
-            })
-          }
-        }
-      })
     },
     /**
      * 清除查询表单数据
@@ -787,25 +583,6 @@ export default {
       this.listRecord()
     },
     /**
-     * 清除表单数据
-     */
-    resetRecordForm() {
-      this.recordForm = {
-        payTime: this.parseTime(new Date()),
-        typeDifference: '1',
-        type: '',
-        account: '',
-        otherAccount: '',
-        commemorationDayId: null,
-        money: '',
-        remark: ''
-      }
-      this.money = ''
-      if (this.$refs.recordForm) {
-        this.$refs.recordForm.clearValidate()
-      }
-    },
-    /**
      * 切换当前页
      */
     handleCurrentChange(val) {
@@ -818,9 +595,9 @@ export default {
     getRecord(id) {
       this.loading = true
       getRecord(id).then(res => {
-        this.recordForm = res.data
-        this.recordForm.typeDifference = this.recordForm.typeObject.typeDifference
-        this.recordTitle = '修改记录'
+        const data = res.data
+        data.typeDifference = data.typeObject.typeDifference
+        this.editData = data
         this.record = true
         this.loading = false
       })

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 姨妈记录Service业务层处理
@@ -54,12 +53,12 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
     }
 
     /**
-     * 查询姨妈记录列表
+     * 查询姨妈记录列表（日历视图，家庭成员互见）
      *
      * @param pxMenstruationRecord 姨妈记录
      * @return 姨妈记录
      */
-    @DataScopeSelf(onlySelf = true)
+    @DataScopeSelf
     @Override
     public List<PxMenstruationRecord> selectPxMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         pxMenstruationRecord.setUserId(Long.valueOf(SecurityUtils.getUserId()));
@@ -68,12 +67,12 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
 
 
     /**
-     * 查询姨妈记录列表
+     * 查询姨妈记录列表（时间线/统计，家庭成员互见）
      *
      * @param pxMenstruationRecord 姨妈记录
      * @return 姨妈记录
      */
-    @DataScopeSelf(onlySelf = true)
+    @DataScopeSelf
     @Override
     public List<PxMenstruationRecord> getPxMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         pxMenstruationRecord.setUserId(Long.valueOf(SecurityUtils.getUserId()));
@@ -144,17 +143,22 @@ public class PxMenstruationRecordServiceImpl implements IPxMenstruationRecordSer
     }
 
     private void requireOwner(PxMenstruationRecord entity) {
-        if (entity == null || !Objects.equals(SecurityUtils.getUserId(), entity.getCreateBy())) {
+        // 家庭成员可互相协作修改/删除；管理员不限
+        if (entity == null || entity.getCreateBy() == null) {
+            throw new ServiceException("记录不存在或无权操作");
+        }
+        List<Long> visibleUserIds = dataPermissionService.getVisibleUserIds();
+        if (visibleUserIds != null && !visibleUserIds.contains(Long.valueOf(entity.getCreateBy()))) {
             throw new ServiceException("记录不存在或无权操作");
         }
     }
 
     /**
-     * APP首页获取姨妈提醒列表
+     * APP首页获取姨妈提醒列表（家庭成员互见）
      * @param pxMenstruationRecord
      * @return
      */
-    @DataScopeSelf(onlySelf = true)
+    @DataScopeSelf
     @Override
     public List<PxMenstruationRecord> selectMenstruationRecordList(PxMenstruationRecord pxMenstruationRecord) {
         return pxMenstruationRecordMapper.selectMenstruationRecordList(pxMenstruationRecord);

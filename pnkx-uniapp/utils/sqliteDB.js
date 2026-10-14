@@ -1,3 +1,5 @@
+import { getOfflineAccount } from '@/utils/offlineAccount'
+import { withNoteWriteLock } from '@/utils/noteOffline'
 /**
  * SQLite 数据库封装模块
  * 基于 plus.sqlite API，仅 APP-PLUS 环境可用
@@ -15,12 +17,8 @@
 
 // #ifdef APP-PLUS
 
-const DB_NAME = '_pnkx_offline'
-const DB_PATH = '_doc/pnkx_offline.db'
-const DB_VERSION = 16 // 数据库版本号，结构变更时递增
-
-let dbOpened = false
-let openPromise = null  // 缓存 open promise，防止竞态重复打开
+const DB_VERSION = 16 // Existing per-account schemas retain the additive revision migration.
+const connections = new Map()
 
 /**
  * 本地表列名白名单（与服务器数据库列名完全一致）
@@ -34,7 +32,7 @@ const TABLE_COLUMNS = {
   // 记账记录 — Mapper: account, other_account, type, money, images, pay_time, version
   px_bookkeeping_record: ['id', 'version', 'account', 'other_account', 'type', 'money', 'images', 'pay_time', 'del_flag', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
   // 笔记 — Mapper: title, content, rich_text, folder, `order`, del_flag, version
-  px_note: ['id', 'title', 'content', 'rich_text', 'folder', 'order', 'del_flag', 'version', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
+  px_note: ['revision', 'id', 'title', 'content', 'rich_text', 'folder', 'order', 'del_flag', 'version', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
   // 纪念日 — Mapper: name, icon, date, `repeat`, order_num, del_flag, version
   px_commemoration_day: ['id', 'name', 'icon', 'date', 'repeat', 'order_num', 'del_flag', 'version', 'client_uuid', 'create_by', 'create_time', 'update_by', 'update_time', 'remark', '_sync_status', '_server_id', '_updated_at'],
   // 卡券定义（对应服务器 px_lovers_card，来自同步接口）
@@ -152,60 +150,41 @@ const IGNORE_FIELDS = new Set([
 ])
 
 const sqliteDB = {
-  /** 打开数据库（带防竞态锁） */
+  /** Each authenticated account gets a separate file; legacy pnkx_offline.db is retained untouched. */
   async open() {
-    if (dbOpened) return
-    if (openPromise) return openPromise
-    openPromise = new Promise((resolve, reject) => {
-      plus.sqlite.openDatabase({
-        name: DB_NAME,
-        path: DB_PATH,
-        success: () => {
-          dbOpened = true
-          openPromise = null
-          console.log('[SQLite] 数据库已打开')
-          resolve()
-        },
-        fail: (e) => {
-          openPromise = null
-          // 如果报 "Same Name Already Open"，说明数据库已经打开了
-          if (e.code === -1402) {
-            dbOpened = true
-            console.log('[SQLite] 数据库已处于打开状态')
-            resolve()
-            return
-          }
-          console.error('[SQLite] 数据库打开失败:', e)
-          reject(e)
-        }
-      })
-    })
-    return openPromise
+    const owner = getOfflineAccount()
+    if (!owner) throw new Error('登录后才能使用离线资料')
+    if (!connections.has(owner)) {
+      const name = '_pnkx_offline_' + owner
+      const path = '_doc/pnkx_offline_' + owner + '.db'
+      connections.set(owner,new Promise((resolve,reject) => {
+        plus.sqlite.openDatabase({ name, path, success: () => resolve({ owner,name }), fail: error => {
+          if (error.code === -1402) resolve({ owner,name })
+          else { connections.delete(owner); reject(error) }
+        } })
+      }))
+    }
+    const connection = await connections.get(owner)
+    if (getOfflineAccount() !== owner) throw new Error('账号已变化，停止离线操作')
+    return connection
   },
 
-  /** 关闭数据库 */
   async close() {
-    if (!dbOpened) return
-    return new Promise((resolve, reject) => {
-      plus.sqlite.closeDatabase({
-        name: DB_NAME,
-        success: () => {
-          dbOpened = false
-          resolve()
-        },
-        fail: reject
-      })
-    })
+    for (const [owner,pending] of connections) {
+      const connection = await pending
+      await new Promise((resolve,reject) => plus.sqlite.closeDatabase({ name: connection.name, success: resolve, fail: reject }))
+      connections.delete(owner)
+    }
   },
 
   /** 执行 SQL（无返回值，用于 INSERT/UPDATE/DELETE/CREATE） */
   async executeSql(sql) {
-    await this.open()
+    const connection = await this.open()
     return new Promise((resolve, reject) => {
       plus.sqlite.executeSql({
-        name: DB_NAME,
+        name: connection.name,
         sql,
-        success: resolve,
+        success: result => getOfflineAccount() === connection.owner ? resolve(result) : reject(new Error('账号已变化')),
         fail: (e) => {
           console.error('[SQLite] SQL执行失败:', sql.substring(0, 100), e)
           reject(e)
@@ -216,12 +195,12 @@ const sqliteDB = {
 
   /** 查询 SQL（返回行数组） */
   async selectSql(sql) {
-    await this.open()
+    const connection = await this.open()
     return new Promise((resolve, reject) => {
       plus.sqlite.selectSql({
-        name: DB_NAME,
+        name: connection.name,
         sql,
-        success: (data) => resolve(data || []),
+        success: data => getOfflineAccount() === connection.owner ? resolve(data || []) : reject(new Error('账号已变化')),
         fail: (e) => {
           console.error('[SQLite] SQL查询失败:', sql.substring(0, 100), e)
           reject(e)
@@ -339,6 +318,7 @@ const sqliteDB = {
 
       // 笔记 — 对齐服务器 px_note 列
       `CREATE TABLE IF NOT EXISTS px_note (
+        revision INTEGER,
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title VARCHAR(200),
         content TEXT,
@@ -542,8 +522,14 @@ const sqliteDB = {
     for (const sql of tables) {
       await this.executeSql(sql)
     }
+    await this.executeSql("UPDATE _sync_queue SET status='pending', retry_count=CASE WHEN retry_count < 1 THEN 1 ELSE retry_count END WHERE status='syncing'")
 
     // 写入/更新版本号
+    // Additive migration: legacy cached notes retain NULL until refreshed from server.
+    const noteColumns = await this.selectSql('PRAGMA table_info(px_note)')
+    if (!noteColumns.some(column => column.name === 'revision')) {
+      await this.executeSql('ALTER TABLE px_note ADD COLUMN revision INTEGER')
+    }
     await this.executeSql(`DELETE FROM _db_meta`)
     await this.executeSql(`INSERT INTO _db_meta (ver) VALUES (${DB_VERSION})`)
 
@@ -678,7 +664,10 @@ const sqliteDB = {
    * 批量 upsert（同步缓存用）
    * @returns {{ total: number, failed: number }} 成功/失败计数
    */
-  async upsertBatch(tableName, rows) {
+  async upsertBatch(tableName, rows, locked = false) {
+    if (tableName === 'px_note' && !locked) {
+      return withNoteWriteLock(() => this.upsertBatch(tableName, rows, true))
+    }
     if (!rows || rows.length === 0) return { total: 0, failed: 0 }
     let failed = 0
     for (const row of rows) {
@@ -689,15 +678,17 @@ const sqliteDB = {
         let existing = []
         if (row.id) {
           existing = await this.selectSql(
-            `SELECT id FROM ${tableName} WHERE \`_server_id\` = ${this._escapeValue(row.id)} LIMIT 1`
+            `SELECT * FROM ${tableName} WHERE \`_server_id\` = ${this._escapeValue(row.id)} LIMIT 1`
           )
         }
         if ((!existing || existing.length === 0) && clientUuid) {
           existing = await this.selectSql(
-            `SELECT id FROM ${tableName} WHERE \`client_uuid\` = ${this._escapeValue(clientUuid)} LIMIT 1`
+            `SELECT * FROM ${tableName} WHERE \`client_uuid\` = ${this._escapeValue(clientUuid)} LIMIT 1`
           )
         }
 
+        if (tableName === 'px_note' && (existing[0]?._sync_status === 0 ||
+          (existing[0]?.revision && (!row.revision || existing[0].revision > row.revision)))) continue
         const record = {
           ...row,
           _server_id: row.id || row._server_id,
@@ -715,7 +706,7 @@ const sqliteDB = {
           // 这种情况发生在上行同步的 _syncOneTask 更新 _server_id 失败时
           if (clientUuid && row.id) {
             const offlineExisting = await this.selectSql(
-              `SELECT id FROM ${tableName} WHERE \`client_uuid\` = ${this._escapeValue(clientUuid)} AND \`_server_id\` IS NULL LIMIT 1`
+              `SELECT * FROM ${tableName} WHERE \`client_uuid\` = ${this._escapeValue(clientUuid)} AND \`_server_id\` IS NULL LIMIT 1`
             )
             if (offlineExisting && offlineExisting.length > 0) {
               // 合并：更新离线记录的 _server_id 和其他字段

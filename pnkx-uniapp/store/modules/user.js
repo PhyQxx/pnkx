@@ -53,6 +53,7 @@ const user = {
       const uuid = userInfo.uuid
       return new Promise((resolve, reject) => {
         login(username, password, code, uuid).then(res => {
+          commit('SET_ID', '')
           setToken(res.token)
           commit('SET_TOKEN', res.token)
           resolve()
@@ -82,6 +83,13 @@ const user = {
           commit('SET_ID', userid)
           commit('SET_NAME', username)
           commit('SET_AVATAR', avatar)
+          // #ifdef APP-PLUS
+          import('@/utils/sqliteDB').then(async ({ default: db }) => {
+            await db.open(); await db.initTables()
+            const { default: scheduler } = await import('@/utils/syncScheduler')
+            scheduler.start(); scheduler.triggerSync('account_ready')
+          }).catch(error => console.warn('[Offline] 初始化失败', error?.message))
+          // #endif
           resolve(res)
         }).catch(error => {
           reject(error)
@@ -93,6 +101,7 @@ const user = {
     LogOut({commit, state}) {
       return new Promise((resolve) => {
         logout(state.token).finally(() => {
+          commit('SET_ID', '')
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])

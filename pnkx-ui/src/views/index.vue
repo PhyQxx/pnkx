@@ -6,6 +6,7 @@
 -->
 <template>
   <div class="workbench-dashboard">
+    <workspace-summary />
     <!-- 管理员/超级管理员仪表盘 -->
     <div v-hasRole="['super', 'admin']" class="dashboard-layout">
       <!-- 左栏：三模块纵向排列 -->
@@ -160,6 +161,7 @@
 </template>
 
 <script>
+import WorkspaceSummary from '@/components/WorkspaceSummary'
 import { listRecord } from '@/api/px/life/bookkeeping/record'
 import { getAllTodoList } from '@/api/px/homepage'
 import Calendar from '@/views/homepage/calendar.vue'
@@ -169,6 +171,7 @@ import BillAnalysisDialog from '@/views/homepage/components/BillAnalysisDialog.v
 export default {
   name: 'Index',
   components: {
+    WorkspaceSummary,
     Calendar,
     ReminderPanel,
     BillAnalysisDialog

@@ -5,7 +5,8 @@
 <mapper namespace="com.pnkx.life.mapper.PxNoteMapper">
 
     <resultMap type="PxNote" id="PxNoteResult">
-        <result property="id" column="id"/>
+        <result property="syncSequence" column="sync_sequence"/><result property="id" column="id"/>
+        <result property="revision" column="revision"/>
         <result property="title" column="title"/>
         <result property="content" column="content"/>
         <result property="richText" column="rich_text"/>
@@ -21,8 +22,10 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
+    <resultMap type="PxNoteFolder" id="PxNoteListResult" extends="PxNoteResult"/>
+
     <sql id="selectPxNoteVo">
-        select id,
+        select id, revision,
                title,
                content,
                rich_text,
@@ -39,8 +42,8 @@
         from px_note
     </sql>
 
-    <select id="selectPxNoteList" parameterType="PxNote" resultMap="PxNoteResult">
-        select id,
+    <select id="selectPxNoteList" parameterType="PxNote" resultMap="PxNoteListResult">
+        select id, revision,
         title,
         LEFT(regexp_replace(content, '&lt;[^>]+>', ''), 300) content,
         folder,
@@ -65,22 +68,21 @@
             <if test="version != null  and version != ''">
                 and version = #{version}
             </if>
-            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
-            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
-                and create_by in
-                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
-                    #{uid}
-                </foreach>
-            </if>
+            and create_by = #{createBy}
         </where>
-        ORDER BY isnull(`order`) || `order`='' ,`order`,
+        ORDER BY (`order` is null or `order` = 0) ,`order`,
         update_time DESC
     </select>
 
-    <select id="selectPxNoteById" parameterType="Long"
+    <select id="selectPxNoteById"
             resultMap="PxNoteResult">
         <include refid="selectPxNoteVo"/>
-        where id = #{id}
+        where id = #{id} and create_by = #{userId} and del_flag = 0
+    </select>
+
+    <select id="selectPxNoteForUpdate" resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where id = #{id} and create_by = #{userId} and del_flag = 0 for update
     </select>
 
     <insert id="insertPxNote" parameterType="PxNote" useGeneratedKeys="true"
@@ -146,64 +148,44 @@
 
     <update id="updatePxNote" parameterType="PxNote">
         update px_note
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="title != null">title =
-                #{title},
-            </if>
-            <if test="content != null">content =
-                #{content},
-            </if>
-            <if test="richText != null">rich_text =
-                #{richText},
-            </if>
-            <if test="folder != null">folder =
-                #{folder},
-            </if>
-            <if test="order != null">`order` =
-                #{order},
-            </if>
-            <if test="delFlag != null">del_flag =
-                #{delFlag},
-            </if>
-            <if test="version != null">version =
-                #{version},
-            </if>
-            <if test="createBy != null">create_by =
-                #{createBy},
-            </if>
-            <if test="createTime != null">create_time =
-                #{createTime},
-            </if>
-            <if test="updateBy != null">update_by =
-                #{updateBy},
-            </if>
-            <if test="updateTime != null">update_time =
-                #{updateTime},
-            </if>
-            <if test="remark != null">remark =
-                #{remark},
-            </if>
-        </trim>
-        where id = #{id}
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="richText != null">rich_text = #{richText},</if>
+            <if test="folder != null">folder = #{folder},</if>
+            <if test="order != null">`order` = #{order},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            revision = revision + 1, update_by = #{updateBy}, update_time = #{updateTime}
+        </set>
+        where id = #{id} and create_by = #{updateBy} and del_flag = 0 and revision = #{revision}
     </update>
 
-    <delete id="deletePxNoteById" parameterType="Long">
-        update px_note
-        set del_flag = 1
-        where id = #{id}
+    <select id="selectOwnedIds" resultType="java.lang.Long">
+        select id from px_note where create_by = #{userId} and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <delete id="deletePxNoteById">
+        update px_note set del_flag = 1, revision = revision + 1, update_time = CURRENT_TIMESTAMP, update_by = #{userId}
+        where id = #{id} and create_by = #{userId} and del_flag = 0
     </delete>
 
-    <delete id="deletePxNoteByIds" parameterType="String">
-        update px_note set del_flag = 1 where id in
-        <foreach item="id" collection="array" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+    <delete id="deletePxNoteByIds">
+        update px_note set del_flag = 1, revision = revision + 1, update_time = CURRENT_TIMESTAMP, update_by = #{userId}
+        where create_by = #{userId} and del_flag = 0 and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
     <!-- 根据客户端唯一标识查询（幂等去重） -->
-    <select id="selectByClientUuid" parameterType="String" resultMap="PxNoteResult">
+    <select id="selectByClientUuid" resultMap="PxNoteResult">
         <include refid="selectPxNoteVo"/>
-        where client_uuid = #{clientUuid} limit 1
+        where client_uuid = #{clientUuid} and create_by = #{userId} limit 1
+    </select>
+
+    <select id="selectByClientUuidForUpdate" resultMap="PxNoteResult">
+        <include refid="selectPxNoteVo"/>
+        where client_uuid = #{clientUuid} and create_by = #{userId} limit 1 for update
     </select>
 
     <!-- 增量查询（离线同步用，包含软删除记录以便客户端同步删除） -->
@@ -211,7 +193,7 @@
         <include refid="selectPxNoteVo"/>
         where create_by = #{createBy}
         and COALESCE(update_time, create_time, '2020-01-01 00:00:00') &gt;= #{since}
-        order by COALESCE(update_time, create_time) asc
+        order by COALESCE(update_time, create_time) asc, id asc
         limit #{offset}, #{limit}
     </select>
 
@@ -228,4 +210,16 @@
         order by update_time desc
         limit #{limit}
     </select>
+    <insert id="snapshot">insert ignore into px_note_history(note_id,owner_id,revision,title,content,rich_text)
+        values(#{id},#{createBy},#{revision},#{title},#{content},#{richText})</insert>
+    <select id="historyRevisions" resultType="long">select revision from px_note_history where note_id=#{id} and owner_id=#{owner} order by revision desc limit 51</select>
+    <select id="history" resultMap="PxNoteResult">select note_id as id,revision,title,create_time from px_note_history where note_id=#{id} and owner_id=#{owner} order by revision desc limit 50</select>
+    <select id="historical" resultMap="PxNoteResult">select note_id as id,revision,title,content,rich_text,create_time from px_note_history where note_id=#{id} and owner_id=#{owner} and revision=#{revision}</select>
+    <delete id="pruneHistory">delete from px_note_history where note_id=#{id} and owner_id=#{owner} and revision &lt; #{before}</delete>
+    <insert id="ensureSync">insert into px_note_sync_cursor(owner_id,last_seq) values(#{owner},0) on duplicate key update last_seq=last_seq</insert>
+    <select id="lockSync" resultType="long">select last_seq from px_note_sync_cursor where owner_id=#{owner} for update</select>
+    <select id="syncPosition" resultType="long">select last_seq from px_note_sync_cursor where owner_id=#{owner}</select>
+    <update id="advanceSync">update px_note_sync_cursor set last_seq=last_seq+1 where owner_id=#{owner}</update>
+    <insert id="recordChange">insert into px_note_change(owner_id,seq,note_id) select owner_id,last_seq,#{id} from px_note_sync_cursor where owner_id=#{owner}</insert>
+    <select id="changes" resultMap="PxNoteResult">select n.*,c.seq sync_sequence from px_note_change c join px_note n on n.id=c.note_id and n.create_by=c.owner_id where c.owner_id=#{owner} and c.seq &gt; #{after} order by c.seq limit 51</select>
 </mapper>

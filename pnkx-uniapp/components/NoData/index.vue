@@ -34,6 +34,13 @@ export default {
   .text {
     padding: 0.5rem;
     text-align: center;
+    animation: empty-breath 3s ease-in-out infinite;
+  }
+
+  /* 空态呼吸（§7.3 空态插画呼吸 3s） */
+  @keyframes empty-breath {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
   }
 
   .loading_container {

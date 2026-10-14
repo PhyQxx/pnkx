@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.WorkspaceMapper">
+    <insert id="ensureLock">insert into px_workspace_lock(owner_id) values(#{owner}) on duplicate key update owner_id=owner_id</insert>
+    <select id="lockOwner" resultType="string">select owner_id from px_workspace_lock where owner_id=#{owner} for update</select>
+    <sql id="resourceSource">
+        <choose>
+            <when test="type == 'file'">select id,owner_id,display_name title,mime content,'' rich_text,'' tags,revision from (select *,owner_id create_by from px_user_file) f where del_flag=0 and is_folder=false</when>
+            <when test="type == 'note'">select id,create_by owner_id,title,content,rich_text,'' tags,revision from px_note where del_flag=0</when>
+            <when test="type == 'webArticle'">select id,create_by owner_id,title,content_text content,content_html rich_text,tags,fetch_status,0 revision from px_web_article where del_flag=0</when>
+            <when test="type == 'todo'">select id,create_by owner_id,content title,remark content,'' rich_text,label tags,0 revision from px_to_do where 1=1</when>
+            <otherwise>select null id,null owner_id,null title,null content,null rich_text,null tags,null revision where 1=0</otherwise>
+        </choose>
+    </sql>
+    <resultMap id="resource" type="com.pnkx.life.service.workspace.ResourceRecord">
+        <result property="fetchStatus" column="fetch_status"/><result property="id" column="id"/><result property="ownerId" column="owner_id"/>
+        <result property="title" column="title"/><result property="content" column="content"/>
+        <result property="richText" column="rich_text"/><result property="tags" column="tags"/><result property="revision" column="revision"/>
+    </resultMap>
+    <select id="resource" resultMap="resource">
+        <include refid="resourceSource"/>
+        and id=#{id}
+        <if test="!all">
+            <choose><when test="owners != null and !owners.isEmpty()">and create_by in <foreach collection="owners" item="owner" open="(" close=")" separator=",">#{owner}</foreach></when>
+                <otherwise>and 1=0</otherwise></choose>
+        </if>
+        <if test="lock">for update</if>
+    </select>
+    <resultMap id="tag" type="com.pnkx.life.service.workspace.ResourceTag">
+        <result property="id" column="id"/><result property="ownerId" column="owner_id"/>
+        <result property="name" column="name"/><result property="normalizedName" column="normalized_name"/>
+        <result property="parentId" column="parent_id"/><result property="color" column="color"/><result property="revision" column="revision"/>
+    </resultMap>
+    <select id="tags" resultMap="tag">select * from px_resource_tag where owner_id=#{owner} order by normalized_name,id</select>
+    <insert id="insertTag" useGeneratedKeys="true" keyProperty="id">
+        insert into px_resource_tag(owner_id,name,normalized_name,parent_id,color) values(#{ownerId},#{name},#{normalizedName},#{parentId},#{color})
+    </insert>
+    <update id="updateTag">update px_resource_tag set name=#{name},normalized_name=#{normalizedName},parent_id=#{parentId},color=#{color},revision=revision+1 where id=#{id} and owner_id=#{ownerId} and revision=#{revision}</update>
+    <delete id="deleteTag">delete from px_resource_tag where id=#{id} and owner_id=#{owner}</delete>
+    <select id="resourceTags" resultType="long">select tag_id from px_resource_tag_rel where owner_id=#{owner} and resource_type=#{type} and resource_id=#{id} order by tag_id</select>
+    <delete id="clearResourceTags">delete from px_resource_tag_rel where owner_id=#{owner} and resource_type=#{type} and resource_id=#{id}</delete>
+    <insert id="addRelation">insert ignore into px_resource_tag_rel(owner_id,tag_id,resource_type,resource_id) values(#{owner},#{tagId},#{type},#{id})</insert>
+    <delete id="clearTagRelations">delete from px_resource_tag_rel where owner_id=#{owner} and tag_id=#{tagId}</delete>
+    <select id="taggedResources" resultType="map">select resource_type as type,resource_id as id from px_resource_tag_rel where owner_id=#{owner} and tag_id=#{tagId} order by resource_type,resource_id</select>
+    <update id="projectTags">
+        <choose><when test="type == 'webArticle'">update px_web_article set tags=#{tags},update_time=CURRENT_TIMESTAMP where id=#{id} and create_by=#{owner} and del_flag=0</when>
+            <when test="type == 'todo'">update px_to_do set label=#{tags},update_time=CURRENT_TIMESTAMP where id=#{id} and create_by=#{owner}</when>
+            <when test="type == 'file'">update px_user_file set update_time=update_time where id=#{id} and owner_id=#{owner}</when>
+            <otherwise>update px_note set update_time=update_time where id=#{id} and create_by=#{owner}</otherwise></choose>
+    </update>
+    <select id="auditRows" resultMap="resource"><include refid="resourceSource"/> and create_by=#{owner} and id &gt; #{after} order by id limit 100</select>
+    <select id="backfillRows" resultMap="resource">
+        <include refid="resourceSource"/> and create_by=#{owner} and id &gt; #{after} order by id limit 100 for update
+    </select>
+    <select id="checkpoint" resultType="long">select last_id from px_resource_tag_backfill where owner_id=#{owner} and resource_type=#{type}</select>
+    <insert id="checkpointSave">
+        insert into px_resource_tag_backfill(owner_id,resource_type,last_id,done) values(#{owner},#{type},#{after},#{done})
+        on duplicate key update last_id=#{after},done=#{done},update_time=CURRENT_TIMESTAMP
+    </insert>
+</mapper>

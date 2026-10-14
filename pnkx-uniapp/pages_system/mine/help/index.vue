@@ -41,7 +41,7 @@ export default {
   },
   methods: {
     handleText(item) {
-      this.$tab.navigateTo(`/pages/common/textview/index?title=${item.title}&content=${item.content}`)
+      this.$tab.navigateTo(`/pages_system/common/textview/index?title=${item.title}&content=${item.content}`)
     }
   }
 }

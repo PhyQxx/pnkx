@@ -4,7 +4,7 @@
 -- 背景：RSS 幽灵用户缺陷修复（2026-10 优化轮）之前，若 rssFetchTask 曾在
 -- 无登录态的 quartz 线程上运行过，收藏会被错误写入 create_by='' 的虚拟用户，
 -- 正常用户在列表中永远看不到这些记录。此类记录正常入口不可能产生
---（表约束 NOT NULL 且所有入口均显式校验 userId），物理删除安全。
+-- （表约束 NOT NULL 且所有入口均显式校验 userId），物理删除安全。
 -- 若从未部署运行过修复前的版本，本脚本为空操作。
 
 DELETE FROM `px_web_article` WHERE `create_by` = '';

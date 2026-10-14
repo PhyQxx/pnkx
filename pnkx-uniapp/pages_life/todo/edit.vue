@@ -27,6 +27,7 @@
       <uni-icons type="right" size="16" color="#8EA0B8" />
     </view>
 
+    <resource-links v-if="todoForm.id" type="todo" :id="todoForm.id" />
     <!-- 执行者选择 -->
     <view class="form-section" @click="openPerformerPicker">
       <view class="form-label">执行者</view>
@@ -125,6 +126,7 @@
 </template>
 
 <script>
+import ResourceLinks from '@/components/resource-links/index.vue'
 import { getDo, addDo, updateDo, delDo, getLabelList } from '@/api/px/life/todo'
 import { listUser } from '@/api/system/user'
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue'
@@ -133,6 +135,7 @@ import ReminderSetting from '@/components/ReminderSetting/index.vue'
 export default {
   name: 'TodoEdit',
   components: {
+    ResourceLinks,
     uniPopup,
     ReminderSetting
   },

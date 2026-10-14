@@ -1,3 +1,5 @@
+import { getOfflineAccount } from '@/utils/offlineAccount'
+import { withNoteWriteLock } from '@/utils/noteOffline'
 /**
  * 同步调度器
  *
@@ -112,6 +114,7 @@ const syncScheduler = {
    */
   async syncPendingTasks() {
     // #ifdef APP-PLUS
+    const account = getOfflineAccount(); if (!account) return
     if (isSyncing) return
     isSyncing = true
 
@@ -125,16 +128,31 @@ const syncScheduler = {
       console.log(`[SyncScheduler] 开始上行同步: ${tasks.length} 条待处理任务`)
 
       for (const task of tasks) {
-        if (!isOnline.value) break  // 网络断开则停止
+        if (!isOnline.value || getOfflineAccount() !== account) break  // 网络断开则停止
 
         try {
-          await offlineQueue.markSyncing(task.id)
-          await this._syncOneTask(task)
+          if (task.table_name === 'px_note') {
+            await withNoteWriteLock(async () => {
+              const rows = await sqliteDB.selectSql('SELECT * FROM _sync_queue WHERE id = ' + sqliteDB._escapeValue(task.id))
+              const latest = rows[0]
+              if (!latest || latest.status !== 'pending') return
+              await offlineQueue.markSyncing(task.id)
+              await this._syncOneTask(latest)
+            })
+          } else {
+            await offlineQueue.markSyncing(task.id)
+            await this._syncOneTask(task)
+          }
         } catch (e) {
+          if (getOfflineAccount() !== account) break
           console.error('[SyncScheduler] 单条同步失败:', task.id, e)
           // 判断重试次数
           const retryCount = (task.retry_count || 0) + 1
-          if (retryCount >= MAX_RETRY) {
+          if (e.code === 409) {
+            await offlineQueue.updateStatus(task.id, 'conflict', JSON.stringify({
+              errorCode: e.errorCode, message: e.message, current: e.current
+            }))
+          } else if (retryCount >= MAX_RETRY) {
             await offlineQueue.updateStatus(task.id, 'conflict', e?.message || 'unknown')
           } else {
             await offlineQueue.incrementRetry(task.id)
@@ -143,7 +161,7 @@ const syncScheduler = {
       }
 
       // 清理已同步任务
-      await offlineQueue.cleanSynced()
+      if (getOfflineAccount() === account) await offlineQueue.cleanSynced()
     } catch (e) {
       console.error('[SyncScheduler] 上行同步异常:', e)
     } finally {
@@ -157,6 +175,7 @@ const syncScheduler = {
    */
   async _syncOneTask(task) {
     // #ifdef APP-PLUS
+    const account = getOfflineAccount(); if (!account) throw new Error('请先登录')
     const payload = JSON.parse(task.payload || '{}')
 
     // 附加 clientUuid 用于服务端幂等去重
@@ -164,6 +183,7 @@ const syncScheduler = {
 
     let res
     let serverId = null
+    let revision = null
     if (IDEMPOTENT_BATCH_TABLES.has(task.table_name)) {
       res = await request({
         url: '/offline/batch',
@@ -179,11 +199,16 @@ const syncScheduler = {
         offline: false,
         _isSyncCall: true
       })
+      if (getOfflineAccount() !== account) throw new Error('账号已变化')
       const result = res.data?.results?.[0]
       if (!result || !['success', 'skip'].includes(result.status)) {
-        throw new Error(result?.errorMsg || '离线批量同步失败')
+        throw Object.assign(new Error(result?.errorMsg || '离线批量同步失败'), {
+          code: result?.status === 'conflict' ? 409 : undefined,
+          errorCode: result?.errorCode, current: result?.current
+        })
       }
       serverId = result.id || null
+      revision = result.revision
     } else {
       res = await request({
         url: task.url,
@@ -195,8 +220,23 @@ const syncScheduler = {
       serverId = res.data?.id || res.data || null
     }
 
+    if (getOfflineAccount() !== account) throw new Error('账号已变化')
     // 同步成功 → 更新本地 _server_id + 状态
     if (res.code === 200) {
+      if (task.table_name === 'px_note') {
+        const where = payload._noteLocalId ?
+          'id = ' + sqliteDB._escapeValue(payload._noteLocalId) :
+          'client_uuid = ' + sqliteDB._escapeValue(payload.clientUuid || task.id)
+        if (String(task.method).toUpperCase() === 'DELETE') {
+          await sqliteDB.executeSql('DELETE FROM px_note WHERE ' + where)
+        } else {
+          if (!serverId || !revision) throw new Error('服务端未返回笔记修订号，请更新服务端后重试')
+          await sqliteDB.update('px_note', { ...payload, revision, _server_id: serverId, _sync_status: 1 },
+            payload._noteLocalId ? { id: payload._noteLocalId } : { client_uuid: payload.clientUuid || task.id }, true)
+        }
+        await offlineQueue.updateStatus(task.id, 'synced')
+        return
+      }
       await offlineQueue.updateStatus(task.id, 'synced')
 
       // 更新本地业务表的 _server_id 和 _sync_status
@@ -243,8 +283,51 @@ const syncScheduler = {
   /**
    * 拉取单个模块的增量数据
    */
+  async _pullNotes() {
+    // #ifdef APP-PLUS
+    const account = getOfflineAccount(); if (!account) return
+    try {
+      const stored = await sqliteDB.selectSql("SELECT last_cursor FROM _sync_cursor WHERE table_name = 'px_note'")
+      let cursor = /^n2:[0-9]+:[0-9]+$/.test(stored?.[0]?.last_cursor || '') ? stored[0].last_cursor : '0'
+      let resets = 0
+      while (true) {
+        const res = await request({ url: '/workspace/notes/changes', method: 'get', params: { cursor }, offline: false, _isSyncCall: true })
+        if (getOfflineAccount() !== account) return
+        if (res.code !== 200 || !Array.isArray(res.data?.items)) throw new Error('笔记同步响应无效')
+        if (res.data.resetRequired) {
+          if (++resets > 1) throw new Error('笔记游标无法重置')
+          cursor = '0'
+          continue
+        }
+        if (!/^n2:[0-9]+:[0-9]+$/.test(res.data.nextCursor || '')) throw new Error('笔记同步游标无效')
+        await withNoteWriteLock(async () => {
+          // Advance only after every upsert/tombstone succeeds. Replaying a partially applied page is safe.
+          for (const item of res.data.items) {
+            const deleted = item.delFlag === 1 || item.delFlag === '1' || item.delFlag === true
+            if (deleted) {
+              if (!/^[1-9][0-9]*$/.test(String(item.id)) || !/^[1-9][0-9]*$/.test(String(item.revision))) throw new Error('笔记墓碑无效')
+              const matches = [`_server_id = ${sqliteDB._escapeValue(item.id)}`]
+              if (item.clientUuid) matches.push(`client_uuid = ${sqliteDB._escapeValue(item.clientUuid)}`)
+              await sqliteDB.executeSql(`DELETE FROM px_note WHERE (${matches.join(' OR ')}) AND _sync_status = 1 AND (revision IS NULL OR revision <= ${sqliteDB._escapeValue(item.revision)})`)
+            } else {
+              const result = await sqliteDB.upsertBatch('px_note', [{ ...item, _server_id: item.id, _sync_status: 1, _updated_at: item.updateTime }], true)
+              if (result.failed) throw new Error('笔记写入失败，保留游标重试')
+            }
+          }
+          await sqliteDB.executeSql(`INSERT OR REPLACE INTO _sync_cursor (table_name,last_cursor,last_sync_at) VALUES ('px_note',${sqliteDB._escapeValue(res.data.nextCursor)},${sqliteDB._escapeValue(new Date().toISOString())})`)
+        })
+        if (!res.data.hasMore) break
+        if (cursor === res.data.nextCursor) throw new Error('笔记游标未推进')
+        cursor = res.data.nextCursor
+      }
+    } catch (error) { console.warn('[SyncScheduler] 笔记同步失败，下次重试', error?.message || error) }
+    // #endif
+  },
+
   async _pullModule(mod) {
     // #ifdef APP-PLUS
+    if (mod.table === 'px_note') return this._pullNotes()
+    const account = getOfflineAccount(); if (!account) return
     try {
       // 获取该模块最后同步时间（datetime 游标）
       let since = '2020-01-01 00:00:00'
@@ -299,6 +382,7 @@ const syncScheduler = {
           }).then(resolve).catch(reject)
         })
 
+        if (getOfflineAccount() !== account) return
         if (res.code === 200 && res.data?.items) {
           console.log(`[SyncScheduler] ${mod.table} 拉取到 ${res.data.items.length} 条记录`)
 
@@ -337,12 +421,12 @@ const syncScheduler = {
             try {
               const ids = deletedServerIds.join(',')
               await sqliteDB.executeSql(
-                `DELETE FROM ${mod.table} WHERE \`_server_id\` IN (${ids})`
+                `DELETE FROM ${mod.table} WHERE \`_server_id\` IN (${ids})${mod.table === 'px_note' ? ' AND _sync_status = 1' : ''}`
               )
               if (deletedClientUuids.length > 0) {
                 const uuids = deletedClientUuids.map(u => sqliteDB._escapeValue(u)).join(',')
                 await sqliteDB.executeSql(
-                  `DELETE FROM ${mod.table} WHERE \`client_uuid\` IN (${uuids})`
+                  `DELETE FROM ${mod.table} WHERE \`client_uuid\` IN (${uuids})${mod.table === 'px_note' ? ' AND _sync_status = 1' : ''}`
                 )
               }
               console.log(`[SyncScheduler] 同步删除: ${mod.table}, ${deletedServerIds.length} 条`)
@@ -367,7 +451,7 @@ const syncScheduler = {
                   const keepId = rows[0].id
                   const deleteIds = rows.slice(1).map(r => r.id)
                   await sqliteDB.executeSql(
-                    `DELETE FROM ${mod.table} WHERE id IN (${deleteIds.join(',')})`
+                    `DELETE FROM ${mod.table} WHERE id IN (${deleteIds.join(',')})${mod.table === 'px_note' ? ' AND _sync_status = 1' : ''}`
                   )
                   console.log(`[SyncScheduler] 清理重复: ${mod.table}._server_id=${d._server_id}, 删除 ${deleteIds.length} 条`)
                 }

@@ -20,3 +20,7 @@ export function globalSearch(query) {
         params: query
     })
 }
+
+export function globalSearchPage(query) {
+    return request({ url: '/admin/globalSearch/page', method: 'get', params: query })
+}

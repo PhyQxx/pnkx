@@ -47,6 +47,8 @@ public interface IPxOfflineSyncService {
 
     public Long insertNoteIdempotent(Map<String, Object> payload, String clientUuid);
 
+    PxNote insertNoteIdempotentResult(Map<String, Object> payload, String clientUuid);
+
     public List<PxNote> selectNoteIncremental(String userId, String since, int offset, int limit);
 
     // ──────────── 纪念日 ────────────

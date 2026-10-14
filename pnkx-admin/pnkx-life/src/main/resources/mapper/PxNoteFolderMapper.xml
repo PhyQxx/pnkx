@@ -37,16 +37,16 @@
     </sql>
 
     <select id="selectPxNoteFolderList" parameterType="PxNoteFolder" resultMap="PxNoteFolderResult">
-        with recursive folder_tree as (
+        with recursive folder_tree(root_id, sub_id) as (
             -- 递归获取每个文件夹的所有子文件夹（包括自己）
             select id as root_id, id as sub_id
             from px_note_folder
-            where del_flag = 0
-            union all
+            where del_flag = 0 and create_by = #{createBy}
+            union distinct
             select ft.root_id, f.id as sub_id
             from px_note_folder f
             inner join folder_tree ft on f.parent_id = ft.sub_id
-            where f.del_flag = 0
+            where f.del_flag = 0 and f.create_by = #{createBy}
         )
         select f.id,
                f.name,
@@ -65,7 +65,7 @@
         left join (
             select root_id, count(*) as cnt
             from folder_tree ft
-            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0
+            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0 and n.create_by = #{createBy}
             group by root_id
         ) notes on f.id = notes.root_id
         <where>
@@ -82,28 +82,22 @@
             <if test="version != null  and version != ''">
                 and f.version = #{version}
             </if>
-            <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
-            <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">
-                and f.create_by in
-                <foreach collection="params.scopeUserIds" item="uid" open="(" separator="," close=")">
-                    #{uid}
-                </foreach>
-            </if>
+            and f.create_by = #{createBy}
         </where>
-        ORDER BY isnull(f.`order`) || f.`order`='' , f.`order`, f.update_time DESC
+        ORDER BY (f.`order` is null or f.`order` = 0) , f.`order`, f.update_time DESC
     </select>
 
-    <select id="selectPxNoteFolderById" parameterType="Long"
+    <select id="selectPxNoteFolderById"
             resultMap="PxNoteFolderResult">
-        with recursive folder_tree as (
+        with recursive folder_tree(root_id, sub_id) as (
             select id as root_id, id as sub_id
             from px_note_folder
-            where id = #{id} and del_flag = 0
-            union all
+            where id = #{id} and del_flag = 0 and create_by = #{userId}
+            union distinct
             select ft.root_id, f.id as sub_id
             from px_note_folder f
             inner join folder_tree ft on f.parent_id = ft.sub_id
-            where f.del_flag = 0
+            where f.del_flag = 0 and f.create_by = #{userId}
         )
         select f.id,
                f.name,
@@ -122,10 +116,10 @@
         left join (
             select root_id, count(*) as cnt
             from folder_tree ft
-            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0
+            inner join px_note n on ft.sub_id = n.folder and n.del_flag = 0 and n.create_by = #{userId}
             group by root_id
         ) notes on f.id = notes.root_id
-        where f.id = #{id}
+        where f.id = #{id} and f.create_by = #{userId} and f.del_flag = 0
     </select>
 
     <insert id="insertPxNoteFolder" parameterType="PxNoteFolder" useGeneratedKeys="true"
@@ -183,53 +177,35 @@
 
     <update id="updatePxNoteFolder" parameterType="PxNoteFolder">
         update px_note_folder
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="name != null">name =
-                #{name},
-            </if>
-            <if test="parentId != null">parent_id =
-                #{parentId},
-            </if>
-            <if test="password != null">password =
-                #{password},
-            </if>
-            <if test="order != null">`order` =
-                #{order},
-            </if><if test="delFlag != null">del_flag =
-                #{delFlag},
-            </if>
-            <if test="version != null">version =
-                #{version},
-            </if>
-            <if test="createBy != null">create_by =
-                #{createBy},
-            </if>
-            <if test="createTime != null">create_time =
-                #{createTime},
-            </if>
-            <if test="updateBy != null">update_by =
-                #{updateBy},
-            </if>
-            <if test="updateTime != null">update_time =
-                #{updateTime},
-            </if>
-            <if test="remark != null">remark =
-                #{remark},
-            </if>
-        </trim>
-        where id = #{id}
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="order != null">`order` = #{order},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_by = #{updateBy}, update_time = #{updateTime}
+        </set>
+        where id = #{id} and create_by = #{updateBy} and del_flag = 0
     </update>
 
-    <delete id="deletePxNoteFolderById" parameterType="Long">
-        update px_note_folder
-        set del_flag = 1
-        where id = #{id}
+    <select id="selectOwnedIds" resultType="java.lang.Long">
+        select id from px_note_folder where create_by = #{userId} and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <select id="lockOwnedFolders" resultType="java.lang.Long">
+        select id from px_note_folder where create_by = #{userId} order by id for update
+    </select>
+
+    <delete id="deletePxNoteFolderById">
+        update px_note_folder set del_flag = 1, update_time = CURRENT_TIMESTAMP, update_by = #{userId}
+        where id = #{id} and create_by = #{userId} and del_flag = 0
     </delete>
 
-    <delete id="deletePxNoteFolderByIds" parameterType="String">
-        update px_note_folder set del_flag = 1 where id in
-        <foreach item="id" collection="array" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+    <delete id="deletePxNoteFolderByIds">
+        update px_note_folder set del_flag = 1, update_time = CURRENT_TIMESTAMP, update_by = #{userId}
+        where create_by = #{userId} and del_flag = 0 and id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 </mapper>

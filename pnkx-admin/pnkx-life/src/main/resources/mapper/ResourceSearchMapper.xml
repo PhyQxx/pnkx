@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.ResourceSearchMapper">
+    <resultMap id="result" type="com.pnkx.life.service.search.SearchResult">
+        <result property="type" column="resource_type"/>
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="subtitle" column="snippet"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="rawTags" column="tags"/>
+    </resultMap>
+    <sql id="sources">
+        <foreach collection="types" item="kind" separator=" UNION ALL ">
+            <choose>
+                <when test="kind == 'file'">
+                    select 'file' resource_type,concat('',r.id) id,r.display_name title,r.mime body,
+                    (select group_concat(t.name order by t.normalized_name separator ',') from px_resource_tag_rel rel join px_resource_tag t on t.id=rel.tag_id and t.owner_id=rel.owner_id where rel.owner_id=#{userId} and rel.resource_type='file' and rel.resource_id=r.id) tags,
+                    r.create_time created_at,r.update_time updated_at from px_user_file r where r.owner_id=#{userId} and r.del_flag=0 and r.is_folder=false
+                </when>
+                <when test="kind == 'article'">
+                    select 'article' resource_type, concat('', r.id) id, r.title title,
+                           r.content body, r.tag tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_article r
+                    where 1 = 1
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'todo'">
+                    select 'todo' resource_type, concat('', r.id) id, r.content title,
+                           r.remark body, r.label tags, coalesce(r.create_time, r.plan_end_time) created_at,
+                           coalesce(r.update_time, coalesce(r.create_time, r.plan_end_time), '1970-01-01 00:00:00') updated_at
+                    from px_to_do r
+                    where 1 = 1
+                    and (r.parent_id = 0 or r.parent_id is null)
+                    <choose>
+                        <when test="scopes.containsKey(kind) and scopes[kind] == null"/>
+                        <when test="scopes[kind] != null and !scopes[kind].isEmpty()">
+                            and r.create_by in <foreach collection="scopes[kind]" item="owner" open="(" close=")" separator=",">#{owner}</foreach>
+                        </when>
+                        <otherwise>and 1 = 0</otherwise>
+                    </choose>
+                </when>
+                <when test="kind == 'diary'">
+                    select 'diary' resource_type, concat('', r.id) id, coalesce(nullif(r.title, ''), left(r.content, 40)) title,
+                           r.content body, '' tags, coalesce(r.create_time, r.date) created_at,
+                           coalesce(r.update_time, coalesce(r.create_time, r.date), '1970-01-01 00:00:00') updated_at
+                    from px_diary r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'note'">
+                    select 'note' resource_type, concat('', r.id) id, r.title title,
+                           r.content body, (select group_concat(t.name order by t.normalized_name separator ',') from px_resource_tag_rel rel join px_resource_tag t on t.id=rel.tag_id and t.owner_id=rel.owner_id where rel.owner_id=#{userId} and rel.resource_type='note' and rel.resource_id=r.id) tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_note r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'bookkeeping'">
+                    select 'bookkeeping' resource_type, concat('', r.id) id, concat('¥', r.money) title,
+                           r.remark body, c.type_name tags, coalesce(r.create_time, r.pay_time) created_at,
+                           coalesce(r.update_time, coalesce(r.create_time, r.pay_time), '1970-01-01 00:00:00') updated_at
+                    from px_bookkeeping_record r
+                    left join px_bookkeeping_classification c on r.type = c.id and c.create_by = r.create_by
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'commemoration'">
+                    select 'commemoration' resource_type, concat('', r.id) id, r.name title,
+                           r.remark body, '' tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_commemoration_day r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    <choose>
+                        <when test="scopes.containsKey(kind) and scopes[kind] == null"/>
+                        <when test="scopes[kind] != null and !scopes[kind].isEmpty()">
+                            and r.create_by in <foreach collection="scopes[kind]" item="owner" open="(" close=")" separator=",">#{owner}</foreach>
+                        </when>
+                        <otherwise>and 1 = 0</otherwise>
+                    </choose>
+                </when>
+                <when test="kind == 'subscription'">
+                    select 'subscription' resource_type, concat('', r.id) id, r.name title,
+                           r.remark body, '' tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_subscription r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'recipe'">
+                    select 'recipe' resource_type, concat('', r.id) id, r.title title,
+                           r.notes body, '' tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_recipe r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    <choose>
+                        <when test="scopes.containsKey(kind) and scopes[kind] == null"/>
+                        <when test="scopes[kind] != null and !scopes[kind].isEmpty()">
+                            and r.create_by in <foreach collection="scopes[kind]" item="owner" open="(" close=")" separator=",">#{owner}</foreach>
+                        </when>
+                        <otherwise>and 1 = 0</otherwise>
+                    </choose>
+                </when>
+                <when test="kind == 'shopping'">
+                    select 'shopping' resource_type, concat('', r.id) id, r.name title,
+                           r.remark body, '' tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_shopping_list r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    <choose>
+                        <when test="scopes.containsKey(kind) and scopes[kind] == null"/>
+                        <when test="scopes[kind] != null and !scopes[kind].isEmpty()">
+                            and r.create_by in <foreach collection="scopes[kind]" item="owner" open="(" close=")" separator=",">#{owner}</foreach>
+                        </when>
+                        <otherwise>and 1 = 0</otherwise>
+                    </choose>
+                </when>
+                <when test="kind == 'book'">
+                    select 'book' resource_type, concat('', r.id) id, r.title title,
+                           concat(coalesce(r.author,''), ' ', coalesce(r.description,'')) body, '' tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_book r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                </when>
+                <when test="kind == 'webArticle'">
+                    select 'webArticle' resource_type, concat('', r.id) id, r.title title,
+                           r.content_text body, r.tags tags, r.create_time created_at,
+                           coalesce(r.update_time, r.create_time, '1970-01-01 00:00:00') updated_at
+                    from px_web_article r
+                    where 1 = 1
+                    and r.del_flag = '0'
+                    and r.create_by = #{userId}
+                    <if test="readFlag != null">and exists (select 1 from px_resource_state st where st.user_id=#{userId} and st.resource_type='webArticle' and st.resource_id=r.id and st.opened=#{readFlag})</if>
+                    <if test="starFlag != null">and exists (select 1 from px_resource_state st where st.user_id=#{userId} and st.resource_type='webArticle' and st.resource_id=r.id and st.starred=#{starFlag})</if>
+                </when>
+                <otherwise>select '' resource_type, '' id, '' title, '' body, '' tags, null created_at, null updated_at where 1 = 0</otherwise>
+            </choose>
+        </foreach>
+    </sql>
+    <sql id="filters">
+        <where>
+            <if test="keyword != null">
+                and (lower(title) like #{keyword} escape '!' or lower(body) like #{keyword} escape '!'
+                     or lower(tags) like #{keyword} escape '!')
+            </if>
+            <if test="start != null">and created_at &gt;= #{start}</if>
+            <if test="end != null">and created_at &lt; #{end}</if>
+            <if test="tag != null">
+                and locate(concat(',', #{tag}, ','), concat(',',
+                    lower(regexp_replace(trim(replace(replace(replace(replace(coalesce(tags,''), '，', ','), char(9), ' '), char(10), ' '), char(13), ' ')), ' *, *', ',')), ',')) &gt; 0
+            </if>
+            <if test="inbox != null">
+                and exists (select 1 from px_resource_state state where state.user_id=#{userId} and state.resource_type=documents.resource_type and state.resource_id=documents.id and state.inbox=#{inbox})
+            </if>
+            <if test="recent">
+                and exists (select 1 from px_resource_state state where state.user_id=#{userId} and state.resource_type=documents.resource_type and state.resource_id=documents.id and state.last_opened_at is not null)
+            </if>
+            <if test="untagged">
+                and not exists (select 1 from px_resource_tag_rel rel where rel.owner_id=#{userId} and rel.resource_type=documents.resource_type and rel.resource_id=documents.id)
+            </if>
+            <if test="tagGroups != null and !tagGroups.isEmpty()">
+                and (
+                <foreach collection="tagGroups" item="group" index="index">
+                    <if test="index > 0"><choose><when test="tagMode == 'any'">or</when><otherwise>and</otherwise></choose></if>
+                    exists (select 1 from px_resource_tag_rel rel where rel.owner_id=#{userId}
+                        and rel.resource_type=documents.resource_type and rel.resource_id=documents.id
+                        and rel.tag_id in <foreach collection="group" item="tagId" open="(" close=")" separator=",">#{tagId}</foreach>)
+                </foreach>
+                )
+            </if>
+        </where>
+    </sql>
+    <select id="search" resultMap="result">
+        select resource_type, id, title, left(body, 200) snippet, tags, created_at, updated_at
+        from (<include refid="sources"/>) documents
+        <include refid="filters"/>
+        order by
+        <if test="recent">(select state.last_opened_at from px_resource_state state where state.user_id=#{userId} and state.resource_type=documents.resource_type and state.resource_id=documents.id) desc,</if>
+        updated_at desc, resource_type asc, id asc
+        limit #{limit} offset #{offset}
+    </select>
+    <select id="count" resultType="long">
+        select count(*) from (<include refid="sources"/>) documents
+        <include refid="filters"/>
+    </select>
+</mapper>

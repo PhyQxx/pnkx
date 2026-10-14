@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function globalSearch(q, type = 'all', filters = {}) {
   return request({
-    url: '/admin/globalSearch',
+    url: '/admin/globalSearch/page',
     method: 'get',
     params: { q, type, ...filters }
   })

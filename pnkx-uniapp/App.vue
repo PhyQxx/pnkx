@@ -11,6 +11,7 @@ import { isOnline } from '@/utils/network'
 export default {
   onLaunch: function () {
     this.initApp()
+    this.watchDarkMode()
     // #ifdef APP-PLUS
     this.initOffline()
     this.initPush()
@@ -22,6 +23,24 @@ export default {
     // #endif
   },
   methods: {
+    /** 暗色模式（§暗色）：原生 tabBar/导航栏颜色跟随系统深浅 */
+    watchDarkMode() {
+      // #ifdef H5 || APP-PLUS
+      const apply = (dark) => {
+        uni.setTabBarStyle(dark
+          ? { backgroundColor: '#0F172A', borderStyle: 'black', color: '#64748B', selectedColor: '#6AA1F9' }
+          : { backgroundColor: '#FFFFFF', borderStyle: 'black', color: '#8EA0B8', selectedColor: '#4F86F7' });
+      };
+      const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+      if (mq) {
+        apply(mq.matches);
+        const handler = (e) => apply(e.matches);
+        if (mq.addEventListener) mq.addEventListener('change', handler);
+        else if (mq.addListener) mq.addListener(handler);
+      }
+      // #endif
+    },
+
     /**
      * App 推送（uniPush 2.0）：登记设备 + 通知点击监听
      * 后端未配置 UNIPUSH_* 时上报仅落库不推送，无副作用
@@ -107,7 +126,6 @@ export default {
 
 <style lang="scss">
 @import '@/static/scss/global.scss';
-@import '@/static/scss/colorui.css';
 @import '@/static/font/iconfont.css';
 
 .uni-page-head__title {
@@ -134,7 +152,7 @@ uni-page {
   background-color: $bg-page;
   background-image:
     linear-gradient(180deg, rgba(246, 250, 255, 0.08) 0%, $bg-page 520rpx),
-    url('/static/images/glacier-aurora-bg.jpg');
+    radial-gradient(120% 55% at 20% -5%, rgba($aurora-cyan, 0.92) 0%, rgba($aurora-cyan, 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba($aurora-lavender, 0.85) 0%, rgba($aurora-lavender, 0) 62%);
   background-repeat: no-repeat;
   background-position: top center;
   background-size: 100% auto;
@@ -183,5 +201,52 @@ uni-page-body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+}
+
+/* ============================
+   暗色模式（§暗色 双端）：核心表面/文字 CSS 变量
+   跟随系统 prefers-color-scheme；uni.scss 的
+   $bg-card/$text-primary/$border-color 等引用这些变量。
+   ============================ */
+page {
+  --txt-1: #123B70;
+  --txt-2: #4F627B;
+  --txt-3: #8EA0B8;
+  --bg-page: #F2F7FE;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F8FBFF;
+  --surface-2: #F1F6FD;
+  --accent-soft: #DDEAFF;
+  --bd: rgba(142, 174, 218, 0.26);
+  --bd-soft: rgba(142, 174, 218, 0.15);
+  /* 极光渐变（RGB 三元组，供 rgba(var(--aurora-1), x) 使用） */
+  --aurora-1: 221, 248, 255;
+  --aurora-2: 238, 231, 255;
+  --hero-veil: rgba(244, 249, 255, 0.12);
+  /* 玻璃表面 */
+  --glass: rgba(255, 255, 255, 0.88);
+  --glass-strong: rgba(255, 255, 255, 0.94);
+}
+
+@media (prefers-color-scheme: dark) {
+  page {
+    --txt-1: #E2E8F0;
+    --txt-2: #94A3B8;
+    --txt-3: #64748B;
+    --bg-page: #0F172A;
+    --bg-card: rgba(30, 41, 59, 0.72);
+    --bg-elevated: #1E293B;
+    --bg-hover: #1E293B;
+    --surface-2: #1E293B;
+    --accent-soft: rgba(106, 161, 249, 0.16);
+    --bd: rgba(148, 163, 184, 0.22);
+    --bd-soft: rgba(148, 163, 184, 0.14);
+    --aurora-1: 38, 58, 102;
+    --aurora-2: 52, 48, 105;
+    --hero-veil: rgba(15, 23, 42, 0.45);
+    --glass: rgba(30, 41, 59, 0.78);
+    --glass-strong: rgba(30, 41, 59, 0.9);
+  }
 }
 </style>

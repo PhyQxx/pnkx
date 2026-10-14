@@ -7,6 +7,8 @@ import com.pnkx.common.exception.ServiceException;
 import com.pnkx.life.domain.po.PxToDo;
 import com.pnkx.life.mapper.PxToDoMapper;
 import com.pnkx.life.service.IPxToDoService;
+import com.pnkx.life.service.workspace.ResourceTagService;
+import org.springframework.transaction.annotation.Transactional;
 import com.pnkx.life.service.IPxLifeReminderService;
 import com.pnkx.life.service.IPxAutomationService;
 import com.alibaba.fastjson.JSONObject;
@@ -32,6 +34,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
 
     @Resource
     private PxToDoMapper pxToDoMapper;
+    @Resource private ResourceTagService resourceTags;
 
     @Resource
     private DataPermissionService dataPermissionService;
@@ -83,6 +86,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @Transactional
     public int insertPxToDo(PxToDo pxToDo) {
         if (pxToDo.getClientUuid() != null && !pxToDo.getClientUuid().isBlank()) {
             PxToDo existing = pxToDoMapper.selectByClientUuid(pxToDo.getClientUuid());
@@ -92,7 +96,9 @@ public class PxToDoServiceImpl implements IPxToDoService {
             }
         }
         pxToDo.setCreateTime(DateUtils.getNowDate());
-        return pxToDoMapper.insertPxToDo(pxToDo);
+        int rows = pxToDoMapper.insertPxToDo(pxToDo);
+        if (pxToDo.getLabel() != null) resourceTags.syncLegacy(pxToDo.getCreateBy(), "todo", pxToDo.getId(), pxToDo.getLabel());
+        return rows;
     }
 
     /**
@@ -102,11 +108,14 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @Transactional
     public int updatePxToDo(PxToDo pxToDo) {
         PxToDo before = pxToDo.getId() == null ? null : pxToDoMapper.selectPxToDoById(pxToDo.getId());
         requireSharedWrite(before);
+        pxToDo.setCreateBy(before.getCreateBy());
         pxToDo.setUpdateTime(DateUtils.getNowDate());
         int rows = pxToDoMapper.updatePxToDo(pxToDo);
+        if (rows > 0 && pxToDo.getLabel() != null) resourceTags.syncLegacy(before.getCreateBy(), "todo", pxToDo.getId(), pxToDo.getLabel());
         if (rows > 0 && Boolean.TRUE.equals(pxToDo.getStatus())
                 && (before == null || !Boolean.TRUE.equals(before.getStatus()))) {
             JSONObject input = new JSONObject();

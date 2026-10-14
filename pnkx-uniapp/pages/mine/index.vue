@@ -123,6 +123,7 @@
     <view class="page-footer">
       <text class="version-text">Pei你看雪 v{{ version }}</text>
     </view>
+    <AiBall />
   </view>
 </template>
 
@@ -201,7 +202,7 @@ page {
 .header-bg {
   background:
     linear-gradient(180deg, rgba(248, 251, 255, 0.02), rgba(242, 247, 254, 0.18)),
-    url('/static/images/glacier-aurora-bg.jpg') top center / cover no-repeat;
+    radial-gradient(120% 55% at 20% -5%, rgba($aurora-cyan, 0.92) 0%, rgba($aurora-cyan, 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba($aurora-lavender, 0.85) 0%, rgba($aurora-lavender, 0) 62%) top center / cover no-repeat;
   padding: calc(var(--status-bar-height, 44px) + 24rpx) $page-padding 112rpx;
   position: relative;
 }
@@ -227,8 +228,8 @@ page {
     color: $text-primary;
     font-size: 36rpx;
     border-radius: $radius-full;
-    background: rgba(255, 255, 255, 0.84);
-    border: 1rpx solid rgba(255, 255, 255, 0.92);
+    background: var(--glass);
+    border: 1rpx solid var(--glass-strong);
     box-shadow: $shadow-md;
   }
 }
@@ -272,7 +273,7 @@ page {
 
   .avatar-icon {
     font-size: 56rpx;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.92);
   }
 }
 
@@ -323,7 +324,7 @@ page {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--glass);
   border-radius: $radius-full;
   padding: $spacing-xs $spacing-sm $spacing-xs $spacing-md;
   margin-left: $spacing-sm;
@@ -431,8 +432,8 @@ page {
 }
 
 .menu-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  background: var(--glass-strong);
+  border: 1rpx solid var(--glass-strong);
   border-radius: $radius-2xl;
   box-shadow: $shadow-card;
   overflow: hidden;
@@ -536,8 +537,8 @@ page {
   align-items: center;
   justify-content: center;
   gap: $spacing-xs;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1rpx solid rgba(255, 255, 255, 0.92);
+  background: var(--glass);
+  border: 1rpx solid var(--glass-strong);
   border-radius: $radius-2xl;
   padding: $spacing-md 0;
   font-size: $font-body;

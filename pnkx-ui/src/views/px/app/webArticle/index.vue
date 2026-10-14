@@ -332,7 +332,7 @@
 </template>
 
 <script setup>
-import { computed, getCurrentInstance, nextTick, onUnmounted, reactive, ref } from 'vue'
+import { computed, getCurrentInstance, nextTick, onUnmounted, watch, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Bell, Collection, CollectionTag, Check, DataAnalysis, Delete, Download, Edit, Link, MagicStick, Plus, Refresh, RefreshRight, Search, Star, StarFilled, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -710,6 +710,9 @@ function handleDeleteFeed(row) {
 getList()
 loadTags()
 autoSubmitFromQuery()
+watch(() => route.query.id, id => {
+    if (id && /^\d+$/.test(String(id))) openDetail({ id: String(id) })
+}, { immediate: true })
 </script>
 
 <style lang="scss" scoped>

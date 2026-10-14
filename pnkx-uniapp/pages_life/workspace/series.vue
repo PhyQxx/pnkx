@@ -1,0 +1,17 @@
+<template>
+ <view class="page ws-page subpage-shell"><view class="title">重复待办</view><text>到期实例进入现有待办。修改仅本次请打开对应待办；月末不足指定日期使用当月最后一天。</text><button @click="edit()">新建系列</button><view v-for="row in rows" :key="row.id" class="card" @click="edit(row)"><text>{{ row.title }} · {{ row.paused ? '已暂停' : '运行中' }}</text><text>{{ row.ruleType }} · {{ row.zoneId }} {{ row.localTime }}</text></view>
+ <view v-if="form" class="card"><input v-model="form.title" placeholder="标题" maxlength="200"/><picker :range="names" @change="form.ruleType = types[$event.detail.value]"><button>{{ names[types.indexOf(form.ruleType)] }}</button></picker><text>间隔天数（按日/完成后）</text><input v-model.number="form.intervalDays" type="number"/><text>星期（1=周一，逗号分隔）</text><input v-model="form.weekDays" placeholder="1,3,5"/><text>每月日期</text><input v-model.number="form.monthDay" type="number"/><text>时区</text><input v-model="form.zoneId"/><picker mode="time" :value="form.localTime" @change="form.localTime = $event.detail.value"><button>当地时间 {{ form.localTime }}</button></picker><picker mode="date" :value="form.startDate" @change="form.startDate = $event.detail.value"><button>开始 {{ form.startDate }}</button></picker><picker mode="date" :value="form.endDate" @change="form.endDate = $event.detail.value"><button>结束 {{ form.endDate || '不限' }}</button></picker><button size="mini" @click="form.endDate = null">清除结束日期</button><view><text>启用提醒</text><switch :checked="reminder" @change="reminder = $event.detail.value"/></view><input v-if="reminder" v-model.number="lead" type="number" placeholder="提前分钟"/><view><text>暂停</text><switch :checked="form.paused" @change="form.paused = $event.detail.value"/></view><picker v-if="form.id" :range="['本次及以后（今天起的新实例）','整个系列（含未完成实例标题/提醒）']" @change="scope = Number($event.detail.value) === 0 ? 'future' : 'all'"><button>{{ scope === 'future' ? '本次及以后' : '整个系列' }}</button></picker><button :disabled="saving" @click="save">保存</button><button @click="form = null">取消</button></view>
+ </view>
+</template>
+<script>
+import { listSeries, saveSeries } from '@/api/px/life/workspace'
+export default {
+ data() { return { rows: [], form: null, scope: 'future', reminder: false, lead: 0, saving: false, types: ['daily','weekly','monthly','completion'], names: ['按日','按周','按月','完成后间隔'] } },onLoad() { this.load() },methods: {
+ async load() { this.rows = (await listSeries()).data },
+ edit(row) { const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; this.form = row ? { ...row } : { title: '', ruleType: 'daily', intervalDays: 1, weekDays: '1', monthDay: 1, zoneId: 'Asia/Shanghai', localTime: '09:00', startDate: today, paused: false }; this.scope = 'future'; this.reminder = this.form.leadMinutes != null; this.lead = this.form.leadMinutes || 0 },
+ async save() { this.saving = true; try { await saveSeries({ ...this.form, leadMinutes: this.reminder ? this.lead : null, endDate: this.form.endDate || null },this.scope); this.form = null; await this.load() } finally { this.saving = false } }
+ }
+}
+</script>
+<style scoped>
+@import '@/static/scss/workspace-common.scss';.page { padding: 32rpx; }.title { font-size: 36rpx; font-weight: 600; }.card { padding: 24rpx; margin: 20rpx 0; border: 1px solid $border-color; border-radius: 20rpx; }.card text { display: block; margin: 16rpx 0; }input { padding: 16rpx; background: $bg-card-hover; }</style>

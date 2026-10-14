@@ -8,6 +8,7 @@
         <div v-if="!active" class="empty-detail">
             <svg-icon icon-class="备注" class="empty-detail-icon"/>
             <p>选择一条日记查看详情</p>
+            <button class="empty-detail-add" type="button" @click="$emit('add')">写下今天的心情</button>
         </div>
 
         <!-- 日记详情 -->
@@ -55,7 +56,7 @@ import { sanitizeHtml } from '@/utils/sanitizeHtml'
 
 export default {
     name: 'DiaryDetailPanel',
-    emits: ['edit', 'delete'],
+    emits: ['edit', 'delete', 'add'],
     props: {
         // 当前选中日记（null 显示空状态）
         active: { type: Object, default: null },
@@ -91,6 +92,23 @@ export default {
 
     p {
         font-size: var(--text-base);
+    }
+
+    .empty-detail-add {
+        margin-top: var(--space-4);
+        padding: 0 22px;
+        height: 36px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: #fff;
+        background: var(--color-primary);
+        transition: opacity 0.15s ease, transform 0.12s ease;
+
+        &:hover { opacity: 0.9; }
+        &:active { transform: scale(0.96); }
     }
 }
 

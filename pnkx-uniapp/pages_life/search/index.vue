@@ -1,5 +1,6 @@
 <template>
   <view class="search-page subpage-shell">
+    <view class="advanced-filter" @click="openWorkspace">资料中心：按主题整理笔记、剪藏与待办 →</view>
     <uni-search-bar v-model="keyword" placeholder="搜索待办、账本、日记、笔记…" focus @confirm="search" @clear="clear" />
     <scroll-view scroll-x class="filters">
       <view class="filters__inner">
@@ -23,6 +24,7 @@
         </view>
         <uni-icons type="right" size="16" color="#94A3B8" />
       </view>
+      <button v-if="hasMore" :loading="loadingMore" @click="loadMore">加载更多（共 {{ total }} 条）</button>
       <view v-if="results.length" class="ai-summary" @click="summarize">✨ AI 总结搜索结果</view>
       <view v-if="summary" class="summary-card">{{ summary }}</view>
     </view>
@@ -36,7 +38,7 @@ export default {
   data() {
     return {
       keyword: '', type: 'all', tag: '', results: [], summary: '', loading: false, searched: false,
-      dateRangeIndex: 0,
+      activeQuery: null, dateRangeIndex: 0, page: 1, total: 0, hasMore: false, loadingMore: false, sequence: 0,
       dateRanges: [
         { label: '全部时间', days: 0 }, { label: '最近7天', days: 7 },
         { label: '最近30天', days: 30 }, { label: '最近一年', days: 365 }
@@ -44,25 +46,45 @@ export default {
       types: [
         { label: '全部', value: 'all' }, { label: '文章', value: 'article' }, { label: '待办', value: 'todo' },
         { label: '账本', value: 'bookkeeping' }, { label: '日记', value: 'diary' },
-        { label: '笔记', value: 'note' }, { label: '书籍', value: 'book' },
+        { label: '文件', value: 'file' }, { label: '笔记', value: 'note' }, { label: '剪藏', value: 'webArticle' }, { label: '书籍', value: 'book' },
         { label: '菜谱', value: 'recipe' }, { label: '纪念日', value: 'commemoration' },
         { label: '订阅', value: 'subscription' }, { label: '购物', value: 'shopping' }
       ]
     }
   },
   methods: {
+    openWorkspace() { uni.navigateTo({ url: '/pages_life/workspace/index' }) },
     async search() {
       const q = this.keyword.trim()
       if (!q) return this.clear()
       this.loading = true
+      const sequence = ++this.sequence
+      const submitted = { q, type: this.type, filters: this.searchFilters() }
       try {
-        const response = await globalSearch(q, this.type, this.searchFilters())
-        this.results = response.data || []
+        const response = await globalSearch(submitted.q, submitted.type, submitted.filters)
+        if (sequence !== this.sequence) return
+        this.activeQuery = submitted
+        this.results = response.data.rows || []
+        this.page = 1
+        this.total = response.data.total
+        this.hasMore = response.data.hasMore
         this.summary = ''
         this.searched = true
-      } finally { this.loading = false }
+      } finally { if (sequence === this.sequence) this.loading = false }
     },
-    clear() { this.results = []; this.summary = ''; this.searched = false },
+    async loadMore() {
+      if (this.loadingMore || this.loading || !this.hasMore) return
+      const sequence = this.sequence
+      this.loadingMore = true
+      try {
+        const response = await globalSearch(this.activeQuery.q, this.activeQuery.type, { ...this.activeQuery.filters, pageNum: this.page + 1 })
+        if (sequence !== this.sequence) return
+        this.results.push(...response.data.rows)
+        this.page++
+        this.hasMore = response.data.hasMore
+      } finally { this.loadingMore = false }
+    },
+    clear() { this.sequence++; this.loading = false; this.hasMore = false; this.results = []; this.summary = ''; this.searched = false },
     changeType(type) { this.type = type; if (this.keyword.trim()) this.search() },
     changeDateRange(event) { this.dateRangeIndex = Number(event.detail.value); if (this.keyword.trim()) this.search() },
     searchFilters() {

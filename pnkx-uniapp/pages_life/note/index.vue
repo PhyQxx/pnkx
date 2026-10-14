@@ -442,14 +442,14 @@ export default {
      * 查看笔记详情
      */
     viewNote(note) {
-      this.$tab.navigateTo(`/pages_life/note/detail?id=${note.id}`)
+      this.$tab.navigateTo(`/pages_life/note/detail?id=${note.id}${note._localId ? "&localId=" + note._localId : ""}`)
     },
 
     /**
      * 编辑笔记
      */
     editNote(note) {
-      this.$tab.navigateTo(`/pages_life/note/detail?id=${note.id}`)
+      this.$tab.navigateTo(`/pages_life/note/detail?id=${note.id}${note._localId ? "&localId=" + note._localId : ""}`)
     },
 
     /**

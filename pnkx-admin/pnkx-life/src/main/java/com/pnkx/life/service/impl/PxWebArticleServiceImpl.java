@@ -1,5 +1,8 @@
 package com.pnkx.life.service.impl;
 
+import com.pnkx.life.service.workspace.ResourceTagService;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
@@ -36,6 +39,10 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
 
     @Resource
     private PxWebArticleMapper pxWebArticleMapper;
+
+    @Resource
+    private com.pnkx.life.mapper.ResourceLinkMapper resourceLinkMapper;
+    @Resource private ResourceTagService resourceTags;
 
     @Resource
     private PxWebArticleTaskService taskService;
@@ -98,6 +105,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
     }
 
     @Override
+    @Transactional
     public PxWebArticle updatePxWebArticle(PxWebArticle pxWebArticle) {
         pxWebArticle.setUpdateBy(currentUserId());
         pxWebArticle.setUpdateTime(DateUtils.getNowDate());
@@ -105,6 +113,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
         if (rows == 0) {
             throw new ServiceException("记录不存在或无权修改");
         }
+        if (pxWebArticle.getTags() != null) resourceTags.syncLegacy(currentUserId(), "webArticle", pxWebArticle.getId(), pxWebArticle.getTags());
         return pxWebArticleMapper.selectPxWebArticleById(pxWebArticle.getId(), currentUserId());
     }
 
@@ -118,12 +127,16 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
 
     @Override
     public boolean updateReadFlag(Long id, String readFlag) {
-        return pxWebArticleMapper.updateReadFlag(id, currentUserId(), readFlag) > 0;
+        // 状态收一（§3.1）：已读状态落 px_resource_state.opened，不再写 px_web_article.read_flag
+        resourceLinkMapper.openState(id, currentUserId(), "1".equals(readFlag));
+        return true;
     }
 
     @Override
     public boolean updateStarFlag(Long id, String starFlag) {
-        return pxWebArticleMapper.updateStarFlag(id, currentUserId(), starFlag) > 0;
+        // 状态收一（§3.1）：收藏状态落 px_resource_state.starred，不再写 px_web_article.star_flag
+        resourceLinkMapper.starState(id, currentUserId(), "1".equals(starFlag));
+        return true;
     }
 
     @Override
@@ -227,6 +240,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
     }
 
     @Override
+    @Transactional
     public int renameTag(String oldTag, String newTag) {
         if (StringUtils.isEmpty(oldTag) || StringUtils.isEmpty(newTag)) {
             throw new ServiceException("标签名不能为空");
@@ -245,7 +259,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
             }
             String joined = String.join(",", tags);
             if (!joined.equals(row.getTags())) {
-                pxWebArticleMapper.updateTags(row.getId(), joined, currentUserId());
+                resourceTags.syncLegacy(currentUserId(), "webArticle", row.getId(), joined);
                 affected++;
             }
         }
@@ -253,6 +267,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
     }
 
     @Override
+    @Transactional
     public int deleteTag(String tag) {
         if (StringUtils.isEmpty(tag)) {
             throw new ServiceException("标签名不能为空");
@@ -264,7 +279,7 @@ public class PxWebArticleServiceImpl implements IPxWebArticleService {
                     .map(String::trim)
                     .filter(current -> !current.isEmpty() && !current.equals(target))
                     .collect(Collectors.joining(","));
-            pxWebArticleMapper.updateTags(row.getId(), joined, currentUserId());
+            resourceTags.syncLegacy(currentUserId(), "webArticle", row.getId(), joined);
             affected++;
         }
         return affected;

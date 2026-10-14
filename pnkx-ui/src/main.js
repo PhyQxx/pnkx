@@ -1,11 +1,143 @@
-import { createApp, defineAsyncComponent } from 'vue'
+import { computed, createApp, defineAsyncComponent } from 'vue'
 import Cookies from 'js-cookie'
-import ElementPlus from 'element-plus'
+// Element Plus 按需引入：命名导出可被 tree-shaking，仅打包项目实际使用的组件
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import 'element-plus/dist/index.css'
+import {
+    ElAlert,
+    ElAvatar,
+    ElBadge,
+    ElBreadcrumb,
+    ElBreadcrumbItem,
+    ElButton,
+    ElButtonGroup,
+    ElCalendar,
+    ElCard,
+    ElCascader,
+    ElCascaderPanel,
+    ElCheckbox,
+    ElCheckboxGroup,
+    ElCol,
+    ElCollapse,
+    ElCollapseItem,
+    ElColorPicker,
+    ElDatePicker,
+    ElDescriptions,
+    ElDescriptionsItem,
+    ElDialog,
+    ElDivider,
+    ElDrawer,
+    ElDropdown,
+    ElDropdownItem,
+    ElDropdownMenu,
+    ElEmpty,
+    ElForm,
+    ElFormItem,
+    ElIcon,
+    ElImage,
+    ElInput,
+    ElInputNumber,
+    ElLink,
+    ElMenu,
+    ElMenuItem,
+    ElOption,
+    ElOptionGroup,
+    ElPageHeader,
+    ElPagination,
+    ElPopover,
+    ElProgress,
+    ElRadio,
+    ElRadioButton,
+    ElRadioGroup,
+    ElRate,
+    ElRow,
+    ElScrollbar,
+    ElSelect,
+    ElSlider,
+    ElSubMenu,
+    ElSwitch,
+    ElTabPane,
+    ElTable,
+    ElTableColumn,
+    ElTabs,
+    ElTag,
+    ElTimePicker,
+    ElTimeline,
+    ElTimelineItem,
+    ElTooltip,
+    ElTransfer,
+    ElTree,
+    ElTreeSelect,
+    ElUpload,
+    ElLoadingDirective, ElInfiniteScroll, ElMessage, ElMessageBox, ElNotification, configProviderContextKey, localeContextKey
+} from 'element-plus'
+// 按组件引入样式（各条目自动携带其依赖与主题基础样式）
+import 'element-plus/es/components/alert/style/css'
+import 'element-plus/es/components/avatar/style/css'
+import 'element-plus/es/components/badge/style/css'
+import 'element-plus/es/components/breadcrumb/style/css'
+import 'element-plus/es/components/breadcrumb-item/style/css'
+import 'element-plus/es/components/button/style/css'
+import 'element-plus/es/components/button-group/style/css'
+import 'element-plus/es/components/calendar/style/css'
+import 'element-plus/es/components/card/style/css'
+import 'element-plus/es/components/cascader/style/css'
+import 'element-plus/es/components/cascader-panel/style/css'
+import 'element-plus/es/components/checkbox/style/css'
+import 'element-plus/es/components/checkbox-group/style/css'
+import 'element-plus/es/components/col/style/css'
+import 'element-plus/es/components/collapse/style/css'
+import 'element-plus/es/components/collapse-item/style/css'
+import 'element-plus/es/components/color-picker/style/css'
+import 'element-plus/es/components/date-picker/style/css'
+import 'element-plus/es/components/descriptions/style/css'
+import 'element-plus/es/components/descriptions-item/style/css'
+import 'element-plus/es/components/dialog/style/css'
+import 'element-plus/es/components/divider/style/css'
+import 'element-plus/es/components/drawer/style/css'
+import 'element-plus/es/components/dropdown/style/css'
+import 'element-plus/es/components/dropdown-item/style/css'
+import 'element-plus/es/components/dropdown-menu/style/css'
+import 'element-plus/es/components/empty/style/css'
+import 'element-plus/es/components/form/style/css'
+import 'element-plus/es/components/form-item/style/css'
+import 'element-plus/es/components/icon/style/css'
+import 'element-plus/es/components/image/style/css'
+import 'element-plus/es/components/input/style/css'
+import 'element-plus/es/components/input-number/style/css'
+import 'element-plus/es/components/link/style/css'
+import 'element-plus/es/components/menu/style/css'
+import 'element-plus/es/components/menu-item/style/css'
+import 'element-plus/es/components/option/style/css'
+import 'element-plus/es/components/option-group/style/css'
+import 'element-plus/es/components/page-header/style/css'
+import 'element-plus/es/components/pagination/style/css'
+import 'element-plus/es/components/popover/style/css'
+import 'element-plus/es/components/progress/style/css'
+import 'element-plus/es/components/radio/style/css'
+import 'element-plus/es/components/radio-button/style/css'
+import 'element-plus/es/components/radio-group/style/css'
+import 'element-plus/es/components/rate/style/css'
+import 'element-plus/es/components/row/style/css'
+import 'element-plus/es/components/scrollbar/style/css'
+import 'element-plus/es/components/select/style/css'
+import 'element-plus/es/components/slider/style/css'
+import 'element-plus/es/components/sub-menu/style/css'
+import 'element-plus/es/components/switch/style/css'
+import 'element-plus/es/components/tab-pane/style/css'
+import 'element-plus/es/components/table/style/css'
+import 'element-plus/es/components/table-column/style/css'
+import 'element-plus/es/components/tabs/style/css'
+import 'element-plus/es/components/tag/style/css'
+import 'element-plus/es/components/time-picker/style/css'
+import 'element-plus/es/components/timeline/style/css'
+import 'element-plus/es/components/timeline-item/style/css'
+import 'element-plus/es/components/tooltip/style/css'
+import 'element-plus/es/components/transfer/style/css'
+import 'element-plus/es/components/tree/style/css'
+import 'element-plus/es/components/tree-select/style/css'
+import 'element-plus/es/components/upload/style/css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { registerLegacyElementIconAliases, startLegacyElementIconObserver } from '@/utils/element-icon-compat'
-import ElementPlusX from 'vue-element-plus-x'
 import 'vue-element-plus-x/styles/index.css'
 import '@/assets/styles/public.css'
 import '@/assets/styles/font-face.css'
@@ -46,7 +178,6 @@ import Pagination from '@/components/Pagination/index.vue'
 import ToMessage from '@/components/ToMessage/index.vue'
 import { compressImage } from '@/utils/compressImage'
 import { getUserProfile } from '@/api/system/user'
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import RightToolbar from '@/components/RightToolbar/index.vue'
@@ -170,12 +301,81 @@ app.component('Pagination', Pagination)
 app.component('RightToolbar', RightToolbar)
 app.component('ToMessage', ToMessage)
 
-// 插件注册
-app.use(ElementPlus, {
-    size: Cookies.get('size') || 'default',
-    locale: zhCn
-})
-app.use(ElementPlusX)
+// 插件注册（Element Plus 按需版）
+const elementComponents = [
+    ElAlert,
+    ElAvatar,
+    ElBadge,
+    ElBreadcrumb,
+    ElBreadcrumbItem,
+    ElButton,
+    ElButtonGroup,
+    ElCalendar,
+    ElCard,
+    ElCascader,
+    ElCascaderPanel,
+    ElCheckbox,
+    ElCheckboxGroup,
+    ElCol,
+    ElCollapse,
+    ElCollapseItem,
+    ElColorPicker,
+    ElDatePicker,
+    ElDescriptions,
+    ElDescriptionsItem,
+    ElDialog,
+    ElDivider,
+    ElDrawer,
+    ElDropdown,
+    ElDropdownItem,
+    ElDropdownMenu,
+    ElEmpty,
+    ElForm,
+    ElFormItem,
+    ElIcon,
+    ElImage,
+    ElInput,
+    ElInputNumber,
+    ElLink,
+    ElMenu,
+    ElMenuItem,
+    ElOption,
+    ElOptionGroup,
+    ElPageHeader,
+    ElPagination,
+    ElPopover,
+    ElProgress,
+    ElRadio,
+    ElRadioButton,
+    ElRadioGroup,
+    ElRate,
+    ElRow,
+    ElScrollbar,
+    ElSelect,
+    ElSlider,
+    ElSubMenu,
+    ElSwitch,
+    ElTabPane,
+    ElTable,
+    ElTableColumn,
+    ElTabs,
+    ElTag,
+    ElTimePicker,
+    ElTimeline,
+    ElTimelineItem,
+    ElTooltip,
+    ElTransfer,
+    ElTree,
+    ElTreeSelect,
+    ElUpload
+]
+elementComponents.forEach(component => app.component(component.name, component))
+app.directive('loading', ElLoadingDirective)
+app.directive('infinite-scroll', ElInfiniteScroll)
+// 全局 locale/size：等价于原 app.use(ElementPlus, { size, locale })，
+// localeContextKey 供 Message/MessageBox 等命令式 API 的语言回退
+app.provide(configProviderContextKey, computed(() => ({ locale: zhCn, size: Cookies.get('size') || 'default' })))
+app.provide(localeContextKey, computed(() => zhCn))
 app.use(store)
 app.use(router)
 app.use(directive)

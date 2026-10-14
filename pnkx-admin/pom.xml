@@ -224,13 +224,6 @@
                 <version>${pnkx.version}</version>
             </dependency>
 
-            <!--博客素材模块-->
-            <dependency>
-                <groupId>com.pnkx</groupId>
-                <artifactId>pnkx-material</artifactId>
-                <version>${pnkx.version}</version>
-            </dependency>
-
             <!--生活模块-->
             <dependency>
                 <groupId>com.pnkx</groupId>
@@ -268,7 +261,6 @@
         <module>pnkx-framework</module>
         <module>pnkx-blog</module>
         <module>pnkx-life</module>
-        <module>pnkx-material</module>
         <module>pnkx-chat</module>
         <module>pnkx-ai</module>
         <module>pnkx-generator</module>

@@ -33,7 +33,7 @@ pnkx
 | `pnkx-admin` | Spring Boot 3 · JDK 21 · MyBatis · Redis · MySQL | 后端服务，多 Maven 模块 |
 | `pnkx-ui` | Vue 3 · Vite · Element Plus · Vuex | 博客后台管理系统 |
 | `pnkx-client` | Nuxt 3 · Vue 3 | 博客前台，SSR 渲染 |
-| `pnkx-uniapp` | uniapp · Vue 2 · uView UI | 移动端，一码多端 |
+| `pnkx-uniapp` | uniapp · Vue 3 · uni-ui | 移动端，一码多端 |
 
 ## 功能清单
 
@@ -81,6 +81,10 @@ pnkx
 - 代码生成器
 - 系统监控
 
+## 开发进度
+
+资料工作台改造的任务状态与验证记录见 [LightNote 功能实施清单](docs/LIGHT_NOTE_TASKS.md)，设计背景见 [功能对比与技术方案](docs/LIGHT_NOTE_COMPARISON_AND_ROADMAP.md)，部署顺序与人工验收见 [发布说明](docs/LIGHT_NOTE_RELEASE.md)。
+
 ## 环境依赖
 
 | 依赖 | 说明 |
@@ -122,7 +126,15 @@ pnpm build       # 构建
 
 ### 移动端（pnkx-uniapp）
 
-使用 [HBuilderX](https://www.dcloud.io/hbuilderx.html) 打开 `pnkx-uniapp` 目录，支持发布到 App、小程序、H5。
+使用 [HBuilderX](https://www.dcloud.io/hbuilderx.html) 打开 `pnkx-uniapp` 目录，支持发布到 App、小程序、H5。H5 也可在命令行构建：
+
+```bash
+cd pnkx-uniapp
+pnpm install --frozen-lockfile
+pnpm build:h5    # 输出 unpackage/dist/build/h5
+```
+
+2026-10-11 的 NAS 升级结果与备份位置见 [部署记录](docs/NAS_DEPLOYMENT_2026-10-11.md)。
 
 ## 功能截图
 

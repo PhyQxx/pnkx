@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.life.mapper.WorkspaceQaMapper">
+ <resultMap id="run" type="com.pnkx.life.service.workspace.WorkspaceQaRun">
+ <id property="requestId" column="request_id"/><result property="ownerId" column="owner_id"/>
+ <result property="status" column="status"/><result property="answer" column="answer"/><result property="sourcesJson" column="sources_json"/>
+ <result property="coverage" column="coverage"/><result property="inputChars" column="input_chars"/><result property="outputChars" column="output_chars"/>
+ <result property="elapsedMs" column="elapsed_ms"/><result property="targetType" column="target_type"/><result property="targetId" column="target_id"/><result property="createTime" column="create_time"/>
+ </resultMap>
+ <select id="get" resultMap="run">select * from px_workspace_qa where owner_id=#{owner} and request_id=#{id}</select>
+ <select id="list" resultMap="run">select request_id,status,coverage,input_chars,output_chars,elapsed_ms,target_type,target_id,create_time from px_workspace_qa where owner_id=#{owner} order by create_time desc,request_id desc limit 50</select>
+ <update id="expire">update px_workspace_qa set status='timeout' where owner_id=#{owner} and status='running' and create_time &lt; TIMESTAMPADD(SECOND,-180,CURRENT_TIMESTAMP)</update>
+ <select id="running" resultType="int">select count(*) from px_workspace_qa where owner_id=#{owner} and status='running'</select>
+ <insert id="insert">insert into px_workspace_qa(owner_id,request_id,status,input_chars) values(#{ownerId},#{requestId},'running',#{inputChars})</insert>
+ <update id="finish">update px_workspace_qa set status=case when status='cancelled' then 'cancelled' else #{status} end,answer=#{answer},sources_json=#{sourcesJson},coverage=#{coverage},output_chars=#{outputChars},elapsed_ms=#{elapsedMs} where owner_id=#{ownerId} and request_id=#{requestId} and (status='running' or (status='cancelled' and #{status}='failed'))</update>
+ <update id="cancel">update px_workspace_qa set status='cancelled' where owner_id=#{owner} and request_id=#{id} and status='running'</update>
+ <update id="applied">update px_workspace_qa set status='applied',target_type=#{targetType},target_id=#{targetId} where owner_id=#{ownerId} and request_id=#{requestId} and status='done'</update>
+</mapper>

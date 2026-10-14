@@ -6,6 +6,8 @@ import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.life.domain.po.*;
 import com.pnkx.life.mapper.*;
 import com.pnkx.life.service.IPxOfflineSyncService;
+import com.pnkx.life.service.IPxNoteService;
+import com.pnkx.life.service.NoteAccessService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,9 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
 
     @Resource
     private PxNoteMapper noteMapper;
+
+    @Resource
+    private IPxNoteService noteService;
 
     @Resource
     private PxCommemorationDayMapper commemorationDayMapper;
@@ -126,21 +131,24 @@ public class PxOfflineSyncServiceImpl implements IPxOfflineSyncService {
 
     @Override
     public Long insertNoteIdempotent(Map<String, Object> payload, String clientUuid) {
-        PxNote existing = noteMapper.selectByClientUuid(clientUuid);
-        if (existing != null) {
-            return existing.getId();
+        return insertNoteIdempotentResult(payload, clientUuid).getId();
+    }
+
+    @Override
+    public PxNote insertNoteIdempotentResult(Map<String, Object> payload, String clientUuid) {
+        if (clientUuid == null || clientUuid.isBlank() || clientUuid.length() > 36) {
+            throw new ServiceException("笔记同步标识不能为空且不能超过36字符");
         }
         PxNote note = mapToNote(payload);
         note.setClientUuid(clientUuid);
-        note.setCreateBy(SecurityUtils.getUserId());
-        note.setCreateTime(new Date());
-        noteMapper.insertPxNote(note);
-        return note.getId();
+        return noteService.insertPxNote(note);
     }
 
     @Override
     public List<PxNote> selectNoteIncremental(String userId, String since, int offset, int limit) {
-        return noteMapper.selectIncremental(userId, since, offset, limit);
+        String currentUserId = NoteAccessService.currentUserId();
+        if (!currentUserId.equals(userId)) throw NoteAccessService.unavailable();
+        return noteMapper.selectIncremental(currentUserId, since, Math.max(0, offset), Math.max(1, Math.min(limit, 100)));
     }
 
     // ──────────── 纪念日 ────────────

@@ -5,7 +5,10 @@
 </template>
 
 <script>
-import Cherry from 'cherry-markdown'
+// core 版不含 mermaid/katex/MathJax 内嵌引擎（全量版 4.2MB，本项目数据中无公式/流程图），
+// 省约 2.7MB；MathJax 本就走 CDN 按需加载。如需 mermaid 画图：
+// Cherry.usePlugin(require('cherry-markdown/dist/addons/cherry-code-block-mermaid-plugin')) + 页面挂 window.mermaid
+import Cherry from 'cherry-markdown/dist/cherry-markdown.core.js'
 import {getToken} from '@/utils/auth'
 import 'cherry-markdown/dist/cherry-markdown.min.css'
 

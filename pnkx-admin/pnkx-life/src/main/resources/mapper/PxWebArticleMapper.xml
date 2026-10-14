@@ -187,9 +187,10 @@
 
     <update id="updateAiResult" parameterType="PxWebArticle">
         update px_web_article
-        set summary = #{summary},
-            tags = #{tags},
-            category = #{category},
+        set
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="category != null">category = #{category},</if>
             ai_status = #{aiStatus},
             ai_error = #{aiError},
             ai_model = #{aiModel},

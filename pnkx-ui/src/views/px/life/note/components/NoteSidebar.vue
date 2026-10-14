@@ -75,7 +75,7 @@
             </div>
             <div class="folder-info">
               <div class="folder-name">{{ one.name }}</div>
-              <svg-icon v-if="one.password" icon-class="验证码" class="lock-icon" />
+              <svg-icon v-if="one.password" icon-class="captcha" class="lock-icon" />
             </div>
           </div>
 

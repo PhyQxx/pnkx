@@ -1,5 +1,7 @@
 package com.pnkx.life.service.webarticle;
 
+import com.pnkx.life.service.workspace.ResourceTagService;
+
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.ai.AiClient;
 import com.pnkx.common.utils.DateUtils;
@@ -97,6 +99,7 @@ public class PxWebArticleTaskService {
 
     @Resource
     private PxWebArticleMapper pxWebArticleMapper;
+    @Resource private ResourceTagService resourceTags;
 
     @Resource
     private AiClient aiClient;
@@ -219,14 +222,14 @@ public class PxWebArticleTaskService {
         if (article == null || !"1".equals(article.getFetchStatus())) {
             result.setAiStatus("2");
             result.setAiError("正文未就绪，无法分析");
-            pxWebArticleMapper.updateAiResult(result);
+            resourceTags.applyArticleAnalysis(result);
             return;
         }
         String text = article.getContentText() == null ? "" : article.getContentText().trim();
         if (text.length() < MIN_TEXT_LENGTH) {
             result.setAiStatus("2");
             result.setAiError("正文过短，无法有效分析");
-            pxWebArticleMapper.updateAiResult(result);
+            resourceTags.applyArticleAnalysis(result);
             return;
         }
 
@@ -245,7 +248,7 @@ public class PxWebArticleTaskService {
         if (parsed == null) {
             result.setAiStatus("2");
             result.setAiError("AI 调用或输出解析失败");
-            pxWebArticleMapper.updateAiResult(result);
+            resourceTags.applyArticleAnalysis(result);
             return;
         }
         String category = parsed.getString("category");
@@ -255,7 +258,7 @@ public class PxWebArticleTaskService {
         result.setAiStatus("1");
         result.setAiError(null);
         result.setAiModel(model);
-        pxWebArticleMapper.updateAiResult(result);
+        resourceTags.applyArticleAnalysis(result);
         log.info("网址AI分析完成, id: {}, 模型: {}, 长文分段: {}", id, model, text.length() > AI_INPUT_LIMIT);
     }
 

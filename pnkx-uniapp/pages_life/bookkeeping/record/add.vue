@@ -9,18 +9,7 @@
     <!-- 顶部操作栏 -->
     <view class="header-row">
       <!-- 记账类型标签栏 -->
-      <view class="type-tabs">
-        <view
-          v-for="tab in typeTabs"
-          :key="tab.value"
-          class="tab-item"
-          :class="{ active: active === tab.value }"
-          @click="handleTabChange(tab.value)"
-        >
-          {{ tab.label }}
-        </view>
-        <view class="tab-indicator" :style="indicatorStyle"></view>
-      </view>
+      <TypeTabs :tabs="typeTabs" :active="active" @change="handleTabChange" />
 
       <!-- AI记账按钮 -->
       <view class="ai-toggle" :class="{ active: showAiInput }" @click="showAiInput = !showAiInput">
@@ -47,24 +36,13 @@
       </view>
 
       <!-- 分类图标区域（转账无分类） -->
-      <view class="category-section" v-if="active !== '2'">
-        <view class="category-grid">
-          <view
-            v-for="(category, index) in currentCategoryList"
-            :key="category.id"
-            class="category-item"
-            :class="{ selected: temporaryForm.primaryType === category.id || temporaryForm.primaryType === category.typeName }"
-            @click="handleSelectPrimaryType(category)"
-          >
-            <view class="category-icon" :style="{ backgroundColor: getCategoryColor(index) }">
-              <svg-icon :icon-class="category.typeIcon" size="32rpx"/>
-            </view>
-            <view class="category-label">{{ category.typeName }}</view>
-            <view v-if="category.children && category.children.length > 0"
-                  class="category-arrow"></view>
-          </view>
-        </view>
-      </view>
+      <CategoryGrid
+        v-if="active !== '2'"
+        :categories="currentCategoryList"
+        :colors="categoryColors"
+        :selected-key="temporaryForm.primaryType"
+        @select="handleSelectPrimaryType"
+      />
 
       <!-- 金额和备注区域 -->
       <view class="input-section">
@@ -155,63 +133,11 @@
     <!-- 数字键盘 -->
     <Calculator class="calculator" @getInputValue="handleCalculatorInput" @confirm="handleSave"/>
 
-    <!-- 账户选择弹窗 -->
-    <uni-popup ref="accountPopup" type="bottom">
-      <view class="account-picker">
-        <view class="picker-header">
-          <view class="picker-cancel" @click="closePopup('accountPopup')">取消</view>
-          <view class="picker-title">选择账户</view>
-          <view class="picker-confirm" @click="confirmAccount">确定</view>
-        </view>
-        <view class="picker-content">
-          <view
-            v-for="(group, gIndex) in accountColumns"
-            :key="gIndex"
-            class="account-group"
-          >
-            <view class="group-label">{{ group.accountName || group.typeName }}</view>
-            <view class="group-items">
-              <view
-                v-for="(account, aIndex) in group.children || []"
-                :key="account.id"
-                class="account-item"
-                :class="{ selected: temporaryAccountId === account.id }"
-                @click="selectAccountItem(account)"
-              >
-                <view class="account-item-name">{{ account.accountName }}</view>
-                <view class="account-item-amount">¥{{ account.balance || 0 }}</view>
-                <uni-icons v-if="temporaryAccountId === account.id" type="checkmarkempty" size="18"
-                           color="#4A7ADB"/>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-    </uni-popup>
+    <!-- 账户选择弹窗（组件化） -->
+    <AccountPickerPopup ref="accountPicker" :columns="accountColumns" @select="applyAccountSelection" @confirm="onAccountPickerConfirm" />
 
-    <!-- 二级分类选择弹窗 -->
-    <uni-popup ref="secondaryPopup" type="bottom">
-      <view class="secondary-picker">
-        <view class="picker-header">
-          <view class="picker-cancel" @click="closePopup('secondaryPopup')">取消</view>
-          <view class="picker-title">选择分类</view>
-          <view class="picker-confirm" @click="confirmSecondaryType">确定</view>
-        </view>
-        <view class="picker-content">
-          <view
-            v-for="item in currentSecondaryTypeList"
-            :key="item.id"
-            class="picker-item"
-            :class="{ selected: temporarySecondaryType === item.id }"
-            @click="selectSecondaryItem(item)"
-          >
-            {{ item.typeName }}
-            <uni-icons v-if="temporarySecondaryType === item.id" type="checkmarkempty" size="18"
-                       color="#4A7ADB"/>
-          </view>
-        </view>
-      </view>
-    </uni-popup>
+    <!-- 二级分类选择弹窗（组件化） -->
+    <SecondaryTypePopup ref="secondaryPicker" :list="currentSecondaryTypeList" @select="onSecondarySelect" @confirm="onSecondaryConfirm" />
   </view>
 </template>
 
@@ -222,12 +148,20 @@ import {addRecord, aiParse, delRecord, getRecord, updateRecord} from "@/api/px/l
 import {listDay} from "@/api/px/life/commemorationDay";
 import upload from "@/utils/upload";
 import Calculator from "@/pages_life/components/Calculator/index.vue";
+import TypeTabs from '../components/TypeTabs.vue';
+import CategoryGrid from '../components/CategoryGrid.vue';
+import AccountPickerPopup from '../components/AccountPickerPopup.vue';
+import SecondaryTypePopup from '../components/SecondaryTypePopup.vue';
 import uniPopup from '@/uni_modules/uni-popup/components/uni-popup/uni-popup.vue';
 
 export default {
   name: "addRecord",
   components: {
     Calculator,
+    TypeTabs,
+    CategoryGrid,
+    AccountPickerPopup,
+    SecondaryTypePopup,
     uniPopup
   },
   data() {
@@ -270,9 +204,7 @@ export default {
       // 图片列表
       imageList: [],
       // 临时选中的账户ID
-      temporaryAccountId: '',
       // 临时选中的二级分类
-      temporarySecondaryType: '',
       // 分类图标背景颜色
       categoryColors: ['#DDEAFF', '#FFE4E4', '#DCF8E8', '#FFF1C9', '#EEE7FF', '#FCE7F3', '#DDF7EE', '#E1F0FF'],
       // 是否正在初始化
@@ -323,11 +255,6 @@ export default {
       return '';
     },
     // 标签指示器样式
-    indicatorStyle() {
-      const index = this.typeTabs.findIndex(tab => tab.value === this.active);
-      const step = 100 / this.typeTabs.length;
-      return `left: ${index * step}%;`;
-    },
     commemorationLabels() {
       return ['不关联纪念日'].concat(this.commemorationDays.map(item => item.name));
     },
@@ -359,7 +286,6 @@ export default {
       this.temporaryForm.otherAccountName = '';
       this.recordForm.account = '';
       this.recordForm.otherAccount = '';
-      this.temporaryAccountId = '';
       if (newAction === '2') {
         // 转账：无分类，type 固定为 0（与 PC 端一致，type=0 的记录不关联分类）
         this.recordForm.type = 0;
@@ -379,9 +305,6 @@ export default {
     /**
      * 获取分类图标背景颜色
      */
-    getCategoryColor(index) {
-      return this.categoryColors[index % this.categoryColors.length]
-    },
     /**
      * 初始化数据
      */
@@ -408,13 +331,11 @@ export default {
           if (res.data.typeObject) {
             this.temporaryForm.primaryType = res.data.typeObject.typeParentId || res.data.typeObject.id;
             this.temporaryForm.secondaryType = res.data.typeObject.id;
-            this.temporarySecondaryType = res.data.typeObject.id;
           }
           // 设置账户
           if (res.data.account) {
             this.temporaryForm.account = res.data.accountObject ? res.data.accountObject.accountName : res.data.accountName;
             this.recordForm.account = res.data.account;
-            this.temporaryAccountId = res.data.account;
           }
           // 转账：回填转入账户
           if (res.data.otherAccount) {
@@ -470,7 +391,6 @@ export default {
           const recentItem = firstType.children[0];
           this.recordForm.type = recentItem.id;
           this.temporaryForm.secondaryType = recentItem.id;
-          this.temporarySecondaryType = recentItem.id;
         } else {
           this.recordForm.type = firstType.id;
           this.temporaryForm.secondaryType = firstType.id;
@@ -484,11 +404,9 @@ export default {
           const firstAccount = firstGroup.children[0];
           this.temporaryForm.account = firstAccount.accountName;
           this.recordForm.account = firstAccount.id;
-          this.temporaryAccountId = firstAccount.id;
         } else if (firstGroup.id) {
           this.temporaryForm.account = firstGroup.accountName;
           this.recordForm.account = firstGroup.id;
-          this.temporaryAccountId = firstGroup.id;
         }
       } else if (this.recordForm.account && !this.temporaryForm.account) {
         // 如果有账户ID但没有账户名称，从列表中查找
@@ -626,7 +544,6 @@ export default {
               if (child) {
                 this.temporaryForm.primaryType = parent.id;
                 this.temporaryForm.secondaryType = child.id;
-                this.temporarySecondaryType = child.id;
                 this.recordForm.type = child.id;
                 break;
               }
@@ -637,7 +554,6 @@ export default {
         // 设置账户
         if (data.accountId) {
           this.recordForm.account = data.accountId;
-          this.temporaryAccountId = data.accountId;
           for (const group of this.accountColumns) {
             if (group.children) {
               const account = group.children.find(a => a.id === data.accountId);
@@ -677,8 +593,7 @@ export default {
           const child = parent.children.find(c => c.id === this.recordForm.type);
           if (child) {
             this.temporaryForm.primaryType = parent.id || parent.typeName;
-            this.temporarySecondaryType = child.id;
-            this.$refs.secondaryPopup.open();
+            this.$refs.secondaryPicker.open(child.id);
             return;
           }
         }
@@ -686,8 +601,7 @@ export default {
       // 如果没找到，使用第一个有子分类的分类
       if (this.typeColumns.length > 0 && this.typeColumns[0].children) {
         this.temporaryForm.primaryType = this.typeColumns[0].id || this.typeColumns[0].typeName;
-        this.temporarySecondaryType = this.typeColumns[0].children[0].id;
-        this.$refs.secondaryPopup.open();
+        this.$refs.secondaryPicker.open(this.typeColumns[0].children[0].id);
       }
     },
     /**
@@ -701,43 +615,24 @@ export default {
 
       // 如果有二级分类，打开二级分类选择器
       if (category.children && category.children.length > 0) {
-        this.temporarySecondaryType = category.children[0].id;
-        this.$refs.secondaryPopup.open();
+        this.$refs.secondaryPicker.open(category.children[0].id);
       }
     },
     /**
      * 关闭弹窗（带兜底逻辑，解决正式包弹窗不关闭的问题）
      */
-    closePopup(refName) {
-      const popup = this.$refs[refName];
-      if (!popup) return;
-      popup.close();
-      // 兜底：动画完成后强制关闭，防止 animation 为 null 时 close 被跳过
-      setTimeout(() => {
-        if (popup.showPopup) {
-          popup.showPopup = false;
-          popup.showTrans = false;
-        }
-      }, 350);
-    },
     /**
      * 选择二级分类项
      */
-    selectSecondaryItem(item) {
-      this.temporarySecondaryType = item.id;
+    onSecondarySelect(item) {
       this.temporaryForm.secondaryType = item.id;
       this.recordForm.type = item.id;
-      this.closePopup('secondaryPopup');
     },
-    /**
-     * 确认二级分类选择
-     */
-    confirmSecondaryType() {
-      if (this.temporarySecondaryType) {
-        this.temporaryForm.secondaryType = this.temporarySecondaryType;
-        this.recordForm.type = this.temporarySecondaryType;
+    onSecondaryConfirm(id) {
+      if (id) {
+        this.temporaryForm.secondaryType = id;
+        this.recordForm.type = id;
       }
-      this.closePopup('secondaryPopup');
     },
     /**
      * 选择二级分类
@@ -751,11 +646,18 @@ export default {
      */
     openAccountPicker(mode) {
       this.accountPickerMode = mode;
-      // 同步当前已选账户到弹窗选中态
-      this.temporaryAccountId = mode === 'in'
+      // 组件打开时同步当前已选账户高亮
+      this.$refs.accountPicker.open(mode === 'in'
         ? (this.recordForm.otherAccount || '')
-        : (this.recordForm.account || '');
-      this.$refs.accountPopup.open();
+        : (this.recordForm.account || ''));
+    },
+    /**
+     * 账户弹窗「确定」
+     */
+    onAccountPickerConfirm(id) {
+      if (id) {
+        this.applyAccountSelection(this.findAccountById(id));
+      }
     },
     /**
      * 按 id 查找账户
@@ -787,20 +689,6 @@ export default {
     /**
      * 选择账户项
      */
-    selectAccountItem(account) {
-      this.temporaryAccountId = account.id;
-      this.applyAccountSelection(account);
-      this.closePopup('accountPopup');
-    },
-    /**
-     * 确认账户选择
-     */
-    confirmAccount() {
-      if (this.temporaryAccountId) {
-        this.applyAccountSelection(this.findAccountById(this.temporaryAccountId));
-      }
-      this.closePopup('accountPopup');
-    },
 
     /**
      * 获取计算器的内容
@@ -930,6 +818,8 @@ export default {
         } else {
           await addRecord(this.recordForm);
           uni.showToast({title: '新增成功', icon: 'success'});
+          // 通知今天页：新账单从顶部生长进场（§7.4.2）
+          uni.$emit('bill:added', { id: this.recordForm.id || null, payTime: this.recordForm.payTime });
         }
         uni.navigateBack();
       } finally {
@@ -1062,119 +952,7 @@ uni-page-body {
     }
   }
 
-  .type-tabs {
-    display: flex;
-    background-color: $bg-card;
-    padding: 0 $spacing-sm;
-    position: relative;
-    flex: 1;
 
-    .tab-item {
-      flex: 1;
-      text-align: center;
-      padding: $spacing-sm 0;
-      font-size: $font-body;
-      color: $text-secondary;
-      position: relative;
-      transition: color $duration-normal $ease-default;
-
-      &.active {
-        color: $primary-dark;
-        font-weight: $font-weight-medium;
-      }
-    }
-
-    .tab-indicator {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: calc(100% / 3);
-      height: $spacing-2xs;
-      background-color: $primary;
-      transition: left $duration-normal $ease-default;
-    }
-  }
-
-  .category-section {
-    background-color: $bg-card;
-    margin-top: 1rpx solid $border-light;
-    padding: $spacing-sm $spacing-md;
-    flex-shrink: 0;
-
-    .category-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: $spacing-sm;
-      justify-content: center;
-    }
-
-    .category-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: calc(25% - 8rpx);
-      padding: $spacing-sm $spacing-xs;
-      border-radius: $radius-md;
-      background-color: $gray-50;
-      position: relative;
-      transition: all $duration-normal $ease-spring;
-
-      &:active {
-        transform: scale(0.95);
-      }
-
-      &.selected {
-        background-color: $bookkeeping-light;
-
-        .category-label {
-          color: $primary-dark;
-          font-weight: $font-weight-medium;
-        }
-      }
-    }
-
-    .category-icon {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: $radius-full;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: $spacing-2xs;
-      box-shadow: $shadow-xs;
-    }
-
-    .category-label {
-      font-size: $font-small;
-      color: $text-primary;
-      text-align: center;
-      transition: color $duration-fast $ease-default;
-    }
-
-    .category-arrow {
-      position: absolute;
-      top: $spacing-2xs;
-      right: $spacing-2xs;
-      width: $spacing-md;
-      height: $spacing-md;
-      border-radius: $radius-full;
-      background-color: $gray-300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &::after {
-        content: '';
-        width: 0;
-        height: 0;
-        border-left: $spacing-2xs solid transparent;
-        border-right: $spacing-2xs solid transparent;
-        border-top: $spacing-xs solid $bg-card;
-        margin-top: $spacing-2xs;
-      }
-    }
-  }
 
   .sub-category-section {
     background-color: $bg-card;
@@ -1356,142 +1134,7 @@ uni-page-body {
     }
   }
 
-  .account-picker {
-    background-color: $bg-card;
-    border-radius: $radius-2xl $radius-2xl 0 0;
-    overflow: hidden;
 
-    .picker-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: $spacing-sm;
-      border-bottom: 1rpx solid $border-light;
-
-      .picker-cancel {
-        font-size: $font-body;
-        color: $text-secondary;
-        padding: $spacing-xs $spacing-sm;
-      }
-
-      .picker-title {
-        font-size: $font-body;
-        font-weight: $font-weight-medium;
-        color: $text-primary;
-      }
-
-      .picker-confirm {
-        font-size: $font-body;
-        color: $primary;
-        padding: $spacing-xs $spacing-sm;
-      }
-    }
-
-    .picker-content {
-      max-height: 320px;
-      overflow-y: auto;
-
-      .account-group {
-        .group-label {
-          padding: $spacing-sm $spacing-lg $spacing-xs;
-          font-size: $font-caption;
-          color: $text-tertiary;
-        }
-
-        .group-items {
-          background-color: $bg-card;
-        }
-
-        .account-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: $spacing-md $spacing-lg;
-          border-bottom: 1rpx solid $border-light;
-          transition: background-color $duration-fast $ease-default;
-
-          &:last-child {
-            border-bottom: none;
-          }
-
-          &.selected {
-            background-color: $bookkeeping-light;
-          }
-
-          &:active {
-            background-color: $gray-50;
-          }
-
-          .account-item-name {
-            font-size: $font-body;
-            color: $text-primary;
-          }
-
-          .account-item-amount {
-            font-size: $font-body;
-            color: $text-secondary;
-            margin-right: $spacing-xs;
-          }
-        }
-      }
-    }
-  }
-
-  .secondary-picker {
-    background-color: $bg-card;
-    border-radius: $radius-2xl $radius-2xl 0 0;
-    overflow: hidden;
-
-    .picker-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: $spacing-sm;
-      border-bottom: 1rpx solid $border-light;
-
-      .picker-cancel {
-        font-size: $font-body;
-        color: $text-secondary;
-        padding: $spacing-xs $spacing-sm;
-      }
-
-      .picker-title {
-        font-size: $font-body;
-        font-weight: $font-weight-medium;
-        color: $text-primary;
-      }
-
-      .picker-confirm {
-        font-size: $font-body;
-        color: $primary;
-        padding: $spacing-xs $spacing-sm;
-      }
-    }
-
-    .picker-content {
-      max-height: 320px;
-      overflow-y: auto;
-
-      .picker-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: $spacing-md $spacing-lg;
-        font-size: $font-body;
-        color: $text-primary;
-        transition: background-color $duration-fast $ease-default;
-
-        &.selected {
-          color: $primary-dark;
-          background-color: $bookkeeping-light;
-        }
-
-        &:active {
-          background-color: $gray-50;
-        }
-      }
-    }
-  }
 }
 
 /* Glacier morning visual alignment */
@@ -1508,36 +1151,7 @@ uni-page-body {
     backdrop-filter: blur(24rpx);
   }
 
-  .type-tabs { background: transparent; }
 
-  .category-section {
-    margin: 20rpx $page-padding 0;
-    padding: 22rpx 20rpx;
-    background: rgba(255, 255, 255, 0.86);
-    border: 1rpx solid rgba(255, 255, 255, 0.94);
-    border-radius: $radius-2xl;
-    box-shadow: $shadow-card;
-    backdrop-filter: blur(24rpx);
-
-    .category-grid { gap: 10rpx; }
-
-    .category-item {
-      width: calc(25% - 8rpx);
-      padding: 10rpx 4rpx;
-      background: transparent;
-
-      &.selected {
-        background: rgba(79, 134, 247, 0.1);
-        box-shadow: inset 0 0 0 1rpx rgba(79, 134, 247, 0.18);
-      }
-    }
-
-    .category-icon {
-      width: 70rpx;
-      height: 70rpx;
-      box-shadow: none;
-    }
-  }
 
   .input-section {
     margin: 20rpx $page-padding 0;
@@ -1591,17 +1205,7 @@ uni-page-body {
       min-height: 64rpx;
     }
 
-    .type-tabs .tab-item { padding: 10rpx 0; }
 
-    .category-section {
-      margin-top: 10rpx;
-      padding: 12rpx 14rpx;
-
-      .category-grid { gap: 4rpx 8rpx; }
-      .category-item { padding: 4rpx 2rpx; }
-      .category-icon { width: 58rpx; height: 58rpx; }
-      .category-label { font-size: 20rpx; }
-    }
 
     .input-section {
       margin-top: 10rpx;

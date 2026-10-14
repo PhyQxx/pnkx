@@ -39,6 +39,7 @@
       />
     </div>
 
+    <resource-links v-if="toDoDetails.id" type="todo" :id="toDoDetails.id" />
     <!-- 属性区域 -->
     <div class="detail-props">
       <!-- 状态 -->
@@ -57,7 +58,7 @@
       <!-- 标签 -->
       <div class="prop-row">
         <div class="prop-label">
-          <svg-icon icon-class="验证码" class="prop-icon" />
+          <svg-icon icon-class="captcha" class="prop-icon" />
           <span>标签</span>
         </div>
         <div class="prop-content">
@@ -154,10 +155,11 @@
 <script>
 /* eslint-disable vue/no-mutating-props */
 import Editor from '@/components/Editor'
+import ResourceLinks from '@/components/ResourceLinks'
 
 export default {
   name: 'TodoDetail',
-  components: { Editor },
+  components: { Editor, ResourceLinks },
   emits: ['close', 'save', 'delete', 'open-reminder', 'update:time'],
   props: {
     // 待办详情对象（按引用共享，字段就地编辑；保存动作由父组件触发）

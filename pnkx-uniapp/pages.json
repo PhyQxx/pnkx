@@ -65,6 +65,12 @@
       "style": {
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/workspace/index",
+      "style": {
+        "navigationBarTitleText": "资料中心"
+      }
     }
   ],
   "subPackages": [
@@ -136,13 +142,6 @@
           "style": {
             "navigationBarTitleText": "浏览文本"
           }
-        },
-        {
-          "path": "search/index",
-          "style": {
-            "navigationBarTitleText": "",
-            "enablePullDownRefresh": false
-          }
         }
       ]
     },
@@ -153,6 +152,43 @@
           "path": "book/index",
           "style": {
             "navigationBarTitleText": "我的书城",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "workspace/ask",
+          "style": {
+            "navigationBarTitleText": "资料问答"
+          }
+        },
+        {
+          "path": "workspace/files",
+          "style": {
+            "navigationBarTitleText": "个人文件"
+          }
+        },
+        {
+          "path": "workspace/series",
+          "style": {
+            "navigationBarTitleText": "重复待办"
+          }
+        },
+        {
+          "path": "workspace/organize",
+          "style": {
+            "navigationBarTitleText": "整理建议"
+          }
+        },
+        {
+          "path": "workspace/recovery",
+          "style": {
+            "navigationBarTitleText": "历史与回收站"
+          }
+        },
+        {
+          "path": "workspace/resource",
+          "style": {
+            "navigationBarTitleText": "打开资料",
             "enablePullDownRefresh": false
           }
         },
@@ -199,7 +235,7 @@
                 "buttons": [
                   {
                     "text": "编辑",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -222,7 +258,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -257,7 +293,7 @@
                 "buttons": [
                   {
                     "text": "编辑",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -317,7 +353,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#2563EB",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -347,7 +383,7 @@
                 "buttons": [
                   {
                     "text": "新建",
-                    "color": "#2563EB",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -371,7 +407,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -401,7 +437,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -425,7 +461,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#FD6697",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -461,7 +497,7 @@
                 "buttons": [
                   {
                     "text": "保存",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -478,7 +514,7 @@
                 "buttons": [
                   {
                     "text": "使用记录",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -501,7 +537,7 @@
                 "buttons": [
                   {
                     "text": "新建",
-                    "color": "#5A8DEE",
+                    "color": "#4F86F7",
                     "fontSize": "14px"
                   }
                 ]
@@ -597,13 +633,19 @@
         "pagePath": "pages/index",
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home_.png",
-        "text": "首页"
+        "text": "今天"
       },
       {
         "pagePath": "pages/function/index",
         "iconPath": "static/images/tabbar/work.png",
         "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "生活助手"
+        "text": "生活"
+      },
+      {
+        "pagePath": "pages/workspace/index",
+        "iconPath": "static/images/tabbar/res.png",
+        "selectedIconPath": "static/images/tabbar/res_.png",
+        "text": "资料"
       },
       {
         "pagePath": "pages/mine/index",

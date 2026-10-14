@@ -9,6 +9,9 @@ import com.pnkx.common.utils.ExcelUtil;
 import com.pnkx.life.domain.po.PxNote;
 import com.pnkx.life.domain.po.PxNoteFolder;
 import com.pnkx.life.service.IPxNoteService;
+import com.pnkx.life.service.NoteRevisionConflictException;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
@@ -25,6 +28,14 @@ import java.util.List;
 public class PxNoteController extends BaseController {
     @Resource
     private IPxNoteService pxNoteService;
+
+    @ExceptionHandler(NoteRevisionConflictException.class)
+    public ResponseEntity<AjaxResult> conflict(NoteRevisionConflictException ex) {
+        AjaxResult body = AjaxResult.error(409, ex.getMessage());
+        body.put("errorCode", ex.getErrorCode());
+        body.put("data", Map.of("current", ex.getCurrent()));
+        return ResponseEntity.status(409).body(body);
+    }
 
     /**
      * 查询笔记列表

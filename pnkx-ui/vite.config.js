@@ -4,6 +4,26 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import compression from 'vite-plugin-compression2'
 import path from 'path'
+import fs from 'fs'
+
+// 图标名清单虚拟模块：IconSelect 只需要 svg 文件名（渲染走 svg sprite），
+// 避免 eager glob 把 215 个 svg 全文（约 456KB）打进共享 chunk
+const VIRTUAL_ICON_NAMES = 'virtual:svg-icon-names'
+function svgIconNames() {
+    return {
+        name: 'svg-icon-names',
+        resolveId(id) {
+            if (id === VIRTUAL_ICON_NAMES) return '\0' + VIRTUAL_ICON_NAMES
+            return null
+        },
+        load(id) {
+            if (id !== '\0' + VIRTUAL_ICON_NAMES) return null
+            const dir = path.resolve(process.cwd(), 'src/assets/icons/svg')
+            const names = fs.readdirSync(dir).filter(f => f.endsWith('.svg')).map(f => f.replace(/\.svg$/, '')).sort()
+            return `export default ${JSON.stringify(names)}`
+        }
+    }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -13,6 +33,7 @@ export default defineConfig(({ mode }) => {
         plugins: [
             vue(),
             vueJsx(),
+            svgIconNames(),
             createSvgIconsPlugin({
                 iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
                 symbolId: 'icon-[name]'
@@ -56,9 +77,15 @@ export default defineConfig(({ mode }) => {
             chunkSizeWarningLimit: 500,
             rollupOptions: {
                 output: {
+                    // chunk 名强制纯 ASCII：glob 导入的 svg 模块（如 验证码/闹钟.svg）
+                    // 会让共享 chunk 带中文文件名，部分 CDN/对象存储对中文 key 不友好
+                    sanitizeFileName(name) {
+                        return name.replace(/[^\x20-\x7E]/g, c => '_' + c.codePointAt(0).toString(36))
+                    },
                     manualChunks: {
                         'vue-vendor': ['vue', 'vue-router', 'vuex'],
-                        'element-plus': ['element-plus', '@element-plus/icons-vue'],
+                        'element-plus': ['element-plus'],
+                        'element-icons': ['@element-plus/icons-vue'],
                         'echarts': ['echarts'],
                     }
                 }

@@ -1,0 +1,103 @@
+/**
+ * workspace-common.scss —— 资料中心子页统一视觉（PRODUCT_UIUE_REDESIGN §3.2 / Phase 2）
+ * 个人文件 / 资料问答 / 整理建议 / 历史与回收站 / 重复待办 共用。
+ * 页面根节点需挂 subpage-shell + page 类；本文件只提供通用控件质感，
+ * 页面特有布局仍留在各自 <style> 中。
+ */
+
+/* 页面容器 */
+.ws-page {
+  min-height: 100vh;
+  padding: 28rpx;
+  box-sizing: border-box;
+}
+
+/* 标题行 */
+.ws-page .heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin: 24rpx 0 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $text-secondary;
+}
+
+/* 卡片 */
+.ws-page .card {
+  padding: 26rpx;
+  border-radius: 26rpx;
+  background: $frost-white;
+  border: 1rpx solid $border-color-light;
+  box-shadow: $shadow-sm;
+  margin-bottom: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.ws-page .card .title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $text-primary;
+  overflow-wrap: anywhere;
+}
+
+/* 工具行 */
+.ws-page .toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 原生按钮统一为胶囊主按钮 */
+.ws-page button {
+  margin: 0;
+  border-radius: 100rpx;
+  background: $bg-card-hover;
+  color: $text-primary;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 2.2;
+  padding: 0 28rpx;
+}
+.ws-page button[type='primary'],
+.ws-page button.primary {
+  background: $primary;
+  color: $theme-white;
+}
+.ws-page button[disabled] {
+  opacity: 0.45;
+}
+
+/* 输入 */
+.ws-page input,
+.ws-page textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20rpx 24rpx;
+  border-radius: 18rpx;
+  background: $bg-card-hover;
+  font-size: 26rpx;
+}
+.ws-page textarea {
+  height: 240rpx;
+}
+
+/* picker 触发器 */
+.ws-page picker text {
+  color: $primary;
+  font-weight: 600;
+}
+
+/* 状态文案 */
+.ws-page .state,
+.ws-page .empty {
+  display: block;
+  padding: 80rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: $text-tertiary;
+}

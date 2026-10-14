@@ -120,13 +120,6 @@
             <version>${pnkx.version}</version>
         </dependency>
 
-        <!--博客素材模块-->
-        <dependency>
-            <groupId>com.pnkx</groupId>
-            <artifactId>pnkx-material</artifactId>
-            <version>${pnkx.version}</version>
-        </dependency>
-
         <!--html代码转字符串-->
         <dependency>
             <groupId>org.jsoup</groupId>

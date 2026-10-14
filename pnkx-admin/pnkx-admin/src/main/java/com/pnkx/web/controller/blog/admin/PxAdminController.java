@@ -10,6 +10,8 @@ import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
 import com.pnkx.life.domain.po.*;
+import com.pnkx.life.service.search.SearchService;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.pnkx.blog.domain.po.*;
 import com.pnkx.blog.domain.vo.PxArticleVo;
 import com.pnkx.life.service.*;import com.pnkx.blog.service.*;import com.pnkx.system.domain.SysNotice;
@@ -71,144 +73,23 @@ public class PxAdminController extends BaseController {
     private IPxBookService bookService;
     @Resource
     private AiClient aiClient;
+    @Resource
+    private SearchService searchService;
 
     /**
      * 跨模块统一搜索。返回稳定的轻量结果结构，PC 与移动端共用。
      */
     @GetMapping("/globalSearch")
     public AjaxResult globalSearch(String q, String type, String startDate, String endDate, String tag) {
-        String keyword = q == null ? "" : q.trim();
-        if (keyword.isEmpty()) return AjaxResult.success(Collections.emptyList());
-        String userId = SecurityUtils.getUserId();
-        List<JSONObject> results = new ArrayList<>();
-
-        if (matchesType(type, "article")) {
-            PxArticleVo query = new PxArticleVo();
-            query.setSearchValue(keyword);
-            query.setCreateBy(userId);
-            pxArticleService.selectPxArticleNotContent(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "article", item.getId(), item.getTitle(), "博客文章",
-                            "/blog/article", "/pages_blog/article/detail?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "todo")) {
-            PxToDo query = new PxToDo();
-            query.setSearchValue(keyword);
-            pxToDoService.selectPxToDoList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "todo", item.getId(), item.getContent(), item.getLabel(),
-                            "/mytool/todo", "/pages_life/todo/edit?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "diary")) {
-            pxDiaryService.retrieval(keyword).stream().limit(10).forEach(item -> {
-                // 日记表单不写 title，绝大多数行标题为空，用正文摘要兜底避免搜索结果空白
-                String title = StringUtils.isNotBlank(item.getTitle())
-                        ? item.getTitle() : diaryExcerpt(item.getContent());
-                addSearchResult(results, "diary", item.getId(), title,
-                        DateUtils.parseDateToStr("yyyy-MM-dd", item.getDate()),
-                        "/mytool/diary", "/pages_life/diary/edit?id=" + item.getId(), item, startDate, endDate, tag);
-            });
-        }
-        if (matchesType(type, "note")) {
-            noteService.searchNotes(userId, keyword, null, 10).forEach(item ->
-                    addSearchResult(results, "note", item.getId(), item.getTitle(), "笔记",
-                            "/note", "/pages_life/note/detail?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "bookkeeping")) {
-            PxBookkeepingRecord query = new PxBookkeepingRecord();
-            query.setSearchValue(keyword);
-            pxBookkeepingRecordService.selectPxBookkeepingRecordAll(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "bookkeeping", item.getId(), "¥" + item.getMoney(), item.getRemark(),
-                            "/mytool/bookkeeping/record", "/pages_life/bookkeeping/record/index", item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "commemoration")) {
-            PxCommemorationDay query = new PxCommemorationDay();
-            query.setName(keyword);
-            commemorationDayService.selectPxCommemorationDayList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "commemoration", item.getId(), item.getName(), "纪念日",
-                            "/commemorationDay", "/pages_life/commemorationDay/add?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "subscription")) {
-            PxSubscription query = new PxSubscription();
-            query.setName(keyword);
-            subscriptionService.selectPxSubscriptionList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "subscription", item.getId(), item.getName(), "订阅 ¥" + item.getAmount(),
-                            "/mytool/subscription", "/pages_life/subscription/index?highlight=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "recipe")) {
-            PxRecipe query = new PxRecipe();
-            query.setTitle(keyword);
-            recipeService.selectPxRecipeList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "recipe", item.getId(), item.getTitle(), "菜谱",
-                            "/mytool/recipe", "/pages_life/recipe/detail?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "shopping")) {
-            PxShoppingList query = new PxShoppingList();
-            query.setName(keyword);
-            shoppingListService.selectPxShoppingListList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "shopping", item.getId(), item.getName(), "购物清单",
-                            "/mytool/shoppingList", "/pages_life/shoppingList/detail?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "book")) {
-            PxBook query = new PxBook();
-            query.setTitle(keyword);
-            query.setCreateBy(userId);
-            bookService.selectBookList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "book", item.getId(), item.getTitle(), item.getAuthor(),
-                            "/myapp/book", "/pages_life/book/detail?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        return AjaxResult.success(results);
+        if (q == null || q.isBlank()) return AjaxResult.success(Collections.emptyList());
+        return AjaxResult.success(searchService.search(q, type, startDate, endDate, tag, 1, 100).rows());
     }
 
-    private boolean matchesType(String requested, String actual) {
-        return requested == null || requested.isBlank() || "all".equals(requested) || actual.equals(requested);
-    }
-
-    private void addSearchResult(List<JSONObject> results, String type, Object id, String title,
-                                 String subtitle, String route, String appRoute, Object source,
-                                 String startDate, String endDate, String tag) {
-        JSONObject sourceJson = (JSONObject) JSONObject.toJSON(source);
-        String createdAt = firstNotBlank(sourceJson.getString("createTime"), sourceJson.getString("date"),
-                sourceJson.getString("payTime"), sourceJson.getString("planEndTime"));
-        String tags = firstNotBlank(sourceJson.getString("label"), sourceJson.getString("tags"),
-                sourceJson.getString("typeName"));
-        if (!matchesDate(createdAt, startDate, endDate) || !matchesTag(tags, tag)) return;
-        JSONObject item = new JSONObject();
-        item.put("type", type);
-        item.put("id", id);
-        item.put("title", title);
-        item.put("subtitle", subtitle);
-        item.put("route", route);
-        item.put("appRoute", appRoute);
-        item.put("createdAt", createdAt);
-        item.put("tags", tags == null ? Collections.emptyList() : Arrays.asList(tags.split(",")));
-        results.add(item);
-    }
-
-    private boolean matchesDate(String value, String startDate, String endDate) {
-        if ((startDate == null || startDate.isBlank()) && (endDate == null || endDate.isBlank())) return true;
-        if (value == null || value.length() < 10) return false;
-        String date = value.substring(0, 10);
-        return (startDate == null || startDate.isBlank() || date.compareTo(startDate) >= 0)
-                && (endDate == null || endDate.isBlank() || date.compareTo(endDate) <= 0);
-    }
-
-    private boolean matchesTag(String tags, String requested) {
-        return requested == null || requested.isBlank()
-                || (tags != null && tags.toLowerCase(Locale.ROOT).contains(requested.trim().toLowerCase(Locale.ROOT)));
-    }
-
-    private String firstNotBlank(String... values) {
-        for (String value : values) if (value != null && !value.isBlank()) return value;
-        return null;
-    }
-
-    /**
-     * 无标题日记的搜索展示文案：去掉 HTML 标签后截取正文摘要。
-     */
-    private String diaryExcerpt(String content) {
-        if (content == null || content.isBlank()) return "无内容";
-        String plain = content.replaceAll("(<([^>]+)>)", "").replace("&nbsp;", " ").trim();
-        if (plain.isEmpty()) return "无内容";
-        return plain.length() > 40 ? plain.substring(0, 40) + "…" : plain;
+    @GetMapping("/globalSearch/page")
+    public AjaxResult searchPage(String q, String type, String startDate, String endDate, String tag,
+                                 @RequestParam(defaultValue = "1") int pageNum,
+                                 @RequestParam(defaultValue = "20") int pageSize) {
+        return AjaxResult.success(searchService.search(q, type, startDate, endDate, tag, pageNum, pageSize));
     }
 
     /** 将当前权限范围内的搜索结果交给 AI 做摘要或问答。 */
@@ -234,71 +115,21 @@ public class PxAdminController extends BaseController {
      */
     @GetMapping("/fullRetrieval")
     public AjaxResult retrieval(String searchCode) {
-        logger.info("全文检索-检索条件为：{}", searchCode);
-        List<Map<String, Object>> result = new ArrayList<>();
-        // 文章列表
-        PxArticleVo pxArticle = new PxArticleVo();
-        pxArticle.setSearchValue(searchCode);
-        pxArticle.setCreateBy(SecurityUtils.getUserId());
-        List<PxArticleVo> pxArticles = pxArticleService.selectPxArticleNotContent(pxArticle);
-        Map<String, Object> article = new HashMap<>();
-        article.put("label", "博客文章");
-        article.put("options", pxArticles);
-        result.add(article);
-        // 待办事项
-        PxToDo pxToDo = new PxToDo();
-        pxToDo.setSearchValue(searchCode);
-        List<PxToDo> pxToDos = pxToDoService.selectPxToDoList(pxToDo);
-        Map<String, Object> todo = new HashMap<>();
-        todo.put("label", "待办事项");
-        todo.put("options", pxToDos);
-        result.add(todo);
-        // 生活账本
-        PxBookkeepingRecord pxBookkeepingRecord = new PxBookkeepingRecord();
-        pxBookkeepingRecord.setSearchValue(searchCode);
-        List<?> pxBookkeepingRecords = pxBookkeepingRecordService.selectPxBookkeepingRecordAll(pxBookkeepingRecord);
-        Map<String, Object> bookkeeping = new HashMap<>();
-        bookkeeping.put("label", "生活账本");
-        bookkeeping.put("options", pxBookkeepingRecords);
-        result.add(bookkeeping);
-        // 日记
-        List<PxDiary> diaryList = pxDiaryService.retrieval(searchCode);
-        Map<String, Object> diary = new HashMap<>();
-        diary.put("label", "日记");
-        diary.put("options", diaryList);
-        result.add(diary);
-        // 笔记
-        PxNoteFolder pxNoteFolder = new PxNoteFolder();
-        pxNoteFolder.setName(searchCode);
-        List<PxNoteFolder> noteList = pxNoteFolderService.selectPxNoteFolderList(pxNoteFolder);
-        Map<String, Object> note = new HashMap<>();
-        note.put("label", "笔记");
-        note.put("options", noteList);
-        result.add(note);
-        PxCommemorationDay dayQuery = new PxCommemorationDay();
-        dayQuery.setName(searchCode);
-        result.add(searchGroup("纪念日", commemorationDayService.selectPxCommemorationDayList(dayQuery)));
-        PxSubscription subscriptionQuery = new PxSubscription();
-        subscriptionQuery.setName(searchCode);
-        result.add(searchGroup("订阅", subscriptionService.selectPxSubscriptionList(subscriptionQuery)));
-        PxRecipe recipeQuery = new PxRecipe();
-        recipeQuery.setTitle(searchCode);
-        result.add(searchGroup("菜谱", recipeService.selectPxRecipeList(recipeQuery)));
-        PxShoppingList shoppingQuery = new PxShoppingList();
-        shoppingQuery.setName(searchCode);
-        result.add(searchGroup("购物清单", shoppingListService.selectPxShoppingListList(shoppingQuery)));
-        PxBook bookQuery = new PxBook();
-        bookQuery.setTitle(searchCode);
-        bookQuery.setCreateBy(SecurityUtils.getUserId());
-        result.add(searchGroup("书籍", bookService.selectBookList(bookQuery)));
-        return AjaxResult.success(result);
-    }
-
-    private Map<String, Object> searchGroup(String label, List<?> options) {
-        Map<String, Object> group = new HashMap<>();
-        group.put("label", label);
-        group.put("options", options);
-        return group;
+        if (searchCode == null || searchCode.isBlank()) return AjaxResult.success(Collections.emptyList());
+        Map<String, List<JSONObject>> grouped = new LinkedHashMap<>();
+        Map<String, String> labels = Map.ofEntries(Map.entry("article", "博客文章"), Map.entry("todo", "待办事项"),
+                Map.entry("diary", "日记"), Map.entry("note", "笔记"), Map.entry("bookkeeping", "生活账本"),
+                Map.entry("commemoration", "纪念日"), Map.entry("subscription", "订阅"), Map.entry("recipe", "菜谱"),
+                Map.entry("shopping", "购物清单"), Map.entry("file", "文件"), Map.entry("book", "书籍"), Map.entry("webArticle", "剪藏"));
+        for (var row : searchService.search(searchCode, "all", null, null, null, 1, 100).rows()) {
+            JSONObject item = new JSONObject();
+            item.put("id", row.getId()); item.put("title", row.getTitle());
+            item.put("content", row.getSubtitle() == null ? row.getTitle() : row.getSubtitle());
+            item.put("type", row.getType()); item.put("route", row.getRoute()); item.put("appRoute", row.getAppRoute());
+            grouped.computeIfAbsent(labels.get(row.getType()), key -> new ArrayList<>()).add(item);
+        }
+        return AjaxResult.success(grouped.entrySet().stream().map(entry ->
+                Map.of("label", entry.getKey(), "options", entry.getValue())).toList());
     }
 
     /**

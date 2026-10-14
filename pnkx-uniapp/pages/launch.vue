@@ -38,7 +38,7 @@ export default {
   justify-content: center;
   background:
     linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.7) 100%),
-    url('/static/images/glacier-aurora-bg.jpg') center / cover no-repeat;
+    radial-gradient(120% 55% at 20% -5%, rgba($aurora-cyan, 0.92) 0%, rgba($aurora-cyan, 0) 60%), radial-gradient(110% 60% at 85% 10%, rgba($aurora-lavender, 0.85) 0%, rgba($aurora-lavender, 0) 62%);
 }
 
 .launch-content {
@@ -51,7 +51,7 @@ export default {
   width: 160rpx;
   height: 160rpx;
   border-radius: 32rpx;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--glass);
   padding: 14rpx;
   box-shadow: 0 16rpx 42rpx rgba(64, 111, 176, 0.16);
   margin-bottom: 48rpx;

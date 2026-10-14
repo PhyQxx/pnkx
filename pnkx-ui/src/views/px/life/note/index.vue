@@ -26,6 +26,15 @@
       @drop="drop"
     />
 
+    <div v-if="saveError" class="note-save-warning" role="alert">
+      <p>{{ saveError }}</p>
+      <el-button @click="handleSaveNote">重试保存</el-button>
+      <el-button @click="saveDraftCopy">草稿另存为新笔记</el-button>
+      <el-button v-if="currentConflict" @click="loadConflictVersion">放弃草稿并加载服务端版本</el-button>
+      <details v-if="currentConflict"><summary>查看服务端内容</summary>
+        <h4>{{ currentConflict.title }}</h4><pre>{{ currentConflict.content }}</pre>
+      </details>
+    </div>
     <!-- 右侧预览区域 -->
     <note-editor
       :active-type="active.type"
@@ -112,7 +121,7 @@
           class="source-icon"
         />
         <span>{{ source.name || source.title }}</span>
-        <svg-icon v-if="source.password" icon-class="验证码" class="lock-icon" />
+        <svg-icon v-if="source.password" icon-class="captcha" class="lock-icon" />
       </div>
       <div class="move-target">
         <p class="move-label">选择目标文件夹：</p>
@@ -168,6 +177,8 @@
 </template>
 
 <script>
+import { cloneNote, noteChanged, noteSession, saveSession } from '@/utils/noteSession'
+
 import {
   addFolder,
   addNote,
@@ -256,7 +267,11 @@ export default {
       // 编辑器
       editor: true,
       // 笔记缓存
-      noteCache: undefined
+      noteCache: undefined,
+      saveSessions: {},
+      saveError: '',
+      currentConflict: null,
+      openSequence: 0, wasActivated: false
     }
   },
   mounted() {
@@ -267,17 +282,33 @@ export default {
       this.getFolderList()
     }
   },
+  activated() {
+    const id = this.$route.query.noteId || this.note.id
+    if (this.wasActivated && id) this.handleOpenNote(id)
+    this.wasActivated = true
+  },
+  beforeUnmount() {
+    Object.values(this.saveSessions).forEach(state => clearTimeout(state.timer))
+    this.openSequence++
+  },
   watch: {
+    '$route.query.noteId'(id) { if (id && this.$route.path === '/note') this.handleOpenNote(id) },
     params(newDate) {
       this.setLocal('noteFolder', newDate)
     },
     note: {
       handler(newValue) {
-        if (this.firstGet || JSON.stringify(this.noteCache) === JSON.stringify(newValue)) return
-        this.$debounce(() => {
-          this.handleSaveNote()
-        }, 2000)()
+        const state = this.saveSessions[newValue?.id]
+        if (this.firstGet || !state || !noteChanged(newValue, state.draft)) return
+        state.draft = cloneNote(newValue)
+        this.persistDraft(state)
+        clearTimeout(state.timer)
+        const id = newValue.id
+        state.timer = setTimeout(() => {
+          if (!state.error && !state.conflict) this.saveById(id)
+        }, 2000)
       },
+      flush: 'sync',
       deep: true
     }
   },
@@ -331,7 +362,7 @@ export default {
     /**
      * 移动笔记或文件夹
      */
-    handleMoveNote() {
+    async handleMoveNote() {
       if (!this.target) {
         this.$notify.warning('请选择移动目标文件夹')
       } else if (this.source.folder === this.target) {
@@ -346,12 +377,18 @@ export default {
             this.getFolderList()
           })
         } else if (this.source.type === 'note') {
-          this.source.folder = this.target
-          updateNote(this.source).then(res => {
+          const state = this.saveSessions[this.source.id]
+          if (state && !await this.saveById(this.source.id)) {
+            this.moveNoteLoading = false
+            return
+          }
+          updateNote({ id: this.source.id, folder: this.target, revision: state?.saved.revision || this.source.revision }).then(res => {
             this.moveNoteLoading = false
             this.moveNoteVisible = false
-            this.getFolderList(res.data)
-          })
+            this.getFolderList({ ...res.data, type: 'note' })
+          }).catch(() => {
+            this.$notify.warning('移动失败，可能存在更新冲突，请刷新目录后重试')
+          }).finally(() => { this.moveNoteLoading = false })
         }
       }
     },
@@ -397,7 +434,7 @@ export default {
     /**
      * 拖动结束
      */
-    drop(event, data) {
+    async drop(event, data) {
       if (data.name) {
         if (this.dragObject.type === 'folder') {
           this.listLoading = true
@@ -408,11 +445,16 @@ export default {
           })
         } else if (this.dragObject.type === 'note') {
           this.listLoading = true
-          this.dragObject.folder = data.id
-          updateNote(this.dragObject).then(res => {
+          const state = this.saveSessions[this.dragObject.id]
+          if (state && !await this.saveById(this.dragObject.id)) {
             this.listLoading = false
+            return
+          }
+          updateNote({ id: this.dragObject.id, folder: data.id, revision: state?.saved.revision || this.dragObject.revision }).then(() => {
             this.getFolderList()
-          })
+          }).catch(() => {
+            this.$notify.warning('移动失败，可能存在更新冲突，请刷新目录后重试')
+          }).finally(() => { this.listLoading = false })
         }
       }
     },
@@ -465,14 +507,84 @@ export default {
     /**
      * 保存笔记
      */
-    handleSaveNote() {
-      const note = JSON.parse(JSON.stringify(this.note))
-      note.content = this.$refs.editor.value
-      updateNote(note).then(() => {
-        this.noteCache = JSON.parse(JSON.stringify(this.note))
-        this.$notify.success('保存成功')
-        this.$set(this.list, this.list.findIndex(item => item.id === this.note.id), { type: 'note', ...this.note })
+    draftKey(id) {
+      const userId = this.$store.state.user.id
+      return userId ? 'note-draft:' + userId + ':' + id : null
+    },
+    persistDraft(state) {
+      const key = state.owner ? 'note-draft:' + state.owner + ':' + state.draft.id : null
+      if (!key) return
+      try {
+        if (noteChanged(state.draft, state.saved)) localStorage.setItem(key, JSON.stringify(state.draft))
+        else localStorage.removeItem(key)
+      } catch {
+        this.saveError = '本地草稿存储失败，请保持页面打开并手动保存'
+      }
+    },
+    async saveById(id) {
+      const state = this.saveSessions[id]
+      if (!state) return false
+      const success = await saveSession(state, snapshot => {
+        if (state.owner !== this.$store.state.user.id) throw new Error('账号已切换，草稿保留在原账号下')
+        return updateNote(snapshot)
+      }, () => {
+        this.persistDraft(state)
+        if (this.note.id === id) this.note.revision = state.draft.revision
       })
+      if (this.note.id === id) {
+        this.currentConflict = state.conflict
+        this.saveError = state.conflict ? '保存冲突：草稿已保留，自动保存已暂停。' :
+          state.error ? '保存失败，草稿已保留，可手动重试。' : ''
+      }
+      const index = this.list.findIndex(item => item.id === id && item.type === 'note')
+      if (success && index >= 0) this.list.splice(index, 1, { ...state.saved, type: 'note' })
+      return success
+    },
+    handleSaveNote() {
+      clearTimeout(this.saveSessions[this.note.id]?.timer)
+      return this.saveById(this.note.id)
+    },
+    async saveDraftCopy() {
+      const draft = cloneNote(this.note)
+      try {
+        const res = await addNote({
+          title: (draft.title || '未命名笔记') + '（冲突副本）',
+          content: draft.content, richText: draft.richText, folder: 0, order: draft.order
+        })
+        this.$notify.success('草稿副本已保存到根目录')
+        this.active = { ...res.data, type: 'note' }
+        this.handleOpenNote(res.data.id)
+      } catch { /* Request interceptor reports failures; original draft remains. */ }
+    },
+    async loadConflictVersion() {
+      await this.$confirm('此操作会放弃当前本地草稿，是否继续？', '加载服务端版本')
+      const id = this.note.id
+      const res = await getNote(id)
+      if (this.note.id !== id) return
+      delete this.saveSessions[id]
+      const key = this.draftKey(id)
+      if (key) localStorage.removeItem(key)
+      this.installNote(res.data)
+    },
+    installNote(server) {
+      let draft
+      try {
+        const key = this.draftKey(server.id)
+        draft = key ? JSON.parse(localStorage.getItem(key) || 'null') : null
+      } catch { draft = null }
+      const previous = this.saveSessions[server.id]
+      const state = previous && (previous.running || noteChanged(previous.draft, previous.saved)) ? previous : noteSession(server, draft)
+      state.owner = this.$store.state.user.id
+      this.saveSessions[server.id] = state
+      this.firstGet = true
+      this.note = cloneNote(state.draft)
+      this.noteCache = cloneNote(state.saved)
+      this.currentConflict = state.conflict
+      this.saveError = state.conflict ? '检测到服务端更新，本地草稿已保留。' :
+        state.error ? '保存失败，草稿已保留。' : draft ? '已恢复本地草稿，请检查后保存。' : ''
+      this.editor = true
+      this.loading = false
+      this.$nextTick(() => { this.firstGet = false })
     },
     /**
      * 删除文件夹
@@ -609,7 +721,7 @@ export default {
           }
           if (this.active.type === 'note') {
             this.loading = true
-            this.handleOpenNote(this.list[0].id)
+            this.handleOpenNote(this.active.id)
           } else if (this.active.type === 'folder') {
             this.note = {}
           }
@@ -625,23 +737,26 @@ export default {
     /**
      * 打开笔记
      */
-    handleOpenNote(id) {
+    async handleOpenNote(id) {
+      const sequence = ++this.openSequence
       this.firstGet = true
       this.loading = true
       this.editor = false
-      getNote(id).then(res => {
-        this.note = res.data
-        this.noteCache = JSON.parse(JSON.stringify(res.data))
-        this.loading = false
-        this.editor = true
-        setTimeout(() => this.firstGet = false, 1000)
-      })
+      try {
+        const res = await getNote(id)
+        if (sequence !== this.openSequence) return
+        this.installNote(res.data)
+      } finally {
+        if (sequence === this.openSequence) this.loading = false
+      }
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.note-save-warning { padding: 12px; max-width: 320px; overflow: auto; }
+.note-save-warning pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 // ==================== 容器 ====================
 
 .note-page {

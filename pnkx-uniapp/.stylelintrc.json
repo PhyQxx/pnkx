@@ -1,0 +1,36 @@
+{
+  "plugins": [],
+  "ignoreFiles": [
+    "uni.scss",
+    "**/*.css"
+  ],
+  "rules": {
+    "color-no-hex": [
+      true,
+      {
+        "message": "禁止硬编码色值：请使用 uni.scss 设计令牌（$primary/$txt-1/$bg-1 等），保持双端同源"
+      }
+    ],
+    "color-no-invalid-hex": true,
+    "declaration-block-no-duplicate-properties": true,
+    "no-duplicate-selectors": true,
+    "comment-no-empty": true
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.vue"
+      ],
+      "customSyntax": "postcss-html"
+    },
+    {
+      "files": [
+        "uni.scss",
+        "static/scss/*.scss"
+      ],
+      "rules": {
+        "color-no-hex": null
+      }
+    }
+  ]
+}

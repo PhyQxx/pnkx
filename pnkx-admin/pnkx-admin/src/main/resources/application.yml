@@ -32,6 +32,14 @@ pnkx:
     login-page: ${SSO_LOGIN_PAGE:/sso/login}
     # 网关前缀：登录后回跳授权端点时补回反代前缀（如 /prod-api）
     gateway-prefix: ${SSO_GATEWAY_PREFIX:}
+  # 私有文件（资料中心个人文件库）存储与配额
+  # storage: local=本地磁盘（默认，开发零依赖）；ftp=FTP 服务器（生产，私有目录须在公开目录 ftp.path 之外）
+  # 配额含回收站（软删除仍占空间）；上传单文件上限 20MB 由代码约束
+  private-files:
+    storage: ${PRIVATE_FILES_STORAGE:local}
+    root: ${PRIVATE_FILES_ROOT:${user.home}/.pnkx-private-files}
+    ftp-root: ${PRIVATE_FILES_FTP_ROOT:/pnkx-private}
+    quota-bytes: ${PRIVATE_FILES_QUOTA:5368709120}
 
 # 开发环境配置
 server:

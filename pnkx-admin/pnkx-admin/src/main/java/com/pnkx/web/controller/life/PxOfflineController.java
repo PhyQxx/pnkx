@@ -1,5 +1,7 @@
 package com.pnkx.web.controller.life;
 
+import com.pnkx.life.service.NoteRevisionConflictException;
+
 import com.pnkx.common.annotation.Log;
 import com.pnkx.common.core.controller.BaseController;
 import com.pnkx.common.core.domain.AjaxResult;
@@ -86,6 +88,15 @@ public class PxOfflineController extends BaseController {
                 if ("success".equals(status)) successCount++;
                 else if ("skip".equals(status)) skipCount++;
                 else failCount++;
+            } catch (NoteRevisionConflictException e) {
+                Map<String, Object> conflict = new HashMap<>();
+                conflict.put("clientUuid", clientUuid);
+                conflict.put("status", "conflict");
+                conflict.put("errorCode", e.getErrorCode());
+                conflict.put("errorMsg", e.getMessage());
+                conflict.put("current", e.getCurrent());
+                results.add(conflict);
+                failCount++;
             } catch (Exception e) {
                 logger.error("离线同步单条失败: table={}, uuid={}", tableName, clientUuid, e);
                 Map<String, Object> failResult = new HashMap<>();
@@ -130,7 +141,16 @@ public class PxOfflineController extends BaseController {
                     id = offlineSyncService.insertBookkeepingRecordIdempotent(payload, clientUuid);
                     break;
                 case "px_note":
-                    id = offlineSyncService.insertNoteIdempotent(payload, clientUuid);
+                    PxNote createdNote = offlineSyncService.insertNoteIdempotentResult(payload, clientUuid);
+                    id = createdNote.getId();
+                    result.put("revision", createdNote.getRevision());
+                    if (Integer.valueOf(1).equals(createdNote.getDelFlag())) {
+                        result.put("status", "conflict");
+                        result.put("errorCode", "NOTE_DELETED");
+                        result.put("errorMsg", "笔记已被删除，请保留草稿或另存副本");
+                        result.put("current", createdNote);
+                        return result;
+                    }
                     break;
                 case "px_commemoration_day":
                     id = offlineSyncService.insertCommemorationDayIdempotent(payload, clientUuid);
@@ -202,7 +222,10 @@ public class PxOfflineController extends BaseController {
                     if (payload.get("order") != null) note.setOrder(Integer.parseInt(payload.get("order").toString()));
                     note.setRemark((String) payload.get("remark"));
                     note.setUpdateBy(SecurityUtils.getUserId());
-                    noteService.updatePxNote(note);
+                    if (payload.get("revision") != null) note.setRevision(toLong(payload.get("revision")));
+                    PxNote savedNote = noteService.updatePxNote(note);
+                    result.put("id", savedNote.getId());
+                    result.put("revision", savedNote.getRevision());
                     break;
                 case "px_commemoration_day":
                     PxCommemorationDay day = new PxCommemorationDay();
@@ -246,7 +269,7 @@ public class PxOfflineController extends BaseController {
                     bookkeepingRecordService.deletePxBookkeepingRecordById(deleteId);
                     break;
                 case "px_note":
-                    requireOwner(noteService.selectPxNoteById(deleteId));
+                    // 服务层校验归属并支持删除请求重放（详情接口不返回已删除记录）。
                     noteService.deletePxNoteById(deleteId);
                     break;
                 case "px_commemoration_day":
