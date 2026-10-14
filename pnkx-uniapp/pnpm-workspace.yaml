@@ -1,0 +1,6 @@
+# pnpm 11+ 的设置从此文件读取（package.json 的 pnpm 字段已废弃）
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - core-js
+  - core-js-pure
+  - esbuild
