@@ -69,6 +69,7 @@ import ResizeMixin from './mixin/ResizeHandler'
 import {mapState} from 'vuex'
 import Chat from "@/components/Chat/index.vue"
 import AiAssistant from "@/components/AiAssistant/index.vue"
+import {getBookkeepingRoute} from '@/utils/bookkeepingRoute'
 
 export default {
     name: 'Layout',
@@ -132,7 +133,12 @@ export default {
                     icon: '账',
                     active: true,
                     func: () => {
-                        this.$router.push('/mytool/bookkeeping/record?remember=1');
+                        const target = getBookkeepingRoute(this.$router, {remember: '1'});
+                        if (target) {
+                            this.$router.push(target);
+                        } else {
+                            this.$message.warning('未找到生活账本菜单，请联系管理员检查菜单权限');
+                        }
                     },
                 },
                 {

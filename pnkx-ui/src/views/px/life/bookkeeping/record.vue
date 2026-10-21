@@ -604,7 +604,7 @@ export default {
   async mounted() {
     await this.init()
     if (this.$route.query.remember) {
-      this.record = true
+      this.openRecord()
     }
     if (this.$route.query.recordId) {
       this.getRecord(this.$route.query.recordId)

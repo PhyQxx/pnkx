@@ -161,6 +161,7 @@
 
 <script>
 import { listRecord } from '@/api/px/life/bookkeeping/record'
+import { getBookkeepingRoute } from '@/utils/bookkeepingRoute'
 import { getAllTodoList } from '@/api/px/homepage'
 import Calendar from '@/views/homepage/calendar.vue'
 import ReminderPanel from '@/views/homepage/components/ReminderPanel.vue'
@@ -383,7 +384,12 @@ export default {
      * 账本
      */
     goToBookkeepingRecord() {
-      this.$router.push('/mytool/bookkeeping/record')
+      const target = getBookkeepingRoute(this.$router)
+      if (target) {
+        this.$router.push(target)
+      } else {
+        this.$message.warning('未找到生活账本菜单，请联系管理员检查菜单权限')
+      }
     }
   }
 }

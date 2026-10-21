@@ -57,6 +57,8 @@ function filterAsyncRouter(asyncRouterMap, isRewrite = false) {
             } else if (route.component === 'ParentView') {
                 route.component = ParentView
             } else {
+                // 保留页面标识，快捷入口不依赖可由后台修改的菜单 URL。
+                route.meta = {...route.meta, viewPath: route.component}
                 route.component = loadView(route.component)
             }
         }
