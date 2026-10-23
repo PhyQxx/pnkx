@@ -117,11 +117,11 @@
                               :rows="3"
                               placeholder="请输入检查结果"/>
                 </el-form-item>
-                <el-form-item label="大姨妈来喽" prop="come" v-if="come()">
-                    <el-switch v-model="dayForm.come"/>
+                <el-form-item label="大姨妈来喽" prop="come">
+                    <el-switch v-model="dayForm.come" @change="value => { if (value) dayForm.go = false }"/>
                 </el-form-item>
-                <el-form-item label="大姨妈走喽" prop="go" v-if="go()">
-                    <el-switch v-model="dayForm.go"/>
+                <el-form-item label="大姨妈走喽" prop="go">
+                    <el-switch v-model="dayForm.go" @change="value => { if (value) dayForm.come = false }"/>
                 </el-form-item>
                 <el-form-item label="是否爱爱" prop="makeLove">
                     <el-switch v-model="dayForm.makeLove"/>
@@ -328,27 +328,6 @@ export default {
                 estimate: estimate,
                 actual: actual
             }
-        },
-        /**
-         * 计算大姨妈走
-         */
-        go() {
-            return true
-        },
-        /**
-         * 计算大姨妈来
-         */
-        come() {
-            if (this.dayDialogVisible) {
-                const startData = this.menstruationRecord.filter(item => {
-                    return item.type === '0'
-                })
-                if (!startData || startData.length < 1) {
-                    return true
-                }
-                return !(this.dayForm.date > this.parseTime(startData[0].date, '{y}-{m}-{d}') && this.dayForm.date < this.$dateChange(10, this.parseTime(startData[0].date, '{y}-{m}-{d}')));
-            }
-            return true
         },
         /**
          * 计算排卵日

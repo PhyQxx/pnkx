@@ -31,7 +31,7 @@ public class PxBookkeepingStatisticsServiceImpl implements IPxBookkeepingStatist
      * @param pxBookkeepingRecord 时间月份
      * @return 折线数据
      */
-    @DataScopeSelf(alias = "r", onlySelf = true)
+    @DataScopeSelf(alias = "r", module = "budget")
     @Override
     public List<Map<String, Object>> getLineChartByDay(PxBookkeepingRecord pxBookkeepingRecord) {
         return pxBookkeepingStatisticsMapper.getLineChartByDay(pxBookkeepingRecord);
@@ -101,8 +101,7 @@ public class PxBookkeepingStatisticsServiceImpl implements IPxBookkeepingStatist
      * 注入数据权限到 Map 参数：scopeAll / scopeUserIds
      */
     private void applyDataScope(Map<String, Object> params) {
-        List<Long> visibleUserIds = java.util.Collections.singletonList(
-                Long.valueOf(com.pnkx.common.utils.SecurityUtils.getUserId()));
+        List<Long> visibleUserIds = dataPermissionService.getVisibleUserIds("budget");
         if (visibleUserIds == null) {
             params.put(DataScopeSelf.SCOPE_ALL, true);
         } else {
