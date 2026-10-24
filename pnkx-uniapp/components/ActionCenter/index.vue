@@ -1,6 +1,9 @@
 <template>
   <view class="actions">
-    <view class="head"><text>今天要处理</text><button size="mini" @click="load">刷新</button></view>
+    <view class="head"
+      ><text>今天要处理</text
+      ><button size="mini" :loading="loading" @click="load">刷新</button></view
+    >
     <picker :range="spaceLabels" :value="spaceIndex" @change="switchSpace"
       ><view class="item">{{ spaceLabels[spaceIndex] }} ▾</view></picker
     >
@@ -9,18 +12,28 @@
         {{ labels[key] }}
       </button></view
     >
-    <button size="mini" @click="editing = !editing">管理常用入口</button>
+    <button size="mini" :disabled="!preferencesReady || savingPins" @click="editPins">
+      管理常用入口
+    </button>
     <view v-if="editing"
       ><checkbox-group @change="pinsChanged"
         ><label v-for="(label, key) in labels" :key="key"
-          ><checkbox :value="key" :checked="pinned.includes(key)" />{{ label }}</label
+          ><checkbox :value="key" :checked="draftPinned.includes(key)" :disabled="savingPins" />{{
+            label
+          }}</label
         ></checkbox-group
-      ><button size="mini" @click="savePins">保存</button></view
+      ><text v-if="pinsError">{{ pinsError }}</text
+      ><button size="mini" :loading="savingPins" @click="savePins">保存顺序</button
+      ><button size="mini" :disabled="savingPins" @click="editing = false">取消</button
+      ><text>保存后生效</text></view
     >
+    <text v-if="loading" class="loading-note">正在加载当前空间…</text>
     <text v-if="error">{{ error }}</text>
     <view v-for="todo in visibleTodos" :key="todo.id" class="item"
       ><text>{{ todo.content }} · {{ todo.planEndTime }}</text
-      ><button v-if="data.canEdit" size="mini" @click="complete(todo)">完成</button></view
+      ><button v-if="data.canEdit" :disabled="loading" size="mini" @click="complete(todo)">
+        完成
+      </button></view
     >
     <text v-if="data.todoCount === 0">暂无到期或逾期待办</text>
     <button v-if="data.todoCount > 5" size="mini" @click="expanded = !expanded">
@@ -64,6 +77,7 @@
 </template>
 <script>
 import request from "@/utils/request";
+import { createLatestLoader, parsePinned } from "@/utils/actionCenterState";
 import ChargeInstances from "@/components/ChargeInstances/index.vue";
 import OperationPlans from "@/components/OperationPlans/index.vue";
 const paths = {
@@ -79,6 +93,12 @@ export default {
   data() {
     return {
       data: {},
+      loading: false,
+      loader: null,
+      draftPinned: [],
+      savingPins: false,
+      preferencesReady: false,
+      pinsError: "",
       error: "",
       spaces: [],
       spaceIndex: 0,
@@ -112,6 +132,29 @@ export default {
         .slice(0, 5);
     },
   },
+  created() {
+    this.loader = createLatestLoader({
+      fetch: (params) => request({ url: "/life/action-center", method: "get", params }),
+      onStart: () => {
+        this.loading = true;
+        this.error = "";
+        this.data = {};
+      },
+      onData: (r) => {
+        this.data = r.data || {};
+        this.error = this.data.partialErrors?.length ? "部分内容暂时无法加载，请刷新重试" : "";
+      },
+      onError: () => {
+        this.error = "行动中心加载失败，请联网重试";
+      },
+      onSettled: () => {
+        this.loading = false;
+      },
+    });
+  },
+  beforeUnmount() {
+    this.loader.invalidate();
+  },
   async mounted() {
     this.load();
     const results = await Promise.allSettled([
@@ -120,54 +163,61 @@ export default {
     ]);
     if (results[0].status === "fulfilled") this.spaces = results[0].value.data || [];
     if (results[1].status === "fulfilled") {
-      this.pinned = JSON.parse(results[1].value.data.entries_json);
+      this.pinned = parsePinned(results[1].value.data.entries_json, this.labels);
       this.prefRevision = results[1].value.data.revision;
     }
+    this.preferencesReady = true;
   },
   methods: {
     go(key) {
       uni.navigateTo({ url: paths[key] });
     },
     pinsChanged(e) {
-      this.pinned = e.detail.value;
+      this.draftPinned = e.detail.value.slice(0, 6);
+    },
+    editPins() {
+      if (this.savingPins || !this.preferencesReady) return;
+      this.draftPinned = [...this.pinned];
+      this.pinsError = "";
+      this.editing = !this.editing;
     },
     async savePins() {
-      const r = await request({
-        url: "/life/action-center/preferences",
-        method: "put",
-        data: { entries: this.pinned, expectedRevision: this.prefRevision },
-      });
-      this.prefRevision = r.data.revision;
-      this.editing = false;
+      if (this.savingPins) return;
+      this.savingPins = true;
+      this.pinsError = "";
+      const entries = [...this.draftPinned];
+      try {
+        const r = await request({
+          url: "/life/action-center/preferences",
+          method: "put",
+          data: { entries, expectedRevision: this.prefRevision },
+        });
+        this.prefRevision = r.data.revision;
+        this.pinned = entries;
+        this.editing = false;
+      } catch {
+        this.pinsError = "保存失败，选择已保留；如在其他设备修改过，请刷新页面后重试";
+      } finally {
+        this.savingPins = false;
+      }
     },
     switchSpace(e) {
       this.spaceIndex = Number(e.detail.value);
       this.data = {};
       this.page = 1;
+      this.expanded = false;
       this.load();
     },
     turn(delta) {
       this.page += delta;
       this.load();
     },
-    async load() {
-      try {
-        const r = await request({
-          url: "/life/action-center",
-          method: "get",
-          params: {
-            scope: this.spaceIndex === 0 ? "personal" : "group",
-            groupId: this.spaceIndex === 0 ? undefined : this.spaces[this.spaceIndex - 1].id,
-            page: this.page,
-          },
-        });
-        this.data = r.data || {};
-        this.error =
-          this.data.partialErrors && this.data.partialErrors.length ? "部分内容暂时无法加载" : "";
-      } catch (e) {
-        this.data = {};
-        this.error = "行动中心加载失败，请联网重试";
-      }
+    load() {
+      return this.loader.run({
+        scope: this.spaceIndex === 0 ? "personal" : "group",
+        groupId: this.spaceIndex === 0 ? undefined : this.spaces[this.spaceIndex - 1].id,
+        page: this.page,
+      });
     },
     async retryCharge(f, action) {
       await request({ url: `/charge/instances/failures/${f.id}/${action}`, method: "post" });

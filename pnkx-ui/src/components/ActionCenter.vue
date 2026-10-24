@@ -14,22 +14,28 @@
         /></el-select>
         <div class="item">
             <el-button v-for="key in pinned" :key="key" @click="go(key)">{{ entryLabels[key] }}</el-button
-            ><el-button link @click="editing = !editing">管理常用入口</el-button>
+            ><el-button link :disabled="!preferencesReady || savingPins" @click="editPins">管理常用入口</el-button>
         </div>
         <div v-if="editing">
-            <el-checkbox-group v-model="pinned" :max="6"
+            <el-checkbox-group v-model="draftPinned" :max="6" :disabled="savingPins"
                 ><el-checkbox v-for="(label, key) in entryLabels" :key="key" :label="key">{{
                     label
                 }}</el-checkbox></el-checkbox-group
-            ><el-button @click="savePinned">保存顺序</el-button><small>按勾选顺序排列</small>
+            ><el-alert v-if="pinsError" :title="pinsError" type="error" :closable="false" /><el-button
+                :loading="savingPins"
+                @click="savePinned"
+                >保存顺序</el-button
+            ><el-button :disabled="savingPins" @click="editing = false">取消</el-button
+            ><small>按勾选顺序排列，保存后生效</small>
         </div>
         <el-alert v-if="error" :title="error" type="error" :closable="false" />
+        <p v-if="loading" class="loading-note" role="status">正在加载当前空间，稍候即可处理事项…</p>
         <h3>
             到期与逾期待办 <span v-if="data.todoCount != null">（{{ data.todoCount }}）</span>
         </h3>
         <div v-for="todo in expanded ? data.todos || [] : (data.todos || []).slice(0, 5)" :key="todo.id" class="item">
             <span>{{ todo.content }} · {{ todo.planEndTime }}</span
-            ><el-button v-if="data.canEdit" @click="complete(todo)">完成</el-button>
+            ><el-button v-if="data.canEdit" :disabled="loading" @click="complete(todo)">完成</el-button>
         </div>
         <el-empty v-if="data.todoCount === 0" description="暂无到期或逾期待办" :image-size="50" />
         <el-button v-if="data.todoCount > 5" link @click="expanded = !expanded">{{
@@ -85,7 +91,8 @@
     </el-card>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { createLatestLoader, parsePinned } from '../utils/actionCenterState';
 import { useRouter } from 'vue-router';
 import request from '@/utils/request';
 import ChargeInstances from '@/components/ChargeInstances.vue';
@@ -97,7 +104,11 @@ const router = useRouter(),
     expanded = ref(false),
     pinned = ref([]),
     editing = ref(false),
-    prefRevision = ref(0);
+    prefRevision = ref(0),
+    draftPinned = ref([]),
+    savingPins = ref(false),
+    preferencesReady = ref(false),
+    pinsError = ref('');
 const entryLabels = {
     todo: '待办',
     meal: '本周吃饭',
@@ -121,41 +132,65 @@ function go(key) {
 function changeSpace() {
     data.value = {};
     page.value = 1;
+    expanded.value = false;
     load();
 }
+function editPins() {
+    if (savingPins.value || !preferencesReady.value) return;
+    draftPinned.value = [...pinned.value];
+    pinsError.value = '';
+    editing.value = !editing.value;
+}
 async function savePinned() {
-    const r = await request({
-        url: '/life/action-center/preferences',
-        method: 'put',
-        data: { entries: pinned.value, expectedRevision: prefRevision.value }
-    });
-    prefRevision.value = r.data.revision;
-    editing.value = false;
+    if (savingPins.value) return;
+    savingPins.value = true;
+    pinsError.value = '';
+    const entries = [...draftPinned.value];
+    try {
+        const r = await request({
+            url: '/life/action-center/preferences',
+            method: 'put',
+            data: { entries, expectedRevision: prefRevision.value }
+        });
+        prefRevision.value = r.data.revision;
+        pinned.value = entries;
+        editing.value = false;
+    } catch {
+        pinsError.value = '保存失败，选择已保留；如在其他设备修改过，请刷新页面后重试';
+    } finally {
+        savingPins.value = false;
+    }
 }
 const data = ref({}),
     error = ref(''),
     loading = ref(false);
 const states = { open: '待处理', snoozed: '稍后提醒', resolved: '已处理', cancelled: '已结束' };
-async function load() {
-    loading.value = true;
-    error.value = '';
-    try {
-        const r = await request({
-            url: '/life/action-center',
-            params: {
-                scope: space.value === 'personal' ? 'personal' : 'group',
-                groupId: space.value === 'personal' ? undefined : space.value,
-                page: page.value
-            }
-        });
+const loader = createLatestLoader({
+    fetch: (params) => request({ url: '/life/action-center', params }),
+    onStart: () => {
+        loading.value = true;
+        error.value = '';
+        data.value = {};
+    },
+    onData: (r) => {
         data.value = r.data || {};
         if (data.value.partialErrors?.length) error.value = '部分内容暂时无法加载，请刷新重试';
-    } catch (e) {
-        error.value = '行动中心加载失败';
-    } finally {
+    },
+    onError: () => {
+        error.value = '行动中心加载失败，请刷新重试';
+    },
+    onSettled: () => {
         loading.value = false;
     }
+});
+function load() {
+    return loader.run({
+        scope: space.value === 'personal' ? 'personal' : 'group',
+        groupId: space.value === 'personal' ? undefined : space.value,
+        page: page.value
+    });
 }
+onBeforeUnmount(() => loader.invalidate());
 async function retryCharge(f, action) {
     await request({ url: `/charge/instances/failures/${f.id}/${action}`, method: 'post' });
     await load();
@@ -184,9 +219,10 @@ onMounted(async () => {
     ]);
     if (results[0].status === 'fulfilled') spaces.value = results[0].value.data || [];
     if (results[1].status === 'fulfilled') {
-        pinned.value = JSON.parse(results[1].value.data.entries_json);
+        pinned.value = parsePinned(results[1].value.data.entries_json, entryLabels);
         prefRevision.value = results[1].value.data.revision;
     }
+    preferencesReady.value = true;
 });
 </script>
 <style scoped>
