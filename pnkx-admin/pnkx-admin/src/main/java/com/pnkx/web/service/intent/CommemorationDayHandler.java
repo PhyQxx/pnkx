@@ -24,6 +24,9 @@ import java.util.Date;
  */
 @Component
 public class CommemorationDayHandler implements ConfirmableIntentHandler {
+    @jakarta.annotation.Resource
+    private LocalIntentPlanService localPlans;
+
 
     private static final Logger logger = LoggerFactory.getLogger(CommemorationDayHandler.class);
 
@@ -72,6 +75,9 @@ public class CommemorationDayHandler implements ConfirmableIntentHandler {
                 return false;
             }
 
+            if (!isRealValue(parsed.getString("date"))) { IntentHandler.writeSse(out, "请提供纪念日的具体日期 yyyy-MM-dd。"); IntentHandler.writeSse(out, "[DONE]"); return true; }
+            if (parsed.getBoolean("repeat") == null) parsed.put("repeat", true);
+            localPlans.prepare(parsed, "commemoration.create", "创建纪念日");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
@@ -82,20 +88,8 @@ public class CommemorationDayHandler implements ConfirmableIntentHandler {
     }
 
     @Override
-    public boolean confirm(JSONObject draft, OutputStream out) {
-        try {
-            int rows = commemorationDayService.insertPxCommemorationDay(buildCommemorationDay(draft));
-            if (rows <= 0) {
-                return false;
-            }
-
-            IntentHandler.writeSse(out, buildSuccessMessage(draft));
-            IntentHandler.writeSse(out, "[DONE]");
-            return true;
-        } catch (Exception e) {
-            logger.error("AI纪念日确认保存失败: {}", e.getMessage());
-            return false;
-        }
+    public boolean confirm(JSONObject draft, OutputStream out) throws java.io.IOException {
+        return localPlans.confirm(draft, out);
     }
 
     private JSONObject parseJsonObject(String content) {
@@ -105,32 +99,6 @@ public class CommemorationDayHandler implements ConfirmableIntentHandler {
             return new JSONObject();
         }
         return JSON.parseObject(content.substring(start, end + 1));
-    }
-
-    private PxCommemorationDay buildCommemorationDay(JSONObject parsed) {
-        PxCommemorationDay day = new PxCommemorationDay();
-        day.setName(parsed.getString("name"));
-        day.setCreateBy(SecurityUtils.getUserId());
-
-        String dateStr = parsed.getString("date");
-        if (isRealValue(dateStr)) {
-            try {
-                // 兼容 yyyy-MM-dd 与 yyyy-MM-dd HH:mm:ss
-                String pattern = dateStr.length() > 10 ? "yyyy-MM-dd HH:mm:ss" : "yyyy-MM-dd";
-                day.setDate(new SimpleDateFormat(pattern).parse(dateStr));
-            } catch (Exception e) {
-                logger.warn("纪念日日期解析失败，使用当前时间: {}", dateStr);
-                day.setDate(new Date());
-            }
-        } else {
-            day.setDate(new Date());
-        }
-
-        // repeat 默认 true（纪念日/生日通常每年重复）
-        Boolean repeat = parsed.getBoolean("repeat");
-        day.setRepeat(repeat != null ? repeat : Boolean.TRUE);
-
-        return day;
     }
 
     private String buildDraftMessage(JSONObject parsed) {

@@ -1,8 +1,9 @@
 <template>
   <view class="recurring-page subpage-shell">
+    <feature-gate feature="chargeInstanceV2"><charge-instances source-type="recurring" /></feature-gate>
     <view class="intro">
-      <text class="intro__title">固定收支，自动入账</text>
-      <text class="intro__text">房租、工资、会员等规则会由系统每日检查，到期后自动生成账目。</text>
+      <text class="intro__title">固定收支，按期管理</text>
+      <text class="intro__text">房租、工资、会员等规则会由系统每日检查，到期后生成待确认账期或按规则自动记账。</text>
     </view>
 
     <view v-if="!loading && rules.length === 0" class="empty-card">暂无周期规则</view>
@@ -18,7 +19,7 @@
         <text>{{ rule.typeDifference === '2' ? '转账' : (rule.typeName || '-') }} · {{ rule.accountName || '-' }}</text>
         <text>下次 {{ dateText(rule.nextRunDate) }}</text>
       </view>
-      <view class="rule-card__actions" @click.stop>
+      <view class="rule-card__actions" @click.stop><feature-gate feature="chargeInstanceV2"><button v-if="!rule.enabled && rule.lifecycle!=='cancelled'" size="mini" @click="backfill(rule)">补齐账期</button></feature-gate>
         <switch :checked="Boolean(rule.enabled)" color="#4F86F7" @change="toggle(rule, $event)" />
         <view class="delete-link" @click="remove(rule)">删除</view>
       </view>
@@ -33,6 +34,7 @@
           <text class="editor__title">{{ form.id ? '编辑规则' : '新增规则' }}</text>
           <text class="editor__save" @click="save">保存</text>
         </view>
+        <view class="field"><text>到期自动记账</text><switch :checked="form.postingMode === 'auto_record'" @change="form.postingMode=$event.detail.value?'auto_record':'manual_confirm'" /></view>
         <view class="field"><text class="field__label">名称</text><input v-model="form.name" class="field__input" placeholder="如：房租" /></view>
         <picker :range="typeLabels" :value="typeIndex" @change="onTypeChange">
           <view class="field"><text class="field__label">类型</text><text>{{ typeLabels[typeIndex] }}</text></view>
@@ -60,11 +62,14 @@
 </template>
 
 <script>
+import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
+import ChargeInstances from "@/components/ChargeInstances/index.vue"
 import { addRecurring, delRecurring, listRecurring, toggleRecurring, updateRecurring } from '@/api/px/life/bookkeeping/recurring'
 import { getClassificationList } from '@/api/px/life/bookkeeping/classification'
 import { getAccountList } from '@/api/px/life/bookkeeping/account'
 
 export default {
+  components: { ChargeInstances },
   data() {
     return {
       loading: false, rules: [], categories: [], accounts: [],
@@ -85,8 +90,9 @@ export default {
   onLoad() { this.resetForm(); this.loadReferences(); this.load() },
   onShow() { this.load() },
   methods: {
+    async backfill(row){await backfillRule('recurring',row.id);this.load()},
     resetForm() {
-      this.form = { id: null, name: '', typeDifference: '1', frequency: 'month', dayNumber: 1, type: null, account: null, otherAccount: null, money: '', remark: '' }
+      this.form = { postingMode: 'manual_confirm', id: null, name: '', typeDifference: '1', frequency: 'month', dayNumber: 1, type: null, account: null, otherAccount: null, money: '', remark: '' }
       this.typeIndex = 0; this.frequencyIndex = 0; this.dayIndex = 0; this.categoryIndex = 0; this.accountIndex = 0; this.otherAccountIndex = 0
     },
     async load() {
@@ -134,7 +140,7 @@ export default {
       if (this.form.typeDifference !== '2' && !this.form.type) return uni.showToast({ title: '请选择分类', icon: 'none' })
       if (this.form.typeDifference === '2' && (!this.form.otherAccount || this.form.otherAccount === this.form.account)) return uni.showToast({ title: '请选择不同的转入账户', icon: 'none' })
       const payload = { ...this.form, money: Number(this.form.money), type: this.form.typeDifference === '2' ? 0 : this.form.type }
-      await (payload.id ? updateRecurring(payload) : addRecurring(payload))
+      await (payload.id ? changeRule('recurring',payload) : addRecurring(payload))
       this.$refs.editor.close(); uni.showToast({ title: '已保存', icon: 'success' }); this.load()
     },
     async toggle(rule, e) { await toggleRecurring(rule.id, Boolean(e.detail.value)); this.load() },

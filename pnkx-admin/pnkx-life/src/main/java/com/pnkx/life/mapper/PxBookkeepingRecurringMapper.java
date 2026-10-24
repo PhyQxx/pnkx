@@ -24,6 +24,8 @@ public interface PxBookkeepingRecurringMapper {
 
     PxBookkeepingRecurring selectByClientUuid(@Param("clientUuid") String clientUuid);
 
+    PxBookkeepingRecurring lockForCharge(@Param("id") Long id, @Param("userId") String userId);
+
     PxBookkeepingRecurring selectById(@Param("id") Long id, @Param("userId") String userId);
 
     /**

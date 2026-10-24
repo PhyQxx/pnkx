@@ -17,6 +17,7 @@ public interface PxRecipeIngredientMapper {
     PxRecipeIngredient selectPxRecipeIngredientById(Long id);
 
     List<PxRecipeIngredient> selectByRecipeId(@Param("recipeId") Long recipeId);
+    List<PxRecipeIngredient> selectForWorkflow(@Param("recipeId") Long recipeId);
 
     int insertPxRecipeIngredient(PxRecipeIngredient ingredient);
 

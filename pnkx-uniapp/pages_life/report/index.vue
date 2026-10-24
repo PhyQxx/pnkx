@@ -1,5 +1,6 @@
 <template>
   <view class="life-report subpage-shell">
+    <feature-gate feature="reportActionV2"><report-actions :period="currentPeriod"/></feature-gate>
     <view class="header">
       <view class="period-selector">
         <view
@@ -76,12 +77,14 @@
   </view>
 </template>
 <script>
+import ReportActions from "@/components/ReportActions/index.vue"
 import { getLifeReportData } from '@/api/px/life/report'
 import config from '@/config'
 import { getToken } from '@/utils/auth'
 import { createSseParser } from '@/utils/sseParser'
 
 export default {
+ components:{ReportActions},
   name: 'LifeReportIndex',
   data() {
     return {

@@ -6,6 +6,7 @@
 
     <resultMap type="PxLifeNotification" id="PxLifeNotificationResult">
         <result property="id" column="id"/>
+        <result property="eventId" column="event_id"/>
         <result property="reminderId" column="reminder_id"/>
         <result property="userId" column="user_id"/>
         <result property="channel" column="channel"/>
@@ -22,6 +23,7 @@
             useGeneratedKeys="true" keyProperty="id">
         insert into px_life_notification
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="eventId != null">event_id,</if>
             <if test="reminderId != null">reminder_id,</if>
             <if test="userId != null">user_id,</if>
             <if test="channel != null">channel,</if>
@@ -34,6 +36,7 @@
             <if test="createTime != null">create_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="eventId != null">#{eventId},</if>
             <if test="reminderId != null">#{reminderId},</if>
             <if test="userId != null">#{userId},</if>
             <if test="channel != null">#{channel},</if>
@@ -48,7 +51,7 @@
     </insert>
 
     <select id="selectByUser" resultMap="PxLifeNotificationResult">
-        select id, reminder_id, user_id, channel, source_type, source_id,
+        select id, event_id, reminder_id, user_id, channel, source_type, source_id,
                title, content, send_time, status, create_time
         from px_life_notification
         where user_id = #{userId}
@@ -84,7 +87,7 @@
     </delete>
 
     <select id="selectByIdForUser" resultMap="PxLifeNotificationResult">
-        select id, reminder_id, user_id, channel, source_type, source_id, title, content, send_time, status, create_time
+        select id, event_id, reminder_id, user_id, channel, source_type, source_id, title, content, send_time, status, create_time
         from px_life_notification where user_id = #{userId} and id = #{id}
     </select>
 

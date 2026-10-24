@@ -1,3 +1,4 @@
+import { clearSharedCache } from '@/utils/sharedCache'
 /**
  * 同步调度器
  *
@@ -237,6 +238,7 @@ const syncScheduler = {
     if (!isOnline.value) return
 
     await Promise.all(SYNC_MODULES.map(mod => this._pullModule(mod)))
+    await clearSharedCache()
     // #endif
   },
 

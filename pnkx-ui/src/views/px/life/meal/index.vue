@@ -20,9 +20,9 @@
                         下一周<el-icon class="el-icon--right"><ArrowRight/></el-icon>
                     </el-button>
                 </el-button-group>
-                <el-button size="small" type="primary" plain icon="ShoppingCart" @click="openTransfer">
+                <feature-gate feature="shoppingPlanV2"><el-button size="small" type="primary" plain icon="ShoppingCart" @click="openTransfer">
                     加入购物清单
-                </el-button>
+                </el-button></feature-gate>
                 <el-button size="small" icon="Refresh" @click="loadWeek">刷新</el-button>
             </div>
         </div>
@@ -90,6 +90,7 @@
                     <span class="dialog-meta">{{ mealLabel(dialog.form.mealType) }}</span>
                 </el-form-item>
                 <el-form-item label="标题">
+                    <el-input-number v-model="dialog.form.servings" :min="1" :max="100" aria-label="用餐份数"/>
                     <el-input v-model="dialog.form.title" placeholder="如：番茄炒蛋" maxlength="50" show-word-limit/>
                 </el-form-item>
                 <el-form-item label="关联菜谱">
@@ -150,6 +151,7 @@
 </template>
 
 <script>
+import request from "@/utils/request"
 import {ArrowLeft, ArrowRight, Plus, Close, ShoppingCart} from '@element-plus/icons-vue'
 import {
     getMealWeek,
@@ -193,7 +195,7 @@ export default {
                     id: undefined,
                     planDate: '',
                     mealType: 1,
-                    title: '',
+                    title: '', servings: 1,
                     recipeId: undefined,
                     notes: ''
                 }
@@ -295,7 +297,7 @@ export default {
                 id: undefined,
                 planDate: dateStr,
                 mealType: mealType,
-                title: '',
+                title: '', servings: 1,
                 recipeId: undefined,
                 notes: ''
             }
@@ -310,7 +312,7 @@ export default {
                 id: plan.id,
                 planDate: plan.planDate,
                 mealType: plan.mealType,
-                title: plan.title || '',
+                title: plan.title || '', servings: plan.servings || 1,
                 recipeId: plan.recipeId,
                 notes: plan.notes || ''
             }
@@ -355,7 +357,7 @@ export default {
             this.transfer.visible = true
         },
         /** 执行加入购物清单 */
-        handleTransfer() {
+        async handleTransfer() {
             if (!this.transfer.listId) {
                 this.$message.warning('请选择目标购物清单')
                 return
@@ -363,14 +365,17 @@ export default {
             this.transferring = true
             const startDate = this.weekDays[0].dateStr
             const endDate = this.weekDays[6].dateStr
-            transferToShopping(this.transfer.listId, startDate, endDate).then(res => {
-                const added = res.data != null ? res.data : (res.msg ? null : 0)
-                this.$modal.msgSuccess(`已加入购物清单${added != null ? `（${added} 项）` : ''}`)
-                this.transfer.visible = false
-            }).finally(() => {
-                this.transferring = false
-            })
+            try {
+                const preview = await request({url:'/mealPlan/shopping-preview',method:'post',data:{listId:this.transfer.listId,startDate,endDate}})
+                const text=(preview.data.groups||[]).map(g=>`${g.name}（${g.change}）：${g.beforeQuantity||'无'} → ${g.needsReview?g.raw+'（人工核对）':g.quantity+g.unit}`).join('；')
+                await this.$confirm(text || '本周无食材；确认后将移除该范围内未购的旧来源贡献。','确认采购预览',{confirmButtonText:'确认更新',cancelButtonText:'取消'})
+                const result=await request({url:'/mealPlan/shopping-commit',method:'post',data:{previewId:preview.data.previewId}})
+                this.$message.success('采购清单已更新')
+                if(result.data.warnings?.length)this.$alert(result.data.warnings.join('；'),'请核对')
+                this.transfer.visible=false
+            } finally {this.transferring=false}
         },
+
         prevWeek() {
             const d = new Date(this.weekStart)
             d.setDate(d.getDate() - 7)

@@ -1,7 +1,7 @@
 <template>
   <div class="ai-chat-container">
     <div v-if="showSidebar" class="chat-sidebar">
-      <div class="sidebar-header">
+      <div class="sidebar-header"><el-popover placement="right" :width="'min(600px, 90vw)'" trigger="click"><template #reference><el-button style="width:100%;margin-bottom:8px">操作计划与恢复</el-button></template><feature-gate feature="operationPlanV2"><operation-plans/></feature-gate></el-popover>
         <el-button type="primary" style="width: 100%" @click="newConversation">
           <el-icon><Plus /></el-icon>
           新建对话
@@ -99,6 +99,7 @@
 </template>
 
 <script setup>
+import OperationPlans from '@/components/OperationPlans.vue'
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { Plus, ChatDotRound, Close, Operation } from '@element-plus/icons-vue'
 import { BubbleList, Welcome, Prompts, Thinking } from 'vue-element-plus-x'

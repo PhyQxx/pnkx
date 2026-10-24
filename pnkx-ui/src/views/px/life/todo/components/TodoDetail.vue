@@ -5,7 +5,7 @@
  * 说明：toDoDetails 按引用共享，字段就地编辑；保存/删除等业务动作由父组件处理
 -->
 <template>
-  <div class="detail-panel">
+  <div class="detail-panel"><assignment-history v-if="toDoDetails.id" type="todo" :source-id="toDoDetails.id" :key="toDoDetails.id" @changed="toDoDetails.performer=String($event).split(',').map(Number)" />
     <!-- 详情头部 -->
     <div class="detail-header">
       <div class="detail-back" @click="$emit('close')">
@@ -98,6 +98,7 @@
         <div class="prop-content">
           <el-select
             v-model="toDoDetails.performer"
+            :disabled="!!toDoDetails.id"
             multiple
             placeholder="请选择执行者"
             size="small"

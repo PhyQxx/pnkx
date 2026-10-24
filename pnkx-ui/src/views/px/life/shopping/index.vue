@@ -48,6 +48,7 @@
                             </el-tag>
                         </div>
                         <div class="toolbar-right">
+                            <feature-gate feature="shoppingPlanV2"><shopping-checkout :items="items" :list-id="activeListId" @changed="loadItems"/></feature-gate>
                             <el-button
                                 size="small"
                                 type="danger"
@@ -56,7 +57,7 @@
                                 :disabled="checkedItems.length === 0"
                                 @click="handleClearChecked"
                             >
-                                清空已购
+                                归档已购
                             </el-button>
                         </div>
                     </div>
@@ -102,6 +103,7 @@
                             />
                             <span class="item-name">{{ item.name }}</span>
                             <span class="item-qty">× {{ item.quantity }}</span>
+                            <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
                             <el-tag v-if="item.addedFromMeal" size="small" type="warning" effect="plain">
                                 来自餐饮
                             </el-tag>
@@ -125,6 +127,7 @@
                             />
                             <span class="item-name">{{ item.name }}</span>
                             <span class="item-qty">× {{ item.quantity }}</span>
+                            <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
                             <el-tag v-if="item.addedFromMeal" size="small" type="warning" effect="plain">
                                 来自餐饮
                             </el-tag>
@@ -151,6 +154,8 @@
 </template>
 
 <script>
+import ShoppingCheckout from "@/components/ShoppingCheckout.vue"
+import ShoppingItemActions from "@/components/ShoppingItemActions.vue"
 import {Plus, Close, EditPen, Goods} from '@element-plus/icons-vue'
 import {
     listShoppingList,
@@ -165,7 +170,7 @@ import {
 
 export default {
     name: 'ShoppingList',
-    components: {Plus, Close, EditPen, Goods},
+    components: {ShoppingCheckout,ShoppingItemActions,Plus, Close, EditPen, Goods},
     data() {
         return {
             // 清单
@@ -278,7 +283,7 @@ export default {
             }).catch(() => {
             })
         },
-        /** 清空已购条目 */
+        /** 归档已购条目 */
         handleClearChecked() {
             if (this.checkedItems.length === 0) {
                 this.$message.info('没有已购条目')
@@ -287,7 +292,7 @@ export default {
             this.$modal.confirm(`确认清空 ${this.checkedItems.length} 条已购物品？`).then(() => {
                 return clearChecked(this.activeListId)
             }).then(() => {
-                this.$modal.msgSuccess('已清空已购')
+                this.$modal.msgSuccess('已归档已购')
                 this.loadItems()
             }).catch(() => {
             })

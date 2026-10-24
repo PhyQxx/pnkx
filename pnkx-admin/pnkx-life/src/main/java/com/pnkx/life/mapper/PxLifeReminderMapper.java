@@ -15,6 +15,9 @@ import java.util.List;
  */
 @Mapper
 public interface PxLifeReminderMapper {
+    @org.apache.ibatis.annotations.Update("update px_life_reminder set remind_time=#{time},last_triggered_time=null,update_time=now() where id=#{id} and enabled=1 and del_flag='0'")
+    int reschedule(@Param("id")Long id,@Param("time")Date time);
+
 
     /**
      * 查询提醒配置

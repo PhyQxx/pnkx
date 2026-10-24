@@ -39,6 +39,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
               "mealType": "餐次数字，1=早餐 2=午餐 3=晚餐 4=加餐",
               "date": "日期，yyyy-MM-dd，今天/明天/后天等都要换算成具体日期",
               "notes": "备注，没有则为 null",
+              "servings": "用户明确的用餐份数，未说明则 null，不得猜测",
               "generateShopping": "用户要求同时生成购物清单时为 true，否则 false"
             }
             今天是 %s。
@@ -61,6 +62,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
 
     @Resource
     private AiPendingActionService pendingActionService;
+    @Resource private com.pnkx.web.service.operation.OperationPlanService operationPlanService;
 
     @Override
     public String intentName() {
@@ -95,6 +97,20 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
                 if (!lists.isEmpty()) parsed.put("shoppingListId", lists.get(0).getId());
             }
 
+            if (Boolean.TRUE.equals(parsed.getBoolean("generateShopping")) && (parsed.getLong("recipeId") == null || parsed.getLong("shoppingListId") == null)) {
+                IntentHandler.writeSse(out,"请先在菜谱库关联这道菜并创建购物清单，再生成餐饮与采购计划。");
+                IntentHandler.writeSse(out,"[DONE]"); return true;
+            }
+            if(parsed.getString("date")==null)parsed.put("date",LocalDate.now().toString());
+            if(parsed.getInteger("mealType")==null)parsed.put("mealType",3);
+            if(parsed.getBigDecimal("servings")==null||parsed.getBigDecimal("servings").signum()<=0){
+                IntentHandler.writeSse(out,"请补充用餐人数或份数，再生成餐饮计划预览。");
+                IntentHandler.writeSse(out,"[DONE]");return true;
+            }
+            var steps=new com.alibaba.fastjson.JSONArray();var step=new JSONObject();step.put("toolCode","meal.create");step.put("input",JSON.parseObject(parsed.toJSONString()));steps.add(step);
+            if(Boolean.TRUE.equals(parsed.getBoolean("generateShopping"))){var shoppingStep=new JSONObject();shoppingStep.put("toolCode","shopping.generate");var args=new JSONObject();args.put("listId",parsed.getLong("shoppingListId"));args.put("startDate",parsed.getString("date"));args.put("endDate",parsed.getString("date"));shoppingStep.put("input",args);steps.add(shoppingStep);}
+            var planInput=new JSONObject();planInput.put("title","安排餐饮与采购");planInput.put("steps",steps);
+            var operation=operationPlanService.preview(planInput,SecurityUtils.getUserId());parsed.put("operationPlanId",operation.getString("id"));
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
@@ -107,21 +123,14 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
     @Override
     public boolean confirm(JSONObject draft, OutputStream out) {
         try {
-            PxMealPlan plan = buildMealPlan(draft);
-            int rows = mealPlanService.insertPxMealPlan(plan);
-            if (rows <= 0) {
-                return false;
-            }
-
-            if (Boolean.TRUE.equals(draft.getBoolean("generateShopping"))
-                    && draft.getLong("shoppingListId") != null && plan.getRecipeId() != null) {
-                String date = new SimpleDateFormat("yyyy-MM-dd").format(plan.getPlanDate());
-                int items = mealPlanService.transferToShopping(draft.getLong("shoppingListId"), date, date);
-                draft.put("generatedShoppingItems", items);
-            }
-            IntentHandler.writeSse(out, buildSuccessMessage(draft));
-            IntentHandler.writeSse(out, "[DONE]");
+            if(draft.getString("operationPlanId")==null)throw new IllegalArgumentException("旧草稿请重新预览");
+            JSONObject result=operationPlanService.execute(draft.getString("operationPlanId"),SecurityUtils.getUserId());
+            draft.put("_result",result);
+            IntentHandler.writeSse(out,"执行结果："+java.util.Map.of("succeeded","全部完成","partially_succeeded","部分完成","failed","执行失败","running","正在执行","cancelled","已取消").getOrDefault(result.getString("status"),result.getString("status"))+"。可在操作计划中查看每一步、重试失败步骤。计划编号："+result.getString("id"));
+            IntentHandler.writeSse(out,"[DONE]");
+            // 执行详情已持久化，即使部分失败也不让旧确认入口重建整份草稿。
             return true;
+
         } catch (Exception e) {
             logger.error("AI膳食计划确认保存失败: {}", e.getMessage());
             return false;
@@ -187,6 +196,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
     }
 
     private void appendLines(StringBuilder msg, JSONObject parsed) {
+        msg.append("- 用餐份数：").append(parsed.getBigDecimal("servings")).append("（确认前请核对）\n");
         msg.append("- 菜名：").append(parsed.getString("title")).append("\n");
         String mealType = String.valueOf(parsed.getInteger("mealType") != null ? parsed.getInteger("mealType") : 3);
         msg.append("- 餐次：").append(MEAL_TYPE_LABEL.getOrDefault(mealType, "晚餐")).append("\n");

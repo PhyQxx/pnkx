@@ -81,6 +81,9 @@ class PxLifeReminderServiceImplTest {
                 });
         PxLifeReminderServiceImpl service = new PxLifeReminderServiceImpl();
         setField(service, "pxLifeNotificationMapper", mapper);
+        setField(service, "reminderEventService", new ReminderEventService(null,null,null) {
+            @Override public boolean sendable(Long id,String user) { return true; }
+        });
         return service;
     }
 

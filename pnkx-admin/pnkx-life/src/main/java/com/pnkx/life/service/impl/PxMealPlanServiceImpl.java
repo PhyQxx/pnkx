@@ -30,6 +30,7 @@ import java.util.Objects;
  */
 @Service
 public class PxMealPlanServiceImpl implements IPxMealPlanService {
+    @Resource private ShoppingWorkflowService shoppingWorkflowService;
     @Resource
     private PxMealPlanMapper pxMealPlanMapper;
 
@@ -41,6 +42,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
     @Resource
     private PxShoppingListMapper pxShoppingListMapper;
     @Resource private DataPermissionService dataPermissionService;
+    @Resource private com.pnkx.life.mapper.PxRecipeMapper recipeMapper;
 
     /**
      * 查询餐饮计划
@@ -74,10 +76,12 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int insertPxMealPlan(PxMealPlan pxMealPlan) {
+        validateInput(pxMealPlan);
         if (StringUtils.isNotEmpty(pxMealPlan.getClientUuid())) {
             PxMealPlan existing = pxMealPlanMapper.selectByClientUuid(
                     pxMealPlan.getClientUuid());
             if (existing != null) {
+                requireOwner(existing);
                 pxMealPlan.setId(existing.getId());
                 return 1;
             }
@@ -95,6 +99,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
      */
     @Override
     public int updatePxMealPlan(PxMealPlan pxMealPlan) {
+        validateInput(pxMealPlan);
         requireOwner(pxMealPlanMapper.selectPxMealPlanById(pxMealPlan.getId()));
         pxMealPlan.setUpdateTime(DateUtils.getNowDate());
         return pxMealPlanMapper.updatePxMealPlan(pxMealPlan);
@@ -122,6 +127,23 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
     public int deletePxMealPlanById(Long id) {
         requireOwner(pxMealPlanMapper.selectPxMealPlanById(id));
         return pxMealPlanMapper.deletePxMealPlanById(id);
+    }
+
+    private void validateInput(PxMealPlan meal) {
+        if (meal.getServings() != null && (meal.getServings().signum() <= 0
+                || meal.getServings().scale() > 3 || meal.getServings().compareTo(new java.math.BigDecimal("100000")) > 0)) {
+            throw new ServiceException("用餐份数须大于0、最多3位小数且不超过100000");
+        }
+        if (meal.getRecipeId() != null) {
+            var recipe = recipeMapper.selectPxRecipeById(meal.getRecipeId());
+            var existing = meal.getId() == null ? null : pxMealPlanMapper.selectPxMealPlanById(meal.getId());
+            boolean unchanged = existing != null && Objects.equals(existing.getRecipeId(), meal.getRecipeId())
+                    && recipe != null && Objects.equals(existing.getCreateBy(), recipe.getCreateBy());
+            if (recipe == null || "1".equals(recipe.getDelFlag()) || (!unchanged
+                    && !Objects.equals(SecurityUtils.getUserId(), recipe.getCreateBy()))) {
+                throw new ServiceException("菜谱不存在或无权使用");
+            }
+        }
     }
 
     private void requireOwner(PxMealPlan entity) {
@@ -153,37 +175,7 @@ public class PxMealPlanServiceImpl implements IPxMealPlanService {
     @Override
     public int transferToShopping(Long listId, String startDate, String endDate) {
         String userId = SecurityUtils.getUserId();
-        PxShoppingList target = pxShoppingListMapper.selectPxShoppingListById(listId);
-        if (target == null || !dataPermissionService.canWrite(target.getCreateBy(), "shopping")) {
-            throw new ServiceException("购物清单不存在或无权操作");
-        }
-        List<PxMealPlan> mealPlans = new ArrayList<>();
-        List<Long> visibleUsers = dataPermissionService.getVisibleUserIds("meal");
-        if (visibleUsers == null || visibleUsers.isEmpty()) visibleUsers = List.of(Long.valueOf(userId));
-        for (Long visibleUser : visibleUsers)
-            mealPlans.addAll(pxMealPlanMapper.selectByDateRangeForUser(startDate, endDate, String.valueOf(visibleUser)));
-        List<PxShoppingItem> shoppingItems = new ArrayList<>();
-        for (PxMealPlan mealPlan : mealPlans) {
-            if (mealPlan.getRecipeId() == null) {
-                continue;
-            }
-            List<PxRecipeIngredient> ingredients = pxRecipeIngredientMapper.selectByRecipeId(mealPlan.getRecipeId());
-            for (PxRecipeIngredient ingredient : ingredients) {
-                PxShoppingItem shoppingItem = new PxShoppingItem();
-                shoppingItem.setListId(listId);
-                shoppingItem.setName(ingredient.getName());
-                shoppingItem.setQuantity(ingredient.getQuantity());
-                shoppingItem.setClassificationId(ingredient.getClassificationId());
-                shoppingItem.setChecked(false);
-                shoppingItem.setAddedFromMeal(true);
-                shoppingItem.setCreateTime(DateUtils.getNowDate());
-                shoppingItem.setCreateBy(userId);
-                shoppingItems.add(shoppingItem);
-            }
-        }
-        if (shoppingItems.isEmpty()) {
-            return 0;
-        }
-        return pxShoppingItemMapper.insertBatch(shoppingItems);
+        var preview=shoppingWorkflowService.preview(listId,startDate,endDate,userId);
+        return shoppingWorkflowService.commit(preview.getString("previewId"),userId).getIntValue("created");
     }
 }

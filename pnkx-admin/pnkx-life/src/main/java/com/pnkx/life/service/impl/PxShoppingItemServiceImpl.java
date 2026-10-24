@@ -84,7 +84,11 @@ public class PxShoppingItemServiceImpl implements IPxShoppingItemService {
      */
     @Override
     public int updatePxShoppingItem(PxShoppingItem pxShoppingItem) {
-        requireOwner(pxShoppingItemMapper.selectPxShoppingItemById(pxShoppingItem.getId()));
+        PxShoppingItem previous = pxShoppingItemMapper.selectPxShoppingItemById(pxShoppingItem.getId());
+        requireOwner(previous);
+        if (pxShoppingItem.getChecked() != null && (previous.getBatchId() != null || "available".equals(previous.getFulfillmentState()))) {
+            throw new ServiceException("请使用采购状态操作；已结算或家里已有的条目不能由旧勾选接口覆盖");
+        }
         pxShoppingItem.setUpdateTime(DateUtils.getNowDate());
         return pxShoppingItemMapper.updatePxShoppingItem(pxShoppingItem);
     }

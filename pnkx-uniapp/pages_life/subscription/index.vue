@@ -1,5 +1,6 @@
 <template>
   <view class="sub-page subpage-shell">
+    <feature-gate feature="chargeInstanceV2"><charge-instances source-type="subscription" /></feature-gate>
     <!-- 预测汇总 -->
     <view class="sub-summary" v-if="forecast.monthlyTotal !== undefined">
       <view class="sub-summary__card sub-summary__card--month">
@@ -50,7 +51,7 @@
               </text>
             </view>
           </view>
-          <view class="sub-item__actions">
+          <view class="sub-item__actions"><feature-gate feature="chargeInstanceV2"><button v-if="!item.enabled && item.lifecycle!=='cancelled'" size="mini" @click="backfill(item)">补齐账期</button></feature-gate><button size="mini" @click="editSubscription(item)">编辑</button>
             <view class="sub-item__reminder" @click="openReminder(item)">
               <uni-icons type="notification" size="18" color="#5B9EEE" />
             </view>
@@ -66,15 +67,19 @@
     </view>
 
     <!-- 新增按钮 -->
-    <view class="sub-fab" @click="showAdd = true">
+    <view class="sub-fab" @click="editSubscription(null)">
       <text class="sub-fab__text">+</text>
     </view>
 
     <!-- 新增弹框 -->
     <uni-popup ref="addPopup" type="bottom" v-if="showAdd" @change="onPopupChange">
       <view class="sub-popup">
-        <text class="sub-popup__title">添加订阅</text>
+        <text class="sub-popup__title">{{form.id?'编辑订阅':'添加订阅'}}</text>
         <view class="sub-popup__form">
+          <picker :range="['追踪中','暂停','终止追踪']" @change="form.lifecycle=['active','paused','cancelled'][Number($event.detail.value)]"><view>状态：{{({active:'追踪中',paused:'暂停',cancelled:'终止追踪'})[form.lifecycle]||'追踪中'}}</view></picker>
+          <picker mode="date" @change="form.trialEndDate=$event.detail.value"><view>试用结束：{{form.trialEndDate||'无试用'}}</view></picker>
+          <button v-if="form.trialEndDate" size="mini" @click="form.trialEndDate=null">取消试用日期</button><text v-if="form.lifecycle==='cancelled'">仅停止系统内计划，请自行到服务平台取消续费。</text>
+          <view>到期自动记账（关闭则需确认）<switch :checked="form.postingMode === 'auto_record'" @change="form.postingMode = $event.detail.value ? 'auto_record' : 'manual_confirm'" /></view>
           <input class="sub-popup__input" v-model="form.name" placeholder="订阅名称（如 Netflix）" />
           <input class="sub-popup__input" v-model.number="form.amount" type="digit" placeholder="金额" />
           <view class="sub-popup__row">
@@ -89,7 +94,7 @@
         </view>
         <view class="sub-popup__actions">
           <view class="sub-popup__btn sub-popup__btn--ghost" @click="showAdd = false">取消</view>
-          <view class="sub-popup__btn sub-popup__btn--primary" @click="handleAdd">添加</view>
+          <view class="sub-popup__btn sub-popup__btn--primary" @click="handleAdd">保存</view>
         </view>
       </view>
     </uni-popup>
@@ -108,11 +113,13 @@
 </template>
 
 <script>
+import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
+import ChargeInstances from "@/components/ChargeInstances/index.vue"
 import { listSubscription, addSubscription, updateSubscription, delSubscription, forecast } from '@/api/px/life/subscription'
 import ReminderSetting from '@/components/ReminderSetting/index.vue'
 
 export default {
-  components: { ReminderSetting },
+  components: { ChargeInstances, ReminderSetting },
   data() {
     return {
       list: [],
@@ -120,7 +127,7 @@ export default {
       forecast: {},
       reminderItem: null,
       showAdd: false,
-      form: { name: '', amount: 0, cycle: 'monthly', cycleInterval: 1, nextPaymentDate: '' },
+      form: { postingMode: 'manual_confirm', lifecycle: 'active', name: '', amount: 0, cycle: 'monthly', cycleInterval: 1, nextPaymentDate: '' },
       cycleOptions: [
         { label: '每月', value: 'monthly' },
         { label: '每年', value: 'yearly' },
@@ -136,6 +143,7 @@ export default {
     if (!this.loading) this.loadData()
   },
   methods: {
+    async backfill(row){await backfillRule('subscription',row.id);this.loadData()},
     async loadData() {
       this.loading = true
       try {
@@ -199,19 +207,20 @@ export default {
     onDateChange(e) {
       this.form.nextPaymentDate = e.detail.value
     },
+    editSubscription(item) {
+      this.form=item?{...item,nextPaymentDate:String(item.nextPaymentDate||'').slice(0,10)}:{postingMode:'manual_confirm',lifecycle:'active',name:'',amount:0,cycle:'monthly',cycleInterval:1,nextPaymentDate:''}
+      this.showAdd=true
+    },
     async handleAdd() {
       if (!this.form.name.trim()) {
         uni.showToast({ title: '请输入名称', icon: 'none' })
         return
       }
       try {
-        await addSubscription({
-          ...this.form,
-          name: this.form.name.trim(),
-          enabled: true
-        })
+        const payload={...this.form,name:this.form.name.trim(),enabled:this.form.lifecycle==='active'}
+        await (payload.id?changeRule('subscription',payload):addSubscription(payload))
         this.showAdd = false
-        this.form = { name: '', amount: 0, cycle: 'monthly', cycleInterval: 1, nextPaymentDate: '' }
+        this.form = { postingMode:'manual_confirm',lifecycle:'active',name: '', amount: 0, cycle: 'monthly', cycleInterval: 1, nextPaymentDate: '' }
         this.loadData()
         uni.showToast({ title: '已添加', icon: 'success' })
       } catch (e) {

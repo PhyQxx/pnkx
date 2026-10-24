@@ -9,6 +9,11 @@
         <result property="cycle" column="cycle"/>
         <result property="cycleInterval" column="cycle_interval"/>
         <result property="nextPaymentDate" column="next_payment_date"/>
+        <result property="lifecycle" column="lifecycle"/>
+        <result property="trialEndDate" column="trial_end_date"/>
+        <result property="legacyResumePolicy" column="legacy_resume_policy"/>
+        <result property="postingMode" column="posting_mode"/>
+        <result property="anchorDay" column="anchor_day"/>
         <result property="accountId" column="account_id"/>
         <result property="classificationId" column="classification_id"/>
         <result property="paymentMethod" column="payment_method"/>
@@ -26,7 +31,7 @@
     </resultMap>
 
     <sql id="selectPxSubscriptionVo">
-        select id, name, amount, cycle, cycle_interval, next_payment_date, account_id, classification_id,
+        select id, name, amount, cycle, cycle_interval, next_payment_date, anchor_day, lifecycle, trial_end_date, legacy_resume_policy, posting_mode, account_id, classification_id,
                payment_method, logo, reminder_lead_days, enabled, version, client_uuid, del_flag,
                create_by, create_time, update_by, update_time, remark
         from px_subscription
@@ -55,6 +60,11 @@
         where id = #{id}
     </select>
 
+    <select id="selectForCharge" resultMap="PxSubscriptionResult">
+        <include refid="selectPxSubscriptionVo"/>
+        where id = #{id} and del_flag = '0' for update
+    </select>
+
     <select id="selectByClientUuid" parameterType="String" resultMap="PxSubscriptionResult">
         <include refid="selectPxSubscriptionVo"/>
         where client_uuid = #{clientUuid}
@@ -77,6 +87,11 @@
             <if test="cycle != null">cycle,</if>
             <if test="cycleInterval != null">cycle_interval,</if>
             <if test="nextPaymentDate != null">next_payment_date,</if>
+            <if test="lifecycle != null">lifecycle,</if>
+            <if test="trialEndDate != null">trial_end_date,</if>
+            <if test="legacyResumePolicy != null">legacy_resume_policy,</if>
+            <if test="postingMode != null">posting_mode,</if>
+            <if test="anchorDay != null">anchor_day,</if>
             <if test="accountId != null">account_id,</if>
             <if test="classificationId != null">classification_id,</if>
             <if test="paymentMethod != null">payment_method,</if>
@@ -98,6 +113,11 @@
             <if test="cycle != null">#{cycle},</if>
             <if test="cycleInterval != null">#{cycleInterval},</if>
             <if test="nextPaymentDate != null">#{nextPaymentDate},</if>
+            <if test="lifecycle != null">#{lifecycle},</if>
+            <if test="trialEndDate != null">#{trialEndDate},</if>
+            <if test="legacyResumePolicy != null">#{legacyResumePolicy},</if>
+            <if test="postingMode != null">#{postingMode},</if>
+            <if test="anchorDay != null">#{anchorDay},</if>
             <if test="accountId != null">#{accountId},</if>
             <if test="classificationId != null">#{classificationId},</if>
             <if test="paymentMethod != null">#{paymentMethod},</if>
@@ -123,6 +143,12 @@
             <if test="cycle != null">cycle = #{cycle},</if>
             <if test="cycleInterval != null">cycle_interval = #{cycleInterval},</if>
             <if test="nextPaymentDate != null">next_payment_date = #{nextPaymentDate},</if>
+            <if test="lifecycle != null">lifecycle = #{lifecycle},</if>
+            <if test="trialEndDate != null">trial_end_date = #{trialEndDate},</if>
+            <if test="params.clearTrialEndDate == true">trial_end_date = null,</if>
+            <if test="legacyResumePolicy != null">legacy_resume_policy = #{legacyResumePolicy},</if>
+            <if test="postingMode != null">posting_mode = #{postingMode},</if>
+            <if test="anchorDay != null">anchor_day = #{anchorDay},</if>
             <if test="accountId != null">account_id = #{accountId},</if>
             <if test="classificationId != null">classification_id = #{classificationId},</if>
             <if test="paymentMethod != null">payment_method = #{paymentMethod},</if>

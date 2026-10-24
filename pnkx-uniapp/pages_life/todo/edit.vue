@@ -5,7 +5,7 @@
  * @Description: 待办编辑页
 -->
 <template>
-  <view class="todo-edit subpage-shell">
+  <view class="todo-edit subpage-shell"><assignment-history v-if="todoForm.id" type="todo" :source-id="todoForm.id" @changed="assignmentChanged" />
     <!-- 内容输入 -->
     <view class="form-section">
       <view class="form-label">内容 <text class="required">*</text></view>
@@ -232,7 +232,12 @@ export default {
       }
     },
 
+    assignmentChanged(value) {
+      this.selectedUserIds = String(value).split(',').map(Number)
+      this.updatePerformData()
+    },
     openPerformerPicker() {
+      if(this.todoForm.id) { uni.showToast({title:'请通过分工与转派记录修改执行者',icon:'none'});return }
       this.$refs.performerPopup.open()
     },
 

@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class NoteHandler implements ConfirmableIntentHandler {
+    @jakarta.annotation.Resource
+    private LocalIntentPlanService localPlans;
+
 
     private static final Logger logger = LoggerFactory.getLogger(NoteHandler.class);
 
@@ -75,7 +78,8 @@ public class NoteHandler implements ConfirmableIntentHandler {
             return false;
         }
 
-        pendingActionService.save(intentData.getString("requestId"), intentName(), intentData);
+        localPlans.prepare(intentData, "note.create", "创建笔记");
+            pendingActionService.save(intentData.getString("requestId"), intentName(), intentData);
 
         StringBuilder msg = new StringBuilder();
         msg.append("**笔记草稿**\n\n");
@@ -169,24 +173,8 @@ public class NoteHandler implements ConfirmableIntentHandler {
     }
 
     @Override
-    public boolean confirm(JSONObject draft, OutputStream out) throws IOException {
-        PxNote note = new PxNote();
-        note.setTitle(draft.getString("title"));
-        note.setContent(draft.getString("content"));
-        note.setRichText(draft.getString("content")); // 简单处理
-        note.setFolder(draft.getLong("folderId"));
-        note.setDelFlag(0);
-        note.setVersion("1");
-        note.setCreateBy(SecurityUtils.getUserId().toString());
-        note.setUpdateBy(SecurityUtils.getUserId().toString());
-
-        PxNote result = noteService.insertPxNote(note);
-        if (result != null && result.getId() != null) {
-            IntentHandler.writeSse(out, "笔记已成功保存。");
-            IntentHandler.writeSse(out, "[DONE]");
-            return true;
-        }
-        return false;
+    public boolean confirm(JSONObject draft, OutputStream out) throws java.io.IOException {
+        return localPlans.confirm(draft, out);
     }
 
     private JSONObject parseJsonObject(String content) {

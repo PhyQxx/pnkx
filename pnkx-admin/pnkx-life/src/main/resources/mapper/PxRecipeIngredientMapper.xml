@@ -33,6 +33,13 @@
         and del_flag = '0'
     </select>
 
+    <select id="selectForWorkflow" resultMap="PxRecipeIngredientResult">
+        <include refid="selectPxRecipeIngredientVo"/>
+        where recipe_id = #{recipeId}
+        and del_flag = '0'
+     for update
+    </select>
+
     <insert id="insertPxRecipeIngredient" parameterType="PxRecipeIngredient" useGeneratedKeys="true" keyProperty="id">
         insert into px_recipe_ingredient
         <trim prefix="(" suffix=")" suffixOverrides=",">

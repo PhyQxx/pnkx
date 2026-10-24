@@ -50,6 +50,7 @@ import java.time.LocalTime;
  */
 @Service
 public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
+    @Resource private LifeFeatureGate featureGate;
 
     private static final Logger log = LoggerFactory.getLogger(PxLifeReminderServiceImpl.class);
 
@@ -57,6 +58,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
     private PxLifeReminderMapper pxLifeReminderMapper;
     @Resource
     private PxLifeNotificationMapper pxLifeNotificationMapper;
+    @Resource private ReminderEventService reminderEventService;
     @Resource
     private PxToDoMapper pxToDoMapper;
     @Resource
@@ -206,6 +208,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
         if (notification == null || !"1".equals(notification.getStatus())) {
             throw new ServiceException("仅发送失败的通知可以重试");
         }
+        if (!reminderEventService.sendable(notification.getEventId(), userId)) throw new ServiceException("提醒已处理、已延期或为历史通知，请查看来源最新状态");
         try {
             if ("email".equals(notification.getChannel())) {
                 SysUser user = sysUserMapper.selectUserById(Long.valueOf(userId));
@@ -266,7 +269,10 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
     public int dispatchReminders() {
         int stopDaysAfter = getIntConfig("sys.life.remind.stop.days.after", 3);
         Date now = DateUtils.getNowDate();
-        List<PxLifeReminder> dueList = pxLifeReminderMapper.selectDueReminders(now, stopDaysAfter);
+        List<PxLifeReminder> dueList = new java.util.ArrayList<>(pxLifeReminderMapper.selectDueReminders(now, stopDaysAfter));
+        for (PxLifeReminder snoozed : reminderEventService.snoozed()) {
+            if(dueList.stream().noneMatch(r -> r.getId().equals(snoozed.getId()))) dueList.add(snoozed);
+        }
         if (dueList.isEmpty()) {
             return 0;
         }
@@ -276,6 +282,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
         int triggered = 0;
 
         for (PxLifeReminder reminder : dueList) {
+            if(featureGate!=null&&!featureGate.enabled("reminderEventV2",reminder.getUserId()))continue;
             try {
                 ReminderContent rc = buildContent(reminder);
                 if (rc == null) {
@@ -283,7 +290,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
                     pxLifeReminderMapper.updateLastTriggeredTime(reminder.getId(), now);
                     continue;
                 }
-                if (isQuiet(getPreference(reminder.getUserId()), LocalTime.now())) {
+                if (isQuiet(getPreference(reminder.getUserId()), LocalTime.now(SubscriptionSchedule.ZONE))) {
                     continue;
                 }
                 deliver(reminder, rc, wsEnabled, emailEnabled, now);
@@ -304,9 +311,13 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
     private void deliver(PxLifeReminder reminder, ReminderContent rc,
                          boolean wsEnabled, boolean emailEnabled, Date now) {
         PxReminderPreference preference = getPreference(reminder.getUserId());
-        if (isQuiet(preference, LocalTime.now())) {
+        if (isQuiet(preference, LocalTime.now(SubscriptionSchedule.ZONE))) {
             return;
         }
+        var businessEvent = reminderEventService.ensure(reminder, rc.title);
+        if (!reminderEventService.sendable(businessEvent)) return;
+        // 每个渠道发出前重新检查业务事件，避免已处理事件继续投递。
+        if (!reminderEventService.sendable(businessEvent.getId(), reminder.getUserId())) return;
         // 1. WebSocket 站内推送
         if (wsEnabled && Boolean.TRUE.equals(preference.getWebsocketEnabled()) && pushChannel != null) {
             try {
@@ -325,6 +336,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
             }
         }
 
+        if (!reminderEventService.sendable(businessEvent.getId(), reminder.getUserId())) return;
         if (Boolean.TRUE.equals(preference.getPushEnabled()) && pushChannel != null
                 && pushChannel.isAppPushEnabled()) {
             try {
@@ -341,6 +353,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
             }
         }
 
+        if (!reminderEventService.sendable(businessEvent.getId(), reminder.getUserId())) return;
         // 2. 邮件推送
         if (emailEnabled && Boolean.TRUE.equals(preference.getEmailEnabled())) {
             try {
@@ -358,6 +371,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
                 recordNotification(reminder, "email", rc, "1", now);
             }
         }
+        reminderEventService.delivered(businessEvent);
     }
 
     static boolean isQuiet(PxReminderPreference preference, LocalTime now) {
@@ -380,6 +394,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
     private void recordNotification(PxLifeReminder reminder, String channel,
                                     ReminderContent rc, String status, Date now) {
         PxLifeNotification n = new PxLifeNotification();
+        n.setEventId(reminderEventService.ensure(reminder, rc.title).getId());
         n.setReminderId(reminder.getId());
         n.setUserId(reminder.getUserId());
         n.setChannel(channel);
@@ -423,17 +438,16 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
             case "subscription": {
                 PxSubscription subscription = pxSubscriptionMapper.selectPxSubscriptionById(reminder.getSourceId());
                 if (subscription == null) return null;
+                var occurrence=reminder.getRemindTime().toInstant().plusSeconds(60L*(reminder.getLeadMinutes()==null?0:reminder.getLeadMinutes())).atZone(SubscriptionSchedule.ZONE).toLocalDate();
                 String date = subscription.getNextPaymentDate() == null
                         ? "近期"
-                        : DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, subscription.getNextPaymentDate());
+                        : occurrence.toString();
                 PxBookkeepingAccount account = subscription.getAccountId() == null
                         ? null : pxBookkeepingAccountMapper.selectPxBookkeepingAccountById(subscription.getAccountId());
                 String accountText = account == null ? "" : "，账户 " + account.getAccountName();
                 return new ReminderContent(
                         "💳 订阅续费提醒：" + subscription.getName(),
-                        "订阅「" + subscription.getName() + "」将在 " + date
-                                + " 扣费" + (subscription.getAmount() == null ? "" : "，金额 " + subscription.getAmount())
-                                + accountText);
+                        "订阅「" + subscription.getName() + "」的 " + date + " 账期提醒，请在周期账单中核对实际扣费状态。");
             }
             default:
                 return new ReminderContent("叮咚！生活提醒", "您有一条新的提醒");

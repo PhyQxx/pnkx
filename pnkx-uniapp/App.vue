@@ -1,5 +1,6 @@
 <script>
 import config from './config'
+import { clearSharedCache } from '@/utils/sharedCache'
 import {getToken} from '@/utils/auth'
 import { parsePushPayload, resolvePushRoute } from '@/utils/pushRouter'
 // #ifdef APP-PLUS
@@ -80,6 +81,7 @@ export default {
       try {
         await sqliteDB.open()
         await sqliteDB.initTables()
+        await clearSharedCache()
         this._offlineReady = true
         syncScheduler.start()
         if (isOnline.value) {
@@ -92,8 +94,9 @@ export default {
     },
 
     // ★ App 回前台时触发同步
-    triggerOnlineSync() {
+    async triggerOnlineSync() {
       try {
+        await clearSharedCache()
         if (isOnline.value) {
           syncScheduler.triggerSync('app_show')
         }

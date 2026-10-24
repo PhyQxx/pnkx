@@ -19,6 +19,9 @@ public class PxLifeNotification extends BaseEntity {
      * 主键
      */
     private Long id;
+    private Long eventId;
+    public Long getEventId(){return eventId;}
+    public void setEventId(Long value){eventId=value;}
 
     /**
      * 关联提醒配置ID

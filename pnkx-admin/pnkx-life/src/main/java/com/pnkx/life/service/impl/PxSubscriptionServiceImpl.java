@@ -5,9 +5,7 @@ import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
-import com.pnkx.life.domain.po.PxBookkeepingRecord;
 import com.pnkx.life.domain.po.PxSubscription;
-import com.pnkx.life.mapper.PxBookkeepingRecordMapper;
 import com.pnkx.life.mapper.PxSubscriptionMapper;
 import com.pnkx.life.service.IPxSubscriptionService;
 import com.pnkx.life.service.IPxLifeReminderService;
@@ -19,9 +17,6 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,12 +29,14 @@ import java.util.Objects;
 @Service
 public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
 
+    @Resource private ChargeExecutionService chargeExecutions;
+
     private static final Logger log = LoggerFactory.getLogger(PxSubscriptionServiceImpl.class);
 
     @Resource
     private PxSubscriptionMapper pxSubscriptionMapper;
     @Resource
-    private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
+    private SubscriptionChargeService subscriptionChargeService;
     @Resource
     private IPxLifeReminderService lifeReminderService;
 
@@ -61,18 +58,42 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
             PxSubscription existing = pxSubscriptionMapper.selectByClientUuid(
                     pxSubscription.getClientUuid());
             if (existing != null) {
+                requireOwner(existing);
                 pxSubscription.setId(existing.getId());
                 return 1;
             }
         }
+        validateSchedule(pxSubscription);
+        pxSubscription.setLegacyResumePolicy(false);
+        applyLifecycle(pxSubscription,null);
+        pxSubscription.setPostingMode(ChargeInstanceService.mode(pxSubscription.getPostingMode(), "manual_confirm"));
+        pxSubscription.setAnchorDay(SubscriptionSchedule.date(pxSubscription.getNextPaymentDate()).getDayOfMonth());
         pxSubscription.setCreateBy(SecurityUtils.getUserId());
         pxSubscription.setCreateTime(DateUtils.getNowDate());
         return pxSubscriptionMapper.insertPxSubscription(pxSubscription);
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
     public int updatePxSubscription(PxSubscription pxSubscription) {
-        requireOwner(pxSubscriptionMapper.selectPxSubscriptionById(pxSubscription.getId()));
+        var current=pxSubscriptionMapper.selectForCharge(pxSubscription.getId());
+        requireOwner(current);
+        boolean explicitDateChange=pxSubscription.getNextPaymentDate()!=null&&!SubscriptionSchedule.date(pxSubscription.getNextPaymentDate()).equals(SubscriptionSchedule.date(current.getNextPaymentDate()));
+        applyLifecycle(pxSubscription,current);
+        if (pxSubscription.getPostingMode() != null) ChargeInstanceService.mode(pxSubscription.getPostingMode(), "auto_record");
+        if (pxSubscription.getNextPaymentDate() != null) {
+            PxSubscription existing = pxSubscriptionMapper.selectPxSubscriptionById(pxSubscription.getId());
+            if (explicitDateChange) {
+                pxSubscription.setAnchorDay(SubscriptionSchedule.date(pxSubscription.getNextPaymentDate()).getDayOfMonth());
+            } else {
+                pxSubscription.setAnchorDay(existing.getAnchorDay());
+            }
+        } else {
+            pxSubscription.setAnchorDay(null);
+        }
+        if (pxSubscription.getAmount() != null && pxSubscription.getAmount().signum() < 0) throw new ServiceException("金额不能小于 0");
+        if (pxSubscription.getCycleInterval() != null && pxSubscription.getCycleInterval() < 1) throw new ServiceException("周期间隔必须大于 0");
+        if (pxSubscription.getCycle() != null) SubscriptionSchedule.validateCycle(pxSubscription.getCycle());
         pxSubscription.setUpdateTime(DateUtils.getNowDate());
         int rows = pxSubscriptionMapper.updatePxSubscription(pxSubscription);
         if (Boolean.FALSE.equals(pxSubscription.getEnabled())) {
@@ -95,6 +116,22 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
         int rows = pxSubscriptionMapper.deletePxSubscriptionById(id);
         lifeReminderService.unbindReminder("subscription", id, SecurityUtils.getUserId());
         return rows;
+    }
+
+    private void applyLifecycle(PxSubscription input,PxSubscription old) {
+        String state=input.getLifecycle();
+        if(state==null)state=input.getEnabled()==null?(old==null?"active":old.getLifecycle()):(Boolean.TRUE.equals(input.getEnabled())?"active":"paused");
+        if(state==null)state="active";
+        if(!java.util.Set.of("active","paused","cancelled").contains(state))throw new ServiceException("无效订阅状态");
+        if(old!=null&&"cancelled".equals(old.getLifecycle())&&!"cancelled".equals(state))throw new ServiceException("已终止订阅不可恢复，请新建规则");
+        input.setLifecycle(state);input.setEnabled("active".equals(state));
+        if(old!=null&&"active".equals(state)&&!Boolean.TRUE.equals(old.getEnabled())&&!Boolean.TRUE.equals(old.getLegacyResumePolicy())){
+            var due=SubscriptionSchedule.date(input.getNextPaymentDate()==null?old.getNextPaymentDate():input.getNextPaymentDate());
+            var today=LocalDate.now(SubscriptionSchedule.ZONE);
+            int guard=0;while(!due.isAfter(today)&&guard++<100000)due=SubscriptionSchedule.next(due,input.getCycle()==null?old.getCycle():input.getCycle(),input.getCycleInterval()==null?old.getCycleInterval():input.getCycleInterval(),old.getAnchorDay());
+            if(!due.isAfter(today))throw new ServiceException("恢复日期超出自动计算范围，请指定下次日期");
+            input.setNextPaymentDate(java.sql.Date.valueOf(due));
+        }
     }
 
     private void requireOwner(PxSubscription entity) {
@@ -145,82 +182,35 @@ public class PxSubscriptionServiceImpl implements IPxSubscriptionService {
      * 对每个 next_payment_date <= today 的启用订阅：
      * 1. 生成一条 px_bookkeeping_record 支出记录
      * 2. 推进 next_payment_date 到下一个周期
-     * 3. 防止极端情况：最多推进 12 次（跳过长期未处理的积压）
+     * 3. 单轮最多处理 100 期，剩余积压保留至下轮
      */
     @Override
     public int generateDueRecords() {
-        Date now = DateUtils.getNowDate();
-        List<PxSubscription> dueList = pxSubscriptionMapper.selectDueSubscriptions(now);
-        if (dueList.isEmpty()) {
-            log.info("【订阅出账】无到期订阅");
-            return 0;
-        }
+        LocalDate today = LocalDate.now(SubscriptionSchedule.ZONE);
+        List<PxSubscription> dueList = pxSubscriptionMapper.selectDueSubscriptions(java.sql.Date.valueOf(today));
         int count = 0;
         for (PxSubscription sub : dueList) {
+            LocalDate due = SubscriptionSchedule.date(sub.getNextPaymentDate());
             try {
-                LocalDate paymentDate = toLocalDate(sub.getNextPaymentDate());
-                LocalDate today = LocalDate.now();
-                int safeguard = 0;
-                // 处理可能积压的多个周期（但限制 12 次防死循环）
-                while (!paymentDate.isAfter(today) && safeguard < 12) {
-                    generateOneRecord(sub, paymentDate);
-                    paymentDate = advanceDate(paymentDate, sub.getCycle(), sub.getCycleInterval());
-                    safeguard++;
+                // 每一期单独事务；失败不推进，积压超过上限保留至下轮。
+                for (int i = 0; i < 100 && !due.isAfter(today); i++) {
+                    SubscriptionChargeService.ChargeResult result = subscriptionChargeService.charge(sub.getId(), sub.getCreateBy(), due, today);
+                    if (result == null) break;
+                    if (result.created()) count++;
+                    due = result.nextDate();
                 }
-                // 更新下次扣费日期
-                PxSubscription update = new PxSubscription();
-                update.setId(sub.getId());
-                update.setNextPaymentDate(java.sql.Date.valueOf(paymentDate));
-                update.setUpdateTime(now);
-                pxSubscriptionMapper.updatePxSubscription(update);
-                count++;
-                log.info("【订阅出账】{} 已出账，下次扣费推进至 {}", sub.getName(), paymentDate);
             } catch (Exception e) {
-                log.error("【订阅出账】处理订阅失败 id={} name={}", sub.getId(), sub.getName(), e);
+                chargeExecutions.failed(sub.getCreateBy(),"subscription",sub.getId(),due);
+                log.error("订阅出账失败 id={}", sub.getId(), e);
             }
         }
-        log.info("【订阅出账】完成，共处理 {} 个订阅", count);
         return count;
     }
 
-    /**
-     * 生成单条记账记录
-     */
-    private void generateOneRecord(PxSubscription sub, LocalDate paymentDate) {
-        PxBookkeepingRecord record = new PxBookkeepingRecord();
-        record.setAccount(sub.getAccountId());
-        record.setType(sub.getClassificationId());
-        record.setMoney(sub.getAmount());
-        record.setPayTime(java.sql.Date.valueOf(paymentDate));
-        record.setDelFlag(false);
-        record.setVersion("subscription_" + sub.getId() + "_" + paymentDate.toString());
-        record.setClientUuid("sub_" + sub.getId() + "_" + paymentDate.toString());
-        record.setCreateBy(sub.getCreateBy());
-        record.setCreateTime(DateUtils.getNowDate());
-        record.setRemark("订阅自动出账：" + sub.getName());
-        pxBookkeepingRecordMapper.insertPxBookkeepingRecord(record);
-    }
-
-    /**
-     * 按周期推进日期
-     */
-    private LocalDate advanceDate(LocalDate date, String cycle, Integer interval) {
-        int n = interval == null ? 1 : interval;
-        if (cycle == null) cycle = "monthly";
-        switch (cycle) {
-            case "daily":
-                return date.plus(n, ChronoUnit.DAYS);
-            case "weekly":
-                return date.plus(n * 7L, ChronoUnit.DAYS);
-            case "yearly":
-                return date.plus(n, ChronoUnit.YEARS);
-            case "monthly":
-            default:
-                return date.plus(n, ChronoUnit.MONTHS);
-        }
-    }
-
-    private LocalDate toLocalDate(Date date) {
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    private void validateSchedule(PxSubscription sub) {
+        if (sub.getNextPaymentDate() == null) throw new ServiceException("下次扣费日期不能为空");
+        if (sub.getCycleInterval() != null && sub.getCycleInterval() < 1) throw new ServiceException("周期间隔必须大于 0");
+        SubscriptionSchedule.validateCycle(sub.getCycle());
+        if (sub.getAmount() == null || sub.getAmount().signum() < 0) throw new ServiceException("金额不能小于 0");
     }
 }

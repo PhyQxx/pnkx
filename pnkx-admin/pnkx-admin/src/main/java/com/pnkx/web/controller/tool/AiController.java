@@ -31,6 +31,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/ai")
 public class AiController extends BaseController {
+    @jakarta.annotation.Resource
+    private com.pnkx.web.service.operation.OperationPlanService operationPlans;
+
 
     private static final String SYSTEM_PROMPT = "你是一个智能生活助手，可以帮助用户管理记账、日记、笔记、待办事项等。\n"
             + "你可以：\n"
@@ -201,6 +204,8 @@ public class AiController extends BaseController {
         if (pendingAction == null) {
             IntentHandler.writeSse(out, "没有待确认的草稿。");
         } else {
+            String planId = pendingAction.draft().getString("operationPlanId");
+            if (planId != null) operationPlans.cancel(planId, SecurityUtils.getUserId());
             pendingActionService.clearCurrent();
             aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "cancelled",
                     pendingAction.draft().toJSONString(), statusJson("cancelled"),
@@ -231,7 +236,10 @@ public class AiController extends BaseController {
         if (handler instanceof ConfirmableIntentHandler confirmableIntentHandler) {
             try {
                 if (confirmableIntentHandler.confirm(pendingAction.draft(), out)) {
-                    aiOperationLogService.finishWriteDetail(pendingAction.requestId(), "confirmed",
+                    String persistedStatus="confirmed";
+                    var execution=pendingAction.draft().getJSONObject("_result");
+                    if(pendingAction.draft().containsKey("operationPlanId")&&execution!=null&&!"succeeded".equals(execution.getString("status")))persistedStatus="failed";
+                    aiOperationLogService.finishWriteDetail(pendingAction.requestId(), persistedStatus,
                             pendingAction.draft().toJSONString(), resultJson(pendingAction.draft()),
                             rollbackJson(pendingAction.draft()), null);
                     pendingActionService.clearCurrent();

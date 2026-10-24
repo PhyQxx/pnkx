@@ -29,9 +29,12 @@ import java.util.Map;
  */
 @Service
 public class PxToDoServiceImpl implements IPxToDoService {
+    @jakarta.annotation.Resource private AssignmentService assignments;
+
 
     @Resource
     private PxToDoMapper pxToDoMapper;
+    @Resource private com.pnkx.system.service.ISysDataGroupService spaces;
 
     @Resource
     private DataPermissionService dataPermissionService;
@@ -83,16 +86,21 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
     public int insertPxToDo(PxToDo pxToDo) {
+        validateAssignee(pxToDo.getCreateBy(),pxToDo.getPerformer());
         if (pxToDo.getClientUuid() != null && !pxToDo.getClientUuid().isBlank()) {
             PxToDo existing = pxToDoMapper.selectByClientUuid(pxToDo.getClientUuid());
             if (existing != null) {
+                if(!java.util.Objects.equals(existing.getCreateBy(),pxToDo.getCreateBy()))throw new ServiceException("请求标识已被其他对象使用");
                 pxToDo.setId(existing.getId());
                 return 1;
             }
         }
         pxToDo.setCreateTime(DateUtils.getNowDate());
-        return pxToDoMapper.insertPxToDo(pxToDo);
+        int rows=pxToDoMapper.insertPxToDo(pxToDo);
+        if(rows>0 && assignments!=null) assignments.record("todo",pxToDo.getId(),pxToDo.getCreateBy(),null,pxToDo.getPerformer(),pxToDo.getCreateBy(),"create","创建待办时分配执行者");
+        return rows;
     }
 
     /**
@@ -102,9 +110,12 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
     public int updatePxToDo(PxToDo pxToDo) {
-        PxToDo before = pxToDo.getId() == null ? null : pxToDoMapper.selectPxToDoById(pxToDo.getId());
+        PxToDo before = pxToDo.getId() == null ? null : pxToDoMapper.lockById(pxToDo.getId());
         requireSharedWrite(before);
+        if(pxToDo.getPerformer()!=null && !java.util.Objects.equals(before.getPerformer(),pxToDo.getPerformer())) throw new ServiceException("负责人已变化或需要转派，请刷新后使用分工与转派入口填写原因");
+        pxToDo.setCreateBy(before.getCreateBy());
         pxToDo.setUpdateTime(DateUtils.getNowDate());
         int rows = pxToDoMapper.updatePxToDo(pxToDo);
         if (rows > 0 && Boolean.TRUE.equals(pxToDo.getStatus())
@@ -237,6 +248,15 @@ public class PxToDoServiceImpl implements IPxToDoService {
             count += pxToDoMapper.updateKanbanSort(t.getId(), t.getKanbanStatus(), t.getSortOrder());
         }
         return count;
+    }
+
+    private void validateAssignee(String owner,String assignee){
+        if(assignee==null||assignee.isBlank())return;
+        for(String id:assignee.split(",")) {
+            if(java.util.Objects.equals(owner,id))continue;
+            try{if(spaces.canShare(Long.valueOf(id),Long.valueOf(owner),"todo"))continue;}catch(NumberFormatException ignored){}
+            throw new ServiceException("执行者须为具有待办编辑权限的有效空间成员");
+        }
     }
 
     private void requireSharedWrite(PxToDo todo) {

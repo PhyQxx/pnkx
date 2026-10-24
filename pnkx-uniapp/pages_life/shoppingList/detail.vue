@@ -14,6 +14,7 @@
       </view>
     </view>
 
+    <feature-gate feature="shoppingPlanV2"><shopping-checkout :items="items" :list-id="listId" @changed="loadItems"/></feature-gate>
     <!-- Items -->
     <view class="items" v-if="items.length > 0">
       <view
@@ -29,6 +30,7 @@
         </view>
         <text class="item__name">{{ item.name }}</text>
         <text v-if="item.quantity" class="item__qty">{{ item.quantity }}</text>
+        <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
         <view class="item__del" @click="handleDelete(item)">
           <text class="item__del-icon">×</text>
         </view>
@@ -56,6 +58,8 @@
 </template>
 
 <script>
+import ShoppingCheckout from "@/components/ShoppingCheckout/index.vue"
+import ShoppingItemActions from "@/components/ShoppingItemActions/index.vue"
 import {
   listShoppingItem,
   addShoppingItem,
@@ -65,6 +69,7 @@ import {
 } from '@/api/px/life/shoppingList'
 
 export default {
+ components:{ShoppingCheckout,ShoppingItemActions},
   data() {
     return {
       listId: null,

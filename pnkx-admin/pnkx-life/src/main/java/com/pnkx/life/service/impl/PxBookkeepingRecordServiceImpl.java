@@ -38,6 +38,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     private static final Logger logger = LoggerFactory.getLogger(PxBookkeepingRecordServiceImpl.class);
     @Resource
     private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
+    @Resource private com.pnkx.life.mapper.PxBookkeepingAccountMapper ownedAccountMapper;
     @Resource
     private PxBookkeepingClassificationMapper classificationMapper;
     @Resource
@@ -54,13 +55,15 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
 
     @Override
     public PxBookkeepingRecord selectPxBookkeepingRecordById(Long id) {
-        return pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(id);
+        var record=pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(id);
+        requirePrivateOwner(record);return record;
     }
 
     @Override
     public int insertPxBookkeepingRecord(PxBookkeepingRecord pxBookkeepingRecord) {
         pxBookkeepingRecord.setCreateTime(DateUtils.getNowDate());
         pxBookkeepingRecord.setCreateBy(SecurityUtils.getUserId());
+        validateFinancialReferences(pxBookkeepingRecord);
         // 礼物类支出联动纪念日：用户未手动指定时，自动匹配消费时间附近最近的纪念日
         autoMatchCommemorationDay(pxBookkeepingRecord);
         int rows = pxBookkeepingRecordMapper.insertPxBookkeepingRecord(pxBookkeepingRecord);
@@ -156,13 +159,14 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         for (PxBookkeepingRecord record : list) {
             record.setCreateTime(now);
             record.setCreateBy(userId);
+            validateFinancialReferences(record);
             autoMatchCommemorationDay(record, classificationMap.get(record.getType()), days);
             rows += pxBookkeepingRecordMapper.insertPxBookkeepingRecord(record);
         }
         return rows;
     }
 
-    @DataScopeSelf(alias = "r", module = "budget")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public TableDataInfo selectPxBookkeepingRecordList(PxBookkeepingRecord pxBookkeepingRecord) {
         List<PxBookkeepingRecord> list = pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
@@ -180,7 +184,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         return rspData;
     }
 
-    @DataScopeSelf(alias = "r", module = "budget")
+    @DataScopeSelf(alias = "r", onlySelf = true)
     @Override
     public List<PxBookkeepingRecord> selectPxBookkeepingRecordAll(PxBookkeepingRecord pxBookkeepingRecord) {
         return pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
@@ -188,6 +192,11 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
 
     @Override
     public int updatePxBookkeepingRecord(PxBookkeepingRecord pxBookkeepingRecord) {
+        var before=pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(pxBookkeepingRecord.getId());requirePrivateOwner(before);
+        if(pxBookkeepingRecord.getAccount()==null)pxBookkeepingRecord.setAccount(before.getAccount());
+        if(pxBookkeepingRecord.getType()==null)pxBookkeepingRecord.setType(before.getType());
+        if(pxBookkeepingRecord.getOtherAccount()==null)pxBookkeepingRecord.setOtherAccount(before.getOtherAccount());
+        pxBookkeepingRecord.setCreateBy(before.getCreateBy());validateFinancialReferences(pxBookkeepingRecord);
         pxBookkeepingRecord.setUpdateTime(DateUtils.getNowDate());
         pxBookkeepingRecord.setUpdateBy(SecurityUtils.getUserId());
         return pxBookkeepingRecordMapper.updatePxBookkeepingRecord(pxBookkeepingRecord);
@@ -195,12 +204,30 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
 
     @Override
     public int deletePxBookkeepingRecordByIds(Long[] ids) {
+        for(Long id:ids)requirePrivateOwner(pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(id));
         return pxBookkeepingRecordMapper.deletePxBookkeepingRecordByIds(ids);
     }
 
     @Override
     public int deletePxBookkeepingRecordById(Long id) {
+        requirePrivateOwner(pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(id));
         return pxBookkeepingRecordMapper.deletePxBookkeepingRecordById(id);
+    }
+
+    private void requirePrivateOwner(PxBookkeepingRecord record){
+        if(record==null||!java.util.Objects.equals(SecurityUtils.getUserId(),record.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("账单不存在或无权访问");
+    }
+    private void validateFinancialReferences(PxBookkeepingRecord record){
+        String owner=SecurityUtils.getUserId();
+        var account=record.getAccount()==null?null:ownedAccountMapper.selectPxBookkeepingAccountById(record.getAccount());
+        if(account==null||!owner.equals(account.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("账户不存在或无权使用");
+        if(Long.valueOf(0L).equals(record.getType())){
+            var target=record.getOtherAccount()==null?null:ownedAccountMapper.selectPxBookkeepingAccountById(record.getOtherAccount());
+            if(target==null||!owner.equals(target.getCreateBy())||java.util.Objects.equals(record.getAccount(),record.getOtherAccount()))throw new com.pnkx.common.exception.ServiceException("转入账户无效");
+        }else{
+            var category=record.getType()==null?null:classificationMapper.selectPxBookkeepingClassificationById(record.getType());
+            if(category==null||!owner.equals(category.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("分类不存在或无权使用");
+        }
     }
 
     @Override

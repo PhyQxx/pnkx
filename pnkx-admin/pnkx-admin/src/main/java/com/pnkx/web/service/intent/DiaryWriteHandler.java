@@ -21,6 +21,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Component
 public class DiaryWriteHandler implements ConfirmableIntentHandler {
+    @jakarta.annotation.Resource
+    private LocalIntentPlanService localPlans;
+
 
     private static final Logger logger = LoggerFactory.getLogger(DiaryWriteHandler.class);
 
@@ -69,6 +72,9 @@ public class DiaryWriteHandler implements ConfirmableIntentHandler {
                 return false;
             }
 
+            if (!isRealValue(parsed.getString("date"))) parsed.put("date", java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).toString());
+            if (!isRealValue(parsed.getString("mood"))) parsed.put("mood", "x-可爱");
+            localPlans.prepare(parsed, "diary.create", "记录日记");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
@@ -79,20 +85,8 @@ public class DiaryWriteHandler implements ConfirmableIntentHandler {
     }
 
     @Override
-    public boolean confirm(JSONObject draft, OutputStream out) {
-        try {
-            int rows = diaryService.insertPxDiary(buildDiary(draft));
-            if (rows <= 0) {
-                return false;
-            }
-
-            IntentHandler.writeSse(out, buildSuccessMessage(draft));
-            IntentHandler.writeSse(out, "[DONE]");
-            return true;
-        } catch (Exception e) {
-            logger.error("AI日记确认保存失败: {}", e.getMessage());
-            return false;
-        }
+    public boolean confirm(JSONObject draft, OutputStream out) throws java.io.IOException {
+        return localPlans.confirm(draft, out);
     }
 
     private JSONObject parseJsonObject(String content) {
@@ -102,23 +96,6 @@ public class DiaryWriteHandler implements ConfirmableIntentHandler {
             return new JSONObject();
         }
         return JSON.parseObject(content.substring(start, end + 1));
-    }
-
-    private PxDiary buildDiary(JSONObject parsed) {
-        PxDiary diary = new PxDiary();
-        diary.setContent(parsed.getString("content"));
-        diary.setDate(DateUtils.getNowDate());
-        diary.setDelFlag(0);
-        diary.setCreateBy(SecurityUtils.getUserId());
-
-        String mood = parsed.getString("mood");
-        diary.setMood(isRealValue(mood) ? mood : "x-可爱");
-
-        String date = parsed.getString("date");
-        if (isRealValue(date)) {
-            diary.setDate(DateUtils.parseDate(date));
-        }
-        return diary;
     }
 
     private String buildDraftMessage(JSONObject parsed) {

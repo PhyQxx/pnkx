@@ -1,3 +1,7 @@
+import SharePreview from '@/components/SharePreview.vue'
+import CommemorationPreparations from '@/components/CommemorationPreparations.vue'
+import AssignmentHistory from '@/components/AssignmentHistory.vue'
+import FeatureGate from '@/components/FeatureGate.vue'
 import { createSSRApp } from 'vue'
 import App from './App.vue'
 import store from './store'
@@ -55,6 +59,10 @@ dayjs.locale('zh-cn')
 
 export function createApp() {
   const app = createSSRApp(App)
+  app.component('FeatureGate', FeatureGate)
+  app.component('SharePreview', SharePreview)
+  app.component('CommemorationPreparations', CommemorationPreparations)
+  app.component('AssignmentHistory', AssignmentHistory)
 
   app.use(store)
   app.use(plugins)

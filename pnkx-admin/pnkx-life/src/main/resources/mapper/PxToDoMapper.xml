@@ -123,6 +123,8 @@
         where id = #{id}
     </select>
 
+    <select id="lockById" resultMap="PxToDoResult"><include refid="selectPxToDoVo"/> where id=#{id} for update</select>
+
     <!--获取待办事项标签列表（params 携带数据权限）-->
     <select id="getLabelList" parameterType="com.pnkx.life.domain.po.PxToDo" resultType="string">
         select DISTINCT label from px_to_do

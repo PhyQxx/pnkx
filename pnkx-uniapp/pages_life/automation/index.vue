@@ -1,5 +1,6 @@
 <template>
   <view class="automation-page subpage-shell">
+    <feature-gate feature="operationPlanV2"><button size="mini" @click="showOperationPlans=!showOperationPlans">操作计划与恢复</button></feature-gate><feature-gate feature="operationPlanV2"><operation-plans v-if="showOperationPlans"/></feature-gate>
     <scroll-view scroll-x class="templates">
       <view class="templates__inner">
         <view v-for="item in templates" :key="item.code" class="template" @click="useTemplate(item)">
@@ -57,12 +58,14 @@
 </template>
 
 <script>
+import OperationPlans from '@/components/OperationPlans/index.vue'
 import { listRules, listTemplates, saveRule, deleteRule, runRule, dryRunRule, listExecutions, retryExecution } from '@/api/px/life/automation'
 
 const emptyForm = () => ({ name: '', templateCode: '', triggerType: 'manual', triggerConfig: '{}', conditionJson: '{}', actionType: 'create_todo', actionConfig: '{}', enabled: true })
 export default {
+  components: { OperationPlans },
   data() {
-    return {
+    return { showOperationPlans:false,
       rules: [], templates: [], executions: [], form: emptyForm(),
       // WXML 属性值里不能出现字面量 { } 和 "，示例文案必须走绑定
       placeholders: {

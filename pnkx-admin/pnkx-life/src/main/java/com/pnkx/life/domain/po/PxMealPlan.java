@@ -15,6 +15,10 @@ import java.util.Date;
 public class PxMealPlan extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
+    private java.math.BigDecimal servings;
+    public java.math.BigDecimal getServings() {return servings;}
+    public void setServings(java.math.BigDecimal value) {servings=value;}
+
     private Long id;
 
     @JsonFormat(pattern = "yyyy-MM-dd")

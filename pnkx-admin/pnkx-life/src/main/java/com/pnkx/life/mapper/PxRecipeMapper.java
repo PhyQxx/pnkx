@@ -14,6 +14,7 @@ import java.util.List;
 @Mapper
 public interface PxRecipeMapper {
     PxRecipe selectPxRecipeById(Long id);
+    PxRecipe selectForWorkflow(Long id);
 
     PxRecipe selectByClientUuid(String clientUuid);
 

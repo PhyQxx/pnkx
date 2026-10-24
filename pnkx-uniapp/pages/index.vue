@@ -1,5 +1,6 @@
 <template>
   <view class="home-page">
+    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token"/></feature-gate>
     <!-- Greeting Header -->
     <view class="greeting-header">
       <view class="greeting-header__bg">
@@ -254,6 +255,7 @@
 </template>
 
 <script>
+import ActionCenter from "@/components/ActionCenter/index.vue"
 	import RecordList from "@/components/RecordList/index.vue"
 	import {
 		listNotice
@@ -270,7 +272,7 @@
 	import uniPopupDialog from '@/uni_modules/uni-popup/components/uni-popup-dialog/uni-popup-dialog.vue';
 
 	export default {
-		components: {
+		components: { ActionCenter,
 			RecordList,
 			uniPopup,
 			uniPopupDialog

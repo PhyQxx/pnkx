@@ -22,6 +22,9 @@ import java.util.List;
 /** 待办的统一查询和写操作入口。 */
 @Component
 public class TodoHandler implements ConfirmableIntentHandler {
+    @jakarta.annotation.Resource
+    private LocalIntentPlanService localPlans;
+
     private static final Logger logger = LoggerFactory.getLogger(TodoHandler.class);
     private static final int MAX_BATCH_SIZE = 20;
     private static final String PARSE_PROMPT = """
@@ -64,6 +67,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
                 IntentHandler.writeSse(out, "[DONE]");
                 return true;
             }
+            if ("create".equals(normalizeAction(parsed.getString("action")))) localPlans.prepare(parsed, "todo.create", "创建待办");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
@@ -79,17 +83,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
             String action = normalizeAction(draft.getString("action"));
             int rows;
             if ("create".equals(action)) {
-                PxToDo todo = buildTodo(draft);
-                rows = toDoService.insertPxToDo(todo);
-                JSONObject result = new JSONObject();
-                result.put("action", action);
-                result.put("affected", rows);
-                result.put("createdId", todo.getId());
-                draft.put("_result", result);
-                JSONObject rollback = new JSONObject();
-                rollback.put("action", "delete");
-                rollback.put("targetIds", List.of(todo.getId()));
-                draft.put("_rollback", rollback);
+                return localPlans.confirm(draft, out);
             } else {
                 List<PxToDo> targets = currentOwnedTargets(draft.getJSONArray("targetIds"));
                 if (targets.isEmpty()) return false;

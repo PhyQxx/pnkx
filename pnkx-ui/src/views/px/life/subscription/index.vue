@@ -6,6 +6,7 @@
 -->
 <template>
     <div class="subscription-container">
+    <feature-gate feature="chargeInstanceV2"><charge-instances source-type="subscription" /></feature-gate>
         <!-- 预测汇总卡片 -->
         <div class="forecast-cards">
             <div class="forecast-card">
@@ -73,10 +74,10 @@
                 </template>
             </el-table-column>
             <el-table-column label="备注" prop="remark" show-overflow-tooltip min-width="120"/>
-            <el-table-column label="操作" align="center" width="140" fixed="right">
+            <el-table-column label="操作" align="center" width="220" fixed="right">
                 <template #default="{row}">
                     <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-                    <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+                    <feature-gate feature="chargeInstanceV2"><el-button v-if="!row.enabled && row.lifecycle!=='cancelled'" link @click="backfill(row)">补齐账期</el-button></feature-gate><el-button link type="danger" @click="handleDelete(row)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -88,6 +89,10 @@
         <!-- 新增/编辑弹窗 -->
         <el-dialog v-model="dialog.visible" :title="dialog.title" width="540px" append-to-body>
             <el-form :model="form" label-width="100px">
+                <el-form-item label="生命周期"><el-select v-model="form.lifecycle" @change="form.enabled=form.lifecycle==='active'"><el-option label="追踪中" value="active"/><el-option label="暂停" value="paused"/><el-option label="终止追踪" value="cancelled"/></el-select></el-form-item>
+                <el-form-item label="试用结束"><el-date-picker v-model="form.trialEndDate" value-format="YYYY-MM-DD" placeholder="无试用可留空"/></el-form-item>
+                <el-alert v-if="form.lifecycle==='cancelled'" title="仅停止系统内计划，请自行到服务平台取消续费" type="warning" :closable="false"/>
+                <el-form-item label="入账方式"><el-select v-model="form.postingMode"><el-option label="到期后确认入账" value="manual_confirm"/><el-option label="按规则自动记账（不代表实际扣款）" value="auto_record"/></el-select></el-form-item>
                 <el-form-item label="订阅名称">
                     <el-input v-model="form.name" placeholder="如：Netflix、iCloud"/>
                 </el-form-item>
@@ -129,9 +134,6 @@
                 <el-form-item label="提前提醒">
                     <el-input-number v-model="form.reminderLeadDays" :min="0" :max="90"/> 天
                 </el-form-item>
-                <el-form-item label="启用">
-                    <el-switch v-model="form.enabled"/>
-                </el-form-item>
                 <el-form-item label="备注">
                     <el-input v-model="form.remark" type="textarea" :rows="2"/>
                 </el-form-item>
@@ -145,6 +147,8 @@
 </template>
 
 <script>
+import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
+import ChargeInstances from "@/components/ChargeInstances.vue"
 import {
     listSubscription, addSubscription, updateSubscription,
     delSubscription, forecast
@@ -154,6 +158,7 @@ import {listClassification} from '@/api/px/life/bookkeeping/classification'
 import {bindReminder} from '@/api/px/life/reminder'
 
 export default {
+ components: { ChargeInstances },
     name: 'Subscription',
     data() {
         return {
@@ -176,11 +181,12 @@ export default {
         this.loadClassificationOptions()
     },
     methods: {
+        async backfill(row){await backfillRule('subscription',row.id);this.getList()},
         emptyForm() {
             return {
                 id: undefined, name: '', amount: 0, cycle: 'monthly', cycleInterval: 1,
                 nextPaymentDate: '', accountId: undefined, classificationId: undefined,
-                reminderLeadDays: 3, enabled: true, remark: ''
+                postingMode: 'manual_confirm', lifecycle: 'active', reminderLeadDays: 3, enabled: true, remark: ''
             }
         },
         getList() {
@@ -229,7 +235,7 @@ export default {
             }
             this.saving = true
             const isEdit = !!this.form.id
-            const action = isEdit ? updateSubscription(this.form) : addSubscription(this.form)
+            const action = isEdit ? changeRule('subscription',this.form) : addSubscription(this.form)
             action.then(res => {
                 // 保存成功后自动绑定续费提醒（提前 N 天提醒）
                 const subId = isEdit ? this.form.id : res.data

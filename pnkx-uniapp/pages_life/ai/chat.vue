@@ -1,5 +1,6 @@
 <template>
   <view class="ai-chat subpage-shell">
+    <feature-gate feature="operationPlanV2"><button size="mini" @click="showOperationPlans=!showOperationPlans">操作计划与恢复</button></feature-gate><scroll-view v-if="showOperationPlans" scroll-y style="max-height:55vh"><feature-gate feature="operationPlanV2"><operation-plans/></feature-gate></scroll-view>
     <!-- 消息区域 -->
     <scroll-view class="chat-body" scroll-y :scroll-into-view="scrollToId" :scroll-with-animation="false">
       <!-- 欢迎消息 -->
@@ -81,11 +82,13 @@
 </template>
 
 <script>
+import OperationPlans from '@/components/OperationPlans/index.vue'
 import { cancelPendingAction, chatStream, confirmPendingAction } from '@/api/px/ai/chat'
 
 export default {
+  components: { OperationPlans },
   data() {
-    return {
+    return { showOperationPlans:false,
       inputText: '',
       isLoading: false,
       isThinking: false,

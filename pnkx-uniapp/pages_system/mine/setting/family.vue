@@ -21,7 +21,8 @@
                   class="transfer" @click.stop="transfer(space, member)">转让</text>
           </view>
         </view>
-        <view class="policy">退出后：撤销共享访问，本人创建的数据仍归本人并保留审计。</view>
+        <share-preview :group-id="space.id" :modules="parseModules(space.visibilityJson)" />
+        <view class="policy">共享仅限上方业务域；私人日记与账单不会因成员身份自动开放；共享记录内的图片和链接引用会随正文显示，请先预览。退出会撤销后续共享访问并释放未完成认领，本人创建的数据仍归本人；已下载的离线数据无法远程收回。</view>
         <button v-if="String(space.ownerUserId) !== currentUserId" class="leave" @click.stop="leave(space)">退出空间</button>
       </view>
     </view>
@@ -48,13 +49,14 @@ export default {
       Object.assign(space, response.data || {})
       this.expandedId = space.id
     },
+    parseModules(value) { try{return typeof value === 'string' ? JSON.parse(value || '[]') : (value || [])} catch(_){return []} },
     labels(value) {
       try {
         const values = typeof value === 'string' ? JSON.parse(value || '[]') : (value || [])
         return values.map(item => moduleLabels[item] || item)
       } catch (e) { return [] }
     },
-    roleLabel(role) { return ({ owner: '所有者', admin: '管理员', member: '成员' })[role] || role },
+    roleLabel(role) { return ({ owner: '所有者', admin: '管理员', member: '成员', viewer: '只读成员' })[role] || role },
     transfer(space, member) {
       uni.showModal({ title: '转让所有权', content: `确认转让给用户 ${member.userId}？你将变为管理员。`, success: async res => {
         if (!res.confirm) return

@@ -1,3 +1,7 @@
+import SharePreview from '@/components/SharePreview.vue'
+import CommemorationPreparations from '@/components/CommemorationPreparations.vue'
+import AssignmentHistory from '@/components/AssignmentHistory.vue'
+import FeatureGate from '@/components/FeatureGate.vue'
 import { createApp, defineAsyncComponent } from 'vue'
 import Cookies from 'js-cookie'
 import ElementPlus from 'element-plus'
@@ -63,6 +67,10 @@ const EditPicture = defineAsyncComponent(() => import('@/components/EditPicture/
 const Editor = defineAsyncComponent(() => import('@/components/Editor/index.vue'))
 
 const app = createApp(App)
+  app.component('FeatureGate', FeatureGate)
+  app.component('SharePreview', SharePreview)
+  app.component('CommemorationPreparations', CommemorationPreparations)
+  app.component('AssignmentHistory', AssignmentHistory)
 
 // 全局方法挂载
 const globalProperties = {

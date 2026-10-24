@@ -48,6 +48,12 @@
         where id = #{id}
     </select>
 
+    <select id="selectForWorkflow" parameterType="Long" resultMap="PxRecipeResult">
+        <include refid="selectPxRecipeVo"/>
+        where id = #{id}
+     for update
+    </select>
+
     <select id="selectByClientUuid" parameterType="String" resultMap="PxRecipeResult">
         <include refid="selectPxRecipeVo"/>
         where client_uuid = #{clientUuid}

@@ -5,6 +5,10 @@
 <mapper namespace="com.pnkx.life.mapper.PxShoppingItemMapper">
 
     <resultMap type="PxShoppingItem" id="PxShoppingItemResult">
+        <result property="fulfillmentState" column="fulfillment_state"/>
+        <result property="revision" column="revision"/>
+        <result property="claimedBy" column="claimed_by"/>
+        <result property="batchId" column="batch_id"/>
         <result property="id" column="id"/>
         <result property="listId" column="list_id"/>
         <result property="name" column="name"/>
@@ -24,7 +28,7 @@
     </resultMap>
 
     <sql id="selectPxShoppingItemVo">
-        select id,
+        select fulfillment_state, revision, claimed_by, batch_id, id,
                list_id,
                name,
                quantity, classification_id, checked, added_from_meal, sort_order, version, client_uuid, del_flag, create_by, create_time, update_by, update_time, remark
@@ -105,11 +109,12 @@
     <update id="updatePxShoppingItem" parameterType="PxShoppingItem">
         update px_shopping_item
         <trim prefix="SET" suffixOverrides=",">
+            revision = revision + 1,
             <if test="listId != null">list_id = #{listId},</if>
             <if test="name != null">name = #{name},</if>
             <if test="quantity != null">quantity = #{quantity},</if>
             <if test="classificationId != null">classification_id = #{classificationId},</if>
-            <if test="checked != null">checked = #{checked},</if>
+            <if test="checked != null">checked = #{checked}, fulfillment_state = case when #{checked}=1 then 'purchased' else 'needed' end,</if>
             <if test="addedFromMeal != null">added_from_meal = #{addedFromMeal},</if>
             <if test="sortOrder != null">sort_order = #{sortOrder},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>

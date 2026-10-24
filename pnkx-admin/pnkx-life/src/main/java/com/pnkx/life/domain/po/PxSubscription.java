@@ -16,6 +16,19 @@ import java.util.Date;
 public class PxSubscription extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
+    private String lifecycle;
+    @JsonFormat(pattern="yyyy-MM-dd") private Date trialEndDate;
+    private Boolean legacyResumePolicy;
+    public String getLifecycle(){return lifecycle;}
+    public void setLifecycle(String value){lifecycle=value;}
+    public Date getTrialEndDate(){return trialEndDate;}
+    public void setTrialEndDate(Date value){trialEndDate=value;}
+    public Boolean getLegacyResumePolicy(){return legacyResumePolicy;}
+    public void setLegacyResumePolicy(Boolean value){legacyResumePolicy=value;}
+    private String postingMode;
+    public String getPostingMode() { return postingMode; }
+    public void setPostingMode(String value) { postingMode = value; }
+
     private Long id;
 
     @Excel(name = "订阅名称")
@@ -33,6 +46,12 @@ public class PxSubscription extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "下次扣费", dateFormat = "yyyy-MM-dd")
     private Date nextPaymentDate;
+
+    /** 周期日期锚点，防止短月使后续扣费日永久漂移。 */
+    private Integer anchorDay;
+
+    public Integer getAnchorDay() { return anchorDay; }
+    public void setAnchorDay(Integer anchorDay) { this.anchorDay = anchorDay; }
 
     private Long accountId;
 

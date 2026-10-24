@@ -124,12 +124,15 @@
                         <el-radio label="couple">情侣空间</el-radio>
                     </el-radio-group>
                 </el-form-item>
+                <el-alert title="共享范围内的记录将对空间成员可见；私人日记、经期及账单明细不随购物或待办自动公开。退出后不再获得访问权，但已下载的内容无法收回。" type="info" :closable="false"/>
+                <el-alert title="共享字段：待办内容/时间/状态/负责人；购物名称/数量/采购与认领状态；餐饮菜名/日期/份数；纪念日名称/日期。私人账单详情、日记正文不随成员身份开放；共享记录正文中的图片和链接引用会随内容显示，请先预览。" type="info" :closable="false"/>
                 <el-form-item label="共享范围" prop="visibilityModules">
                     <el-checkbox-group v-model="form.visibilityModules">
                         <el-checkbox v-for="item in visibilityOptions" :key="item.value" :label="item.value">{{ item.label }}</el-checkbox>
                     </el-checkbox-group>
                     <div class="form-tip">日记、笔记、经期、订阅和 AI 日志始终仅本人可见。</div>
                 </el-form-item>
+                <share-preview :modules="form.visibilityModules || []" :group-id="form.id" />
                 <el-form-item label="群组成员" prop="userIds">
                     <el-select
                         v-model="form.userIds"
@@ -151,7 +154,8 @@
                               :label="memberName(member.userId)">
                     <el-select v-model="member.role" :disabled="String(member.userId) === String(form.ownerUserId)">
                         <el-option label="管理员" value="admin"/>
-                        <el-option label="成员" value="member"/>
+                        <el-option label="成员（可协作编辑）" value="member"/>
+                        <el-option label="只读成员" value="viewer"/>
                         <el-option v-if="String(member.userId) === String(form.ownerUserId)" label="所有者" value="owner"/>
                     </el-select>
                     <el-button v-if="form.id && String(form.ownerUserId) === String($store.state.user.id)

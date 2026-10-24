@@ -28,7 +28,8 @@ public class PxAutomationServiceImpl implements IPxAutomationService {
     @Resource private PxRecipeIngredientMapper ingredientMapper;
     @Resource private PxShoppingItemMapper shoppingItemMapper;
     @Resource private PxSubscriptionMapper subscriptionMapper;
-    @Resource private PxBookkeepingRecordMapper recordMapper;
+    @Resource private SubscriptionChargeService subscriptionChargeService;
+    @Resource private ShoppingWorkflowService shoppingWorkflowService;
     @Resource private PxBookMapper bookMapper;
 
     @Override public List<PxAutomationRule> listRules() { return automationMapper.selectRules(SecurityUtils.getUserId()); }
@@ -127,8 +128,31 @@ public class PxAutomationServiceImpl implements IPxAutomationService {
         if (existing != null) return existing;
         String writeKey = stableWriteKey(ruleId, eventKey, originalKey);
         JSONObject config = parse(rule.getActionConfig());
+        String preparationError = null;
+        try {
+            if ("subscription_charge".equals(rule.getActionType())) {
+                if (retryOf == null) {
+                    Long subscriptionId = config.getLong("subscriptionId");
+                    PxSubscription subscription = subscriptionId == null ? null : subscriptionMapper.selectPxSubscriptionById(subscriptionId);
+                    if (subscription == null || !userId.equals(subscription.getCreateBy()) || subscription.getNextPaymentDate() == null) {
+                        throw new ServiceException("订阅不存在、日期未配置或无权操作");
+                    }
+                    input.put("chargeSubscriptionId", subscriptionId);
+                    input.put("chargeDueDate", SubscriptionSchedule.date(subscription.getNextPaymentDate()).toString());
+                } else if (input.getString("chargeDueDate") == null || input.getLong("chargeSubscriptionId") == null) {
+                    throw new ServiceException("历史执行缺少账期快照，请核对账单后重新执行");
+                }
+            }
+        } catch (ServiceException e) {
+            preparationError = e.getMessage();
+        }
         JSONObject plan = buildPlan(rule, config, input, writeKey);
         PxAutomationExecution execution = startExecution(rule, dryRun, input, plan, executionKey, retryOf, userId);
+        if (preparationError != null) {
+            execution.setStatus("failed");
+            finish(execution, preparationError);
+            return execution;
+        }
         if (!matchesConditions(parse(rule.getConditionJson()), input)) {
             execution.setStatus("skipped"); execution.setResultJson("{\"message\":\"条件不满足\"}");
             finish(execution, null); return execution;
@@ -166,7 +190,7 @@ public class PxAutomationServiceImpl implements IPxAutomationService {
 
     private JSONObject runAction(PxAutomationRule rule, JSONObject config, JSONObject input, String writeKey, String userId) {
         return switch (rule.getActionType()) {
-            case "subscription_charge" -> subscriptionCharge(config, writeKey, userId);
+            case "subscription_charge" -> subscriptionCharge(input, userId);
             case "meal_to_shopping" -> mealToShopping(config, writeKey, userId);
             case "create_todo" -> createTodo(config, input, writeKey, userId, false);
             case "create_reading_todo" -> createTodo(config, input, writeKey, userId, true);
@@ -175,55 +199,22 @@ public class PxAutomationServiceImpl implements IPxAutomationService {
         };
     }
 
-    private JSONObject subscriptionCharge(JSONObject config, String writeKey, String userId) {
-        Long id = config.getLong("subscriptionId");
+    private JSONObject subscriptionCharge(JSONObject input, String userId) {
+        Long id = input.getLong("chargeSubscriptionId");
         PxSubscription sub = id == null ? null : subscriptionMapper.selectPxSubscriptionById(id);
         if (sub == null || !userId.equals(sub.getCreateBy())) throw new ServiceException("订阅不存在或无权操作");
-        PxBookkeepingRecord record = new PxBookkeepingRecord();
-        record.setAccount(sub.getAccountId()); record.setType(sub.getClassificationId());
-        record.setMoney(sub.getAmount()); record.setPayTime(DateUtils.getNowDate());
-        record.setClientUuid(writeKey); record.setVersion(writeKey); record.setCreateBy(userId);
-        record.setCreateTime(DateUtils.getNowDate()); record.setRemark("自动化订阅出账：" + sub.getName()); record.setDelFlag(false);
-        PxBookkeepingRecord existing = recordMapper.selectByClientUuid(writeKey);
-        boolean inserted = existing == null;
-        if (inserted) recordMapper.insertPxBookkeepingRecord(record); else record.setId(existing.getId());
-        if (inserted && sub.getNextPaymentDate() != null) {
-            LocalDate next = sub.getNextPaymentDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            int interval = sub.getCycleInterval() == null ? 1 : sub.getCycleInterval();
-            next = switch (Optional.ofNullable(sub.getCycle()).orElse("monthly")) {
-                case "daily" -> next.plusDays(interval);
-                case "weekly" -> next.plusWeeks(interval);
-                case "yearly" -> next.plusYears(interval);
-                default -> next.plusMonths(interval);
-            };
-            PxSubscription update = new PxSubscription(); update.setId(sub.getId());
-            update.setNextPaymentDate(java.sql.Date.valueOf(next)); update.setUpdateTime(DateUtils.getNowDate());
-            subscriptionMapper.updatePxSubscription(update);
-        }
-        return result("recordId", record.getId());
+        if (sub.getNextPaymentDate() == null) throw new ServiceException("订阅未设置下次扣费日");
+        SubscriptionChargeService.ChargeResult charge = subscriptionChargeService.charge(
+                id, userId, LocalDate.parse(input.getString("chargeDueDate")), LocalDate.now(SubscriptionSchedule.ZONE));
+        if (charge == null) return result("message", "该账期未到期、已处理或订阅已停用");
+        return result("recordId", charge.recordId());
     }
 
     private JSONObject mealToShopping(JSONObject config, String writeKey, String userId) {
-        Long listId = config.getLong("listId");
-        PxShoppingList list = listId == null ? null : shoppingListMapper.selectPxShoppingListById(listId);
-        if (list == null || !userId.equals(list.getCreateBy())) throw new ServiceException("购物清单不存在或无权操作");
-        String start = Optional.ofNullable(config.getString("startDate")).orElse(LocalDate.now().toString());
-        String end = Optional.ofNullable(config.getString("endDate")).orElse(LocalDate.now().plusDays(6).toString());
-        List<PxShoppingItem> items = new ArrayList<>();
-        int index = 0;
-        for (PxMealPlan plan : mealPlanMapper.selectByDateRangeForUser(start, end, userId)) {
-            if (plan.getRecipeId() == null) continue;
-            for (PxRecipeIngredient ingredient : ingredientMapper.selectByRecipeId(plan.getRecipeId())) {
-                PxShoppingItem item = new PxShoppingItem(); item.setListId(listId); item.setName(ingredient.getName());
-                item.setQuantity(ingredient.getQuantity()); item.setClassificationId(ingredient.getClassificationId());
-                item.setChecked(false); item.setAddedFromMeal(true); item.setCreateBy(userId); item.setCreateTime(DateUtils.getNowDate());
-                item.setClientUuid(UUID.nameUUIDFromBytes((writeKey + ":" + index++).getBytes(StandardCharsets.UTF_8)).toString());
-                items.add(item);
-            }
-        }
-        int inserted = 0;
-        for (PxShoppingItem item : items) if (shoppingItemMapper.selectByClientUuid(item.getClientUuid()) == null) inserted += shoppingItemMapper.insertPxShoppingItem(item);
-        return result("inserted", inserted);
+        Long listId=config.getLong("listId");
+        String start=Optional.ofNullable(config.getString("startDate")).orElse(LocalDate.now(SubscriptionSchedule.ZONE).toString());
+        String end=Optional.ofNullable(config.getString("endDate")).orElse(LocalDate.parse(start).plusDays(6).toString());
+        return shoppingWorkflowService.automatic(listId,start,end,userId);
     }
 
     private JSONObject createTodo(JSONObject config, JSONObject input, String writeKey, String userId, boolean reading) {

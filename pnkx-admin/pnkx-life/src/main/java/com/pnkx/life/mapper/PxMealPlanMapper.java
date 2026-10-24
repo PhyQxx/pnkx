@@ -25,6 +25,8 @@ public interface PxMealPlanMapper {
     List<PxMealPlan> selectByDateRange(@Param("startDate") String startDate, @Param("endDate") String endDate);
     List<PxMealPlan> selectByDateRangeForUser(@Param("startDate") String startDate, @Param("endDate") String endDate,
                                               @Param("userId") String userId);
+    List<PxMealPlan> selectByDateRangeForWorkflow(@Param("startDate") String startDate, @Param("endDate") String endDate,
+                                              @Param("userId") String userId);
 
     int insertPxMealPlan(PxMealPlan pxMealPlan);
 

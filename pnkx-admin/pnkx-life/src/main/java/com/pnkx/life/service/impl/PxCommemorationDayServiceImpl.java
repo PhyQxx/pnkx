@@ -36,7 +36,11 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public PxCommemorationDay selectPxCommemorationDayById(Long id) {
-        return pxCommemorationDayMapper.selectPxCommemorationDayById(id);
+        var day=pxCommemorationDayMapper.selectPxCommemorationDayById(id);
+        if(day==null || Boolean.TRUE.equals(day.getDelFlag()))throw new ServiceException("记录不存在或无权查看");
+        var visible=dataPermissionService.getVisibleUserIds("commemoration");
+        if(visible!=null && visible.stream().noneMatch(uid->String.valueOf(uid).equals(day.getCreateBy())))throw new ServiceException("记录不存在或无权查看");
+        return day;
     }
 
     /**
@@ -60,7 +64,8 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int insertPxCommemorationDay(PxCommemorationDay pxCommemorationDay) {
-        if (pxCommemorationDay.getCreateBy() == null) pxCommemorationDay.setCreateBy(SecurityUtils.getUserId());
+        pxCommemorationDay.setCreateBy(SecurityUtils.getUserId());
+        pxCommemorationDay.setDelFlag(false);
         pxCommemorationDay.setCreateTime(DateUtils.getNowDate());
         return pxCommemorationDayMapper.insertPxCommemorationDay(pxCommemorationDay);
     }
@@ -73,7 +78,11 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
      */
     @Override
     public int updatePxCommemorationDay(PxCommemorationDay pxCommemorationDay) {
-        requireSharedWrite(pxCommemorationDayMapper.selectPxCommemorationDayById(pxCommemorationDay.getId()));
+        var before=pxCommemorationDayMapper.selectPxCommemorationDayById(pxCommemorationDay.getId());
+        requireSharedWrite(before);
+        pxCommemorationDay.setCreateBy(before.getCreateBy());
+        pxCommemorationDay.setCreateTime(before.getCreateTime());
+        pxCommemorationDay.setUpdateBy(SecurityUtils.getUserId());
         pxCommemorationDay.setUpdateTime(DateUtils.getNowDate());
         return pxCommemorationDayMapper.updatePxCommemorationDay(pxCommemorationDay);
     }
@@ -118,7 +127,7 @@ public class PxCommemorationDayServiceImpl implements IPxCommemorationDayService
     }
 
     private void requireSharedWrite(PxCommemorationDay day) {
-        if (day == null || !dataPermissionService.canWrite(day.getCreateBy(), "commemoration"))
+        if (day == null || Boolean.TRUE.equals(day.getDelFlag()) || !dataPermissionService.canWrite(day.getCreateBy(), "commemoration"))
             throw new ServiceException("记录不存在或无权操作");
     }
 }

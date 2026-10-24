@@ -33,13 +33,13 @@
         <where>
             <if test="name != null  and name != ''">and name like concat('%', #{name}, '%')</if>
             <if test="date != null">
-                and ( `repeat` = 1 and date_format(date,'%m') in ( date_format(#{date},'%m'),
+                and (( `repeat` = 1 and date_format(date,'%m') in ( date_format(#{date},'%m'),
                 date_format(DATE_SUB(#{date}, INTERVAL 1 MONTH),'%m'),
                 date_format(DATE_SUB(#{date}, INTERVAL -1 MONTH),'%m')
                 ))or (`repeat` = 0 and date_format(date,'%Y-%m') in ( date_format(#{date},'%Y-%m'),
                 date_format(DATE_SUB(#{date}, INTERVAL 1 MONTH),'%Y-%m'),
                 date_format(DATE_SUB(#{date}, INTERVAL -1 MONTH),'%Y-%m')
-                ))
+                )))
             </if>
             <if test="orderNum != null ">and order_num = #{orderNum}</if>
             <if test="version != null  and version != ''">and version = #{version}</if>
@@ -66,12 +66,12 @@
         icon, date, `repeat`, order_num, del_flag, version, create_by, create_time, update_by, update_time, remark
         from px_commemoration_day
         where
-            ( `repeat` = 1 AND TIMESTAMPDIFF( DAY, now(), CONCAT( LEFT ( now(), 4 ), RIGHT ( date, 15 ))) &lt; 30
+            (( `repeat` = 1 AND TIMESTAMPDIFF( DAY, now(), CONCAT( LEFT ( now(), 4 ), RIGHT ( date, 15 ))) &lt; 30
                 AND TIMESTAMPDIFF( DAY, now(), CONCAT( LEFT ( now(), 4 ), RIGHT ( date, 15 ))) &gt; -1
                 )
             OR (
             `repeat` = 0
-            AND TIMESTAMPDIFF( DAY, now(), date ) &lt; 30 AND TIMESTAMPDIFF( DAY, now(), date )  &gt; -1)
+            AND TIMESTAMPDIFF( DAY, now(), date ) &lt; 30 AND TIMESTAMPDIFF( DAY, now(), date )  &gt; -1))
             and del_flag = '0'
             <!-- 数据权限：默认仅本人+群组成员，管理员不限 -->
             <if test="params != null and params.scopeAll != true and params.scopeUserIds != null">

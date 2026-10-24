@@ -79,7 +79,7 @@ public class PxBookkeepingAiService {
      */
     public JSONObject aiAnalysis(Boolean isAll) {
         String question = buildAnalysisQuestion(isAll);
-        logger.info("AI账单分析，问题：{}", question);
+        logger.info("AI账单分析，请求长度：{}", question.length());
         return aiClient.chat(ANALYSIS_SYSTEM_PROMPT, question);
     }
 
@@ -88,7 +88,7 @@ public class PxBookkeepingAiService {
      */
     public void aiAnalysisStream(Boolean isAll, Consumer<String> onChunk, Runnable onError) {
         String question = buildAnalysisQuestion(isAll);
-        logger.info("AI账单流式分析，问题：{}", question);
+        logger.info("AI账单流式分析，请求长度：{}", question.length());
         Flux<ChatResponse> stream = aiClient.chatStream(ANALYSIS_SYSTEM_PROMPT, question);
         stream.subscribe(
                 resp -> emitTextChunks(resp, onChunk),
@@ -106,13 +106,8 @@ public class PxBookkeepingAiService {
     private String buildAnalysisQuestion(Boolean isAll) {
         PxBookkeepingRecord pxBookkeepingRecord = new PxBookkeepingRecord();
         pxBookkeepingRecord.setPayTime(DateUtils.getNowDate());
-        if (isAll == null || !isAll) {
-            try {
-                pxBookkeepingRecord.setCreateBy(SecurityUtils.getUserId());
-            } catch (Exception e) {
-                logger.warn("无法获取当前用户ID，可能在Webhook非登录上下文中被调用", e);
-            }
-        }
+        // 共享预算不等于授权私人账单进入 AI 上下文；无登录态必须失败关闭。
+        pxBookkeepingRecord.setCreateBy(SecurityUtils.getUserId());
         List<JSONObject> list = pxBookkeepingRecordMapper.getNaturalLanguageList(pxBookkeepingRecord);
         StringBuilder question = new StringBuilder("请分析当月的记账数据：\n");
         for (JSONObject jsonObject : list) {
@@ -313,10 +308,12 @@ public class PxBookkeepingAiService {
     private ParseContext loadParseContext() {
         PxBookkeepingClassification queryClass = new PxBookkeepingClassification();
         queryClass.setDelFlag(false);
+        queryClass.setCreateBy(SecurityUtils.getUserId());
         List<PxBookkeepingClassification> allClassifications = classificationMapper.selectPxBookkeepingClassificationList(queryClass);
 
         PxBookkeepingAccount queryAccount = new PxBookkeepingAccount();
         queryAccount.setDelFlag(false);
+        queryAccount.setCreateBy(SecurityUtils.getUserId());
         List<PxBookkeepingAccount> allAccounts = accountMapper.selectPxBookkeepingAccountList(queryAccount);
 
         return new ParseContext(

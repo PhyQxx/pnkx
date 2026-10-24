@@ -12,6 +12,19 @@ import com.pnkx.common.core.domain.BaseEntity;
 public class PxShoppingItem extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
+    private String fulfillmentState;
+    public String getFulfillmentState() {return fulfillmentState;}
+    public void setFulfillmentState(String value) {fulfillmentState=value;}
+    private Long revision;
+    public Long getRevision() {return revision;}
+    public void setRevision(Long value) {revision=value;}
+    private String claimedBy;
+    public String getClaimedBy() {return claimedBy;}
+    public void setClaimedBy(String value) {claimedBy=value;}
+    private Long batchId;
+    public Long getBatchId() {return batchId;}
+    public void setBatchId(Long value) {batchId=value;}
+
     private Long id;
 
     @Excel(name = "清单ID")

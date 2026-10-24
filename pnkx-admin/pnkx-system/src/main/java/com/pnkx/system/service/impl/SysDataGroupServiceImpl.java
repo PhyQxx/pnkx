@@ -25,6 +25,8 @@ import com.pnkx.system.service.ISysDataGroupService;
 public class SysDataGroupServiceImpl implements ISysDataGroupService {
     @Autowired
     private SysDataGroupMapper dataGroupMapper;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.context.ApplicationEventPublisher events;
 
     /**
      * 查询群组列表
@@ -90,9 +92,11 @@ public class SysDataGroupServiceImpl implements ISysDataGroupService {
         group.setOwnerUserId(existing.getOwnerUserId());
         group.setOwnershipPolicy("retain_creator");
         group.setUpdateTime(DateUtils.getNowDate());
+        var previousMembers = dataGroupMapper.selectMembers(group.getId());
         int rows = dataGroupMapper.updateDataGroup(group);
         dataGroupMapper.deleteMemberByGroupId(group.getId());
         insertMembers(group, group.getUserIds());
+        previousMembers.forEach(member -> events.publishEvent(new com.pnkx.common.event.SpaceMembershipChanged(group.getId(),member.getUserId())));
         return rows;
     }
 
@@ -103,8 +107,11 @@ public class SysDataGroupServiceImpl implements ISysDataGroupService {
     @Transactional(rollbackFor = Exception.class)
     public int deleteDataGroupById(Long id) {
         requireManager(id);
+        var previousMembers = dataGroupMapper.selectMembers(id);
         dataGroupMapper.deleteMemberByGroupId(id);
-        return dataGroupMapper.deleteDataGroupById(id);
+        int rows = dataGroupMapper.deleteDataGroupById(id);
+        previousMembers.forEach(member -> events.publishEvent(new com.pnkx.common.event.SpaceMembershipChanged(id, member.getUserId())));
+        return rows;
     }
 
     /**
@@ -134,6 +141,7 @@ public class SysDataGroupServiceImpl implements ISysDataGroupService {
         if (userId.equals(group.getOwnerUserId())) throw new ServiceException("空间所有者需先转移所有权，不能直接退出");
         int rows = dataGroupMapper.leaveMember(groupId, userId);
         if (rows <= 0) throw new ServiceException("不是该空间的有效成员");
+        events.publishEvent(new com.pnkx.common.event.SpaceMembershipChanged(groupId,userId));
         dataGroupMapper.insertMemberAudit(groupId, userId, "leave", userId,
                 "retain_creator", "{\"sharedAccessRevoked\":true,\"dataOwnerUnchanged\":true}");
         return rows;
@@ -188,7 +196,7 @@ public class SysDataGroupServiceImpl implements ISysDataGroupService {
             String requestedRole = group.getMembers() == null ? null : group.getMembers().stream()
                     .filter(item -> userId.equals(item.getUserId())).map(SysDataGroupMember::getRole).findFirst().orElse(null);
             member.setRole(userId.equals(group.getOwnerUserId()) ? "owner"
-                    : ("admin".equals(requestedRole) ? "admin" : "member"));
+                    : ("admin".equals(requestedRole) ? "admin" : ("viewer".equals(requestedRole) ? "viewer" : "member")));
             member.setStatus("active");
             member.setCreateTime(now);
             members.add(member);

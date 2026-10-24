@@ -1,3 +1,5 @@
+import store from '@/store'
+import { requiresOnline } from '@/utils/onlineActions'
 /**
  * 离线请求代理模块
  *
@@ -39,11 +41,14 @@ const URL_TABLE_MAP = {
 // 预排序的 key 列表（长→短），确保最长前缀优先匹配
 const SORTED_URL_KEYS = Object.keys(URL_TABLE_MAP).sort((a, b) => b.length - a.length)
 
+const PERSONAL_CACHE_TABLES = new Set(['px_todo', 'px_shopping_list', 'px_shopping_item', 'px_meal_plan', 'px_commemoration_day'])
+
 const offlineProxy = {
   /**
    * 处理离线请求（由 request.js 调用）
    */
   async handle(config) {
+    if (requiresOnline(config)) throw new Error('此操作需要联网确认')
     const method = (config.method || 'get').toLowerCase()
 
     // 只读请求 → 从本地读取
@@ -69,11 +74,15 @@ const offlineProxy = {
       // #ifdef APP-PLUS
       const query = this._parseQuery(config)
       let data = []
+      const personalOnly = PERSONAL_CACHE_TABLES.has(tableName)
+      const owner = String(store.state.user.id || '')
+      if (personalOnly && !owner) throw new Error('请登录后读取本地数据')
+      if (personalOnly) query.createBy = owner
 
       if (query.id) {
         // URL 中是服务端 ID；兼容尚未同步、只有本地主键的记录。
         const rows = await sqliteDB.selectSql(
-          `SELECT * FROM ${tableName} WHERE _server_id = ${sqliteDB._escapeValue(query.id)} OR id = ${sqliteDB._escapeValue(query.id)} LIMIT 1`
+          `SELECT * FROM ${tableName} WHERE (_server_id = ${sqliteDB._escapeValue(query.id)} OR id = ${sqliteDB._escapeValue(query.id)}) ${personalOnly ? 'AND create_by = ' + sqliteDB._escapeValue(owner) : ''} LIMIT 1`
         )
         const row = rows?.[0] || null
         data = row ? [row] : []
@@ -168,7 +177,7 @@ const offlineProxy = {
 
     if (!tableName) {
       // 不支持的 URL，写操作无法离线处理
-      return Promise.resolve({ code: 500, msg: 'offline_not_supported' })
+      throw new Error('此操作不支持离线提交')
     }
 
     try {
@@ -178,7 +187,7 @@ const offlineProxy = {
 
       // 构建本地记录
       const requestData = { ...(config.data || {}) }
-      const urlId = this._parseIdFromUrl(config.url)
+      const urlId = requestData.id || this._parseIdFromUrl(config.url)
 
       // 阅读进度 URL 使用章节 ID，无法直接对应本地书籍主键；保留操作并在联网后回放。
       if (method === 'put' && config.url.includes('/myBook/progress/')) {
@@ -219,6 +228,14 @@ const offlineProxy = {
           `SELECT * FROM ${tableName} WHERE _server_id = ${sqliteDB._escapeValue(urlId)} OR id = ${sqliteDB._escapeValue(urlId)} LIMIT 1`
         )
         localRow = rows?.[0] || null
+      }
+      if (PERSONAL_CACHE_TABLES.has(tableName)) {
+        const owner = String(store.state.user.id || '')
+        const rowOwner = localRow?.create_by ?? requestData.createBy ?? requestData.create_by
+        if (!owner || (rowOwner != null && String(rowOwner) !== owner) || (urlId && !localRow)) {
+          throw new Error('共享数据需要联网校验权限')
+        }
+        requestData.create_by = owner
       }
       const serverId = localRow?._server_id || requestData.id || urlId
       const record = {
@@ -296,7 +313,7 @@ const offlineProxy = {
       // #endif
     } catch (e) {
       console.error('[OfflineProxy] 离线写入失败:', config.url, e)
-      return Promise.resolve({ code: 500, msg: 'offline_write_error' })
+      throw e
     }
   },
 
@@ -306,11 +323,16 @@ const offlineProxy = {
   async cacheResponse(config, data) {
     // 仅缓存关键模块的列表数据
     const tableName = this._parseTableName(config.url)
-    if (!tableName) return
+    if (!tableName || requiresOnline(config)) return
 
     // 提取数据行
     let rows = data?.rows || data?.data?.rows || (Array.isArray(data?.data) ? data.data : null)
     if (!rows || !Array.isArray(rows) || rows.length === 0) return
+
+    if (PERSONAL_CACHE_TABLES.has(tableName)) {
+      const owner = String(store.state.user.id || '')
+      rows = rows.filter(row => owner && String(row.createBy ?? row.create_by ?? '') === owner)
+    }
 
     // #ifdef APP-PLUS
     try {

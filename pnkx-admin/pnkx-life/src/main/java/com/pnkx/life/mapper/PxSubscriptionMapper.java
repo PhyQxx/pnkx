@@ -17,6 +17,9 @@ import java.util.List;
 public interface PxSubscriptionMapper {
     PxSubscription selectPxSubscriptionById(Long id);
 
+    /** 必须在事务中调用；串行化同一订阅的所有出账入口。 */
+    PxSubscription selectForCharge(@Param("id") Long id);
+
     PxSubscription selectByClientUuid(String clientUuid);
 
     List<PxSubscription> selectPxSubscriptionList(PxSubscription pxSubscription);

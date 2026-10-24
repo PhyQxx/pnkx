@@ -39,6 +39,9 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
     @Resource
     private AiClient aiClient;
 
+    @Resource private LocalIntentPlanService localPlans;
+    @Resource private com.pnkx.web.service.operation.ShoppingCreateTool shoppingCreates;
+
     @Resource
     private IPxShoppingItemService shoppingItemService;
 
@@ -72,8 +75,11 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
                 return false;
             }
 
+            parsed.put("items", new com.alibaba.fastjson.JSONArray(items));
+            shoppingCreates.prepare(parsed, SecurityUtils.getUserId());
+            localPlans.prepare(parsed,"shopping.add","添加购物清单商品");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
-            IntentHandler.writeSse(out, buildDraftMessage(items));
+            IntentHandler.writeSse(out, buildDraftMessage(items, parsed));
             return true;
         } catch (Exception e) {
             logger.error("AI购物清单解析失败: {}", e.getMessage());
@@ -82,28 +88,8 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
     }
 
     @Override
-    public boolean confirm(JSONObject draft, OutputStream out) {
-        try {
-            List<JSONObject> items = extractItems(draft);
-            if (items.isEmpty()) {
-                return false;
-            }
-
-            String userId = SecurityUtils.getUserId();
-            Long listId = resolveListId(userId);
-
-            for (JSONObject item : items) {
-                PxShoppingItem shoppingItem = buildShoppingItem(item, listId, userId);
-                shoppingItemService.insertPxShoppingItem(shoppingItem);
-            }
-
-            IntentHandler.writeSse(out, buildSuccessMessage(items));
-            IntentHandler.writeSse(out, "[DONE]");
-            return true;
-        } catch (Exception e) {
-            logger.error("AI购物清单确认保存失败: {}", e.getMessage());
-            return false;
-        }
+    public boolean confirm(JSONObject draft, OutputStream out) throws java.io.IOException {
+        return localPlans.confirm(draft,out);
     }
 
     /**
@@ -122,39 +108,6 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
         return List.of();
     }
 
-    /**
-     * 确定目标清单：用户未指定时，取最近一个清单；无清单则新建默认清单
-     */
-    private Long resolveListId(String userId) {
-        PxShoppingList query = new PxShoppingList();
-        query.setCreateBy(userId);
-        List<PxShoppingList> lists = shoppingListService.selectPxShoppingListList(query);
-        if (lists != null && !lists.isEmpty()) {
-            return lists.get(0).getId();
-        }
-        // 自动创建默认清单
-        PxShoppingList newList = new PxShoppingList();
-        newList.setName("购物清单");
-        newList.setCreateBy(userId);
-        shoppingListService.insertPxShoppingList(newList);
-        logger.info("AI购物清单：用户无清单，已自动创建默认清单");
-        return newList.getId();
-    }
-
-    private PxShoppingItem buildShoppingItem(JSONObject item, Long listId, String userId) {
-        PxShoppingItem shoppingItem = new PxShoppingItem();
-        shoppingItem.setListId(listId);
-        shoppingItem.setName(item.getString("name"));
-        String quantity = item.getString("quantity");
-        if (isRealValue(quantity)) {
-            shoppingItem.setQuantity(quantity);
-        }
-        shoppingItem.setChecked(false);
-        shoppingItem.setAddedFromMeal(false);
-        shoppingItem.setCreateBy(userId);
-        return shoppingItem;
-    }
-
     private JSONObject parseJsonObject(String content) {
         int start = content.indexOf('{');
         int end = content.lastIndexOf('}');
@@ -164,9 +117,10 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
         return JSON.parseObject(content.substring(start, end + 1));
     }
 
-    private String buildDraftMessage(List<JSONObject> items) {
+    private String buildDraftMessage(List<JSONObject> items, JSONObject draft) {
         StringBuilder msg = new StringBuilder();
         msg.append("**购物清单草稿**\n\n");
+        msg.append("目标：").append(draft.getString("listName")).append(draft.getBooleanValue("createList") ? "（确认后新建）" : "（已有清单）").append("\n\n");
         appendItems(msg, items);
         msg.append("\n[PENDING_CONFIRM]");
         return msg.toString();

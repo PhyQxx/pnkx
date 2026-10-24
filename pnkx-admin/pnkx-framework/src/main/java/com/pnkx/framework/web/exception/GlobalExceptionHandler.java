@@ -114,6 +114,20 @@ public class GlobalExceptionHandler {
     public AjaxResult serviceException(ServiceException e) {
         log.error(e.getMessage(), e);
         String message = e.getMessage();
-        return AjaxResult.error(message);
+        var labels = java.util.Map.ofEntries(
+                java.util.Map.entry("FEATURE_DISABLED", "该功能暂未向当前用户启用"),
+                java.util.Map.entry("REVISION_CONFLICT", "内容已在其他操作中更新，请刷新后重试"),
+                java.util.Map.entry("INVALID_TRANSITION", "当前状态不支持此操作，请刷新查看"),
+                java.util.Map.entry("SOURCE_UNAVAILABLE", "来源不存在或无权访问"),
+                java.util.Map.entry("PERMISSION_DENIED", "当前空间无访问权限"),
+                java.util.Map.entry("PREVIEW_EXPIRED", "预览已过期，请重新生成预览"),
+                java.util.Map.entry("IDEMPOTENCY_CONFLICT", "请求标识对应的内容已变化，请刷新后重新提交"),
+                java.util.Map.entry("REQUEST_ID_REQUIRED", "请求缺少有效标识，请刷新后重试"),
+                java.util.Map.entry("INVALID_ACTION", "不支持此操作"),
+                java.util.Map.entry("INVALID_STATE", "无效状态"),
+                java.util.Map.entry("EXECUTION_SUPERSEDED", "该计划已由另一执行接管，请刷新结果"));
+        var result=AjaxResult.error(labels.getOrDefault(message,message));
+        if(labels.containsKey(message))result.put("errorCode",message);
+        return result;
     }
 }

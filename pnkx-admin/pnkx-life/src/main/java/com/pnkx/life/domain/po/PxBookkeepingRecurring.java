@@ -20,6 +20,13 @@ public class PxBookkeepingRecurring extends BaseEntity {
     /**
      * 主键
      */
+    private Boolean legacyResumePolicy;
+    public Boolean getLegacyResumePolicy(){return legacyResumePolicy;}
+    public void setLegacyResumePolicy(Boolean value){legacyResumePolicy=value;}
+    private String postingMode;
+    public String getPostingMode() { return postingMode; }
+    public void setPostingMode(String value) { postingMode = value; }
+
     private Long id;
 
     /** 离线创建幂等键。 */

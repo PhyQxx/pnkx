@@ -4,9 +4,7 @@ import com.pnkx.common.exception.ServiceException;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.common.utils.StringUtils;
-import com.pnkx.life.domain.po.PxBookkeepingRecord;
 import com.pnkx.life.domain.po.PxBookkeepingRecurring;
-import com.pnkx.life.mapper.PxBookkeepingRecordMapper;
 import com.pnkx.life.mapper.PxBookkeepingRecurringMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +26,8 @@ import java.util.List;
 @Service
 public class PxBookkeepingRecurringService {
 
+    @Resource private ChargeExecutionService chargeExecutions;
+
     private static final Logger log = LoggerFactory.getLogger(PxBookkeepingRecurringService.class);
 
     /**
@@ -44,7 +44,7 @@ public class PxBookkeepingRecurringService {
     private PxBookkeepingRecurringMapper recurringMapper;
 
     @Resource
-    private PxBookkeepingRecordMapper recordMapper;
+    private RecurringChargeService chargeService;
 
     /**
      * 当前用户的规则列表
@@ -60,17 +60,20 @@ public class PxBookkeepingRecurringService {
         if (StringUtils.isNotEmpty(recurring.getClientUuid())) {
             PxBookkeepingRecurring existing = recurringMapper.selectByClientUuid(recurring.getClientUuid());
             if (existing != null) {
+                if(!SecurityUtils.getUserId().equals(existing.getCreateBy()))throw new ServiceException("请求标识已被其他对象使用");
                 recurring.setId(existing.getId());
                 return 1;
             }
         }
         validate(recurring);
+        recurring.setPostingMode(ChargeInstanceService.mode(recurring.getPostingMode(), "manual_confirm"));
+        recurring.setLegacyResumePolicy(false);
         recurring.setCreateBy(SecurityUtils.getUserId());
         recurring.setCreateTime(DateUtils.getNowDate());
         recurring.setEnabled(true);
-        LocalDate next = computeNextRunDate(recurring, LocalDate.now());
+        LocalDate next = computeNextRunDate(recurring, LocalDate.now(SubscriptionSchedule.ZONE));
         // 首次执行不早于明天，避免当天重复
-        if (next.isBefore(LocalDate.now().plusDays(1))) {
+        if (next.isBefore(LocalDate.now(SubscriptionSchedule.ZONE).plusDays(1))) {
             next = computeNextRunDate(recurring, next);
         }
         recurring.setNextRunDate(toDate(next));
@@ -85,6 +88,7 @@ public class PxBookkeepingRecurringService {
             throw new ServiceException("规则ID不能为空");
         }
         validate(recurring);
+        if (recurring.getPostingMode() != null) ChargeInstanceService.mode(recurring.getPostingMode(), "auto_record");
         recurring.setUpdateBy(SecurityUtils.getUserId());
         return recurringMapper.updateRecurring(recurring);
     }
@@ -93,8 +97,17 @@ public class PxBookkeepingRecurringService {
      * 启停规则。重新启用时不重置 next_run_date：
      * 停用期间到期的账（如房租）会在下次任务执行时补记一笔，符合固定支出的实际语义
      */
+    @Transactional(rollbackFor=Exception.class)
     public int toggle(Long id, boolean enabled) {
+        var current=recurringMapper.lockForCharge(id,SecurityUtils.getUserId());
+        if(current==null)throw new ServiceException("SOURCE_UNAVAILABLE");
         PxBookkeepingRecurring rule = new PxBookkeepingRecurring();
+        if(enabled&&!Boolean.TRUE.equals(current.getEnabled())&&!Boolean.TRUE.equals(current.getLegacyResumePolicy())){
+            var today=LocalDate.now(SubscriptionSchedule.ZONE);
+            var next=FREQ_WEEK.equals(current.getFrequency())?computeNextRunDate(current,today):today.withDayOfMonth(current.getDayNumber());
+            if(!next.isAfter(today))next=computeNextRunDate(current,today);
+            rule.setNextRunDate(java.sql.Date.valueOf(next));
+        }
         rule.setId(id);
         rule.setEnabled(enabled);
         rule.setUpdateBy(SecurityUtils.getUserId());
@@ -114,48 +127,30 @@ public class PxBookkeepingRecurringService {
      *
      * @return 本次生成的记录数
      */
-    @Transactional(rollbackFor = Exception.class)
     public int executeDue() {
         Date today = DateUtils.getNowDate();
         List<PxBookkeepingRecurring> dueList = recurringMapper.selectDueList(today);
         if (dueList.isEmpty()) {
             return 0;
         }
-        LocalDate todayDate = today.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate todayDate = today.toInstant().atZone(SubscriptionSchedule.ZONE).toLocalDate();
         int generated = 0;
         for (PxBookkeepingRecurring rule : dueList) {
+            LocalDate due=SubscriptionSchedule.date(rule.getNextRunDate());
             try {
-                PxBookkeepingRecord record = buildRecord(rule);
-                recordMapper.insertPxBookkeepingRecord(record);
-                LocalDate next = computeNextRunDate(rule, todayDate);
-                recurringMapper.advanceRunDate(rule.getId(), toDate(next), today);
-                generated++;
+                for(int i=0;i<100&&!due.isAfter(todayDate);i++) {
+                    LocalDate next=chargeService.charge(rule.getId(),rule.getCreateBy(),due,todayDate);
+                    if(next==null) break;
+                    generated++; due=next;
+                }
             } catch (Exception e) {
+                chargeExecutions.failed(rule.getCreateBy(),"recurring",rule.getId(),due);
                 // 单条规则失败不影响其余规则
                 log.error("周期记账规则执行失败: {} ({})", rule.getName(), rule.getId(), e);
             }
         }
         log.info("周期记账执行完成：{} 条规则到期，生成 {} 条记录", dueList.size(), generated);
         return generated;
-    }
-
-    /**
-     * 由规则构造一条记账记录（payTime 取执行日，remark 追加周期标记）
-     */
-    private PxBookkeepingRecord buildRecord(PxBookkeepingRecurring rule) {
-        PxBookkeepingRecord record = new PxBookkeepingRecord();
-        // PxBookkeepingRecord 无独立收支字段：type=0 即转账语义，收支由分类的 type_difference 表达
-        record.setType("2".equals(rule.getTypeDifference()) ? 0L : rule.getType());
-        record.setAccount(rule.getAccount());
-        record.setOtherAccount(rule.getOtherAccount());
-        record.setMoney(rule.getMoney());
-        record.setCreateBy(rule.getCreateBy());
-        record.setCreateTime(DateUtils.getNowDate());
-        record.setPayTime(DateUtils.getNowDate());
-        record.setRemark(StringUtils.isEmpty(rule.getRemark())
-                ? String.format("【周期·%s】%s", FREQ_MONTH.equals(rule.getFrequency()) ? "每月" : "每周", rule.getName())
-                : rule.getRemark() + String.format("（周期·%s）", FREQ_MONTH.equals(rule.getFrequency()) ? "每月" : "每周"));
-        return record;
     }
 
     /**
@@ -176,7 +171,7 @@ public class PxBookkeepingRecurringService {
     }
 
     private Date toDate(LocalDate localDate) {
-        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return Date.from(localDate.atStartOfDay(SubscriptionSchedule.ZONE).toInstant());
     }
 
     private void validate(PxBookkeepingRecurring rule) {

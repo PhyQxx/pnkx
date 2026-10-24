@@ -6,6 +6,7 @@
 -->
 <template>
   <div class="workbench-dashboard">
+    <feature-gate feature="actionCenterV2"><action-center/></feature-gate>
     <!-- 管理员/超级管理员仪表盘 -->
     <div v-hasRole="['super', 'admin']" class="dashboard-layout">
       <!-- 左栏：三模块纵向排列 -->
@@ -160,6 +161,7 @@
 </template>
 
 <script>
+import ActionCenter from "@/components/ActionCenter.vue"
 import { listRecord } from '@/api/px/life/bookkeeping/record'
 import { getBookkeepingRoute } from '@/utils/bookkeepingRoute'
 import { getAllTodoList } from '@/api/px/homepage'
@@ -170,6 +172,7 @@ import BillAnalysisDialog from '@/views/homepage/components/BillAnalysisDialog.v
 export default {
   name: 'Index',
   components: {
+    ActionCenter,
     Calendar,
     ReminderPanel,
     BillAnalysisDialog
@@ -419,7 +422,7 @@ export default {
 
 // ===== 容器 =====
 .workbench-dashboard {
-  height: calc(100vh - 86px);
+  min-height: calc(100vh - 86px);
   background: var(--pnkx-bg);
   color: var(--pnkx-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
@@ -430,7 +433,7 @@ export default {
 // ===== 左右两栏 =====
 .dashboard-layout {
   display: flex;
-  height: 100%;
+  min-height: calc(100vh - 120px);
   gap: 16px;
 }
 

@@ -26,6 +26,7 @@ public interface PxToDoMapper {
      * @return 待办事项
      */
     public PxToDo selectPxToDoById(Long id);
+    PxToDo lockById(Long id);
 
     /**
      * 查询待办事项列表

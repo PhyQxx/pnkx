@@ -5,6 +5,7 @@
 <mapper namespace="com.pnkx.life.mapper.PxMealPlanMapper">
 
     <resultMap type="PxMealPlan" id="PxMealPlanResult">
+        <result property="servings" column="servings"/>
         <result property="id" column="id"/>
         <result property="planDate" column="plan_date"/>
         <result property="mealType" column="meal_type"/>
@@ -23,7 +24,7 @@
     </resultMap>
 
     <sql id="selectPxMealPlanVo">
-        select id,
+        select servings, id,
                plan_date,
                meal_type,
                recipe_id,
@@ -74,9 +75,18 @@
         order by plan_date, meal_type, sort_order
     </select>
 
+    <select id="selectByDateRangeForWorkflow" resultMap="PxMealPlanResult">
+        <include refid="selectPxMealPlanVo"/>
+        where del_flag = '0' and create_by = #{userId}
+        and plan_date between #{startDate} and #{endDate}
+        order by plan_date, meal_type, sort_order
+     for update
+    </select>
+
     <insert id="insertPxMealPlan" parameterType="PxMealPlan" useGeneratedKeys="true" keyProperty="id">
         insert into px_meal_plan
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="servings != null">servings,</if>
             <if test="planDate != null">plan_date,</if>
             <if test="mealType != null">meal_type,</if>
             <if test="recipeId != null">recipe_id,</if>
@@ -93,6 +103,7 @@
             <if test="remark != null">remark,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="servings != null">#{servings},</if>
             <if test="planDate != null">#{planDate},</if>
             <if test="mealType != null">#{mealType},</if>
             <if test="recipeId != null">#{recipeId},</if>
@@ -113,6 +124,7 @@
     <update id="updatePxMealPlan" parameterType="PxMealPlan">
         update px_meal_plan
         <trim prefix="SET" suffixOverrides=",">
+            <if test="servings != null">servings = #{servings},</if>
             <if test="planDate != null">plan_date = #{planDate},</if>
             <if test="mealType != null">meal_type = #{mealType},</if>
             <if test="recipeId != null">recipe_id = #{recipeId},</if>

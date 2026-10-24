@@ -48,18 +48,20 @@
     </scroll-view>
 
     <!-- Footer: generate shopping list -->
-    <view class="footer">
+    <feature-gate feature="shoppingPlanV2"><view class="footer">
       <view class="footer__btn" @click="openTransfer">
         <text class="footer__btn-text">🛒 生成本周购物清单</text>
       </view>
       <view class="safe-bottom"></view>
     </view>
 
+    </feature-gate>
     <!-- Add meal popup -->
     <uni-popup ref="addPopup" type="bottom" v-if="slotDialog.show">
       <view class="popup">
         <text class="popup__title">{{ slotDialog.dayLabel }} · {{ slotDialog.mealLabel }}</text>
         <view class="popup__form">
+          <view>用餐份数<input type="number" v-model.number="slotDialog.servings" placeholder="用餐份数"/></view>
           <input
             class="popup__input"
             v-model="slotDialog.title"
@@ -106,6 +108,7 @@
 </template>
 
 <script>
+import request from "@/utils/request"
 import { getMealPlanWeek, addMealPlan, delMealPlan, transferToShopping } from '@/api/px/life/mealPlan'
 import { listShoppingList, addShoppingList } from '@/api/px/life/shoppingList'
 
@@ -129,7 +132,7 @@ export default {
         mealType: 0,
         dayLabel: '',
         mealLabel: '',
-        title: '',
+        title: '', servings: 1,
         notes: ''
       },
       shoppingLists: [],
@@ -229,7 +232,7 @@ export default {
       this.slotDialog = {
         show: true,
         date: day.date,
-        mealType: meal.value,
+        mealType: meal.value, servings: 1,
         dayLabel: day.weekday + ' ' + day.dateLabel,
         mealLabel: meal.label,
         title: this.pendingRecipe ? this.pendingRecipe.title : '',
@@ -251,7 +254,7 @@ export default {
       try {
         await addMealPlan({
           planDate: this.slotDialog.date,
-          mealType: this.slotDialog.mealType,
+          mealType: this.slotDialog.mealType, servings: this.slotDialog.servings,
           recipeId: this.pendingRecipe ? this.pendingRecipe.id : null,
           title: this.slotDialog.title.trim(),
           notes: this.slotDialog.notes
@@ -303,7 +306,13 @@ export default {
     async doTransfer(listId) {
       uni.showLoading({ title: '生成中…' })
       try {
-        await transferToShopping(listId, this.weekStartDate, this.weekEndDate)
+        const preview=await request({url:'/mealPlan/shopping-preview',method:'post',data:{listId,startDate:this.weekStartDate,endDate:this.weekEndDate}})
+        uni.hideLoading()
+        const content=(preview.data.groups||[]).map(g=>`${g.name}（${g.change}）：${g.beforeQuantity||'无'} → ${g.needsReview?g.raw+'（人工核对）':g.quantity+g.unit}`).join('；')
+        const accepted=await new Promise(resolve=>uni.showModal({title:'确认采购预览',content:content||'无食材；确认将移除范围内未购的旧来源贡献',success:r=>resolve(r.confirm),fail:()=>resolve(false)}))
+        if(!accepted)return
+        const result=await request({url:'/mealPlan/shopping-commit',method:'post',data:{previewId:preview.data.previewId}})
+        if(result.data.warnings&&result.data.warnings.length)uni.showModal({title:'请核对已购项目',content:result.data.warnings.join('；'),showCancel:false})
         uni.hideLoading()
         this.closeTransfer()
         uni.showToast({ title: '已生成购物清单', icon: 'success' })

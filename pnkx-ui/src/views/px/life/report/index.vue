@@ -1,5 +1,6 @@
 <template>
     <div class="report-page">
+    <feature-gate feature="reportActionV2"><report-actions :period="period"/></feature-gate>
         <div class="page-toolbar">
             <div class="toolbar-title">
                 <h2>生活报告</h2>
@@ -117,9 +118,11 @@
 </template>
 
 <script>
+import ReportActions from "@/components/ReportActions.vue"
 import {getLifeReportData, getLifeReportHistory} from '@/api/px/life/report'
 
 export default {
+ components:{ReportActions},
     name: 'LifeReport',
     data() {
         return {

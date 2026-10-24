@@ -199,6 +199,7 @@
         join px_data_group_member owner_member on owner_member.group_id = g.id
         where g.status = '0'
           and requester.user_id = #{userId} and requester.status = 'active'
+          and requester.role in ('owner', 'admin', 'member')
           and owner_member.user_id = #{ownerId} and owner_member.status = 'active'
           and JSON_CONTAINS(COALESCE(g.visibility_json, JSON_ARRAY()), JSON_QUOTE(#{module}))
     </select>

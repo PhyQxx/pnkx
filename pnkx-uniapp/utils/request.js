@@ -2,6 +2,7 @@ import store from '@/store'
 import config from '@/config'
 import {getToken} from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
+import { requiresOnline } from '@/utils/onlineActions'
 import {showConfirm, tansParams, toast} from '@/utils/common'
 // #ifdef APP-PLUS
 import offlineProxy from '@/utils/offlineProxy'
@@ -27,6 +28,11 @@ const request = config => {
 
   // ★ 离线代理拦截（仅 APP-PLUS 且离线时生效）
   // #ifdef APP-PLUS
+  if (!isOnline.value && requiresOnline(config)) {
+    const message = '此操作需要联网确认，请联网后重试；当前输入不会提交'
+    toast(message)
+    return Promise.reject(new Error(message))
+  }
   if (config.offline !== false && !config._isSyncCall) {
     if (!isOnline.value) {
       return offlineProxy.handle(config)

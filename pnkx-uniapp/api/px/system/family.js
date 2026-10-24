@@ -1,3 +1,4 @@
+import { clearSharedCache } from '@/utils/sharedCache'
 import request from '@/utils/request'
 
 export function listSpaces() {
@@ -8,8 +9,10 @@ export function getSpace(id) {
   return request({ url: `/system/dataGroup/${id}`, method: 'get' })
 }
 
-export function leaveSpace(id) {
-  return request({ url: `/system/dataGroup/${id}/leave`, method: 'post' })
+export async function leaveSpace(id) {
+  const result = await request({ url: `/system/dataGroup/${id}/leave`, method: 'post' })
+  try { await clearSharedCache() } catch (_) { uni.showToast({ title: '已退出，缓存清理将在下次启动重试', icon: 'none' }) }
+  return result
 }
 
 export function transferSpace(id, userId) {

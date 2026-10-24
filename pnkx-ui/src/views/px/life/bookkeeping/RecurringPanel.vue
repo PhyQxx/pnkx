@@ -1,7 +1,8 @@
 <template>
   <div class="recurring-panel">
+    <feature-gate feature="chargeInstanceV2"><charge-instances source-type="recurring" /></feature-gate>
     <div class="panel-toolbar">
-      <span class="tip">固定支出（房租/会员等）按周期自动生成记账记录，每日 08:30 由系统执行</span>
+      <span class="tip">固定收支到期后按所选方式生成待确认账期或自动记账，每日 08:30 检查</span>
       <el-button type="primary" size="small" @click="openAdd">新增规则</el-button>
     </div>
 
@@ -27,13 +28,13 @@
           <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? '启用' : '停用' }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column label="操作" width="260" fixed="right">
         <template #default="{row}">
           <el-button size="small" text type="primary" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" text :type="row.enabled ? 'warning' : 'success'" @click="handleToggle(row)">
             {{ row.enabled ? '停用' : '启用' }}
           </el-button>
-          <el-button size="small" text type="danger" @click="handleDelete(row)">删除</el-button>
+          <feature-gate feature="chargeInstanceV2"><el-button v-if="!row.enabled" text @click="backfill(row)">补齐账期</el-button></feature-gate><el-button size="small" text type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -41,7 +42,8 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="visible" :title="form.id ? '编辑周期规则' : '新增周期规则'" width="460px" append-to-body>
       <el-form :model="form" label-width="90px">
-        <el-form-item label="名称">
+        <el-form-item label="入账方式"><el-select v-model="form.postingMode"><el-option label="到期后确认" value="manual_confirm"/><el-option label="自动记账" value="auto_record"/></el-select></el-form-item>
+      <el-form-item label="名称">
           <el-input v-model="form.name" placeholder="如：房租、视频会员" maxlength="30" />
         </el-form-item>
         <el-form-item label="收支类型">
@@ -91,11 +93,14 @@
 </template>
 
 <script>
+import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
+import ChargeInstances from "@/components/ChargeInstances.vue"
 import {addRecurring, delRecurring, listRecurring, toggleRecurring, updateRecurring} from '@/api/px/life/bookkeeping/recurring'
 import {getClassificationList} from '@/api/px/life/bookkeeping/classification'
 import {getAccountList} from '@/api/px/life/bookkeeping/account'
 
 export default {
+ components: { ChargeInstances },
     name: 'RecurringPanel',
     data() {
         return {
@@ -127,9 +132,10 @@ export default {
         })
     },
     methods: {
+        async backfill(row){await backfillRule('recurring',row.id);this.load()},
         emptyForm() {
             return {
-                id: null, name: '', frequency: 'month', dayNumber: 1,
+                postingMode: 'manual_confirm', id: null, name: '', frequency: 'month', dayNumber: 1,
                 typeDifference: '1', type: null, account: null, otherAccount: null,
                 amount: 1000, remark: ''
             }
@@ -154,7 +160,7 @@ export default {
         },
         openEdit(row) {
             this.form = {
-                id: row.id,
+                postingMode: row.postingMode || 'auto_record', id: row.id,
                 name: row.name,
                 frequency: row.frequency,
                 dayNumber: row.dayNumber,
@@ -173,7 +179,7 @@ export default {
                 money: this.form.amount
             }
             this.saving = true
-            const req = data.id ? updateRecurring(data) : addRecurring(data)
+            const req = data.id ? changeRule('recurring',data) : addRecurring(data)
             req.then(() => {
                 this.msgSuccess(data.id ? '已保存' : '已新增')
                 this.visible = false
