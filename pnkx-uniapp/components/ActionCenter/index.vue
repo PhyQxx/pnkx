@@ -31,7 +31,12 @@
     <text v-if="error">{{ error }}</text>
     <view v-for="todo in visibleTodos" :key="todo.id" class="item"
       ><text>{{ todo.content }} · {{ todo.planEndTime }}</text
-      ><button v-if="data.canEdit" :disabled="loading" size="mini" @click="complete(todo)">
+      ><button
+        v-if="data.canEdit"
+        :disabled="loading || busyItems['todo:' + todo.id]"
+        size="mini"
+        @click="complete(todo)"
+      >
         完成
       </button></view
     >
@@ -51,8 +56,19 @@
         ><text
           >出账失败：{{ f.source_name }} · {{ f.due_date }}，请核对账户与分类；自动重试不早于
           {{ f.next_retry_at || "下一轮调度" }}</text
-        ><button size="mini" @click="retryCharge(f, 'retry')">重试</button
-        ><button size="mini" @click="retryCharge(f, 'dismiss')">忽略记录</button></view
+        ><button
+          size="mini"
+          :disabled="busyItems['charge:' + f.id]"
+          @click="retryCharge(f, 'retry')"
+        >
+          重试</button
+        ><button
+          size="mini"
+          :disabled="busyItems['charge:' + f.id]"
+          @click="retryCharge(f, 'dismiss')"
+        >
+          忽略记录
+        </button></view
       ></feature-gate
     ><view v-for="m in data.meals || []" :key="'meal' + m.id" class="item" @click="go('meal')"
       >{{ m.title }} · {{ m.servings }}份</view
@@ -61,9 +77,18 @@
       ><view v-for="e in visibleEvents" :key="'event' + e.id" class="item"
         ><text>{{ e.title }} · {{ states[e.state] || e.state }}</text
         ><view class="head"
-          ><button v-if="!e.readAt" size="mini" @click="act(e, 'read')">已读</button
-          ><button size="mini" @click="act(e, 'snooze')">一小时后</button
-          ><button size="mini" @click="act(e, 'dismiss')">忽略本次</button></view
+          ><button
+            v-if="!e.readAt"
+            size="mini"
+            :disabled="busyItems['reminder:' + e.id]"
+            @click="act(e, 'read')"
+          >
+            已读</button
+          ><button size="mini" :disabled="busyItems['reminder:' + e.id]" @click="act(e, 'snooze')">
+            一小时后</button
+          ><button size="mini" :disabled="busyItems['reminder:' + e.id]" @click="act(e, 'dismiss')">
+            忽略本次
+          </button></view
         ></view
       > </feature-gate
     ><template v-if="spaceIndex === 0"
@@ -76,6 +101,7 @@
   </view>
 </template>
 <script>
+import { createActionMutations } from "@/utils/actionCenterMutations";
 import request from "@/utils/request";
 import { createLatestLoader, parsePinned } from "@/utils/actionCenterState";
 import ChargeInstances from "@/components/ChargeInstances/index.vue";
@@ -94,6 +120,8 @@ export default {
     return {
       data: {},
       loading: false,
+      busyItems: {},
+      mutations: null,
       loader: null,
       draftPinned: [],
       savingPins: false,
@@ -133,6 +161,17 @@ export default {
     },
   },
   created() {
+    this.mutations = createActionMutations({
+      request,
+      refresh: () => this.load(),
+      onBusy: (key, value) => {
+        this.busyItems = { ...this.busyItems, [key]: value };
+      },
+      onError: (message) => {
+        this.error = message;
+      },
+      makeId: () => `reminder_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    });
     this.loader = createLatestLoader({
       fetch: (params) => request({ url: "/life/action-center", method: "get", params }),
       onStart: () => {
@@ -154,6 +193,7 @@ export default {
   },
   beforeUnmount() {
     this.loader.invalidate();
+    this.mutations.dispose();
   },
   async mounted() {
     this.load();
@@ -202,6 +242,7 @@ export default {
       }
     },
     switchSpace(e) {
+      this.mutations.contextChanged();
       this.spaceIndex = Number(e.detail.value);
       this.data = {};
       this.page = 1;
@@ -219,29 +260,29 @@ export default {
         page: this.page,
       });
     },
-    async retryCharge(f, action) {
-      await request({ url: `/charge/instances/failures/${f.id}/${action}`, method: "post" });
-      await this.load();
+    retryCharge(f, action) {
+      return this.mutations.run(`charge:${f.id}`, action, () => ({
+        url: `/charge/instances/failures/${f.id}/${action}`,
+        method: "post",
+      }));
     },
-    async complete(t) {
-      await request({
+    complete(t) {
+      return this.mutations.run(`todo:${t.id}`, "complete", () => ({
         url: "/admin/toDo",
         method: "put",
         data: { id: t.id, status: true, kanbanStatus: 2 },
-      });
-      await this.load();
+      }));
     },
-    async act(e, action) {
-      await request({
+    act(e, action) {
+      return this.mutations.run(`reminder:${e.id}`, `${action}:${e.revision}`, ({ id, now }) => ({
         url: `/reminder/events/${e.id}/${action}`,
         method: "post",
         data: {
-          requestId: `reminder_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          requestId: id,
           expectedRevision: e.revision,
-          until: action === "snooze" ? new Date(Date.now() + 3600000).toISOString() : null,
+          until: action === "snooze" ? new Date(now + 3600000).toISOString() : null,
         },
-      });
-      await this.load();
+      }));
     },
   },
 };

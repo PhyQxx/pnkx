@@ -35,7 +35,9 @@
         </h3>
         <div v-for="todo in expanded ? data.todos || [] : (data.todos || []).slice(0, 5)" :key="todo.id" class="item">
             <span>{{ todo.content }} · {{ todo.planEndTime }}</span
-            ><el-button v-if="data.canEdit" :disabled="loading" @click="complete(todo)">完成</el-button>
+            ><el-button v-if="data.canEdit" :disabled="loading || busyItems['todo:' + todo.id]" @click="complete(todo)"
+                >完成</el-button
+            >
         </div>
         <el-empty v-if="data.todoCount === 0" description="暂无到期或逾期待办" :image-size="50" />
         <el-button v-if="data.todoCount > 5" link @click="expanded = !expanded">{{
@@ -55,8 +57,10 @@
                     >出账失败：{{ f.source_name }} · {{ f.due_date }}（{{ f.attempt_count }}次）<small
                         >请检查规则账户与分类后重试；下次自动尝试不早于 {{ f.next_retry_at || '下一轮调度' }}</small
                     ></span
-                ><el-button @click="retryCharge(f, 'retry')">重试</el-button
-                ><el-button link @click="retryCharge(f, 'dismiss')">忽略记录</el-button>
+                ><el-button :disabled="busyItems['charge:' + f.id]" @click="retryCharge(f, 'retry')">重试</el-button
+                ><el-button link :disabled="busyItems['charge:' + f.id]" @click="retryCharge(f, 'dismiss')"
+                    >忽略记录</el-button
+                >
             </div>
         </feature-gate>
         <h3>今日餐饮</h3>
@@ -75,10 +79,18 @@
                     ><small>{{ event.readAt ? '已读' : '未读' }}</small>
                 </div>
                 <div>
-                    <el-button v-if="!event.readAt" link @click="act(event, 'read')">标记已读</el-button
+                    <el-button
+                        v-if="!event.readAt"
+                        link
+                        :disabled="busyItems['reminder:' + event.id]"
+                        @click="act(event, 'read')"
+                        >标记已读</el-button
                     ><template v-if="['open', 'snoozed'].includes(event.state)"
-                        ><el-button link @click="act(event, 'snooze')">一小时后提醒</el-button
-                        ><el-button link @click="act(event, 'dismiss')">忽略本次</el-button></template
+                        ><el-button link :disabled="busyItems['reminder:' + event.id]" @click="act(event, 'snooze')"
+                            >一小时后提醒</el-button
+                        ><el-button link :disabled="busyItems['reminder:' + event.id]" @click="act(event, 'dismiss')"
+                            >忽略本次</el-button
+                        ></template
                     >
                 </div>
             </div> </feature-gate
@@ -94,6 +106,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { createLatestLoader, parsePinned } from '../utils/actionCenterState';
 import { useRouter } from 'vue-router';
+import { createActionMutations } from '../utils/actionCenterMutations';
 import request from '@/utils/request';
 import ChargeInstances from '@/components/ChargeInstances.vue';
 import OperationPlans from '@/components/OperationPlans.vue';
@@ -130,6 +143,7 @@ function go(key) {
     if (route) router.push(route.path);
 }
 function changeSpace() {
+    mutations.contextChanged();
     data.value = {};
     page.value = 1;
     expanded.value = false;
@@ -191,25 +205,42 @@ function load() {
     });
 }
 onBeforeUnmount(() => loader.invalidate());
-async function retryCharge(f, action) {
-    await request({ url: `/charge/instances/failures/${f.id}/${action}`, method: 'post' });
-    await load();
+const busyItems = ref({});
+const mutations = createActionMutations({
+    request,
+    refresh: load,
+    onBusy: (key, value) => {
+        busyItems.value = { ...busyItems.value, [key]: value };
+    },
+    onError: (message) => {
+        error.value = message;
+    },
+    makeId: () => `reminder_${Date.now()}_${Math.random().toString(36).slice(2)}`
+});
+onBeforeUnmount(() => mutations.dispose());
+function retryCharge(f, action) {
+    return mutations.run(`charge:${f.id}`, action, () => ({
+        url: `/charge/instances/failures/${f.id}/${action}`,
+        method: 'post'
+    }));
 }
-async function complete(todo) {
-    await request({ url: '/admin/toDo', method: 'put', data: { id: todo.id, status: true, kanbanStatus: 2 } });
-    await load();
+function complete(t) {
+    return mutations.run(`todo:${t.id}`, 'complete', () => ({
+        url: '/admin/toDo',
+        method: 'put',
+        data: { id: t.id, status: true, kanbanStatus: 2 }
+    }));
 }
-async function act(event, action) {
-    await request({
-        url: `/reminder/events/${event.id}/${action}`,
+function act(e, action) {
+    return mutations.run(`reminder:${e.id}`, `${action}:${e.revision}`, ({ id, now }) => ({
+        url: `/reminder/events/${e.id}/${action}`,
         method: 'post',
         data: {
-            requestId: `reminder_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            expectedRevision: event.revision,
-            until: action === 'snooze' ? new Date(Date.now() + 3600000).toISOString() : null
+            requestId: id,
+            expectedRevision: e.revision,
+            until: action === 'snooze' ? new Date(now + 3600000).toISOString() : null
         }
-    });
-    await load();
+    }));
 }
 onMounted(async () => {
     load();
