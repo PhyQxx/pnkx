@@ -4,7 +4,9 @@
       ><view
         ><text class="heading">操作计划</text
         ><text class="sub">先确认，再执行。每一步都有结果。</text></view
-      ><button size="mini" :loading="loading" :disabled="busy" @click="load">刷新</button></view
+      ><button size="mini" :loading="loading" :disabled="busy || draftEditing" @click="load">
+        刷新
+      </button></view
     >
     <view class="filters"
       ><button
@@ -25,7 +27,12 @@
         ><text class="title">{{ p.title }}</text
         ><text :class="['badge', tone(p.status)]">{{ labels[p.status] || p.status }}</text></view
       ><text class="sub">{{ hint(p.status) }}</text
-      ><button size="mini" class="view-button" :disabled="busy" @click="inspect(p.id)">
+      ><button
+        size="mini"
+        class="view-button"
+        :disabled="busy || draftEditing"
+        @click="inspect(p.id)"
+      >
         {{ actionLabel(p.status) }}
       </button></view
     >
@@ -36,7 +43,9 @@
     <view v-if="opened" class="detail"
       ><view class="head"
         ><text class="heading">计划详情</text
-        ><button size="mini" :disabled="busy" @click="closeDetail">收起</button></view
+        ><button size="mini" :disabled="busy || draftEditing" @click="closeDetail">
+          收起
+        </button></view
       ><text v-if="detailLoading" class="empty">正在加载详情…</text
       ><text v-if="detailError" class="error">{{ detailError }}</text
       ><button v-if="detailError && !detail" size="mini" @click="inspect(selectedId)">
@@ -61,11 +70,16 @@
           ><text v-if="result(s).sourceId" class="sub">已创建记录 #{{ result(s).sourceId }}</text
           ><text v-if="s.error_msg" class="error">{{ s.error_msg }}</text></view
         >
-        <view class="actions"
+        <PlanDraftEditor
+          :plan="detail"
+          :disabled="busy"
+          @editing="draftEditing = $event"
+          @updated="acceptRevision"
+        /><view v-if="!draftEditing" class="actions"
           ><button
             v-if="detail.status === 'awaiting_confirmation'"
             class="primary"
-            :disabled="busy"
+            :disabled="busy || draftEditing"
             :loading="busy"
             @click="run('confirm')"
           >
@@ -73,25 +87,25 @@
           ><button
             v-if="['failed', 'partially_succeeded'].includes(detail.status)"
             class="primary"
-            :disabled="busy"
+            :disabled="busy || draftEditing"
             :loading="busy"
             @click="run('retry')"
           >
             重试未完成步骤</button
           ><template v-if="detail.status === 'running'"
-            ><button :disabled="busy" @click="inspect(detail.id)">刷新进度</button
-            ><button :disabled="busy" :loading="busy" @click="run('retry')">
+            ><button :disabled="busy || draftEditing" @click="inspect(detail.id)">刷新进度</button
+            ><button :disabled="busy || draftEditing" :loading="busy" @click="run('retry')">
               尝试恢复执行
             </button></template
           ><button
             v-if="['succeeded', 'partially_succeeded'].includes(detail.status)"
-            :disabled="busy"
+            :disabled="busy || draftEditing"
             @click="undo"
           >
             预览撤销</button
           ><button
             v-if="['awaiting_confirmation', 'failed'].includes(detail.status)"
-            :disabled="busy"
+            :disabled="busy || draftEditing"
             @click="run('cancel')"
           >
             取消计划
@@ -103,6 +117,7 @@
 </template>
 <script>
 import request from "@/utils/request";
+import PlanDraftEditor from "@/components/PlanDraftEditor.vue";
 import {
   planLabels,
   toolLabels,
@@ -115,6 +130,7 @@ import {
   parsePlanValue,
 } from "@/utils/operationPlanPresentation";
 export default {
+  components: { PlanDraftEditor },
   data() {
     return {
       plans: [],
@@ -127,6 +143,7 @@ export default {
       error: "",
       detailError: "",
       busy: false,
+      draftEditing: false,
       selectedId: "",
       listRequest: 0,
       detailRequest: 0,
@@ -151,6 +168,12 @@ export default {
     this.detailRequest++;
   },
   methods: {
+    acceptRevision(plan) {
+      this.detail = plan;
+      this.selectedId = plan.id;
+      this.draftEditing = false;
+      this.load();
+    },
     tone: planTone,
     hint: planHint,
     actionLabel: planActionLabel,
@@ -162,7 +185,7 @@ export default {
       return this.plans.filter((p) => matchesPlan(p, key)).length;
     },
     closeDetail() {
-      if (this.busy) return;
+      if (this.busy || this.draftEditing) return;
       this.detailRequest++;
       this.opened = false;
       this.detail = null;
@@ -183,7 +206,7 @@ export default {
       }
     },
     async inspect(id) {
-      if (this.busy) return;
+      if (this.busy || this.draftEditing) return;
       const token = ++this.detailRequest;
       this.selectedId = id;
       this.opened = true;

@@ -5,7 +5,7 @@
                 <h2>操作计划</h2>
                 <p>先确认，再执行。每一步都有结果可查。</p>
             </div>
-            <el-button :loading="loading" :disabled="busy" @click="load">刷新</el-button>
+            <el-button :loading="loading" :disabled="busy || draftEditing" @click="load">刷新</el-button>
         </header>
         <div class="toolbar">
             <div class="filters" aria-label="筛选计划">
@@ -35,7 +35,7 @@
                 <el-button
                     :type="attention(p.status) ? 'primary' : 'default'"
                     :plain="attention(p.status)"
-                    :disabled="busy"
+                    :disabled="busy || draftEditing"
                     @click="inspect(p.id)"
                     >{{ actionLabel(p.status) }}</el-button
                 >
@@ -55,9 +55,9 @@
             width="min(720px,94vw)"
             top="8vh"
             append-to-body
-            :close-on-click-modal="!busy"
-            :close-on-press-escape="!busy"
-            :show-close="!busy"
+            :close-on-click-modal="!busy && !draftEditing"
+            :close-on-press-escape="!busy && !draftEditing"
+            :show-close="!busy && !draftEditing"
         >
             <div class="detail-body" :aria-busy="detailLoading">
                 <el-skeleton v-if="detailLoading" :rows="4" animated />
@@ -68,6 +68,11 @@
                         <el-tag :type="tone(detail.status)">{{ labels[detail.status] || detail.status }}</el-tag>
                     </div>
                     <p class="hint">{{ hint(detail.status) }}</p>
+                    <PlanDraftEditor
+                        :plan="detail"
+                        :disabled="busy || draftEditing"
+                        @editing="draftEditing = $event"
+                        @updated="acceptRevision" />
                     <p class="progress">{{ completed }} / {{ detail.steps?.length || 0 }} 步已完成</p>
                     <article v-for="s in detail.steps || []" :key="s.step_number" class="step">
                         <div class="step-heading">
@@ -109,11 +114,13 @@
             </div>
             <template #footer
                 ><div class="actions">
-                    <el-button :disabled="busy" @click="visible = false">{{ detail ? '关闭' : '返回' }}</el-button
-                    ><template v-if="detail && !detailLoading"
+                    <el-button :disabled="busy || draftEditing" @click="visible = false">{{
+                        detail ? '关闭' : '返回'
+                    }}</el-button
+                    ><template v-if="detail && !detailLoading && !draftEditing"
                         ><el-button
                             v-if="['awaiting_confirmation', 'failed'].includes(detail.status)"
-                            :disabled="busy"
+                            :disabled="busy || draftEditing"
                             @click="run('cancel')"
                             >取消计划</el-button
                         ><el-button
@@ -136,7 +143,7 @@
                             @click="run('retry')"
                             >重试未完成步骤</el-button
                         ><template v-else-if="detail.status === 'running'"
-                            ><el-button :disabled="busy" @click="inspect(detail.id)">刷新进度</el-button
+                            ><el-button :disabled="busy || draftEditing" @click="inspect(detail.id)">刷新进度</el-button
                             ><el-button :loading="busy" @click="run('retry')">尝试恢复执行</el-button></template
                         ></template
                     ><el-button v-else-if="detailError" @click="inspect(selectedId)">重新加载</el-button>
@@ -149,6 +156,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import request from '@/utils/request';
+import PlanDraftEditor from './PlanDraftEditor.vue';
 import {
     planLabels as labels,
     toolLabels as tools,
@@ -171,6 +179,7 @@ const plans = ref([]),
     detailError = ref(''),
     visible = ref(false),
     busy = ref(false),
+    draftEditing = ref(false),
     compensation = ref(null),
     selectedId = ref(''),
     router = useRouter();
@@ -180,6 +189,13 @@ const filtered = computed(() => plans.value.filter((p) => matchesPlan(p, filter.
     completed = computed(() => (detail.value?.steps || []).filter((s) => s.status === 'succeeded').length);
 const count = (key) => plans.value.filter((p) => matchesPlan(p, key)).length;
 const result = (s) => parsePlanValue(s.result_json);
+function acceptRevision(plan) {
+    detail.value = plan;
+    selectedId.value = plan.id;
+    draftEditing.value = false;
+    compensation.value = null;
+    load();
+}
 async function load() {
     const token = ++listRequest;
     loading.value = true;
@@ -196,7 +212,7 @@ async function load() {
     }
 }
 async function inspect(id) {
-    if (busy.value) return;
+    if (busy.value || draftEditing.value) return;
     const token = ++detailRequest;
     selectedId.value = id;
     detail.value = null;
@@ -230,7 +246,7 @@ async function run(action) {
     }
 }
 async function previewUndo() {
-    if (busy.value) return;
+    if (busy.value || draftEditing.value) return;
     busy.value = true;
     detailError.value = '';
     try {

@@ -25,6 +25,11 @@ public class PxOperationPlanController {
     return AjaxResult.success(service.preview(input, SecurityUtils.getUserId()));
   }
 
+  @PostMapping("/{id}/revise")
+  public AjaxResult revise(@PathVariable String id, @RequestBody JSONObject input) {
+    return AjaxResult.success(service.revise(id, input, SecurityUtils.getUserId()));
+  }
+
   @GetMapping("/{id}")
   public AjaxResult get(@PathVariable String id) {
     return AjaxResult.success(service.get(id, SecurityUtils.getUserId()));

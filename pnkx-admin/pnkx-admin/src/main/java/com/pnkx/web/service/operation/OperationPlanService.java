@@ -90,6 +90,63 @@ public class OperationPlanService {
     return get(id, owner);
   }
 
+  /** 原草稿和新预览原子替换；旧编号不会执行修改后的内容。 */
+  public JSONObject revise(String id, JSONObject input, String owner) {
+    return tx.execute(
+        t -> {
+          var rows =
+              db.queryForList(
+                  "select *,expires_at<=now() as expired from px_operation_plan where id=? and"
+                      + " owner_id=? for update",
+                  id,
+                  owner);
+          if (rows.isEmpty()) throw new ServiceException("计划不存在或无权编辑");
+          var plan = rows.get(0);
+          if (!"awaiting_confirmation".equals(plan.get("status"))
+              || ((Number) plan.get("expired")).intValue() != 0)
+            throw new ServiceException("仅可修改有效期内尚未执行的草稿");
+          if (input.getInteger("expectedRevision") == null
+              || input.getIntValue("expectedRevision")
+                  != ((Number) plan.get("revision")).intValue())
+            throw new ServiceException("草稿已变化，请刷新后重试");
+          var steps =
+              db.queryForList(
+                  "select tool_code,input_json from px_operation_step where plan_id=? order by"
+                      + " step_number",
+                  id);
+          if (steps.size() != 1) throw new ServiceException("多步骤计划暂不支持编辑");
+          String code = (String) steps.get(0).get("tool_code");
+          var editable =
+              Map.of(
+                  "todo.create",
+                  Set.of("content", "planStartTime", "planEndTime", "label", "dueDate"),
+                  "note.create",
+                  Set.of("title", "content"),
+                  "diary.create",
+                  Set.of("content", "date", "mood"),
+                  "commemoration.create",
+                  Set.of("name", "date", "repeat"));
+          if (!editable.containsKey(code)) throw new ServiceException("当前类型暂不支持编辑");
+          JSONObject patch = input.getJSONObject("fields");
+          if (patch == null || patch.isEmpty() || !editable.get(code).containsAll(patch.keySet()))
+            throw new ServiceException("包含不支持的编辑字段");
+          JSONObject args = JSON.parseObject((String) steps.get(0).get("input_json"));
+          args.putAll(patch);
+          var step = new JSONObject();
+          step.put("toolCode", code);
+          step.put("input", args);
+          var newSteps = new JSONArray();
+          newSteps.add(step);
+          var body = new JSONObject();
+          body.put("title", plan.get("title"));
+          body.put("steps", newSteps);
+          JSONObject replacement = preview(body, owner);
+          db.update(
+              "update px_operation_plan set status='cancelled',revision=revision+1 where id=?", id);
+          return replacement;
+        });
+  }
+
   private void validate(String tool, JSONObject args, boolean lock, String owner) {
     if ("shopping.add".equals(tool) && shoppingCreates != null) {
       shoppingCreates.validate(args, owner, lock);
