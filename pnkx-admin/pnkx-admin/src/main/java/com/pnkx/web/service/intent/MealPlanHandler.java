@@ -112,6 +112,7 @@ public class MealPlanHandler implements ConfirmableIntentHandler {
             var planInput=new JSONObject();planInput.put("title","安排餐饮与采购");planInput.put("steps",steps);
             var operation=operationPlanService.preview(planInput,SecurityUtils.getUserId());parsed.put("operationPlanId",operation.getString("id"));
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
+            IntentHandler.writePlanEvent(out, parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
         } catch (Exception e) {

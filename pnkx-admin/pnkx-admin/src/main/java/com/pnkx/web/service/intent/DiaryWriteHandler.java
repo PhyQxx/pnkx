@@ -76,6 +76,7 @@ public class DiaryWriteHandler implements ConfirmableIntentHandler {
             if (!isRealValue(parsed.getString("mood"))) parsed.put("mood", "x-可爱");
             localPlans.prepare(parsed, "diary.create", "记录日记");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
+            IntentHandler.writePlanEvent(out, parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
         } catch (Exception e) {

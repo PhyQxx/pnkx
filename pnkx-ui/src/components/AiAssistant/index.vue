@@ -50,6 +50,7 @@
             <BubbleList :list="bubbleList">
               <template #content="{ item }">
                 <XMarkDown :content="item.content" />
+                <ChatPlanCard v-if="item.planId" :plan-id="item.planId" :disabled="isLoading" />
               </template>
             </BubbleList>
 
@@ -78,6 +79,8 @@
 </template>
 
 <script setup>
+import ChatPlanCard from "@/components/ChatPlanCard.vue"
+import { createChatStreamParser } from "@/utils/chatStreamParser"
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { ChatDotRound, Monitor, Close, Plus, Wallet, EditPen, Calendar, List } from '@element-plus/icons-vue'
 import { BubbleList, Welcome, Prompts, Thinking, XSender } from 'vue-element-plus-x'
@@ -102,6 +105,7 @@ let messageId = 0
 const bubbleList = computed(() => {
   return messages.value.map(msg => ({
     id: msg.id,
+    planId: msg.planId,
     role: msg.role,
     content: filterInstructionText(msg.content),
     placement: msg.role === 'user' ? 'end' : 'start',
@@ -111,7 +115,7 @@ const bubbleList = computed(() => {
 
 const showPendingActions = computed(() => {
   const last = messages.value[messages.value.length - 1]
-  return !!last && last.role === 'assistant' && last.pendingAction && !isThinking.value
+  return !!last && last.role === 'assistant' && last.pendingAction && !last.planId && !isThinking.value
 })
 
 const promptItems = [
@@ -137,6 +141,7 @@ function toggleOpen() {
 }
 
 function newConversation() {
+  if (isLoading.value) return
   messages.value = []
 }
 
@@ -189,7 +194,7 @@ async function handlePendingAction(action) {
     await readStreamResponse(response)
   } catch (e) {
     isThinking.value = false
-    if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant' && !messages.value[messages.value.length - 1].content) {
+    if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant' && !messages.value[messages.value.length - 1].content && !messages.value[messages.value.length - 1].planId) {
       messages.value.pop()
     }
     addMessage('assistant', '网络请求失败，请稍后重试。')
@@ -220,54 +225,13 @@ async function handleSend() {
       content: m.content
     }))
     const response = await chatStream(text, history)
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-
     isThinking.value = false
     isStreaming.value = true
     addMessage('assistant', '')
-    await scrollToBottom()
-
-    let fullContent = ''
-    let eventLines = []
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
-
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          eventLines.push(line.substring(5))
-        } else if (line === '' && eventLines.length > 0) {
-          // 空行表示一个SSE事件结束，合并多行data
-          const data = eventLines.join('\n')
-          eventLines = []
-          if (data === '[DONE]') continue
-          fullContent += data
-          updateLastAssistant(fullContent)
-          await scrollToBottom()
-        }
-      }
-    }
-
-    // 处理剩余未结束的事件
-    if (eventLines.length > 0) {
-      const data = eventLines.join('\n').trim()
-      if (data && data !== '[DONE]') {
-        fullContent += data
-        updateLastAssistant(fullContent)
-      }
-    }
-
-    if (!fullContent) {
-      updateLastAssistant('抱歉，AI 暂时无法回复，请稍后再试。')
-    }
+    await readStreamResponse(response)
   } catch (e) {
     isThinking.value = false
-    if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant' && !messages.value[messages.value.length - 1].content) {
+    if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant' && !messages.value[messages.value.length - 1].content && !messages.value[messages.value.length - 1].planId) {
       messages.value.pop()
     }
     addMessage('assistant', '网络请求失败，请稍后重试。')
@@ -282,36 +246,21 @@ async function readStreamResponse(response) {
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let fullContent = ''
-  let eventLines = []
-
+  const parser = createChatStreamParser(text => {
+    fullContent += text
+    updateLastAssistant(fullContent)
+  }, id => {
+    const last = messages.value[messages.value.length - 1]
+    if (last?.role === 'assistant') last.planId = id
+  })
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-
-    const chunk = decoder.decode(value, { stream: true })
-    const lines = chunk.split('\n')
-
-    for (const line of lines) {
-      if (line.startsWith('data:')) {
-        eventLines.push(line.substring(5))
-      } else if (line === '' && eventLines.length > 0) {
-        const data = eventLines.join('\n')
-        eventLines = []
-        if (data === '[DONE]') continue
-        fullContent += data
-        updateLastAssistant(fullContent)
-        await scrollToBottom()
-      }
-    }
+    parser.push(decoder.decode(value, { stream: true }))
+    await scrollToBottom()
   }
-
-  if (eventLines.length > 0) {
-    const data = eventLines.join('\n').trim()
-    if (data && data !== '[DONE]') {
-      fullContent += data
-    }
-  }
-
+  parser.push(decoder.decode())
+  parser.finish()
   updateLastAssistant(fullContent || '抱歉，AI 暂时无法回复，请稍后再试。')
 }
 

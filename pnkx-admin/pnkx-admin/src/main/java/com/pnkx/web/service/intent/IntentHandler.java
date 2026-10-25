@@ -36,6 +36,17 @@ public interface IntentHandler {
      */
     boolean handle(String question, JSONObject intentData, OutputStream out) throws IOException;
 
+    /** Structured metadata is separate from model prose and never authorizes execution. */
+    static void writePlanEvent(OutputStream out, JSONObject draft) throws IOException {
+        String id = draft.getString("operationPlanId");
+        if (id == null) return;
+        JSONObject data = new JSONObject();
+        data.put("planId", id);
+        out.write(("event: operation-plan\ndata:" + data.toJSONString() + "\n\n")
+                .getBytes(StandardCharsets.UTF_8));
+        out.flush();
+    }
+
     /**
      * 写SSE数据（符合SSE标准：多行文本每行加 data: 前缀）
      */

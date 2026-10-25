@@ -79,6 +79,7 @@ public class CommemorationDayHandler implements ConfirmableIntentHandler {
             if (parsed.getBoolean("repeat") == null) parsed.put("repeat", true);
             localPlans.prepare(parsed, "commemoration.create", "创建纪念日");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
+            IntentHandler.writePlanEvent(out, parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
         } catch (Exception e) {

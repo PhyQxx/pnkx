@@ -80,6 +80,7 @@ public class NoteHandler implements ConfirmableIntentHandler {
 
         localPlans.prepare(intentData, "note.create", "创建笔记");
             pendingActionService.save(intentData.getString("requestId"), intentName(), intentData);
+            IntentHandler.writePlanEvent(out, intentData);
 
         StringBuilder msg = new StringBuilder();
         msg.append("**笔记草稿**\n\n");

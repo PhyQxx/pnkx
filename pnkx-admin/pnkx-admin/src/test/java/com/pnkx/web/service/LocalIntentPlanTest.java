@@ -16,6 +16,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class LocalIntentPlanTest {
   @Test
+  void planMetadataIsSeparateFromProseAndMissingPlansEmitNothing() throws Exception {
+    var out = new ByteArrayOutputStream();
+    IntentHandler.writePlanEvent(out, new JSONObject());
+    assertEquals(0, out.size());
+    IntentHandler.writePlanEvent(out, JSON.parseObject("{\"operationPlanId\":\"p1\",\"content\":\"private text\"}"));
+    assertEquals("event: operation-plan\ndata:{\"planId\":\"p1\"}\n\n", out.toString(java.nio.charset.StandardCharsets.UTF_8));
+  }
+
+  @Test
   void allFiveConfirmHandlersUseExistingPlan() throws Exception {
     var adapter = mock(LocalIntentPlanService.class);
     var draft = JSON.parseObject("{\"action\":\"create\",\"operationPlanId\":\"p1\"}");

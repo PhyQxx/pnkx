@@ -79,6 +79,7 @@ public class ShoppingListHandler implements ConfirmableIntentHandler {
             shoppingCreates.prepare(parsed, SecurityUtils.getUserId());
             localPlans.prepare(parsed,"shopping.add","添加购物清单商品");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
+            IntentHandler.writePlanEvent(out, parsed);
             IntentHandler.writeSse(out, buildDraftMessage(items, parsed));
             return true;
         } catch (Exception e) {

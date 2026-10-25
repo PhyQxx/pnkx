@@ -69,6 +69,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
             }
             if ("create".equals(normalizeAction(parsed.getString("action")))) localPlans.prepare(parsed, "todo.create", "创建待办");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
+            IntentHandler.writePlanEvent(out, parsed);
             IntentHandler.writeSse(out, buildDraftMessage(parsed));
             return true;
         } catch (Exception e) {
