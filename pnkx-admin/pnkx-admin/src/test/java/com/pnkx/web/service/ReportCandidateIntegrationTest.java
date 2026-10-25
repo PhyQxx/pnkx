@@ -35,6 +35,10 @@ class ReportCandidateIntegrationTest {
     // Use the same datasource object as JdbcTemplate for transaction-bound sessions.
     tx = new TransactionTemplate(new DataSourceTransactionManager(db.getDataSource()));
     db.execute("drop table if exists px_report_insight");
+    db.execute("drop table if exists px_to_do");
+    db.execute(
+        "create table px_to_do(id bigint primary key,content varchar(2000),status int,plan_end_time"
+            + " datetime,create_by varchar(64))");
     for (String f : List.of("V1.6.9__report_actions.sql", "V1.8.0__report_candidates.sql"))
       db.execute(Files.readString(Path.of("src/main/resources/db/migration/" + f)));
     records = mock(PxBookkeepingRecordMapper.class);
@@ -78,11 +82,57 @@ class ReportCandidateIntegrationTest {
     assertEquals(
         second.getString("id"),
         tx.execute(t -> service.preview(id, "1", action("核对记录并补记漏项"))).getString("id"));
-    service.accept(id, "1");
-    service.accept(id, "1");
+    service.accept(id, "1", second.getString("id"));
+    service.accept(id, "1", second.getString("id"));
     assertEquals(1, db.queryForObject("select count(*) from test_plan_todo", Integer.class));
     assertThrows(
         Exception.class, () -> tx.execute(t -> service.preview(id, "1", action("改变已执行内容"))));
+  }
+
+  @Test
+  void revisedReportPlanIsTrackedAndStaleConfirmationCannotExecuteIt() {
+    Long id = snapshot();
+    var first = tx.execute(t -> service.preview(id, "1", action("核对记录")));
+    var patch = new JSONObject();
+    patch.put("expectedRevision", 0);
+    patch.put("fields", JSON.parseObject("{\"content\":\"修改后的报告行动\"}"));
+    var next = fixture.service.revise(first.getString("id"), patch, "1");
+    var row = service.list("1").get(0);
+    assertEquals(next.getString("id"), row.get("plan_id"));
+    assertEquals(first.getString("id"), row.get("original_plan_id"));
+    assertEquals("awaiting_confirmation", row.get("execution_status"));
+    assertThrows(Exception.class, () -> service.accept(id, "1", first.getString("id")));
+    assertThrows(Exception.class, () -> service.accept(id, "1", null));
+    assertThrows(Exception.class, () -> service.accept(id, "2", next.getString("id")));
+    assertEquals(0, db.queryForObject("select count(*) from test_plan_todo", Integer.class));
+    var preview = tx.execute(t -> service.preview(id, "1", action("修改后的报告行动")));
+    assertEquals(next.getString("id"), preview.getString("id"));
+    assertEquals("succeeded", service.accept(id, "1", preview.getString("id")).getString("status"));
+    assertThrows(Exception.class, () -> tx.execute(t -> service.preview(id, "1", action("重复生成"))));
+    assertEquals(1, db.queryForObject("select count(*) from test_plan_todo", Integer.class));
+    db.update(
+        "insert into px_to_do(id,content,status,create_by) select id,content,0,'1' from"
+            + " test_plan_todo");
+    assertEquals("accepted", service.list("1").get(0).get("action_status"));
+    db.update("update px_to_do set status=1");
+    assertEquals("completed", service.list("1").get(0).get("action_status"));
+    db.update("delete from px_to_do");
+    assertEquals("cancelled", service.list("1").get(0).get("action_status"));
+  }
+
+  @Test
+  void repeatedEditsAndCancellationFollowLatestPlan() {
+    Long id = snapshot();
+    var first = tx.execute(t -> service.preview(id, "1", action("核对记录")));
+    var patch = JSON.parseObject("{\"expectedRevision\":0,\"fields\":{\"content\":\"再次核对\"}}");
+    var second = fixture.service.revise(first.getString("id"), patch, "1");
+    var third = fixture.service.revise(second.getString("id"), patch, "1");
+    assertEquals(third.getString("id"), service.list("1").get(0).get("plan_id"));
+    fixture.service.cancel(third.getString("id"), "1");
+    assertEquals("cancelled", service.list("1").get(0).get("action_status"));
+    var fresh = tx.execute(t -> service.preview(id, "1", action("新的行动")));
+    assertNotEquals(third.getString("id"), fresh.getString("id"));
+    assertEquals(fresh.getString("id"), service.list("1").get(0).get("plan_id"));
   }
 
   @Test

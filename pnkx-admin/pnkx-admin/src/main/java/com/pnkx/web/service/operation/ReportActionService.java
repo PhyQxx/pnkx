@@ -35,6 +35,10 @@ public class ReportActionService {
     for (var row : rows) {
       row.put("candidates", candidates(row));
       if (row.get("plan_id") == null) continue;
+      var current = currentPlan((String) row.get("plan_id"), owner, false);
+      row.put("original_plan_id", row.get("plan_id"));
+      row.put("plan_id", current.getString("id"));
+      row.put("execution_status", current.getString("status"));
       if ("compensated".equals(row.get("execution_status"))
           || "cancelled".equals(row.get("execution_status"))) {
         row.put("action_status", "cancelled");
@@ -156,14 +160,14 @@ public class ReportActionService {
     if (due.isBefore(LocalDate.now(SubscriptionSchedule.ZONE)))
       throw new ServiceException("完成日期不能早于今天");
     if (insight.get("plan_id") != null) {
-      String oldId = (String) insight.get("plan_id");
+      var oldPlan = currentPlan((String) insight.get("plan_id"), owner, true);
+      String oldId = oldPlan.getString("id");
       var old =
           db.queryForMap(
               "select status,expires_at<=now() expired from px_operation_plan where id=? and"
                   + " owner_id=? for update",
               oldId,
               owner);
-      var oldPlan = plans.get(oldId, owner);
       var oldInput =
           JSON.parseObject(oldPlan.getJSONArray("steps").getJSONObject(0).getString("input_json"));
       boolean same =
@@ -196,10 +200,13 @@ public class ReportActionService {
     return plan;
   }
 
-  public JSONObject accept(Long id, String owner) {
+  public JSONObject accept(Long id, String owner, String expectedPlanId) {
     var insight = owned(id, owner);
     if (insight.get("plan_id") == null) throw new ServiceException("请先预览行动");
-    var result = plans.execute((String) insight.get("plan_id"), owner);
+    var current = currentPlan((String) insight.get("plan_id"), owner, false);
+    if (expectedPlanId == null || !expectedPlanId.equals(current.getString("id")))
+      throw new ServiceException("行动预览已变化，请重新预览后确认");
+    var result = plans.execute(expectedPlanId, owner);
     if ("succeeded".equals(result.getString("status")))
       db.update(
           "update px_report_insight set status='accepted' where id=? and owner_id=?", id, owner);
@@ -211,6 +218,25 @@ public class ReportActionService {
     var insight = lock(id, owner);
     if (insight.get("plan_id") != null) throw new ServiceException("已创建行动计划，请在操作计划中处理");
     db.update("update px_report_insight set status='dismissed' where id=?", id);
+  }
+
+  /** Follow replacement links for display; confirmation still requires the exact reviewed ID. */
+  private JSONObject currentPlan(String id, String owner, boolean lock) {
+    var seen = new HashSet<String>();
+    for (int depth = 0; depth < 100; depth++) {
+      if (!seen.add(id)) throw new ServiceException("行动关联异常，请联系管理员");
+      if (lock) {
+        var rows =
+            db.queryForList(
+                "select id from px_operation_plan where id=? and owner_id=? for update", id, owner);
+        if (rows.isEmpty()) throw new ServiceException("SOURCE_UNAVAILABLE");
+      }
+      var plan = plans.get(id, owner);
+      String next = plan.getString("replacement_id");
+      if (next == null) return plan;
+      id = next;
+    }
+    throw new ServiceException("行动修改次数过多，请在操作计划中处理");
   }
 
   private JSONArray candidates(Map<String, Object> insight) {

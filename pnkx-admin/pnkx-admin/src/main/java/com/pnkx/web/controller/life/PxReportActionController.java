@@ -36,8 +36,10 @@ public class PxReportActionController {
   }
 
   @PostMapping("/{id}/accept")
-  public AjaxResult accept(@PathVariable Long id) {
-    return AjaxResult.success(service.accept(id, SecurityUtils.getUserId()));
+  public AjaxResult accept(@PathVariable Long id, @RequestBody(required = false) JSONObject body) {
+    return AjaxResult.success(
+        service.accept(
+            id, SecurityUtils.getUserId(), body == null ? null : body.getString("expectedPlanId")));
   }
 
   @PostMapping("/{id}/dismiss")

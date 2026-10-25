@@ -141,7 +141,11 @@ async function accept() {
         const step = p.data.steps[0];
         const args = JSON.parse(step.input_json);
         await ElMessageBox.confirm(`${args.content}，完成日期：${args.dueDate}`, '确认创建待办');
-        const result = await request({ url: `/lifeReport/insights/${selected.value.id}/accept`, method: 'post' });
+        const result = await request({
+            url: `/lifeReport/insights/${selected.value.id}/accept`,
+            method: 'post',
+            data: { expectedPlanId: p.data.id }
+        });
         if (result.data.status !== 'succeeded') {
             actionError.value = '行动尚未执行成功，请在操作计划中查看失败原因并重试';
             await load();

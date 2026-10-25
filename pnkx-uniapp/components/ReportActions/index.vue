@@ -131,6 +131,7 @@ export default {
         const result = await request({
           url: `/lifeReport/insights/${this.selected.id}/accept`,
           method: "post",
+          data: { expectedPlanId: p.data.id },
         });
         if (result.data.status !== "succeeded") {
           this.actionError = "行动尚未执行成功，请在操作计划中查看失败原因并重试";
