@@ -36,6 +36,23 @@ class LocalIntentPlanTest {
   }
 
   @Test
+  void oldChatConfirmationPointsToReplacementWithoutExecutingIt() throws Exception {
+    try (var security = mockStatic(SecurityUtils.class)) {
+      security.when(SecurityUtils::getUserId).thenReturn("1");
+      var plans = mock(OperationPlanService.class);
+      when(plans.execute("old", "1"))
+          .thenReturn(JSON.parseObject("{\"status\":\"cancelled\",\"replacement_id\":\"new\"}"));
+      var out = new ByteArrayOutputStream();
+      assertTrue(
+          new LocalIntentPlanService(plans)
+              .confirm(JSON.parseObject("{\"operationPlanId\":\"old\"}"), out));
+      assertTrue(out.toString(java.nio.charset.StandardCharsets.UTF_8).contains("新计划编号：new"));
+      verify(plans).execute("old", "1");
+      verifyNoMoreInteractions(plans);
+    }
+  }
+
+  @Test
   void cancellationCancelsDurablePlanBeforeClearingDraft() {
     try (var security = mockStatic(SecurityUtils.class)) {
       security.when(SecurityUtils::getUserId).thenReturn("1");

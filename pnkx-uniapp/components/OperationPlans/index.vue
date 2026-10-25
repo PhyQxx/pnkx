@@ -57,6 +57,11 @@
           labels[detail.status] || detail.status
         }}</text
         ><text class="sub">{{ hint(detail.status) }}</text
+        ><view v-if="detail.replacement_id"
+          ><text class="sub">此草稿已修改，请打开新预览核对后确认。</text
+          ><button :disabled="busy || draftEditing" @click="inspect(detail.replacement_id)">
+            查看修改后的预览
+          </button></view
         ><text class="progress">{{ completed }} / {{ detail.steps.length }} 步已完成</text
         ><view v-for="s in detail.steps" :key="s.step_number" class="step"
           ><view class="title-line"

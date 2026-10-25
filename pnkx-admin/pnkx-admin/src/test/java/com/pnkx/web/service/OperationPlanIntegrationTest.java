@@ -34,7 +34,11 @@ class OperationPlanIntegrationTest {
     db = new JdbcTemplate(ds);
     for (String table : List.of("px_operation_step", "px_operation_plan", "test_plan_todo"))
       db.execute("drop table if exists " + table);
-    for (String file : List.of("V1.6.8__operation_plans.sql", "V1.7.0__operation_recovery.sql"))
+    for (String file :
+        List.of(
+            "V1.6.8__operation_plans.sql",
+            "V1.7.0__operation_recovery.sql",
+            "V1.8.2__operation_plan_replacements.sql"))
       for (String sql :
           Files.readString(Path.of("src/main/resources/db/migration/" + file)).split(";"))
         if (!sql.isBlank()) db.execute(sql);

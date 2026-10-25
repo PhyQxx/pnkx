@@ -68,6 +68,17 @@
                         <el-tag :type="tone(detail.status)">{{ labels[detail.status] || detail.status }}</el-tag>
                     </div>
                     <p class="hint">{{ hint(detail.status) }}</p>
+                    <el-alert
+                        v-if="detail.replacement_id"
+                        title="此草稿已修改，请打开新预览核对后确认。"
+                        type="info"
+                        :closable="false" />
+                    <el-button
+                        v-if="detail.replacement_id"
+                        :disabled="busy || draftEditing"
+                        @click="inspect(detail.replacement_id)"
+                        >查看修改后的预览</el-button
+                    >
                     <PlanDraftEditor
                         :plan="detail"
                         :disabled="busy || draftEditing"

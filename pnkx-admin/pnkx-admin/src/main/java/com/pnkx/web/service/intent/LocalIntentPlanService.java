@@ -33,6 +33,12 @@ public class LocalIntentPlanService {
     if (id == null) throw new ServiceException("旧草稿请重新生成预览后确认");
     var result = plans.execute(id, SecurityUtils.getUserId());
     draft.put("_result", result);
+    if (result.getString("replacement_id") != null) {
+      IntentHandler.writeSse(
+          out, "此草稿已修改，旧确认不会执行新内容。请在操作计划打开新预览并核对后确认。新计划编号：" + result.getString("replacement_id"));
+      IntentHandler.writeSse(out, "[DONE]");
+      return true;
+    }
     IntentHandler.writeSse(
         out,
         "执行结果："

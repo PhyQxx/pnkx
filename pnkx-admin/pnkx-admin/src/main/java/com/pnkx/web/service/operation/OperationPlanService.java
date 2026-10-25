@@ -102,6 +102,14 @@ public class OperationPlanService {
                   owner);
           if (rows.isEmpty()) throw new ServiceException("计划不存在或无权编辑");
           var plan = rows.get(0);
+          // Return the original replacement for an identical retry, even after it expires or
+          // changes.
+          if (plan.get("replacement_id") != null) {
+            JSONObject previous = JSON.parseObject((String) plan.get("revision_request_json"));
+            if (previous != null && previous.equals(input))
+              return get((String) plan.get("replacement_id"), owner);
+            throw new ServiceException("草稿已被替换，请打开新预览后修改");
+          }
           if (!"awaiting_confirmation".equals(plan.get("status"))
               || ((Number) plan.get("expired")).intValue() != 0)
             throw new ServiceException("仅可修改有效期内尚未执行的草稿");
@@ -142,7 +150,12 @@ public class OperationPlanService {
           body.put("steps", newSteps);
           JSONObject replacement = preview(body, owner);
           db.update(
-              "update px_operation_plan set status='cancelled',revision=revision+1 where id=?", id);
+              "update px_operation_plan set"
+                  + " status='cancelled',revision=revision+1,replacement_id=?,revision_request_json=?"
+                  + " where id=?",
+              replacement.getString("id"),
+              input.toJSONString(),
+              id);
           return replacement;
         });
   }
@@ -215,8 +228,8 @@ public class OperationPlanService {
   public JSONObject get(String id, String owner) {
     var p =
         db.queryForList(
-            "select id,title,status,expires_at,revision,create_time from px_operation_plan where"
-                + " id=? and owner_id=?",
+            "select id,title,status,expires_at,revision,create_time,replacement_id from"
+                + " px_operation_plan where id=? and owner_id=?",
             id,
             owner);
     if (p.isEmpty()) throw new ServiceException("SOURCE_UNAVAILABLE");
