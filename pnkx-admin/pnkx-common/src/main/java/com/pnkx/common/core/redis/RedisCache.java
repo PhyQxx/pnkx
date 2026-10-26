@@ -50,6 +50,14 @@ public class RedisCache {
         redisTemplate.opsForValue().set(key, value, timeout, timeUnit);
     }
 
+    /** Remove only the exact snapshot read earlier; never delete a newer pending action. */
+    public boolean deleteIfValueMatches(String key, Object expected) {
+        var script = new org.springframework.data.redis.core.script.DefaultRedisScript<Long>(
+                "if redis.call('get',KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end", Long.class);
+        Object result = redisTemplate.execute(script, java.util.Collections.singletonList(key), expected);
+        return Long.valueOf(1).equals(result);
+    }
+
     /**
      * 设置有效时间
      *

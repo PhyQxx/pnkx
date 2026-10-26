@@ -16,6 +16,11 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class AiPendingActionService {
 
+    @Resource
+    private com.pnkx.web.service.operation.OperationPlanService operationPlans;
+    @Resource
+    private com.pnkx.life.service.IPxAiOperationLogService operationLogs;
+
     private static final long EXPIRE_SECONDS = 10 * 60;
 
     @Resource
@@ -31,7 +36,17 @@ public class AiPendingActionService {
 
     public PendingAction getCurrent() {
         String key = RedisConstants.AI_PENDING_ACTION + currentUserKey();
-        return redisCache.getCacheObject(key);
+        PendingAction action = redisCache.getCacheObject(key);
+        if (action == null || action.draft().getString("operationPlanId") == null) return action;
+        var plan = operationPlans.get(action.draft().getString("operationPlanId"), currentUserKey());
+        String status = plan.getString("status");
+        if (!java.util.Set.of("succeeded", "cancelled", "compensated").contains(status)) return action;
+        // Persist the original plan's terminal result before retiring the cached confirmation.
+        // Replacements remain separate plans and are never implicitly confirmed here.
+        operationLogs.finishWriteDetail(action.requestId(), "succeeded".equals(status) ? "confirmed" : status,
+                action.draft().toJSONString(), plan.toJSONString(), null, null);
+        redisCache.deleteIfValueMatches(key, action);
+        return null;
     }
 
     public PendingAction getCurrentIncludingExpired() {
@@ -94,6 +109,7 @@ public class AiPendingActionService {
         return "anonymous";
     }
 
+    @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS)
     public record PendingAction(String id, String requestId, String intent, JSONObject draft, Instant createdAt, Instant expireAt) {
     }
 }
