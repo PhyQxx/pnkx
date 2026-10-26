@@ -107,11 +107,21 @@
 <script setup>
 import ChatPlanCard from '@/components/ChatPlanCard.vue';
 import { createChatStreamParser } from '@/utils/chatStreamParser';
+import { createChatHistoryStore, newSessionId, toLocalMessage } from '@/utils/chatHistoryPolicy';
 import OperationPlans from '@/components/OperationPlans.vue';
 import { ref, computed, nextTick, onMounted } from 'vue';
 import { Plus, ChatDotRound, Close, Operation } from '@element-plus/icons-vue';
 import { BubbleList, Welcome, Prompts, Thinking } from 'vue-element-plus-x';
-import { cancelPendingAction, chatStream, confirmPendingAction, listModels } from '@/api/px/ai/chat';
+import {
+    cancelPendingAction,
+    chatStream,
+    confirmPendingAction,
+    listModels,
+    listChatSessions,
+    listChatMessages,
+    appendChatMessage,
+    clearChatSession
+} from '@/api/px/ai/chat';
 
 const inputText = ref('');
 const isLoading = ref(false);
@@ -122,8 +132,13 @@ const chatBodyRef = ref(null);
 const models = ref([]);
 const selectedModel = ref(null);
 
-const conversations = ref([{ id: Date.now(), title: '新对话', messages: [] }]);
+const conversations = ref([{ id: Date.now(), sessionId: newSessionId(), title: '新对话', messages: [], loaded: true }]);
 const currentConvIndex = ref(0);
+
+const chatHistory = createChatHistoryStore({
+    appendMessage: appendChatMessage,
+    loadMessages: (sessionId) => listChatMessages(sessionId)
+});
 
 const promptSuggestions = [
     { key: 'bookkeeping', label: '午餐花了30块' },
@@ -169,7 +184,28 @@ onMounted(async () => {
     } catch (e) {
         console.error('获取模型列表失败', e);
     }
+    await restoreSessions();
 });
+
+// 恢复服务端最近会话；没有历史时保留本地新对话
+async function restoreSessions() {
+    try {
+        const res = await listChatSessions();
+        const sessions = res.data || [];
+        if (!sessions.length) return;
+        conversations.value = sessions.map((s) => ({
+            id: s.lastId || Date.now() + Math.random(),
+            sessionId: s.sessionId,
+            title: s.title || '新对话',
+            messages: [],
+            loaded: false
+        }));
+        currentConvIndex.value = 0;
+        await switchConversation(0);
+    } catch (e) {
+        console.warn('聊天会话恢复失败', e);
+    }
+}
 
 async function handleSend() {
     const text = inputText.value.trim();
@@ -206,6 +242,7 @@ async function sendText(text) {
     addMessage('user', text);
 
     const conv = conversations.value[currentConvIndex.value];
+    chatHistory.recordUser(conv.sessionId, text);
     if (conv.messages.filter((m) => m.role === 'user').length === 1) {
         conv.title = text.slice(0, 20) + (text.length > 20 ? '...' : '');
     }
@@ -293,6 +330,12 @@ async function readStreamResponse(response) {
     parser.finish();
 
     updateLastAssistant(fullContent || '抱歉，AI 暂时无法回复，请稍后再试。');
+
+    const conv = conversations.value[currentConvIndex.value];
+    const last = conv.messages[conv.messages.length - 1];
+    if (last && last.role === 'assistant') {
+        chatHistory.recordAssistant(conv.sessionId, last.content, last.planId);
+    }
 }
 
 async function scrollToBottom() {
@@ -311,20 +354,38 @@ function newConversation() {
     if (isLoading.value) return;
     conversations.value.push({
         id: Date.now(),
+        sessionId: newSessionId(),
         title: '新对话',
-        messages: []
+        messages: [],
+        loaded: true
     });
     currentConvIndex.value = conversations.value.length - 1;
 }
 
-function switchConversation(index) {
+async function switchConversation(index) {
     if (isLoading.value) return;
     currentConvIndex.value = index;
+    const conv = conversations.value[index];
+    if (conv && !conv.loaded) {
+        try {
+            const res = await listChatMessages(conv.sessionId);
+            conv.messages = (res.data || []).map(toLocalMessage);
+        } catch (e) {
+            console.warn('会话消息加载失败', e);
+            conv.messages = [];
+        }
+        conv.loaded = true;
+        await scrollToBottom();
+    }
 }
 
 function deleteConversation(index) {
     if (isLoading.value) return;
     if (conversations.value.length <= 1) return;
+    const conv = conversations.value[index];
+    if (conv && conv.sessionId) {
+        clearChatSession(conv.sessionId).catch(() => {});
+    }
     conversations.value.splice(index, 1);
     if (currentConvIndex.value >= conversations.value.length) {
         currentConvIndex.value = conversations.value.length - 1;

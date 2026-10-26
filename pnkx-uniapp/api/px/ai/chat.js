@@ -140,3 +140,37 @@ export function confirmPendingAction() {
 export function cancelPendingAction() {
   return createStreamRequest(baseUrl + '/ai/pending/cancel', {})
 }
+
+import request from '@/utils/request'
+
+/**
+ * AI 聊天历史：最近会话列表
+ */
+export function listChatSessions() {
+  return request({ url: '/ai/chat/sessions', method: 'get' })
+}
+
+/**
+ * AI 聊天历史：读取会话消息（升序）
+ */
+export function listChatMessages(sessionId, beforeId) {
+  return request({
+    url: '/ai/chat/messages',
+    method: 'get',
+    params: { sessionId, beforeId }
+  })
+}
+
+/**
+ * AI 聊天历史：追加一条本人消息
+ */
+export function appendChatMessage(data) {
+  return request({ url: '/ai/chat/messages', method: 'post', data })
+}
+
+/**
+ * AI 聊天历史：清空本人会话
+ */
+export function clearChatSession(sessionId) {
+  return request({ url: '/ai/chat/sessions/' + sessionId, method: 'delete' })
+}

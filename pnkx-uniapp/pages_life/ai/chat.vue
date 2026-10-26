@@ -109,14 +109,24 @@
 <script>
 import ChatPlanCard from "@/components/ChatPlanCard.vue";
 import { createChatStreamParser } from "@/utils/chatStreamParser";
+import { createChatHistoryStore, newSessionId, toLocalMessage } from "@/utils/chatHistoryPolicy";
 import OperationPlans from "@/components/OperationPlans/index.vue";
-import { cancelPendingAction, chatStream, confirmPendingAction } from "@/api/px/ai/chat";
+import {
+  cancelPendingAction,
+  chatStream,
+  confirmPendingAction,
+  listChatSessions,
+  listChatMessages,
+  appendChatMessage,
+  clearChatSession,
+} from "@/api/px/ai/chat";
 
 export default {
   components: { OperationPlans, ChatPlanCard },
   data() {
     return {
       showOperationPlans: false,
+      sessionId: newSessionId(),
       inputText: "",
       isLoading: false,
       isThinking: false,
@@ -170,6 +180,11 @@ export default {
     },
   },
   mounted() {
+    this.history = createChatHistoryStore({
+      appendMessage: appendChatMessage,
+      loadMessages: (sessionId) => listChatMessages(sessionId),
+    });
+    this.restoreLatestSession();
     this.$nextTick(() => {
       uni
         .createSelectorQuery()
@@ -182,6 +197,24 @@ export default {
     });
   },
   methods: {
+    /**
+     * 恢复服务端最近一次会话；恢复失败保留空的新会话
+     */
+    async restoreLatestSession() {
+      try {
+        const res = await listChatSessions();
+        const sessions = res.data || [];
+        if (!sessions.length) return;
+        this.sessionId = sessions[0].sessionId;
+        const msgRes = await listChatMessages(this.sessionId);
+        this.messages = (msgRes.data || []).map(toLocalMessage);
+        this.messageId = this.messages.reduce((max, m) => Math.max(max, m.id), 0);
+        await this.scrollToBottom();
+      } catch (e) {
+        console.warn("聊天历史恢复失败", e);
+      }
+    },
+
     /**
      * Markdown → HTML（逐行处理，兼容SSE流前导空格）
      */
@@ -327,7 +360,12 @@ export default {
 
     newConversation() {
       if (this.isLoading) return;
+      const previous = this.sessionId;
+      this.sessionId = newSessionId();
       this.messages = [];
+      if (previous) {
+        clearChatSession(previous).catch(() => {});
+      }
     },
 
     handleQuickPrompt(text) {
@@ -402,6 +440,7 @@ export default {
       this.isStreaming = false;
 
       this.addMessage("user", text);
+      if (this.history) this.history.recordUser(this.sessionId, text);
       await this.scrollToBottom();
 
       try {
@@ -453,6 +492,10 @@ export default {
         parser.finish();
       }
       this.updateLastAssistant(fullContent || "抱歉，AI 暂时无法回复，请稍后再试。");
+      const last = this.messages[this.messages.length - 1];
+      if (this.history && last && last.role === "assistant") {
+        this.history.recordAssistant(this.sessionId, last.content, last.planId);
+      }
     },
 
     async scrollToBottom() {
