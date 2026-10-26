@@ -5,7 +5,14 @@
             ><p>保存后将生成新预览，旧草稿失效。请再次核对后确认执行。</p>
             <el-form label-position="top" :disabled="saving"
                 ><el-form-item v-for="f in schema" :key="f.key" :label="f.label"
-                    ><el-switch v-if="f.boolean" v-model="values[f.key]" /><el-input
+                    ><el-switch v-if="f.boolean" v-model="values[f.key]" /><el-date-picker
+                        v-else-if="f.date || f.datetime"
+                        v-model="values[f.key]"
+                        :type="f.datetime ? 'datetime' : 'date'"
+                        :value-format="f.datetime ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'"
+                        placeholder="选择时间"
+                        style="width: 100%"
+                    /><el-input
                         v-else
                         v-model="values[f.key]"
                         :type="f.multiline ? 'textarea' : 'text'"

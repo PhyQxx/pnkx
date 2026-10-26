@@ -81,10 +81,11 @@
 <script setup>
 import ChatPlanCard from "@/components/ChatPlanCard.vue"
 import { createChatStreamParser } from "@/utils/chatStreamParser"
+import { createChatHistoryStore, newSessionId } from "@/utils/chatHistoryPolicy"
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { ChatDotRound, Monitor, Close, Plus, Wallet, EditPen, Calendar, List } from '@element-plus/icons-vue'
 import { BubbleList, Welcome, Prompts, Thinking, XSender } from 'vue-element-plus-x'
-import { cancelPendingAction, chatStream, confirmPendingAction } from '@/api/px/ai/chat'
+import { cancelPendingAction, chatStream, confirmPendingAction, appendChatMessage, clearChatSession } from '@/api/px/ai/chat'
 
 defineProps({
   externalTrigger: {
@@ -101,6 +102,10 @@ const messages = ref([])
 const bodyRef = ref(null)
 const senderRef = ref(null)
 let messageId = 0
+// 悬浮助手每次打开页面开启新会话；消息保存到服务端供事后查阅，
+// 不恢复旧会话，避免与聊天页当前会话交叉。
+let sessionId = newSessionId()
+const chatHistory = createChatHistoryStore({ appendMessage: appendChatMessage })
 
 const bubbleList = computed(() => {
   return messages.value.map(msg => ({
@@ -142,7 +147,12 @@ function toggleOpen() {
 
 function newConversation() {
   if (isLoading.value) return
+  const previous = sessionId
+  sessionId = newSessionId()
   messages.value = []
+  if (previous) {
+    clearChatSession(previous).catch(() => {})
+  }
 }
 
 function handleQuickPrompt(item) {
@@ -216,6 +226,7 @@ async function handleSend() {
   isStreaming.value = false
 
   addMessage('user', text)
+  chatHistory.recordUser(sessionId, text)
   await scrollToBottom()
 
   try {
@@ -262,6 +273,10 @@ async function readStreamResponse(response) {
   parser.push(decoder.decode())
   parser.finish()
   updateLastAssistant(fullContent || '抱歉，AI 暂时无法回复，请稍后再试。')
+  const last = messages.value[messages.value.length - 1]
+  if (last && last.role === 'assistant') {
+    chatHistory.recordAssistant(sessionId, last.content, last.planId)
+  }
 }
 
 async function scrollToBottom() {

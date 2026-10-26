@@ -9,7 +9,13 @@
           v-if="f.boolean"
           :checked="values[f.key]"
           :disabled="saving"
-          @change="values[f.key] = $event.detail.value" /><textarea
+          @change="values[f.key] = $event.detail.value" /><uni-datetime-picker
+          v-else-if="f.date || f.datetime"
+          v-model="values[f.key]"
+          :type="f.datetime ? 'datetime' : 'date'"
+          :clear-icon="false"
+          :disabled="saving"
+          placeholder="请选择时间" /><textarea
           v-else-if="f.multiline"
           v-model="values[f.key]"
           :disabled="saving"
