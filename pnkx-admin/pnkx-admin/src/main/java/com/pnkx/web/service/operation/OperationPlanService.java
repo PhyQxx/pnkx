@@ -23,6 +23,7 @@ public class OperationPlanService {
   @jakarta.annotation.Resource private ShoppingCreateTool shoppingCreates;
   @jakarta.annotation.Resource private BookkeepingCreateTool bookkeepingCreates;
   @jakarta.annotation.Resource private TodoMutationTool todoMutations;
+  @jakarta.annotation.Resource private ContentPublishTool contentPublishes;
   private final JdbcTemplate db;
   private final TransactionTemplate tx;
   private final IPxToDoService todos;
@@ -137,7 +138,9 @@ public class OperationPlanService {
                   "commemoration.create",
                   Set.of("name", "date", "repeat"),
                   "bookkeeping.create",
-                  Set.of("money", "remark"));
+                  Set.of("money", "remark"),
+                  "content.publish",
+                  Set.of("title", "content", "tags"));
           if (!editable.containsKey(code)) throw new ServiceException("当前类型暂不支持编辑");
           JSONObject patch = input.getJSONObject("fields");
           if (patch == null || patch.isEmpty() || !editable.get(code).containsAll(patch.keySet()))
@@ -171,6 +174,10 @@ public class OperationPlanService {
     }
     if ("bookkeeping.create".equals(tool) && bookkeepingCreates != null) {
       bookkeepingCreates.validate(args, owner, lock);
+      return;
+    }
+    if ("content.publish".equals(tool) && contentPublishes != null) {
+      contentPublishes.validate(args, owner, lock);
       return;
     }
     if (todoMutations != null && todoMutations.supports(tool)) {
@@ -404,6 +411,8 @@ public class OperationPlanService {
       return shoppingCreates.run(args, key, owner);
     if ("bookkeeping.create".equals(tool) && bookkeepingCreates != null)
       return bookkeepingCreates.run(args, key, owner);
+    if ("content.publish".equals(tool) && contentPublishes != null)
+      return contentPublishes.run(args, key, owner);
     if (todoMutations != null && todoMutations.supports(tool))
       return todoMutations.run(tool, args, key, owner);
     if (localCreates != null && localCreates.supports(tool))
@@ -476,6 +485,8 @@ public class OperationPlanService {
       String kind = result.getString("sourceType");
       if ("shopping".equals(kind)) throw new ServiceException("采购清单已生成，请在购物清单中核对处理，不能自动撤销");
       if ("bookkeeping".equals(kind)) throw new ServiceException("记账记录已生成，请在记账模块核对处理，不能自动撤销");
+      if ("content_publish".equals(kind))
+        throw new ServiceException("内容草稿已生成，请在笔记或博客模块核对处理，不能自动撤销");
       if ("todo_mutation".equals(kind))
         throw new ServiceException("待办修改/完成/删除请在待办模块处理，不能自动撤销");
       Object current =
