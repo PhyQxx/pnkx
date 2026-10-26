@@ -21,6 +21,8 @@ public class OperationPlanService {
   @jakarta.annotation.Resource private LifeFeatureGate featureGate;
   @jakarta.annotation.Resource private LocalCreateTools localCreates;
   @jakarta.annotation.Resource private ShoppingCreateTool shoppingCreates;
+  @jakarta.annotation.Resource private BookkeepingCreateTool bookkeepingCreates;
+  @jakarta.annotation.Resource private TodoMutationTool todoMutations;
   private final JdbcTemplate db;
   private final TransactionTemplate tx;
   private final IPxToDoService todos;
@@ -133,7 +135,9 @@ public class OperationPlanService {
                   "diary.create",
                   Set.of("content", "date", "mood"),
                   "commemoration.create",
-                  Set.of("name", "date", "repeat"));
+                  Set.of("name", "date", "repeat"),
+                  "bookkeeping.create",
+                  Set.of("money", "remark"));
           if (!editable.containsKey(code)) throw new ServiceException("当前类型暂不支持编辑");
           JSONObject patch = input.getJSONObject("fields");
           if (patch == null || patch.isEmpty() || !editable.get(code).containsAll(patch.keySet()))
@@ -163,6 +167,14 @@ public class OperationPlanService {
   private void validate(String tool, JSONObject args, boolean lock, String owner) {
     if ("shopping.add".equals(tool) && shoppingCreates != null) {
       shoppingCreates.validate(args, owner, lock);
+      return;
+    }
+    if ("bookkeeping.create".equals(tool) && bookkeepingCreates != null) {
+      bookkeepingCreates.validate(args, owner, lock);
+      return;
+    }
+    if (todoMutations != null && todoMutations.supports(tool)) {
+      todoMutations.validate(tool, args, owner, lock);
       return;
     }
     if (localCreates != null && localCreates.supports(tool)) {
@@ -390,6 +402,10 @@ public class OperationPlanService {
   private JSONObject run(String tool, JSONObject args, String key, String owner) {
     if ("shopping.add".equals(tool) && shoppingCreates != null)
       return shoppingCreates.run(args, key, owner);
+    if ("bookkeeping.create".equals(tool) && bookkeepingCreates != null)
+      return bookkeepingCreates.run(args, key, owner);
+    if (todoMutations != null && todoMutations.supports(tool))
+      return todoMutations.run(tool, args, key, owner);
     if (localCreates != null && localCreates.supports(tool))
       return localCreates.run(tool, args, key, owner);
     JSONObject result = new JSONObject();
@@ -459,6 +475,9 @@ public class OperationPlanService {
       var result = JSON.parseObject((String) step.get("result_json"));
       String kind = result.getString("sourceType");
       if ("shopping".equals(kind)) throw new ServiceException("采购清单已生成，请在购物清单中核对处理，不能自动撤销");
+      if ("bookkeeping".equals(kind)) throw new ServiceException("记账记录已生成，请在记账模块核对处理，不能自动撤销");
+      if ("todo_mutation".equals(kind))
+        throw new ServiceException("待办修改/完成/删除请在待办模块处理，不能自动撤销");
       Object current =
           localCreates != null && localCreates.supportsKind(kind)
               ? localCreates.current(kind, result.getLong("sourceId"), owner, false)

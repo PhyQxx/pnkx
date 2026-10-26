@@ -7,6 +7,7 @@ import com.pnkx.ai.AiClient;
 import com.pnkx.common.utils.SecurityUtils;
 import com.pnkx.life.domain.po.PxToDo;
 import com.pnkx.life.service.IPxToDoService;
+import com.pnkx.web.service.operation.TodoMutationTool;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,16 +15,17 @@ import org.springframework.stereotype.Component;
 
 import java.io.OutputStream;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 待办的统一查询和写操作入口。 */
+/** 待办的统一查询和写操作入口；写操作全部进入持久化执行计划。 */
 @Component
 public class TodoHandler implements ConfirmableIntentHandler {
     @jakarta.annotation.Resource
     private LocalIntentPlanService localPlans;
+
+    @Resource
+    private TodoMutationTool todoMutations;
 
     private static final Logger logger = LoggerFactory.getLogger(TodoHandler.class);
     private static final int MAX_BATCH_SIZE = 20;
@@ -60,17 +62,28 @@ public class TodoHandler implements ConfirmableIntentHandler {
                 writeQueryResult(parsed, out);
                 return true;
             }
+            String code;
             if ("create".equals(action)) {
                 if (!isRealValue(parsed.getString("content"))) return false;
-            } else if (!prepareTargets(parsed)) {
-                IntentHandler.writeSse(out, "没有找到可操作的本人待办，请补充更准确的关键词或 ID。");
-                IntentHandler.writeSse(out, "[DONE]");
-                return true;
+                code = "todo.create";
+            } else {
+                code = switch (action) {
+                    case "update" -> "todo.update";
+                    case "complete", "batch_complete" -> "todo.complete";
+                    default -> "todo.delete";
+                };
+                List<PxToDo> targets = resolveTargets(parsed);
+                if (targets.isEmpty()) {
+                    IntentHandler.writeSse(out, "没有找到可操作的本人待办，请补充更准确的关键词或 ID。");
+                    IntentHandler.writeSse(out, "[DONE]");
+                    return true;
+                }
+                todoMutations.prepare(code, parsed, targets);
             }
-            if ("create".equals(normalizeAction(parsed.getString("action")))) localPlans.prepare(parsed, "todo.create", "创建待办");
+            localPlans.prepare(parsed, code, actionLabel(action) + "待办");
             pendingActionService.save(intentData.getString("requestId"), intentName(), parsed);
             IntentHandler.writePlanEvent(out, parsed);
-            IntentHandler.writeSse(out, buildDraftMessage(parsed));
+            IntentHandler.writeSse(out, buildDraftMessage(parsed, action));
             return true;
         } catch (Exception e) {
             logger.error("AI待办操作解析失败: {}", e.getMessage(), e);
@@ -81,24 +94,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
     @Override
     public boolean confirm(JSONObject draft, OutputStream out) {
         try {
-            String action = normalizeAction(draft.getString("action"));
-            int rows;
-            if ("create".equals(action)) {
-                return localPlans.confirm(draft, out);
-            } else {
-                List<PxToDo> targets = currentOwnedTargets(draft.getJSONArray("targetIds"));
-                if (targets.isEmpty()) return false;
-                rows = executeMutation(action, draft, targets);
-                JSONObject result = new JSONObject();
-                result.put("action", action);
-                result.put("affected", rows);
-                result.put("targetIds", targets.stream().map(PxToDo::getId).toList());
-                draft.put("_result", result);
-            }
-            if (rows <= 0) return false;
-            IntentHandler.writeSse(out, buildSuccessMessage(draft, rows));
-            IntentHandler.writeSse(out, "[DONE]");
-            return true;
+            return localPlans.confirm(draft, out);
         } catch (Exception e) {
             logger.error("AI待办确认执行失败: {}", e.getMessage(), e);
             return false;
@@ -122,7 +118,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
         IntentHandler.writeSse(out, "[DONE]");
     }
 
-    private boolean prepareTargets(JSONObject draft) {
+    private List<PxToDo> resolveTargets(JSONObject draft) {
         JSONArray requestedIds = draft.getJSONArray("targetIds");
         List<PxToDo> targets = requestedIds != null && !requestedIds.isEmpty()
                 ? currentOwnedTargets(requestedIds)
@@ -130,21 +126,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
         boolean batch = draft.getString("action").startsWith("batch_");
         if (!batch && targets.size() > 1) targets = new ArrayList<>(targets.subList(0, 1));
         if (targets.size() > MAX_BATCH_SIZE) targets = new ArrayList<>(targets.subList(0, MAX_BATCH_SIZE));
-        if (targets.isEmpty()) return false;
-
-        JSONArray ids = new JSONArray();
-        JSONArray snapshots = new JSONArray();
-        targets.forEach(todo -> {
-            ids.add(todo.getId());
-            snapshots.add(JSON.toJSON(todo));
-        });
-        draft.put("targetIds", ids);
-        draft.put("targets", snapshots);
-        JSONObject rollback = new JSONObject();
-        rollback.put("action", "restore_snapshot");
-        rollback.put("snapshots", snapshots);
-        draft.put("_rollback", rollback);
-        return true;
+        return targets;
     }
 
     private List<PxToDo> currentOwnedTargets(JSONArray ids) {
@@ -168,48 +150,7 @@ public class TodoHandler implements ConfirmableIntentHandler {
         return toDoService.selectPxToDoList(query);
     }
 
-    private int executeMutation(String action, JSONObject draft, List<PxToDo> targets) {
-        if ("delete".equals(action) || "batch_delete".equals(action)) {
-            return targets.size() == 1 ? toDoService.deletePxToDoById(targets.get(0).getId())
-                    : toDoService.deletePxToDoByIds(targets.stream().map(PxToDo::getId).toArray(Long[]::new));
-        }
-        int rows = 0;
-        for (PxToDo existing : targets) {
-            PxToDo update = new PxToDo();
-            update.setId(existing.getId());
-            update.setUpdateBy(SecurityUtils.getUserId().toString());
-            if ("complete".equals(action) || "batch_complete".equals(action)) {
-                update.setStatus(true);
-                update.setKanbanStatus(2);
-                update.setFinishBy(SecurityUtils.getUserId().toString());
-                update.setFinishTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            } else if ("update".equals(action)) {
-                if (isRealValue(draft.getString("newContent"))) update.setContent(draft.getString("newContent"));
-                if (isRealValue(draft.getString("planStartTime"))) update.setPlanStartTime(draft.getString("planStartTime"));
-                if (isRealValue(draft.getString("planEndTime"))) update.setPlanEndTime(draft.getString("planEndTime"));
-                if (isRealValue(draft.getString("label"))) update.setLabel(draft.getString("label"));
-            }
-            rows += toDoService.updatePxToDo(update);
-        }
-        return rows;
-    }
-
-    private PxToDo buildTodo(JSONObject parsed) {
-        PxToDo todo = new PxToDo();
-        todo.setContent(parsed.getString("content"));
-        todo.setStatus(false);
-        todo.setKanbanStatus(0);
-        todo.setPerformer(SecurityUtils.getUserId().toString());
-        todo.setCreateBy(SecurityUtils.getUserId().toString());
-        todo.setClientUuid("ai-todo-" + java.util.UUID.randomUUID());
-        if (isRealValue(parsed.getString("planStartTime"))) todo.setPlanStartTime(parsed.getString("planStartTime"));
-        if (isRealValue(parsed.getString("planEndTime"))) todo.setPlanEndTime(parsed.getString("planEndTime"));
-        if (isRealValue(parsed.getString("label"))) todo.setLabel(parsed.getString("label"));
-        return todo;
-    }
-
-    private String buildDraftMessage(JSONObject draft) {
-        String action = draft.getString("action");
+    private String buildDraftMessage(JSONObject draft, String action) {
         StringBuilder msg = new StringBuilder("**待办操作草稿（确认后执行）**\n\n");
         msg.append("- 操作：").append(actionLabel(action)).append("\n");
         if ("create".equals(action)) {
@@ -226,10 +167,6 @@ public class TodoHandler implements ConfirmableIntentHandler {
             msg.append("- 新内容：").append(draft.getString("newContent")).append("\n");
         msg.append("\n[PENDING_CONFIRM]");
         return msg.toString();
-    }
-
-    private String buildSuccessMessage(JSONObject draft, int rows) {
-        return "**待办操作已完成**\n\n- 操作：" + actionLabel(draft.getString("action")) + "\n- 影响数量：" + rows;
     }
 
     private String actionLabel(String action) {
