@@ -6,8 +6,14 @@
 -->
 <template>
   <div class="workbench-dashboard">
-    <feature-gate feature="actionCenterV2"><action-center/></feature-gate>
+    <div v-if="centerAllowed" class="home-view-switch">
+      <el-button size="small" round @click="toggleHomeView">
+        {{ viewMode === 'center' ? '切换到原版首页' : '切换到行动中心' }}
+      </el-button>
+    </div>
+    <feature-gate feature="actionCenterV2"><action-center v-if="centerActive" /></feature-gate>
     <!-- 管理员/超级管理员仪表盘 -->
+    <div v-show="!centerActive" class="classic-home">
     <div v-hasRole="['super', 'admin']" class="dashboard-layout">
       <!-- 左栏：三模块纵向排列 -->
       <div class="dashboard-left">
@@ -157,11 +163,13 @@
 
     <!-- 本月账单分析对话框 -->
     <bill-analysis-dialog v-model:visible="dialogVisible" />
+    </div>
   </div>
 </template>
 
 <script>
 import ActionCenter from "@/components/ActionCenter.vue"
+import { getFeatureCapabilities } from '@/utils/featureCapabilities'
 import { listRecord } from '@/api/px/life/bookkeeping/record'
 import { getBookkeepingRoute } from '@/utils/bookkeepingRoute'
 import { getAllTodoList } from '@/api/px/homepage'
@@ -215,14 +223,47 @@ export default {
       // 纪念日提醒
       commemorationDayList: [],
       // 账单分析对话框
-      dialogVisible: false
+      dialogVisible: false,
+      // 首页视图：classic 原版工作台 / center 行动中心，选择本地持久化
+      viewMode: localStorage.getItem('pnkx-home-view') === 'center' ? 'center' : 'classic',
+      centerAllowed: false,
+      centerTimer: null
+    }
+  },
+  computed: {
+    centerActive() {
+      return this.centerAllowed && this.viewMode === 'center'
+    }
+  },
+  watch: {
+    '$store.getters.token'() {
+      this.refreshCenterAllowed()
     }
   },
   created() {
     this.getAllTodoList()
     this.getBookkeepingRecord()
   },
+  mounted() {
+    this.refreshCenterAllowed()
+    this.centerTimer = setInterval(() => this.refreshCenterAllowed(), 30000)
+  },
+  beforeUnmount() {
+    clearInterval(this.centerTimer)
+  },
   methods: {
+    toggleHomeView() {
+      this.viewMode = this.viewMode === 'center' ? 'classic' : 'center'
+      localStorage.setItem('pnkx-home-view', this.viewMode)
+    },
+    async refreshCenterAllowed() {
+      try {
+        const capabilities = await getFeatureCapabilities()
+        this.centerAllowed = !!capabilities.actionCenterV2
+      } catch (e) {
+        this.centerAllowed = false
+      }
+    },
     /**
      * 翻译账单类型
      * @param record
@@ -400,6 +441,12 @@ export default {
 
 <style lang="scss" scoped>
 // ===== CSS 变量（SKILLS.md 设计系统） =====
+.home-view-switch {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .workbench-dashboard {
   --sidebar-bg: var(--pnkx-surface-muted);
   --sidebar-border: var(--pnkx-border);

@@ -1,6 +1,6 @@
 <template>
   <view class="home-page">
-    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token"/></feature-gate>
+    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token && centerActive"/></feature-gate>
     <!-- Greeting Header -->
     <view class="greeting-header">
       <view class="greeting-header__bg">
@@ -16,6 +16,9 @@
           <text class="greeting-header__date">{{ todayDate }}</text>
         </view>
         <view class="greeting-header__actions">
+          <view v-if="centerAllowed && $store.getters.token" class="greeting-header__bell home-view-toggle" @click="toggleHomeView">
+            <text class="home-view-toggle__text">{{ viewMode === 'center' ? '原版' : '行动中心' }}</text>
+          </view>
           <view class="greeting-header__bell" @click="navigateToSearch">
             <uni-icons type="search" size="22" color="#334155" />
           </view>
@@ -28,7 +31,7 @@
     </view>
 
     <!-- Content Body -->
-    <view class="home-body">
+    <view v-show="!centerActive" class="home-body">
 
       <!-- Notice Carousel -->
       <view v-if="(noticeList || []).length > 0" class="section">
@@ -256,6 +259,7 @@
 
 <script>
 import ActionCenter from "@/components/ActionCenter/index.vue"
+	import { getFeatureCapabilities } from "@/utils/featureCapabilities";
 	import RecordList from "@/components/RecordList/index.vue"
 	import {
 		listNotice
@@ -279,6 +283,10 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 		},
 		data() {
 			return {
+				// 首页视图：classic 原版内容 / center 行动中心，选择本地持久化
+				viewMode: uni.getStorageSync('pnkx-home-view') === 'center' ? 'center' : 'classic',
+				centerAllowed: false,
+				centerTimer: null,
 				// 当前所在滑块的 index
 				current: 0,
 				// 当前所在滑块的 index
@@ -318,6 +326,10 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 			}
 		},
 		computed: {
+			// 功能开关关闭时回落原版视图，避免空白首页
+			centerActive() {
+				return this.centerAllowed && this.viewMode === 'center'
+			},
 			nickName() {
 				return this.$store.getters.name || '小可爱'
 			},
@@ -383,8 +395,25 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 			this.refreshAll();
 		},
 		mounted() {
+			this.refreshCenterAllowed()
+			this.centerTimer = setInterval(() => this.refreshCenterAllowed(), 30000)
+		},
+		beforeUnmount() {
+			clearInterval(this.centerTimer)
 		},
 		methods: {
+			toggleHomeView() {
+				this.viewMode = this.viewMode === 'center' ? 'classic' : 'center'
+				uni.setStorageSync('pnkx-home-view', this.viewMode)
+			},
+			async refreshCenterAllowed() {
+				try {
+					const capabilities = await getFeatureCapabilities()
+					this.centerAllowed = !!capabilities.actionCenterV2
+				} catch (e) {
+					this.centerAllowed = false
+				}
+			},
 			refreshAll() {
 				this.getNoticeList();
 				this.getTodayReminderData();
@@ -1323,6 +1352,19 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
   border: 1rpx solid rgba(255, 255, 255, 0.94);
   box-shadow: $shadow-md;
   backdrop-filter: blur(20rpx);
+}
+
+.home-view-toggle {
+  display: flex;
+  align-items: center;
+  padding: 0 20rpx;
+}
+
+.home-view-toggle__text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $text-primary;
+  white-space: nowrap;
 }
 
 .home-body {
