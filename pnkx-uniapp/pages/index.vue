@@ -1,6 +1,5 @@
 <template>
   <view class="home-page">
-    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token && centerActive"/></feature-gate>
     <!-- Greeting Header -->
     <view class="greeting-header">
       <view class="greeting-header__bg">
@@ -31,6 +30,8 @@
     </view>
 
     <!-- Content Body -->
+    <view :class="['home-view-stage', centerActive ? 'stage-center' : 'stage-classic']">
+    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token && centerActive"/></feature-gate>
     <view v-show="!centerActive" class="home-body">
 
       <!-- Notice Carousel -->
@@ -254,6 +255,7 @@
         </view>
       </uni-popup-dialog>
     </uni-popup>
+    </view>
   </view>
 </template>
 
@@ -805,6 +807,37 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
     font-size: $font-mini;
     text-align: center;
     border: 2rpx solid var(--primary, #287BF8);
+  }
+}
+
+/* 视图切换舞台：两个状态使用不同动画名，切换时重新播放入场动画 */
+.home-view-stage.stage-classic {
+  animation: home-view-in-down 0.28s ease;
+}
+
+.home-view-stage.stage-center {
+  animation: home-view-in-up 0.28s ease;
+}
+
+@keyframes home-view-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(28rpx);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes home-view-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-28rpx);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

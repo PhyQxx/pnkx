@@ -11,6 +11,7 @@
         {{ viewMode === 'center' ? '切换到原版首页' : '切换到行动中心' }}
       </el-button>
     </div>
+    <div :class="['home-view-stage', centerActive ? 'stage-center' : 'stage-classic']">
     <feature-gate feature="actionCenterV2"><action-center v-if="centerActive" /></feature-gate>
     <!-- 管理员/超级管理员仪表盘 -->
     <div v-show="!centerActive" class="classic-home">
@@ -163,6 +164,7 @@
 
     <!-- 本月账单分析对话框 -->
     <bill-analysis-dialog v-model:visible="dialogVisible" />
+    </div>
     </div>
   </div>
 </template>
@@ -445,6 +447,46 @@ export default {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
+}
+
+.home-view-switch :deep(.el-button) {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-view-switch :deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--el-box-shadow-light);
+}
+
+/* 视图切换舞台：两个状态使用不同动画名，切换时重新播放入场动画 */
+.home-view-stage.stage-classic {
+  animation: home-view-in-down 0.28s ease;
+}
+
+.home-view-stage.stage-center {
+  animation: home-view-in-up 0.28s ease;
+}
+
+@keyframes home-view-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes home-view-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .workbench-dashboard {
