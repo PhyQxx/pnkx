@@ -40,7 +40,7 @@
             </div>
           </div>
           <div class="card-body">
-            <el-table v-loading="billLoading" :data="recordList" height="100%" size="small">
+            <el-table v-loading="billLoading" :data="recordList" size="small">
               <el-table-column align="center" label="分类">
                 <template v-slot="scope">
                   {{ scope.row.typeObject && scope.row.typeObject.typeName }}
@@ -85,7 +85,7 @@
             </div>
           </div>
           <div class="card-body">
-            <el-table v-loading="toDoLoading" :data="toDoList" height="100%" size="small">
+            <el-table v-loading="toDoLoading" :data="toDoList" size="small">
               <el-table-column align="center" label="序号" type="index" width="60" />
               <el-table-column align="center" label="待办类型" prop="type">
                 <template #default="scope">
@@ -522,7 +522,6 @@ export default {
 // ===== 左右两栏 =====
 .dashboard-layout {
   display: flex;
-  min-height: calc(100vh - 120px);
   gap: 16px;
 }
 
@@ -558,9 +557,10 @@ export default {
 }
 
 // ===== 各卡片占比 =====
+// 卡片随内容自然增高,页面级滚动,不出现卡片内滚动条
 .bill-card { flex: 1; animation-delay: 0s; }
 .todo-card { flex: 1; animation-delay: 0.08s; }
-.reminder-card { height: calc((100vh - 84px) / 4); animation-delay: 0.16s; }
+.reminder-card { flex: 0 0 auto; animation-delay: 0.16s; }
 .calendar-card { height: 100%; animation-delay: 0.12s; z-index: 0; }
 
 // ===== 卡片头部 =====
@@ -621,17 +621,9 @@ export default {
 // ===== 卡片主体 =====
 .card-body {
   flex: 1;
-  overflow: auto;
+  overflow: visible;
   padding: 12px;
   min-height: 0;
-
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 3px;
-    &:hover { background: rgba(0, 0, 0, 0.2); }
-  }
 }
 
 // ===== 日历区域 =====
