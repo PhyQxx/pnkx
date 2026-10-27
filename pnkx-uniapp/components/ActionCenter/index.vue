@@ -5,9 +5,11 @@
         ><text class="head__title">今天要处理</text
         ><text class="head__date">{{ todayLabel }}</text></view
       ><view class="head__right"
-        ><text v-if="summary.todos" class="chip chip--danger">待办 {{ summary.todos }}</text
+        ><text v-if="summary.overdue" class="chip chip--danger">逾期 {{ summary.overdue }}</text
+        ><text v-if="summary.todos" class="chip chip--primary">待办 {{ summary.todos }}</text
         ><text v-if="summary.failures" class="chip chip--warning">出账失败 {{ summary.failures }}</text
-        ><text v-if="summary.reminders" class="chip chip--primary">提醒 {{ summary.reminders }}</text
+        ><text v-if="summary.reminders" class="chip chip--plain">提醒 {{ summary.reminders }}</text
+        ><text v-if="summary.commemorations" class="chip chip--commemoration">纪念日 {{ summary.commemorations }}</text
         ><button size="mini" :loading="loading" class="refresh-btn" @click="load">刷新</button></view
       ></view
     >
@@ -39,26 +41,22 @@
     <text v-if="loading" class="loading-note">正在加载当前空间…</text>
     <text v-if="error" class="error-note">{{ error }}</text>
 
-    <view class="section section--danger">
-      <view class="section__head"
-        ><view class="dot dot--danger"></view><text class="section__title">到期与逾期待办</text
-        ><text v-if="data.todoCount != null" class="count">{{ data.todoCount }}</text></view
+    <!-- 必须处理：逾期待办与出账失败置顶，没有内容时整层隐藏 -->
+    <view v-if="overdueTodos.length || (data.generationFailures || []).length" class="layer layer--urgent">
+      <view class="layer__head"
+        ><text class="layer__title">必须处理</text
+        ><text class="count count--danger">{{ overdueTodos.length + (data.generationFailures || []).length }}</text></view
       >
-      <view
-        v-for="(todo, index) in visibleTodos"
-        :key="todo.id"
-        class="item"
-        :class="{ 'item--overdue': isOverdue(todo) }"
-        :style="{ '--i': index }"
+      <view v-for="(todo, index) in overdueTodos" :key="todo.id" class="item item--overdue" :style="{ '--i': index }"
         ><view class="item__main"
           ><text class="item__title">{{ todo.content }}</text
           ><view class="item__meta"
             ><text class="chip chip--plain">{{ shortTime(todo.planEndTime) }}</text
-            ><text v-if="isOverdue(todo)" class="tag tag--danger">已逾期</text></view
+            ><text class="tag tag--danger">已逾期</text></view
           ></view
         ><button
           v-if="data.canEdit"
-          class="item__action"
+          class="item__action item__action--danger"
           :disabled="loading || busyItems['todo:' + todo.id]"
           size="mini"
           @click="complete(todo)"
@@ -66,28 +64,12 @@
           完成
         </button></view
       >
-      <text v-if="data.todoCount === 0" class="empty">暂无到期或逾期待办</text>
-      <button v-if="data.todoCount > 5" size="mini" class="more-btn" @click="expanded = !expanded">
-        {{ expanded ? "收起" : "查看全部（" + data.todoCount + "）" }}
-      </button>
-      <view v-if="expanded && data.todoCount > 20" class="pager"
-        ><button size="mini" :disabled="page === 1" @click="turn(-1)">上一页</button
-        ><text>{{ page }}</text
-        ><button size="mini" :disabled="page * 20 >= data.todoCount" @click="turn(1)">
-          下一页
-        </button></view
-      >
-    </view>
-
-    <feature-gate feature="chargeInstanceV2"
-      ><view class="section section--warning">
-        <view class="section__head"
-          ><view class="dot dot--warning"></view><text class="section__title">出账失败</text
-          ><text v-if="(data.generationFailures || []).length" class="count">{{
-            data.generationFailures.length
-          }}</text></view
-        >
-        <view v-for="f in data.generationFailures || []" :key="'failure' + f.id" class="item item--warning"
+      <feature-gate feature="chargeInstanceV2"
+        ><view
+          v-for="(f, index) in data.generationFailures || []"
+          :key="'failure' + f.id"
+          class="item item--warning"
+          :style="{ '--i': overdueTodos.length + index }"
           ><view class="item__main"
             ><text class="item__title">{{ f.source_name }} · {{ f.due_date }}</text
             ><view class="item__meta"
@@ -106,9 +88,47 @@
               忽略
             </button></view
           ></view
+        ></feature-gate
+      >
+    </view>
+
+    <view class="section section--primary">
+      <view class="section__head"
+        ><view class="dot dot--primary"></view><text class="section__title">到期待办</text
+        ><text v-if="data.todoCount != null" class="count">{{ data.todoCount }}</text></view
+      >
+      <view
+        v-for="(todo, index) in expanded ? upcomingTodos : upcomingTodos.slice(0, 5)"
+        :key="todo.id"
+        class="item"
+        :style="{ '--i': index }"
+        ><view class="item__main"
+          ><text class="item__title">{{ todo.content }}</text
+          ><view class="item__meta"
+            ><text class="chip chip--plain">{{ shortTime(todo.planEndTime) }}</text></view
+          ></view
+        ><button
+          v-if="data.canEdit"
+          class="item__action"
+          :disabled="loading || busyItems['todo:' + todo.id]"
+          size="mini"
+          @click="complete(todo)"
         >
-      </view></feature-gate
-    >
+          完成
+        </button></view
+      >
+      <text v-if="data.todoCount === 0" class="empty">暂无到期待办</text>
+      <button v-if="data.todoCount > 5" size="mini" class="more-btn" @click="expanded = !expanded">
+        {{ expanded ? "收起" : "查看全部（" + data.todoCount + "）" }}
+      </button>
+      <view v-if="expanded && data.todoCount > 20" class="pager"
+        ><button size="mini" :disabled="page === 1" @click="turn(-1)">上一页</button
+        ><text>{{ page }}</text
+        ><button size="mini" :disabled="page * 20 >= data.todoCount" @click="turn(1)">
+          下一页
+        </button></view
+      >
+    </view>
 
     <view class="section section--success">
       <view class="section__head"
@@ -125,10 +145,18 @@
       >
     </view>
 
+    <view v-if="(data.commemorations || []).length" class="section section--commemoration">
+      <view class="section__head"
+        ><view class="dot dot--commemoration"></view><text class="section__title">未来30天纪念日准备</text
+        ><text class="count">{{ data.commemorations.length }}</text></view
+      >
+      <commemoration-preparations :items="data.commemorations" :can-edit="data.canEdit" @changed="load" />
+    </view>
+
     <feature-gate feature="reminderEventV2"
-      ><view class="section section--primary">
+      ><view class="section section--info">
         <view class="section__head"
-          ><view class="dot dot--primary"></view><text class="section__title">提醒事项</text
+          ><view class="dot dot--info"></view><text class="section__title">提醒事项</text
           ><text v-if="visibleEvents.length" class="count">{{ visibleEvents.length }}</text></view
         >
         <view v-for="e in visibleEvents" :key="'event' + e.id" class="item"
@@ -223,8 +251,11 @@ export default {
     spaceLabels() {
       return ["私人空间", ...this.spaces.map((g) => g.group_name)];
     },
-    visibleTodos() {
-      return (this.data.todos || []).slice(0, this.expanded ? 20 : 5);
+    overdueTodos() {
+      return (this.data.todos || []).filter((t) => this.isOverdue(t));
+    },
+    upcomingTodos() {
+      return (this.data.todos || []).filter((t) => !this.isOverdue(t));
     },
     visibleEvents() {
       return (this.data.reminders || [])
@@ -233,9 +264,11 @@ export default {
     },
     summary() {
       return {
+        overdue: this.overdueTodos.length,
         todos: this.data.todoCount || 0,
         failures: (this.data.generationFailures || []).length,
         reminders: this.visibleEvents.length,
+        commemorations: (this.data.commemorations || []).length,
       };
     },
   },
@@ -506,6 +539,12 @@ export default {
 .dot--primary {
   background: #4f86f7;
 }
+.dot--info {
+  background: #7d8ba1;
+}
+.dot--commemoration {
+  background: #9a6bff;
+}
 .count {
   min-width: 36rpx;
   padding: 0 12rpx;
@@ -566,6 +605,50 @@ export default {
 .item__action {
   color: #fff !important;
   background: #4f86f7 !important;
+}
+.item__action--danger {
+  background: #e5484d !important;
+}
+.count--danger {
+  color: #fff;
+  background: #e5484d;
+}
+.chip--commemoration {
+  color: #9a6bff;
+  background: #f1ebff;
+}
+/* 必须处理层：浅红底突出，无内容时整层隐藏 */
+.layer--urgent {
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  background: #fdecec;
+  border: 1rpx solid #f6cfd0;
+  border-radius: 18rpx;
+  animation: layer-in 0.3s ease both;
+}
+.layer__head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+.layer__title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #e5484d;
+}
+.layer--urgent .item {
+  background: #fff;
+}
+@keyframes layer-in {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .chip {
   padding: 2rpx 16rpx;

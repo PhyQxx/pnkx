@@ -6,9 +6,11 @@
                 <p class="ac-subtitle">{{ todayLabel }}</p>
             </div>
             <div class="ac-header__summary">
-                <span v-if="summary.todos" class="ac-chip ac-chip--danger">待办 {{ summary.todos }}</span>
+                <span v-if="summary.overdue" class="ac-chip ac-chip--danger">逾期 {{ summary.overdue }}</span>
+                <span v-if="summary.todos" class="ac-chip ac-chip--primary">待办 {{ summary.todos }}</span>
                 <span v-if="summary.failures" class="ac-chip ac-chip--warning">出账失败 {{ summary.failures }}</span>
-                <span v-if="summary.reminders" class="ac-chip ac-chip--primary">提醒 {{ summary.reminders }}</span>
+                <span v-if="summary.reminders" class="ac-chip ac-chip--plain">提醒 {{ summary.reminders }}</span>
+                <span v-if="summary.commemorations" class="ac-chip ac-chip--commemoration">纪念日 {{ summary.commemorations }}</span>
                 <el-button circle size="small" :loading="loading" @click="load">
                     <el-icon><Refresh /></el-icon>
                 </el-button>
@@ -44,60 +46,32 @@
         <el-alert v-if="error" :title="error" type="error" :closable="false" class="ac-error" />
         <p v-if="loading" class="loading-note" role="status">正在加载当前空间，稍候即可处理事项…</p>
 
-        <div class="ac-section ac-section--danger">
-            <div class="ac-section__head">
-                <span class="ac-dot ac-dot--danger"></span>
-                <span class="ac-section__title">到期与逾期待办</span>
-                <span v-if="data.todoCount != null" class="ac-count">{{ data.todoCount }}</span>
+        <!-- 必须处理：逾期待办与出账失败置顶，没有内容时整层隐藏 -->
+        <div v-if="overdueTodos.length || (data.generationFailures || []).length" class="ac-layer ac-layer--urgent">
+            <div class="ac-layer__head">
+                <span class="ac-layer__title">必须处理</span>
+                <span class="ac-count ac-count--danger">{{ overdueTodos.length + (data.generationFailures || []).length }}</span>
             </div>
-            <div
-                v-for="(todo, index) in expanded ? data.todos || [] : (data.todos || []).slice(0, 5)"
-                :key="todo.id"
-                class="ac-item"
-                :class="{ 'ac-item--overdue': isOverdue(todo) }"
-                :style="{ '--i': index }"
-            >
+            <div v-for="(todo, index) in overdueTodos" :key="todo.id" class="ac-item ac-item--overdue" :style="{ '--i': index }">
                 <div class="ac-item__main">
                     <div class="ac-item__title">{{ todo.content }}</div>
                     <div class="ac-item__meta">
                         <span class="ac-chip ac-chip--plain">{{ shortTime(todo.planEndTime) }}</span>
-                        <span v-if="isOverdue(todo)" class="ac-tag ac-tag--danger">已逾期</span>
+                        <span class="ac-tag ac-tag--danger">已逾期</span>
                     </div>
                 </div>
                 <el-button
                     v-if="data.canEdit"
                     size="small"
-                    type="primary"
+                    type="danger"
                     round
                     :disabled="loading || busyItems['todo:' + todo.id]"
                     @click="complete(todo)"
                     >完成</el-button
                 >
             </div>
-            <el-empty v-if="data.todoCount === 0" description="暂无到期或逾期待办" :image-size="50" />
-            <el-button v-if="data.todoCount > 5" link type="primary" @click="expanded = !expanded">{{
-                expanded ? '收起' : '查看全部'
-            }}</el-button
-            ><el-pagination
-                v-if="expanded && data.todoCount > 20"
-                v-model:current-page="page"
-                :page-size="20"
-                :total="data.todoCount"
-                layout="prev,pager,next"
-                @current-change="load"
-            />
-        </div>
-
-        <feature-gate feature="chargeInstanceV2"
-            ><div class="ac-section ac-section--warning">
-                <div class="ac-section__head">
-                    <span class="ac-dot ac-dot--warning"></span>
-                    <span class="ac-section__title">出账失败</span>
-                    <span v-if="(data.generationFailures || []).length" class="ac-count">{{
-                        data.generationFailures.length
-                    }}</span>
-                </div>
-                <div v-for="f in data.generationFailures || []" :key="'failure' + f.id" class="ac-item ac-item--warning">
+            <feature-gate feature="chargeInstanceV2"
+                ><div v-for="(f, index) in data.generationFailures || []" :key="'failure' + f.id" class="ac-item ac-item--warning" :style="{ '--i': overdueTodos.length + index }">
                     <div class="ac-item__main">
                         <div class="ac-item__title">{{ f.source_name }} · {{ f.due_date }}</div>
                         <div class="ac-item__meta">
@@ -111,9 +85,51 @@
                             >忽略</el-button
                         >
                     </div>
+                </div></feature-gate
+            >
+        </div>
+
+        <div class="ac-section ac-section--primary">
+            <div class="ac-section__head">
+                <span class="ac-dot ac-dot--primary"></span>
+                <span class="ac-section__title">到期待办</span>
+                <span v-if="data.todoCount != null" class="ac-count">{{ data.todoCount }}</span>
+            </div>
+            <div
+                v-for="(todo, index) in expanded ? upcomingTodos : upcomingTodos.slice(0, 5)"
+                :key="todo.id"
+                class="ac-item"
+                :style="{ '--i': index }"
+            >
+                <div class="ac-item__main">
+                    <div class="ac-item__title">{{ todo.content }}</div>
+                    <div class="ac-item__meta">
+                        <span class="ac-chip ac-chip--plain">{{ shortTime(todo.planEndTime) }}</span>
+                    </div>
                 </div>
-            </div></feature-gate
-        >
+                <el-button
+                    v-if="data.canEdit"
+                    size="small"
+                    type="primary"
+                    round
+                    :disabled="loading || busyItems['todo:' + todo.id]"
+                    @click="complete(todo)"
+                    >完成</el-button
+                >
+            </div>
+            <el-empty v-if="data.todoCount === 0" description="暂无到期待办" :image-size="50" />
+            <el-button v-if="data.todoCount > 5" link type="primary" @click="expanded = !expanded">{{
+                expanded ? '收起' : '查看全部'
+            }}</el-button
+            ><el-pagination
+                v-if="expanded && data.todoCount > 20"
+                v-model:current-page="page"
+                :page-size="20"
+                :total="data.todoCount"
+                layout="prev,pager,next"
+                @current-change="load"
+            />
+        </div>
 
         <div class="ac-section ac-section--success">
             <div class="ac-section__head">
@@ -130,10 +146,19 @@
             </div>
         </div>
 
+        <div v-if="(data.commemorations || []).length" class="ac-section ac-section--commemoration">
+            <div class="ac-section__head">
+                <span class="ac-dot ac-dot--commemoration"></span>
+                <span class="ac-section__title">未来30天纪念日准备</span>
+                <span class="ac-count">{{ data.commemorations.length }}</span>
+            </div>
+            <commemoration-preparations :items="data.commemorations" :can-edit="data.canEdit" @changed="load" />
+        </div>
+
         <feature-gate feature="reminderEventV2"
-            ><div v-if="space === 'personal'" class="ac-section ac-section--primary">
+            ><div v-if="space === 'personal'" class="ac-section ac-section--info">
                 <div class="ac-section__head">
-                    <span class="ac-dot ac-dot--primary"></span>
+                    <span class="ac-dot ac-dot--info"></span>
                     <span class="ac-section__title">提醒事项</span>
                     <span v-if="activeReminders.length" class="ac-count">{{ activeReminders.length }}</span>
                 </div>
@@ -184,6 +209,7 @@ import { Refresh } from '@element-plus/icons-vue';
 import request from '@/utils/request';
 import ChargeInstances from '@/components/ChargeInstances.vue';
 import OperationPlans from '@/components/OperationPlans.vue';
+import CommemorationPreparations from '@/components/CommemorationPreparations.vue';
 const router = useRouter(),
     space = ref('personal'),
     spaces = ref([]),
@@ -256,10 +282,14 @@ const states = { open: '待处理', snoozed: '稍后提醒', resolved: '已处�
 const activeReminders = computed(() =>
     (data.value.reminders || []).filter((e) => ['open', 'snoozed'].includes(e.state))
 );
+const overdueTodos = computed(() => (data.value.todos || []).filter(isOverdue));
+const upcomingTodos = computed(() => (data.value.todos || []).filter((t) => !isOverdue(t)));
 const summary = computed(() => ({
+    overdue: overdueTodos.value.length,
     todos: data.value.todoCount || 0,
     failures: (data.value.generationFailures || []).length,
-    reminders: activeReminders.value.length
+    reminders: activeReminders.value.length,
+    commemorations: (data.value.commemorations || []).length
 }));
 const todayLabel = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
 function isOverdue(todo) {
@@ -419,6 +449,26 @@ onMounted(async () => {
 .ac-error {
     margin-bottom: 12px;
 }
+/* 必须处理层：浅红底突出，无内容时整层隐藏 */
+.ac-layer--urgent {
+    padding: 14px;
+    margin-bottom: 12px;
+    background: var(--el-color-danger-light-9);
+    border: 1px solid var(--el-color-danger-light-7);
+    border-radius: 12px;
+    animation: ac-layer-in 0.3s ease both;
+}
+.ac-layer__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.ac-layer__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--el-color-danger);
+}
 .ac-section {
     padding: 14px 0 6px;
     border-top: 1px solid var(--el-border-color-lighter);
@@ -450,6 +500,12 @@ onMounted(async () => {
 .ac-dot--primary {
     background: var(--el-color-primary);
 }
+.ac-dot--info {
+    background: var(--el-text-color-secondary);
+}
+.ac-dot--commemoration {
+    background: #9a6bff;
+}
 .ac-count {
     min-width: 20px;
     padding: 0 6px;
@@ -460,6 +516,10 @@ onMounted(async () => {
     background: var(--el-fill-color);
     border-radius: 999px;
 }
+.ac-count--danger {
+    color: #fff;
+    background: var(--el-color-danger);
+}
 .ac-item {
     display: flex;
     align-items: center;
@@ -467,7 +527,7 @@ onMounted(async () => {
     gap: 12px;
     padding: 10px 12px;
     margin-bottom: 8px;
-    background: var(--el-fill-color-lighter);
+    background: var(--el-bg-color);
     border: 1px solid transparent;
     border-radius: 10px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -534,6 +594,10 @@ onMounted(async () => {
     color: var(--el-color-primary);
     background: var(--el-color-primary-light-9);
 }
+.ac-chip--commemoration {
+    color: #9a6bff;
+    background: #f1ebff;
+}
 .ac-tag {
     padding: 1px 8px;
     font-size: 12px;
@@ -561,6 +625,16 @@ onMounted(async () => {
     from {
         opacity: 0;
         transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes ac-layer-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
     }
     to {
         opacity: 1;

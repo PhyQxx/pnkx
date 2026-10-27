@@ -1,11 +1,18 @@
 <template>
     <section v-if="items.length">
-        <h3>未来30天纪念日准备</h3>
-        <div v-for="i in items" :key="i.id" class="preparation">
-            <span>{{ i.name }} · {{ i.occurrenceDate }} · {{ i.daysUntil === 0 ? '今天' : i.daysUntil + '天后' }}</span>
-            <el-tag>{{ labels[i.preparationStatus] || '尚未准备' }}</el-tag>
+        <div v-for="i in items" :key="i.id" class="cp-item">
+            <div class="cp-item__main">
+                <div class="cp-item__title">{{ i.name }}</div>
+                <div class="cp-item__meta">
+                    <span class="cp-chip">{{ i.occurrenceDate }}</span>
+                    <span class="cp-chip">{{ i.daysUntil === 0 ? '今天' : i.daysUntil + '天后' }}</span>
+                    <span class="cp-tag" :class="{ 'cp-tag--ready': ['accepted', 'completed'].includes(i.preparationStatus) }">{{
+                        labels[i.preparationStatus] || '尚未准备'
+                    }}</span>
+                </div>
+            </div>
             <template v-if="canEdit && !['accepted', 'completed', 'removed'].includes(i.preparationStatus)"
-                ><el-button link @click="open(i)">{{
+                ><el-button link type="primary" @click="open(i)">{{
                     i.preparationStatus === 'dismissed' ? '重新准备' : '创建准备待办'
                 }}</el-button
                 ><el-button v-if="i.preparationStatus !== 'dismissed'" link @click="dismiss(i)"
@@ -89,11 +96,68 @@ async function dismiss(i) {
 }
 </script>
 <style scoped>
-.preparation {
+.cp-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #f6f2ff;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    animation: cp-in 0.25s ease both;
+}
+.cp-item:hover {
+    border-color: #d9c9ff;
+    box-shadow: var(--el-box-shadow-light);
+    transform: translateY(-1px);
+}
+.cp-item__main {
+    min-width: 0;
+    flex: 1;
+}
+.cp-item__title {
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cp-item__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    padding: 10px 0;
+}
+.cp-chip {
+    padding: 1px 8px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    background: var(--el-fill-color);
+    border-radius: 999px;
+}
+.cp-tag {
+    padding: 1px 8px;
+    font-size: 12px;
+    color: #9a6bff;
+    background: #f1ebff;
+    border-radius: 4px;
+}
+.cp-tag--ready {
+    color: var(--el-color-success);
+    background: var(--el-color-success-light-9);
+}
+@keyframes cp-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
 }
 </style>
