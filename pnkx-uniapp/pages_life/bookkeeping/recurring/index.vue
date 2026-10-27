@@ -58,7 +58,8 @@
         <view class="field"><text class="field__label">备注</text><input v-model="form.remark" class="field__input" placeholder="选填" /></view>
       </scroll-view>
     </uni-popup>
-  </view>
+    <charge-rule-flow/>
+</view>
 </template>
 
 <script>

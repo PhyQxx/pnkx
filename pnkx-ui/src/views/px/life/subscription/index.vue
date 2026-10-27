@@ -48,7 +48,8 @@
                         <span>{{ row.name }}</span>
                         <el-tag v-if="!row.enabled" type="info" size="small">停用</el-tag>
                     </div>
-                </template>
+                <charge-rule-flow/>
+    </template>
             </el-table-column>
             <el-table-column label="金额" align="right" width="100">
                 <template #default="{row}">¥ {{ formatMoney(row.amount) }}</template>
@@ -149,6 +150,7 @@
 <script>
 import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
 import ChargeInstances from "@/components/ChargeInstances.vue"
+import ChargeRuleChangeFlow from "@/components/ChargeRuleChangeFlow.vue"
 import {
     listSubscription, addSubscription, updateSubscription,
     delSubscription, forecast
@@ -158,7 +160,7 @@ import {listClassification} from '@/api/px/life/bookkeeping/classification'
 import {bindReminder} from '@/api/px/life/reminder'
 
 export default {
- components: { ChargeInstances },
+ components: {ChargeRuleChangeFlow, ChargeInstances},
     name: 'Subscription',
     data() {
         return {

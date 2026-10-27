@@ -89,18 +89,20 @@
         <el-button type="primary" :loading="saving" @click="handleSave">{{ form.id ? '保存' : '新增' }}</el-button>
       </template>
     </el-dialog>
+    <charge-rule-flow/>
   </div>
 </template>
 
 <script>
 import { changeRule, backfillRule } from '@/api/px/life/chargeChange'
 import ChargeInstances from "@/components/ChargeInstances.vue"
+import ChargeRuleChangeFlow from "@/components/ChargeRuleChangeFlow.vue"
 import {addRecurring, delRecurring, listRecurring, toggleRecurring, updateRecurring} from '@/api/px/life/bookkeeping/recurring'
 import {getClassificationList} from '@/api/px/life/bookkeeping/classification'
 import {getAccountList} from '@/api/px/life/bookkeeping/account'
 
 export default {
- components: { ChargeInstances },
+ components: { ChargeRuleChangeFlow, ChargeInstances},
     name: 'RecurringPanel',
     data() {
         return {

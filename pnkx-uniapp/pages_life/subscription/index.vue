@@ -109,7 +109,8 @@
     />
 
     <view class="safe-bottom"></view>
-  </view>
+    <charge-rule-flow/>
+</view>
 </template>
 
 <script>
