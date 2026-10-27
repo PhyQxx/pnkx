@@ -164,6 +164,11 @@ const {
     toggleItem,
     save
 } = useShoppingCheckout(props, emit, { request, listAccount, listClassification });
+// 供页面底部工具栏带页内预选打开结算核对
+function openWith(ids) {
+    return open(null, ids);
+}
+defineExpose({ openWith });
 </script>
 <style scoped>
 .checkout-panel {

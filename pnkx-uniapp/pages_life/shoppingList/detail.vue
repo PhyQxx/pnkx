@@ -14,27 +14,55 @@
       </view>
     </view>
 
-    <feature-gate feature="shoppingPlanV2"><shopping-checkout :items="items" :list-id="listId" @changed="loadItems"/></feature-gate>
-    <!-- Items -->
+    <feature-gate feature="shoppingPlanV2"><shopping-checkout ref="checkout" :items="items" :list-id="listId" @changed="loadItems"/></feature-gate>
+    <!-- Items:按履约状态分组 -->
     <view class="items" v-if="items.length > 0">
-      <view
-        class="item"
-        v-for="item in items"
-        :key="item.id"
-        :class="{ 'item--done': item.checked }"
-      >
-        <view class="item__check" @click="toggle(item)">
-          <view class="item__checkbox" :class="{ 'item__checkbox--on': item.checked }">
-            <text v-if="item.checked" class="item__tick">✓</text>
+      <template v-for="(meta, key) in visibleGroups" :key="key">
+        <view class="group-head">
+          <view class="group-dot" :class="'group-dot--' + key"></view>
+          <text class="group-title">{{ meta.label }}</text>
+          <text class="group-count">{{ groups[key].length }}</text>
+          <text
+            v-if="key === 'settled'"
+            class="group-toggle"
+            @click="showSettled = !showSettled"
+            >{{ showSettled ? "收起" : "展开" }}</text
+          >
+        </view>
+        <view
+          class="item"
+          v-for="item in key === 'settled' && !showSettled ? [] : groups[key]"
+          :key="item.id"
+          :class="{ 'item--done': key !== 'needed' && key !== 'available' }"
+        >
+          <!-- 待购:勾选即买到 -->
+          <view v-if="key === 'needed'" class="item__check" @click="toggle(item)">
+            <view class="item__checkbox"></view>
+          </view>
+          <!-- 已买到:结算选择(功能开启时);未开启沿用勾选切换 -->
+          <view
+            v-else-if="key === 'purchased'"
+            class="item__check"
+            @click="checkoutEnabled ? toggleSelect(item.id) : toggle(item)"
+          >
+            <view
+              class="item__checkbox"
+              :class="{
+                'item__checkbox--on': checkoutEnabled ? selectedIds.includes(item.id) : true,
+              }"
+            >
+              <text v-if="checkoutEnabled ? selectedIds.includes(item.id) : true" class="item__tick">✓</text>
+            </view>
+          </view>
+          <view v-else class="item__check"></view>
+          <text class="item__name">{{ item.name }}</text>
+          <text v-if="item.quantity" class="item__qty">{{ item.quantity }}</text>
+          <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
+          <view v-if="key !== 'settled'" class="item__del" @click="handleDelete(item)">
+            <text class="item__del-icon">×</text>
           </view>
         </view>
-        <text class="item__name">{{ item.name }}</text>
-        <text v-if="item.quantity" class="item__qty">{{ item.quantity }}</text>
-        <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
-        <view class="item__del" @click="handleDelete(item)">
-          <text class="item__del-icon">×</text>
-        </view>
-      </view>
+      </template>
     </view>
 
     <!-- Empty -->
@@ -44,8 +72,21 @@
       <text class="empty__hint">在上方输入要买的东西</text>
     </view>
 
-    <!-- Footer -->
-    <view class="footer" v-if="doneCount > 0">
+    <!-- 底部工具栏:已买到可勾选结算,已结算不进入 -->
+    <view class="footer" v-if="checkoutEnabled && groups.purchased.length">
+      <view class="footer__info">
+        <text class="footer__count">已选 {{ selectedIds.length }} 项</text>
+        <text class="footer__sub">共 {{ groups.purchased.length }} 项已买到待结算</text>
+      </view>
+      <text class="footer__link" @click="allPurchasedSelected ? clearSelection() : selectAllPurchased()">{{
+        allPurchasedSelected ? "取消全选" : "全选"
+      }}</text>
+      <view class="footer__btn footer__btn--primary" :class="{ 'footer__btn--disabled': !selectedIds.length }" @click="checkoutNow">
+        <text class="footer__btn-text">去结算</text>
+      </view>
+      <view class="safe-bottom"></view>
+    </view>
+    <view class="footer" v-else-if="doneCount > 0">
       <view class="footer__info">
         <text class="footer__count">已完成 {{ doneCount }}/{{ items.length }}</text>
       </view>
@@ -60,6 +101,8 @@
 <script>
 import ShoppingCheckout from "@/components/ShoppingCheckout/index.vue"
 import ShoppingItemActions from "@/components/ShoppingItemActions/index.vue"
+import { groupItems, groupMeta } from "@/utils/shoppingGroups"
+import { getFeatureCapabilities } from "@/utils/featureCapabilities"
 import {
   listShoppingItem,
   addShoppingItem,
@@ -74,12 +117,28 @@ export default {
     return {
       listId: null,
       items: [],
-      newItemName: ''
+      newItemName: '',
+      // 结算选择:仅"已买到且未结算"可选,已结算不进入
+      checkoutEnabled: false,
+      selectedIds: [],
+      showSettled: false
     }
   },
   computed: {
     doneCount() {
       return this.items.filter(i => i.checked).length
+    },
+    groups() {
+      return groupItems(this.items)
+    },
+    // 已结算默认折叠
+    visibleGroups() {
+      const keys = ['needed', 'available', 'purchased']
+      if (this.groups.settled.length) keys.push('settled')
+      return Object.fromEntries(keys.filter(k => this.groups[k].length).map(k => [k, groupMeta[k]]))
+    },
+    allPurchasedSelected() {
+      return this.groups.purchased.length > 0 && this.selectedIds.length === this.groups.purchased.length
     }
   },
   onLoad(options) {
@@ -88,16 +147,13 @@ export default {
       uni.setNavigationBarTitle({ title: decodeURIComponent(options.name) })
     }
     this.loadItems()
+    this.refreshCheckoutEnabled()
   },
   methods: {
     async loadItems() {
       const res = await listShoppingItem(this.listId)
       this.items = res.rows || res.data || []
-      // 按勾选状态排序：未勾选在前
-      this.items.sort((a, b) => {
-        if (a.checked === b.checked) return 0
-        return a.checked ? 1 : -1
-      })
+      this.pruneSelection()
     },
     async handleAdd() {
       const name = this.newItemName.trim()
@@ -123,13 +179,38 @@ export default {
           checked: !item.checked
         })
         item.checked = !item.checked
-        // 重新排序
-        this.items.sort((a, b) => {
-          if (a.checked === b.checked) return 0
-          return a.checked ? 1 : -1
-        })
+        // 与履约状态投影保持一致,分组立即生效
+        item.fulfillmentState = item.checked ? 'purchased' : 'needed'
+        this.pruneSelection()
       } catch (e) {
         uni.showToast({ title: '操作失败', icon: 'none' })
+      }
+    },
+    toggleSelect(id) {
+      this.selectedIds = this.selectedIds.includes(id)
+        ? this.selectedIds.filter(x => x !== id)
+        : [...this.selectedIds, id]
+    },
+    selectAllPurchased() {
+      this.selectedIds = this.groups.purchased.map(i => i.id)
+    },
+    clearSelection() {
+      this.selectedIds = []
+    },
+    pruneSelection() {
+      const valid = new Set(this.groups.purchased.map(i => i.id))
+      this.selectedIds = this.selectedIds.filter(id => valid.has(id))
+    },
+    checkoutNow() {
+      if (!this.selectedIds.length) return
+      this.$refs.checkout?.openWith(this.selectedIds)
+    },
+    async refreshCheckoutEnabled() {
+      try {
+        const capabilities = await getFeatureCapabilities()
+        this.checkoutEnabled = !!capabilities.shoppingPlanV2
+      } catch (e) {
+        this.checkoutEnabled = false
       }
     },
     handleDelete(item) {
@@ -164,6 +245,50 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+/* 分组头 */
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 8rpx 10rpx;
+}
+.group-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $text-primary;
+}
+.group-count {
+  min-width: 34rpx;
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
+  color: $text-secondary;
+  background: $bg-page;
+  border-radius: 999rpx;
+}
+.group-toggle {
+  font-size: 22rpx;
+  color: #4f86f7;
+}
+.group-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+.group-dot--needed {
+  background: #4f86f7;
+}
+.group-dot--available {
+  background: #2fbf71;
+}
+.group-dot--purchased {
+  background: #f5a623;
+}
+.group-dot--settled {
+  background: #94a3b8;
+}
+
 .detail-page {
   min-height: 100vh;
   background: $bg-page;
@@ -326,8 +451,23 @@ export default {
   }
 
   &__count {
+    display: block;
+    font-size: $font-body;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  &__sub {
+    display: block;
+    margin-top: 4rpx;
     font-size: $font-caption;
     color: $text-tertiary;
+  }
+
+  &__link {
+    font-size: $font-caption;
+    color: #4f86f7;
+    margin-right: $spacing-md;
   }
 
   &__btn {
@@ -340,6 +480,14 @@ export default {
     &:active {
       opacity: 0.85;
     }
+  }
+
+  &__btn--primary {
+    background: #4f86f7;
+  }
+
+  &__btn--disabled {
+    opacity: 0.5;
   }
 
   &__btn-text {

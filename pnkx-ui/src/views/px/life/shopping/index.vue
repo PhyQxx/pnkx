@@ -44,17 +44,17 @@
                         <div class="toolbar-left">
                             <h2 class="panel-title">{{ activeList.name }}</h2>
                             <el-tag size="small" effect="plain">
-                                待购 {{ uncheckedItems.length }} / 共 {{ items.length }}
+                                待购 {{ groups.needed.length }} / 已买到 {{ groups.purchased.length }} / 共 {{ items.length }}
                             </el-tag>
                         </div>
                         <div class="toolbar-right">
-                            <feature-gate feature="shoppingPlanV2"><shopping-checkout :items="items" :list-id="activeListId" @changed="loadItems"/></feature-gate>
+                            <feature-gate feature="shoppingPlanV2"><shopping-checkout ref="checkout" :items="items" :list-id="activeListId" @changed="loadItems"/></feature-gate>
                             <el-button
                                 size="small"
                                 type="danger"
                                 plain
                                 icon="Delete"
-                                :disabled="checkedItems.length === 0"
+                                :disabled="groups.purchased.length === 0"
                                 @click="handleClearChecked"
                             >
                                 归档已购
@@ -89,57 +89,91 @@
                         <el-button type="primary" icon="Plus" @click="handleAddItem">添加</el-button>
                     </div>
 
-                    <!-- 条目列表 -->
+                    <!-- 条目列表：按履约状态分组 -->
                     <div v-loading="itemLoading" class="item-list">
-                        <!-- 待购 -->
-                        <div
-                            v-for="item in uncheckedItems"
-                            :key="item.id"
-                            class="item-row"
-                        >
-                            <el-checkbox
-                                :model-value="!!item.checked"
-                                @change="handleToggleItem(item)"
-                            />
-                            <span class="item-name">{{ item.name }}</span>
-                            <span class="item-qty">× {{ item.quantity }}</span>
-                            <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
-                            <el-tag v-if="item.addedFromMeal" size="small" type="warning" effect="plain">
-                                来自餐饮
-                            </el-tag>
-                            <el-icon class="item-del" @click="handleDeleteItem(item)">
-                                <Close/>
-                            </el-icon>
-                        </div>
-
-                        <!-- 分隔 -->
-                        <div v-if="uncheckedItems.length && checkedItems.length" class="divider"></div>
-
-                        <!-- 已购 -->
-                        <div
-                            v-for="item in checkedItems"
-                            :key="item.id"
-                            class="item-row checked"
-                        >
-                            <el-checkbox
-                                :model-value="!!item.checked"
-                                @change="handleToggleItem(item)"
-                            />
-                            <span class="item-name">{{ item.name }}</span>
-                            <span class="item-qty">× {{ item.quantity }}</span>
-                            <feature-gate feature="shoppingPlanV2"><shopping-item-actions :item="item" @changed="loadItems"/></feature-gate>
-                            <el-tag v-if="item.addedFromMeal" size="small" type="warning" effect="plain">
-                                来自餐饮
-                            </el-tag>
-                            <el-icon class="item-del" @click="handleDeleteItem(item)">
-                                <Close/>
-                            </el-icon>
-                        </div>
+                        <template v-for="(meta, key) in visibleGroups" :key="key">
+                            <div class="group-head" :class="'group-head--' + key">
+                                <span class="group-dot" :class="'group-dot--' + key"></span>
+                                <span class="group-title">{{ meta.label }}</span>
+                                <span class="group-count">{{ groups[key].length }}</span>
+                                <el-button
+                                    v-if="key === 'settled' && groups.settled.length"
+                                    link
+                                    size="small"
+                                    @click="showSettled = !showSettled"
+                                    >{{ showSettled ? '收起' : '展开' }}</el-button
+                                >
+                            </div>
+                            <div
+                                v-for="item in key === 'settled' && !showSettled ? [] : groups[key]"
+                                :key="item.id"
+                                class="item-row"
+                                :class="{ checked: key !== 'needed' && key !== 'available' }"
+                            >
+                                <!-- 待购:勾选即买到 -->
+                                <el-checkbox
+                                    v-if="key === 'needed'"
+                                    :model-value="false"
+                                    @change="handleToggleItem(item)"
+                                />
+                                <!-- 已买到:结算选择(功能开启时) -->
+                                <el-checkbox
+                                    v-else-if="key === 'purchased' && checkoutEnabled"
+                                    :model-value="selectedIds.includes(item.id)"
+                                    @change="toggleSelect(item.id)"
+                                />
+                                <!-- 已买到但功能未开启:沿用勾选切换 -->
+                                <el-checkbox
+                                    v-else-if="key === 'purchased'"
+                                    :model-value="true"
+                                    @change="handleToggleItem(item)"
+                                />
+                                <span v-else class="row-pad"></span>
+                                <span class="item-name">{{ item.name }}</span>
+                                <span class="item-qty">× {{ item.quantity }}</span>
+                                <feature-gate feature="shoppingPlanV2"
+                                    ><shopping-item-actions :item="item" @changed="loadItems"
+                                /></feature-gate>
+                                <el-tag v-if="item.addedFromMeal" size="small" type="warning" effect="plain">
+                                    来自餐饮
+                                </el-tag>
+                                <el-tag v-if="key === 'settled'" size="small" type="success" effect="plain">
+                                    已结算
+                                </el-tag>
+                                <el-icon v-if="key !== 'settled'" class="item-del" @click="handleDeleteItem(item)">
+                                    <Close/>
+                                </el-icon>
+                            </div>
+                        </template>
 
                         <div v-if="!itemLoading && items.length === 0" class="empty-tip">
                             清单空空如也，快添加点什么吧
                         </div>
                     </div>
+
+                    <!-- 底部结算工具栏:只统计已买到且未结算,已结算不会被选入 -->
+                    <feature-gate feature="shoppingPlanV2">
+                        <div v-if="checkoutEnabled && groups.purchased.length" class="settle-bar">
+                            <div class="settle-info">
+                                <strong>已选 {{ selectedIds.length }} 项</strong>
+                                <span>共 {{ groups.purchased.length }} 项已买到、待结算</span>
+                            </div>
+                            <el-button
+                                link
+                                type="primary"
+                                :disabled="!groups.purchased.length"
+                                @click="allPurchasedSelected ? clearSelection() : selectAllPurchased()"
+                                >{{ allPurchasedSelected ? '取消全选' : '全选' }}</el-button
+                            >
+                            <el-button
+                                type="primary"
+                                round
+                                :disabled="!selectedIds.length"
+                                @click="checkoutNow"
+                                >去结算</el-button
+                            >
+                        </div>
+                    </feature-gate>
                 </template>
 
                 <div v-else class="empty-tip panel-empty">
@@ -156,6 +190,8 @@
 <script>
 import ShoppingCheckout from "@/components/ShoppingCheckout.vue"
 import ShoppingItemActions from "@/components/ShoppingItemActions.vue"
+import { groupItems, groupMeta } from '@/utils/shoppingGroups'
+import { getFeatureCapabilities } from '@/utils/featureCapabilities'
 import {Plus, Close, EditPen, Goods} from '@element-plus/icons-vue'
 import {
     listShoppingList,
@@ -183,29 +219,33 @@ export default {
             newItem: {
                 name: '',
                 quantity: 1
-            }
+            },
+            // 结算选择:仅"已买到且未结算"可选,已结算不进入
+            checkoutEnabled: false,
+            selectedIds: [],
+            showSettled: false
         }
     },
     computed: {
         activeList() {
             return this.lists.find(l => l.id === this.activeListId)
         },
-        // 已勾选的条目下沉到底部
-        sortedItems() {
-            return [...this.items].sort((a, b) => {
-                if (!!a.checked === !!b.checked) return 0
-                return a.checked ? 1 : -1
-            })
+        groups() {
+            return groupItems(this.items)
         },
-        uncheckedItems() {
-            return this.sortedItems.filter(i => !i.checked)
+        // 已结算默认折叠
+        visibleGroups() {
+            const keys = ['needed', 'available', 'purchased']
+            if (this.groups.settled.length) keys.push('settled')
+            return Object.fromEntries(keys.filter(k => this.groups[k].length).map(k => [k, groupMeta[k]]))
         },
-        checkedItems() {
-            return this.sortedItems.filter(i => !!i.checked)
+        allPurchasedSelected() {
+            return this.groups.purchased.length > 0 && this.selectedIds.length === this.groups.purchased.length
         }
     },
     created() {
         this.loadLists()
+        this.refreshCheckoutEnabled()
     },
     methods: {
         /** 加载左侧清单列表 */
@@ -241,6 +281,7 @@ export default {
             this.itemLoading = true
             listShoppingItem({listId: this.activeListId}).then(res => {
                 this.items = res.rows || res.data || []
+                this.pruneSelection()
             }).finally(() => {
                 this.itemLoading = false
             })
@@ -265,13 +306,43 @@ export default {
                 this.loadItems()
             })
         },
-        /** 切换勾选状态 */
+        /** 切换勾选状态(旧勾选口径,与履约状态投影保持一致) */
         handleToggleItem(item) {
             const next = !item.checked
             updateShoppingItem({id: item.id, checked: next}).then(() => {
                 item.checked = next
+                item.fulfillmentState = next ? 'purchased' : 'needed'
                 this.refreshListCounts()
             })
+        },
+        /** 底部结算选择 */
+        toggleSelect(id) {
+            this.selectedIds = this.selectedIds.includes(id)
+                ? this.selectedIds.filter(x => x !== id)
+                : [...this.selectedIds, id]
+        },
+        selectAllPurchased() {
+            this.selectedIds = this.groups.purchased.map(i => i.id)
+        },
+        clearSelection() {
+            this.selectedIds = []
+        },
+        /** 刷新后仅保留仍为"已买到未结算"的选择 */
+        pruneSelection() {
+            const valid = new Set(this.groups.purchased.map(i => i.id))
+            this.selectedIds = this.selectedIds.filter(id => valid.has(id))
+        },
+        checkoutNow() {
+            if (!this.selectedIds.length) return
+            this.$refs.checkout?.openWith(this.selectedIds)
+        },
+        async refreshCheckoutEnabled() {
+            try {
+                const capabilities = await getFeatureCapabilities()
+                this.checkoutEnabled = !!capabilities.shoppingPlanV2
+            } catch (e) {
+                this.checkoutEnabled = false
+            }
         },
         /** 删除单个条目 */
         handleDeleteItem(item) {
@@ -333,7 +404,7 @@ export default {
             if (!this.activeList) return
             const list = this.lists.find(l => l.id === this.activeListId)
             if (list) {
-                list.uncheckedCount = this.uncheckedItems.length
+                list.uncheckedCount = this.groups.needed.length + this.groups.available.length
             }
         }
     }
@@ -518,10 +589,77 @@ export default {
             }
         }
 
-        .divider {
-            height: 1px;
-            background: var(--pnkx-border, #ebeef5);
-            margin: 10px 4px;
+        .group-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 6px 6px;
+
+            .group-title {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--pnkx-text, #303133);
+            }
+
+            .group-count {
+                min-width: 18px;
+                height: 18px;
+                line-height: 18px;
+                padding: 0 6px;
+                font-size: 11px;
+                text-align: center;
+                border-radius: 9px;
+                background: var(--pnkx-surface-muted, #f5f7fa);
+                color: var(--pnkx-text-secondary, #909399);
+            }
+        }
+
+        .group-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+
+            &.group-dot--needed {
+                background: var(--el-color-primary);
+            }
+            &.group-dot--available {
+                background: var(--el-color-success);
+            }
+            &.group-dot--purchased {
+                background: var(--el-color-warning);
+            }
+            &.group-dot--settled {
+                background: var(--el-text-color-placeholder);
+            }
+        }
+
+        .settle-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--pnkx-border, #ebeef5);
+            background: var(--el-color-primary-light-9);
+            flex-shrink: 0;
+
+            .settle-info {
+                display: flex;
+                flex-direction: column;
+
+                span {
+                    font-size: 12px;
+                    color: var(--pnkx-text-secondary, #909399);
+                }
+            }
+
+            .el-button + .el-button {
+                margin-left: 0;
+            }
+        }
+
+        .row-pad {
+            width: 14px;
         }
 
         .item-row {

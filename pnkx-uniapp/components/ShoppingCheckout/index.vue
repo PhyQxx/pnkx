@@ -130,8 +130,14 @@ export default {
     listId: { type: [String, Number], default: null },
   },
   emits: ["changed"],
-  setup(props, { emit }) {
+  setup(props, { emit, expose }) {
     const state = useShoppingCheckout(props, emit, { request, listAccount, listClassification });
+    expose({
+      // 供页面底部工具栏带页内预选打开结算核对
+      openWith(ids) {
+        return state.open(null, ids);
+      },
+    });
     return {
       ...state,
       selectAccount(e) {

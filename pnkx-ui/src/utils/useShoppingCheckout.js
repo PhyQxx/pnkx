@@ -65,15 +65,22 @@ export function useShoppingCheckout(props, emit, api) {
             if (token === financeRequest) financeLoading.value = false;
         }
     }
-    function open(id = null) {
+    function open(id = null, preselected = null) {
         if (saving.value) return;
         generation++;
         batchId.value = id;
         error.value = '';
         success.value = '';
         financeError.value = '';
+        const eligibleIds = eligible.value.slice(0, 200).map((i) => i.id);
+        // 页内预选:仅接受当前仍"已买到且未结算"的条目,非法或超量部分忽略
+        let initial = eligibleIds;
+        if (!id && Array.isArray(preselected) && preselected.length) {
+            const allowed = new Set(eligibleIds.map(String));
+            initial = preselected.map(String).filter((v) => allowed.has(v)).map(Number);
+        }
         form.value = {
-            purchasedItemIds: eligible.value.slice(0, 200).map((i) => i.id),
+            purchasedItemIds: initial,
             recordExpense: !!id,
             totalAmount: '',
             paidAt: businessToday(),
