@@ -192,11 +192,11 @@
             </div></feature-gate
         >
 
-        <el-collapse v-if="space === 'personal'" class="ac-collapse"
+        <el-collapse v-if="space === 'personal'" v-model="openPanels" class="ac-collapse"
             ><el-collapse-item title="周期账单：待确认与历史" name="charges"
-                ><feature-gate feature="chargeInstanceV2"><charge-instances /></feature-gate></el-collapse-item
+                ><feature-gate feature="chargeInstanceV2"><charge-instances v-if="openPanels.includes('charges')" /></feature-gate></el-collapse-item
             ><el-collapse-item title="AI 与报告操作计划" name="plans"
-                ><feature-gate feature="operationPlanV2"><operation-plans /></feature-gate></el-collapse-item
+                ><feature-gate feature="operationPlanV2"><operation-plans v-if="openPanels.includes('plans')" /></feature-gate></el-collapse-item
         ></el-collapse>
     </section>
 </template>
@@ -210,6 +210,7 @@ import request from '@/utils/request';
 import ChargeInstances from '@/components/ChargeInstances.vue';
 import OperationPlans from '@/components/OperationPlans.vue';
 import CommemorationPreparations from '@/components/CommemorationPreparations.vue';
+const openPanels = ref([]);
 const router = useRouter(),
     space = ref('personal'),
     spaces = ref([]),

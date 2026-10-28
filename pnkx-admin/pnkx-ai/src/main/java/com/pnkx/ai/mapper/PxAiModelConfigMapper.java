@@ -68,6 +68,9 @@ public interface PxAiModelConfigMapper {
      */
     PxAiModelConfig selectDefaultEnabledModel();
 
+    /** 默认模型优先，其余按 sort 升序、id 降序；排除禁用和已删除配置。 */
+    List<PxAiModelConfig> selectEnabledModelsForFallback();
+
     /**
      * 取消所有默认标识
      */

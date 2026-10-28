@@ -44,10 +44,16 @@
         <el-empty
             v-if="!loading && !filtered.length && !error"
             :description="
-                plans.length ? '没有匹配的计划，试试其他筛选或关键词' : '还没有操作计划，在 AI 对话中创建第一份草稿吧'
+                plans.length ? '没有匹配的计划，试试其他筛选或关键词' : '暂无操作计划'
             "
             :image-size="64"
-        />
+        >
+            <div v-if="!plans.length" class="empty-guide">
+                <p>在「AI 助手」中提出创建待办等操作请求，生成待确认的计划草稿；</p>
+                <p>或在「生活管家 → 生活报告」中将建议转为行动，再回到这里查看。</p>
+                <p>普通聊天和报告内容不会自动成为操作计划。生成后可点击刷新查看。</p>
+            </div>
+        </el-empty>
         <footer class="list-note">显示最近加载的 {{ plans.length }} 个计划 · 待处理包含待确认与执行失败</footer>
         <el-dialog
             v-model="visible"
@@ -167,6 +173,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import request from '@/utils/request';
+import { readPanelList } from '@/utils/panelList';
 import PlanDraftEditor from './PlanDraftEditor.vue';
 import {
     planLabels as labels,
@@ -213,7 +220,7 @@ async function load() {
     try {
         const r = await request({ url: '/operation-plans' });
         if (token === listRequest) {
-            plans.value = r.data || [];
+            plans.value = readPanelList(r);
             error.value = '';
         }
     } catch {
@@ -281,6 +288,13 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+.empty-guide {
+    padding: 0 24px;
+    text-align: center;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    line-height: 1.7;
+}
 .plans {
     margin: 16px 0;
     background: var(--el-bg-color, #fff);

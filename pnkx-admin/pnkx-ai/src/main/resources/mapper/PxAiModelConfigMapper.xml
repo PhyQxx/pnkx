@@ -58,6 +58,12 @@
         LIMIT 1
     </select>
 
+    <select id="selectEnabledModelsForFallback" resultMap="PxAiModelConfigResult">
+        <include refid="selectPxAiModelConfigVo"/>
+        WHERE del_flag = 0 AND is_enabled = '1'
+        ORDER BY is_default DESC, sort ASC, id DESC
+    </select>
+
     <insert id="insertPxAiModelConfig" parameterType="com.pnkx.ai.domain.po.PxAiModelConfig" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO px_ai_model_config
         <trim prefix="(" suffix=")" suffixOverrides=",">

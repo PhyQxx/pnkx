@@ -16,7 +16,23 @@
             "
             ><el-option v-for="(label, key) in labels" :key="key" :label="label" :value="key"
         /></el-select>
-        <el-table v-loading="loading" :data="rows" empty-text="暂无账期，规则到期后会自动生成">
+        <el-table v-loading="loading" :data="rows" :empty-text="error ? '账期加载失败，请点击刷新重试' : loading ? '正在加载账期…' : '暂无账期'">
+            <template #empty>
+                <div class="charge-empty">
+                    <p v-if="error">账期加载失败，请点击刷新重试</p>
+                    <p v-else-if="loading">正在加载账期…</p>
+                    <template v-else-if="status || page > 1">
+                        <p>当前筛选或页码下没有账期</p>
+                        <el-button link type="primary" @click="resetFilter">查看全部账期</el-button>
+                    </template>
+                    <template v-else>
+                        <p>暂无已生成的账期</p>
+                        <p>请在「生活账本 → 周期记账」或「生活管家 → 订阅管理」中设置规则。</p>
+                        <p>启用的规则到期并由定时任务处理后，账期才会出现在这里；普通记账记录不会自动归入本列表。</p>
+                        <p>如果规则已经到期，请核对规则是否启用及定时任务的执行结果。</p>
+                    </template>
+                </div>
+            </template>
             <el-table-column prop="sourceName" label="来源" />
             <el-table-column prop="dueDate" label="预计日期" />
             <el-table-column prop="expectedAmount" label="预计金额" />
@@ -101,6 +117,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import request from '@/utils/request';
+import { readPanelList } from '@/utils/panelList';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listAccount } from '@/api/px/life/bookkeeping/account';
 import { listClassification } from '@/api/px/life/bookkeeping/classification';
@@ -140,7 +157,14 @@ const labels = {
     cancelled: '已取消'
 };
 const requestId = () => `charge_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+function resetFilter() {
+    status.value = '';
+    page.value = 1;
+    load();
+}
+let listRequest = 0;
 async function load() {
+    const token = ++listRequest;
     loading.value = true;
     error.value = '';
     try {
@@ -148,11 +172,12 @@ async function load() {
             url: '/charge/instances',
             params: { pageNum: page.value, pageSize: 20, sourceType: props.sourceType, status: status.value }
         });
-        rows.value = r.data || [];
+        const items = readPanelList(r);
+        if (token === listRequest) rows.value = items;
     } catch (e) {
-        error.value = '账期加载失败，请重试';
+        if (token === listRequest) error.value = '账期加载失败，请重试';
     } finally {
-        loading.value = false;
+        if (token === listRequest) loading.value = false;
     }
 }
 async function open(row) {
@@ -200,6 +225,14 @@ async function resolve(row, action) {
 onMounted(load);
 </script>
 <style scoped>
+.charge-empty {
+    padding: 24px 16px;
+    line-height: 1.7;
+    color: var(--el-text-color-secondary);
+}
+.charge-empty p {
+    margin: 8px 0;
+}
 .charge-panel {
     margin: 16px 0;
 }

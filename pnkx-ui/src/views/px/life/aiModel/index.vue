@@ -29,6 +29,14 @@
         <span class="default-url">{{ defaultModel.baseUrl }}</span>
       </div>
 
+      <el-alert
+        title="默认模型失败、超时或无响应内容时，自动尝试其他已启用模型。备用顺序越小越优先，相同时优先新增的模型；流式回答开始输出后不再切换。"
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 16px"
+      />
+
       <!-- 模型列表 -->
       <div v-if="list.length > 0" class="model-grid">
         <div
@@ -47,6 +55,7 @@
             </div>
           </div>
           <div class="card-url">{{ item.baseUrl }}</div>
+          <div class="card-url">备用顺序：{{ item.sort ?? 0 }}</div>
           <div class="card-footer">
             <el-button size="small" plain @click="handleEdit(item)">编辑</el-button>
             <el-button
@@ -98,6 +107,9 @@
             style="width: 100%"
           />
         </el-form-item>
+        <el-form-item label="备用顺序（越小越优先）">
+          <el-input-number v-model="form.sort" :min="0" :max="2147483647" :precision="0" />
+        </el-form-item>
         <el-form-item label="设为默认">
           <el-switch v-model="isDefaultChecked" />
         </el-form-item>
@@ -142,7 +154,8 @@ export default {
         modelKey: '',
         baseUrl: '',
         apiKey: '',
-        temperature: 0.7
+        temperature: 0.7,
+        sort: 0
       },
       formRules: {
         modelName: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
@@ -170,7 +183,8 @@ export default {
         modelKey: '',
         baseUrl: '',
         apiKey: '',
-        temperature: 0.7
+        temperature: 0.7,
+        sort: 0
       }
       this.isDefaultChecked = false
       this.isEnabledChecked = true
@@ -184,7 +198,8 @@ export default {
         modelKey: item.modelKey,
         baseUrl: item.baseUrl,
         apiKey: '',
-        temperature: item.temperature
+        temperature: item.temperature,
+        sort: item.sort ?? 0
       }
       this.isDefaultChecked = item.isDefault === '1'
       this.isEnabledChecked = item.isEnabled === '1'

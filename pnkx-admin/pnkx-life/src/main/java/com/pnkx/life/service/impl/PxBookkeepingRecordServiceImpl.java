@@ -3,6 +3,8 @@ package com.pnkx.life.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.pnkx.common.annotation.DataScopeSelf;
 import com.pnkx.common.constant.HttpStatus;
+import com.pnkx.common.exception.ServiceException;
+import com.pnkx.framework.web.service.DataPermissionService;
 import com.pnkx.common.core.page.TableDataInfo;
 import com.pnkx.common.utils.DateUtils;
 import com.pnkx.common.utils.SecurityUtils;
@@ -39,6 +41,8 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     @Resource
     private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
     @Resource private com.pnkx.life.mapper.PxBookkeepingAccountMapper ownedAccountMapper;
+    @Resource
+    private DataPermissionService dataPermissionService;
     @Resource
     private PxBookkeepingClassificationMapper classificationMapper;
     @Resource
@@ -217,17 +221,34 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     private void requirePrivateOwner(PxBookkeepingRecord record){
         if(record==null||!java.util.Objects.equals(SecurityUtils.getUserId(),record.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("账单不存在或无权访问");
     }
-    private void validateFinancialReferences(PxBookkeepingRecord record){
-        String owner=SecurityUtils.getUserId();
-        var account=record.getAccount()==null?null:ownedAccountMapper.selectPxBookkeepingAccountById(record.getAccount());
-        if(account==null||!owner.equals(account.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("账户不存在或无权使用");
-        if(Long.valueOf(0L).equals(record.getType())){
-            var target=record.getOtherAccount()==null?null:ownedAccountMapper.selectPxBookkeepingAccountById(record.getOtherAccount());
-            if(target==null||!owner.equals(target.getCreateBy())||java.util.Objects.equals(record.getAccount(),record.getOtherAccount()))throw new com.pnkx.common.exception.ServiceException("转入账户无效");
-        }else{
-            var category=record.getType()==null?null:classificationMapper.selectPxBookkeepingClassificationById(record.getType());
-            if(category==null||!owner.equals(category.getCreateBy()))throw new com.pnkx.common.exception.ServiceException("分类不存在或无权使用");
+    private void validateFinancialReferences(PxBookkeepingRecord record) {
+        // 与账户、分类列表的 @DataScopeSelf 默认共享域保持一致。
+        // 账单仍归当前用户所有，但可引用权限范围内的共享账户和分类。
+        List<Long> visibleUserIds = dataPermissionService.getVisibleUserIds("");
+        var account = record.getAccount() == null ? null
+                : ownedAccountMapper.selectPxBookkeepingAccountById(record.getAccount());
+        if (account == null || !isReferenceVisible(account.getCreateBy(), visibleUserIds)) {
+            throw new ServiceException("账户不存在或无权使用");
         }
+        if (Long.valueOf(0L).equals(record.getType())) {
+            var target = record.getOtherAccount() == null ? null
+                    : ownedAccountMapper.selectPxBookkeepingAccountById(record.getOtherAccount());
+            if (target == null || !isReferenceVisible(target.getCreateBy(), visibleUserIds)
+                    || java.util.Objects.equals(record.getAccount(), record.getOtherAccount())) {
+                throw new ServiceException("转入账户无效");
+            }
+        } else {
+            var category = record.getType() == null ? null
+                    : classificationMapper.selectPxBookkeepingClassificationById(record.getType());
+            if (category == null || !isReferenceVisible(category.getCreateBy(), visibleUserIds)) {
+                throw new ServiceException("分类不存在或无权使用");
+            }
+        }
+    }
+
+    private boolean isReferenceVisible(String owner, List<Long> visibleUserIds) {
+        return visibleUserIds == null || visibleUserIds.stream()
+                .anyMatch(id -> id != null && id.toString().equals(owner));
     }
 
     @Override

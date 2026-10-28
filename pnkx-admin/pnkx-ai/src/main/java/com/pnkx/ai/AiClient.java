@@ -15,6 +15,7 @@ import io.agentscope.core.message.TextBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Flux;
 
 import jakarta.annotation.Resource;
@@ -45,6 +46,12 @@ public class AiClient {
     @Resource
     private RedisCache redisCache;
 
+    @Value("${ai.model.idle-timeout-seconds:60}")
+    private long idleTimeoutSeconds = 60;
+
+    @Value("${ai.model.request-timeout-seconds:180}")
+    private long requestTimeoutSeconds = 180;
+
     private final ConcurrentHashMap<Long, Model> modelCache = new ConcurrentHashMap<>();
 
     /**
@@ -58,12 +65,18 @@ public class AiClient {
      * 使用默认模型调用AI（同步）
      */
     public JSONObject chat(String userInfo, String question) {
-        PxAiModelConfig defaultModel = aiModelConfigMapper.selectDefaultEnabledModel();
-        if (defaultModel == null) {
-            logger.error("未配置默认AI模型，请先在AI模型配置中添加");
-            return null;
+        for (PxAiModelConfig model : aiModelConfigMapper.selectEnabledModelsForFallback()) {
+            JSONObject result = chatWithModel(model, userInfo, question);
+            if (result != null) {
+                return result;
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                return null;
+            }
+            logger.warn("AI模型不可用，尝试下一个启用模型 - 模型ID: {}", model.getId());
         }
-        return chatWithModel(defaultModel, userInfo, question);
+        logger.error("所有启用的AI模型均不可用或未配置");
+        return null;
     }
 
     /**
@@ -82,12 +95,34 @@ public class AiClient {
      * 流式AI调用，返回AgentScope Flux流
      */
     public Flux<ChatResponse> chatStream(String userInfo, String question) {
-        PxAiModelConfig defaultModel = aiModelConfigMapper.selectDefaultEnabledModel();
-        if (defaultModel == null) {
-            logger.error("未配置默认AI模型");
-            return Flux.empty();
+        List<PxAiModelConfig> models = aiModelConfigMapper.selectEnabledModelsForFallback();
+        Boolean thinking = thinkingOverride.get();
+        return chatStreamWithFallback(models, 0, userInfo, question, thinking);
+    }
+
+    private Flux<ChatResponse> chatStreamWithFallback(List<PxAiModelConfig> models, int index,
+            String userInfo, String question, Boolean thinking) {
+        if (index >= models.size()) {
+            return Flux.error(new IllegalStateException("所有启用的AI模型均不可用或未配置"));
         }
-        return chatStreamWithModel(defaultModel, userInfo, question);
+        return Flux.defer(() -> {
+            AtomicBoolean emitted = new AtomicBoolean(false);
+            PxAiModelConfig config = models.get(index);
+            return chatStreamWithModel(config, userInfo, question, thinking)
+                    .filter(response -> response.getContent() != null && response.getContent().stream()
+                            .anyMatch(block -> !(block instanceof TextBlock text)
+                                    || (text.getText() != null && !text.getText().isEmpty())))
+                    .switchIfEmpty(Flux.error(new IllegalStateException("模型未返回内容")))
+                    .doOnNext(response -> emitted.set(true))
+                    .onErrorResume(error -> {
+                        // 已输出的流不能重新开始，否则会混合不同模型的回答。
+                        if (emitted.get()) {
+                            return Flux.error(error);
+                        }
+                        logger.warn("AI流式模型不可用，尝试下一个启用模型 - 模型ID: {}", config.getId());
+                        return chatStreamWithFallback(models, index + 1, userInfo, question, thinking);
+                    });
+        });
     }
 
     /**
@@ -140,7 +175,12 @@ public class AiClient {
         String modelKey = modelConfig.getModelKey();
         String cacheKey = buildCacheKey(modelConfig, userInfo, question, currentUserId());
         String redisKey = RedisConstants.AI_RESPONSE_CACHE + cacheKey;
-        JSONObject cached = redisCache.getCacheObject(redisKey);
+        JSONObject cached = null;
+        try {
+            cached = redisCache.getCacheObject(redisKey);
+        } catch (Exception e) {
+            logger.warn("AI响应缓存读取失败，继续调用模型");
+        }
         if (cached != null) {
             logger.info("AI调用缓存命中 - 模型: {} 耗时: {}ms", modelKey, System.currentTimeMillis() - start);
             return cached;
@@ -160,7 +200,8 @@ public class AiClient {
             long tCall = System.currentTimeMillis();
             GenerateOptions perCallOptions = buildThinkingOptions(modelConfig, thinkingOverride.get());
             List<ChatResponse> responses = model.stream(List.of(systemMsg, userMsg), null, perCallOptions)
-                    .collectList().block();
+                    .timeout(Duration.ofSeconds(idleTimeoutSeconds))
+                    .collectList().block(Duration.ofSeconds(requestTimeoutSeconds));
             logger.info("AI调用LLM返回 - 模型: {} 思考={} 耗时: {}ms", modelKey, thinkingOverride.get(), System.currentTimeMillis() - tCall);
 
             if (responses != null && !responses.isEmpty()) {
@@ -180,7 +221,11 @@ public class AiClient {
                     JSONObject result = new JSONObject();
                     result.put("content", content);
                     result.put("model", modelKey);
-                    redisCache.setCacheObject(redisKey, result, 1, TimeUnit.HOURS);
+                    try {
+                        redisCache.setCacheObject(redisKey, result, 1, TimeUnit.HOURS);
+                    } catch (Exception e) {
+                        logger.warn("AI响应缓存写入失败，仍返回模型结果");
+                    }
                     logger.info("AI调用成功 - 模型: {} 总耗时: {}ms", modelKey, System.currentTimeMillis() - start);
                     return result;
                 }
@@ -196,6 +241,11 @@ public class AiClient {
      * 流式AI调用
      */
     private Flux<ChatResponse> chatStreamWithModel(PxAiModelConfig modelConfig, String userInfo, String question) {
+        return chatStreamWithModel(modelConfig, userInfo, question, thinkingOverride.get());
+    }
+
+    private Flux<ChatResponse> chatStreamWithModel(PxAiModelConfig modelConfig, String userInfo,
+            String question, Boolean thinking) {
         long start = System.currentTimeMillis();
         String modelKey = modelConfig.getModelKey();
         logger.info("AI流式调用开始 - 模型: {} 问题: {}", modelKey, question);
@@ -208,9 +258,10 @@ public class AiClient {
             Msg systemMsg = Msg.builder().textContent(userInfo).build();
             Msg userMsg = Msg.builder().textContent(question).build();
 
-            GenerateOptions perCallOptions = buildThinkingOptions(modelConfig, thinkingOverride.get());
+            GenerateOptions perCallOptions = buildThinkingOptions(modelConfig, thinking);
             AtomicBoolean firstTokenLogged = new AtomicBoolean(false);
             return model.stream(List.of(systemMsg, userMsg), null, perCallOptions)
+                    .timeout(Duration.ofSeconds(idleTimeoutSeconds))
                     .doOnNext(resp -> {
                         if (firstTokenLogged.compareAndSet(false, true)) {
                             logger.info("AI流式首Token - 模型: {} TTFT: {}ms", modelKey, System.currentTimeMillis() - start);
@@ -220,7 +271,7 @@ public class AiClient {
                     .doOnError(e -> logger.error("AI流式调用失败 - 模型: {} 总耗时: {}ms 错误: {}", modelKey, System.currentTimeMillis() - start, e.getMessage()));
         } catch (Exception e) {
             logger.error("AI流式调用构建失败: {}", e.getMessage());
-            return Flux.empty();
+            return Flux.error(e);
         }
     }
 
