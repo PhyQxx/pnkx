@@ -6,6 +6,7 @@
 -->
 <template>
   <div class="note-page">
+    <share-dialog ref="sharing" />
     <el-tabs v-model="activeTab" class="note-tabs">
       <el-tab-pane label="我的笔记" name="note">
         <div class="note-container">
@@ -160,6 +161,9 @@
     </transition>
         </div>
       </el-tab-pane>
+      <el-tab-pane label="共享给我的" name="shared" lazy>
+        <shared-notes />
+      </el-tab-pane>
       <el-tab-pane label="Obsidian 笔记" name="obsidian">
         <file-manager v-if="activeTab === 'obsidian'" />
       </el-tab-pane>
@@ -180,13 +184,15 @@ import {
   updateFolder,
   updateNote
 } from '@/api/px/life/note'
+import ShareDialog from './components/ShareDialog.vue'
+import SharedNotes from './components/SharedNotes.vue'
 import FileManager from '@/views/system/fileManager/index.vue'
 import NoteSidebar from './components/NoteSidebar.vue'
 import NoteEditor from './components/NoteEditor.vue'
 
 export default {
   name: 'Note',
-  components: { FileManager, NoteSidebar, NoteEditor },
+  components: { FileManager, NoteSidebar, NoteEditor, ShareDialog, SharedNotes },
   data() {
     return {
       // 当前激活的 tab
@@ -300,6 +306,9 @@ export default {
      */
     handleRightClick(item) {
       switch (item.id) {
+        case 8:
+          this.$refs.sharing.open(this.rightObject)
+          break
         case 1:
           this.handleAdd(false)
           break
@@ -377,6 +386,7 @@ export default {
             { id: 1, name: '新建笔记', icon: '编辑02' },
             { id: 2, name: '新建文件夹', icon: '文件夹' },
             { id: 3, name: '编辑', icon: '编辑' },
+            { id: 8, name: '共享', icon: '分享' },
             { id: 5, name: '移动到', icon: '移动' },
             { id: 6, name: '删除', icon: '删除' }
           ]
@@ -385,6 +395,7 @@ export default {
             { id: 1, name: '新建笔记', icon: '编辑02' },
             { id: 2, name: '新建文件夹', icon: '文件夹' },
             { id: 4, name: '编辑', icon: '编辑' },
+            { id: 8, name: '共享', icon: '分享' },
             { id: 5, name: '移动到', icon: '移动' },
             { id: 7, name: '删除', icon: '删除' }
           ]
@@ -467,11 +478,14 @@ export default {
      */
     handleSaveNote() {
       const note = JSON.parse(JSON.stringify(this.note))
-      note.content = this.$refs.editor.value
+      if (!note.id) return
+      const document = new DOMParser().parseFromString(note.richText || '', 'text/html')
+      note.content = document.body.textContent || ''
       updateNote(note).then(() => {
         this.noteCache = JSON.parse(JSON.stringify(this.note))
         this.$notify.success('保存成功')
-        this.$set(this.list, this.list.findIndex(item => item.id === this.note.id), { type: 'note', ...this.note })
+        const index = this.list.findIndex(item => item.type === 'note' && item.id === note.id)
+        if (index >= 0) this.list.splice(index, 1, { type: 'note', ...note })
       })
     },
     /**
@@ -630,6 +644,7 @@ export default {
       this.loading = true
       this.editor = false
       getNote(id).then(res => {
+        this.active = { ...res.data, type: 'note' }
         this.note = res.data
         this.noteCache = JSON.parse(JSON.stringify(res.data))
         this.loading = false

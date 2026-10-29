@@ -11,6 +11,7 @@ const whiteList = ['/login', '/auth-redirect', '/bind', '/register', '/homepage'
 
 router.beforeEach((to, from, next) => {
     NProgress.start()
+    if (to.path === '/note-share') { next(); NProgress.done(); return }
     if (getToken()) {
         if (to.path === '/login' || to.path === '/homepage') {
             next({ path: '/index' })

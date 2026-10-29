@@ -24,6 +24,7 @@ import ParentView from '@/components/ParentView/index.vue'
 
 // 公共路由
 export const constantRoutes = [
+    { path: '/note-share', component: () => import('@/views/px/life/note/share.vue'), hidden: true },
     {
         path: '/',
         name: 'index',

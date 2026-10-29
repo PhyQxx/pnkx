@@ -24,6 +24,8 @@ import java.util.List;
 public class PxNoteServiceImpl implements IPxNoteService {
     @Resource
     private PxNoteMapper pxNoteMapper;
+    @Resource
+    private NoteShareService sharing;
 
     /**
      * 查询笔记
@@ -33,6 +35,7 @@ public class PxNoteServiceImpl implements IPxNoteService {
      */
     @Override
     public PxNote selectPxNoteById(Long id) {
+        sharing.requireAccess("note", id, SecurityUtils.getUserId(), false);
         return pxNoteMapper.selectPxNoteById(id);
     }
 
@@ -45,6 +48,8 @@ public class PxNoteServiceImpl implements IPxNoteService {
     @Override
     @DataScopeSelf(onlySelf = true)
     public List<PxNoteFolder> selectPxNoteList(PxNote pxNote) {
+        pxNote.getParams().put("scopeAll", false);
+        pxNote.getParams().put("scopeUserIds", java.util.List.of(SecurityUtils.getUserId()));
         return pxNoteMapper.selectPxNoteList(pxNote);
     }
 
@@ -57,6 +62,7 @@ public class PxNoteServiceImpl implements IPxNoteService {
      */
     @Override
     public PxNote insertPxNote(PxNote pxNote) {
+        if (pxNote.getFolder() != null && pxNote.getFolder() != 0) sharing.requireOwner("folder", pxNote.getFolder(), SecurityUtils.getUserId());
         pxNote.setCreateTime(DateUtils.getNowDate());
         pxNote.setCreateBy(SecurityUtils.getUserId());
         pxNote.setUpdateTime(DateUtils.getNowDate());
@@ -73,6 +79,22 @@ public class PxNoteServiceImpl implements IPxNoteService {
      */
     @Override
     public PxNote updatePxNote(PxNote pxNote) {
+        sharing.requireAccess("note", pxNote.getId(), SecurityUtils.getUserId(), true);
+        PxNote old = pxNoteMapper.selectPxNoteById(pxNote.getId());
+        if (!SecurityUtils.getUserId().equals(old.getCreateBy())) {
+            // Collaborators may edit content, never move, delete or transfer ownership.
+            PxNote content = new PxNote();
+            content.setId(pxNote.getId());
+            content.setTitle(pxNote.getTitle());
+            content.setContent(pxNote.getContent());
+            content.setRichText(pxNote.getRichText());
+            pxNote = content;
+        } else if (pxNote.getFolder() != null && pxNote.getFolder() != 0) {
+            sharing.requireOwner("folder", pxNote.getFolder(), SecurityUtils.getUserId());
+        }
+        pxNote.setCreateBy(null);
+        pxNote.setCreateTime(null);
+        pxNote.setDelFlag(null);
         pxNote.setUpdateTime(DateUtils.getNowDate());
         pxNote.setUpdateBy(SecurityUtils.getUserId());
         pxNoteMapper.updatePxNote(pxNote);
@@ -87,6 +109,7 @@ public class PxNoteServiceImpl implements IPxNoteService {
      */
     @Override
     public int deletePxNoteByIds(Long[] ids) {
+        for (Long id : ids) sharing.requireOwner("note", id, SecurityUtils.getUserId());
         return pxNoteMapper.deletePxNoteByIds(ids);
     }
 
@@ -98,6 +121,7 @@ public class PxNoteServiceImpl implements IPxNoteService {
      */
     @Override
     public int deletePxNoteById(Long id) {
+        sharing.requireOwner("note", id, SecurityUtils.getUserId());
         return pxNoteMapper.deletePxNoteById(id);
     }
 

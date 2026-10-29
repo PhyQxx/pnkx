@@ -31,6 +31,13 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
     private PxNoteMapper pxNoteMapper;
     @Resource
     private PxNoteFolderMapper pxNoteFolderMapper;
+    @Resource
+    private NoteShareService sharing;
+
+    private void scope(com.pnkx.common.core.domain.BaseEntity query) {
+        query.getParams().put("scopeAll", false);
+        query.getParams().put("scopeUserIds", java.util.List.of(SecurityUtils.getUserId()));
+    }
 
     /**
      * 查询笔记文件夹
@@ -40,6 +47,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public PxNoteFolder selectPxNoteFolderById(Long id) {
+        sharing.requireOwner("folder", id, SecurityUtils.getUserId());
         return pxNoteFolderMapper.selectPxNoteFolderById(id);
     }
 
@@ -52,11 +60,13 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
     @Override
     @DataScopeSelf(alias = "f", onlySelf = true)
     public List<PxNoteFolder> selectPxNoteFolderList(PxNoteFolder pxNoteFolder) {
+        scope(pxNoteFolder);
         List<PxNoteFolder> result = new ArrayList<>();
         List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(pxNoteFolder);
         PxNote pxNote = new PxNote();
         pxNote.setFolder(pxNoteFolder.getParentId());
         pxNote.setTitle(pxNoteFolder.getName());
+        scope(pxNote);
         List<PxNoteFolder> pxNoteList = pxNoteMapper.selectPxNoteList(pxNote);
         result.addAll(pxNoteFolderList);
         result.addAll(pxNoteList);
@@ -72,6 +82,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public PxNoteFolder insertPxNoteFolder(PxNoteFolder pxNoteFolder) {
+        validateParent(pxNoteFolder);
         pxNoteFolder.setCreateTime(DateUtils.getNowDate());
         pxNoteFolder.setCreateBy(SecurityUtils.getUserId());
         pxNoteFolder.setUpdateTime(DateUtils.getNowDate());
@@ -88,6 +99,11 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public PxNoteFolder updatePxNoteFolder(PxNoteFolder pxNoteFolder) {
+        sharing.requireOwner("folder", pxNoteFolder.getId(), SecurityUtils.getUserId());
+        validateParent(pxNoteFolder);
+        pxNoteFolder.setCreateBy(null);
+        pxNoteFolder.setCreateTime(null);
+        pxNoteFolder.setDelFlag(null);
         pxNoteFolder.setUpdateTime(DateUtils.getNowDate());
         pxNoteFolder.setUpdateBy(SecurityUtils.getUserId());
         pxNoteFolderMapper.updatePxNoteFolder(pxNoteFolder);
@@ -102,6 +118,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public int deletePxNoteFolderByIds(Long[] ids) {
+        for (Long id : ids) sharing.requireOwner("folder", id, SecurityUtils.getUserId());
         return pxNoteFolderMapper.deletePxNoteFolderByIds(ids);
     }
 
@@ -113,6 +130,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
      */
     @Override
     public int deletePxNoteFolderById(Long id) {
+        sharing.requireOwner("folder", id, SecurityUtils.getUserId());
         return pxNoteFolderMapper.deletePxNoteFolderById(id);
     }
 
@@ -127,6 +145,7 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
         List<PxNoteFolderVo> result = new ArrayList<>();
         PxNoteFolder params = new PxNoteFolder();
         params.setParentId(0L);
+        scope(params);
         List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(params);
         pxNoteFolderList.forEach(item -> {
             PxNoteFolderVo pxNoteFolderVo = new PxNoteFolderVo();
@@ -138,10 +157,22 @@ public class PxNoteFolderServiceImpl implements IPxNoteFolderService {
     }
 
 
+    private void validateParent(PxNoteFolder folder) {
+        Long parent = folder.getParentId();
+        java.util.Set<Long> visited = new java.util.HashSet<>();
+        while (parent != null && parent != 0) {
+            if (parent.equals(folder.getId()) || !visited.add(parent) || visited.size() > 256)
+                throw new com.pnkx.common.exception.ServiceException("不能移动到自身或下级文件夹");
+            sharing.requireOwner("folder", parent, SecurityUtils.getUserId());
+            parent = pxNoteFolderMapper.selectPxNoteFolderById(parent).getParentId();
+        }
+    }
+
     private void folderIter(List<PxNoteFolderVo> list) {
         list.forEach(item -> {
             PxNoteFolder pxNoteFolder = new PxNoteFolder();
             pxNoteFolder.setParentId(item.getId());
+            scope(pxNoteFolder);
             List<PxNoteFolder> pxNoteFolderList = pxNoteFolderMapper.selectPxNoteFolderList(pxNoteFolder);
             if (StringUtils.isNotEmpty(pxNoteFolderList)) {
                 List<PxNoteFolderVo> result = new ArrayList<>();

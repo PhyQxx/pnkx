@@ -113,3 +113,13 @@ export function delFolder(id) {
         method: 'delete'
     })
 }
+
+export const managedShares = (type, id) => request({ url: `/note/share/manage/${type}/${id}` })
+export const createShare = (type, id, data) => request({ url: `/note/share/manage/${type}/${id}`, method: 'post', data })
+export const revokeShare = id => request({ url: `/note/share/${id}`, method: 'delete' })
+export const receivedShares = () => request({ url: '/note/share/received' })
+export const browseShare = (shareId, token, params) => request({
+    url: token ? `/client/note-share/${encodeURIComponent(token)}` : `/note/share/${shareId}/browse`,
+    headers: token ? { isToken: false } : {},
+    params
+})
