@@ -7,7 +7,7 @@ export default {
                 return false;
             }
             // 判断指令中是否绑定了函数
-            if (binding.expression) {
+            if (typeof binding.value === 'function') {
                 // 如果绑定了函数 则调用那个函数，此处binding.value就是handleClose方法
                 binding.value(e);
             }

@@ -53,9 +53,9 @@
       <transition-group name="file-list" tag="div" v-else class="file-items">
         <div
           v-for="(one, index) in list"
-          :key="one.id"
+          :key="itemKey(one)"
           class="file-card"
-          :class="{ active: one.id === activeId }"
+          :class="{ active: itemKey(one) === activeKey }"
           :style="{ animationDelay: `${index * 0.05}s` }"
           @contextmenu.prevent.stop="$emit('contextmenu', $event, one)"
         >
@@ -63,7 +63,7 @@
           <div
             v-if="one.type === 'folder'"
             class="folder-item"
-            :draggable="true"
+            :draggable="!one.shared"
             @dragstart="$emit('drag', $event, one)"
             @dragover.prevent
             @drop="$emit('drop', $event, one)"
@@ -75,6 +75,8 @@
             </div>
             <div class="folder-info">
               <div class="folder-name">{{ one.name }}</div>
+              <svg-icon v-if="one.shared" icon-class="分享" class="shared-icon"
+                :title="one.permission === 'edit' ? '共享 · 可编辑' : '共享 · 只读'" role="img" aria-label="共享文件夹" />
               <svg-icon v-if="one.password" icon-class="验证码" class="lock-icon" />
             </div>
           </div>
@@ -83,13 +85,15 @@
           <div
             v-if="one.type === 'note'"
             class="note-item"
-            :draggable="true"
+            :draggable="!one.shared"
             @dragstart="$emit('drag', $event, one)"
             @click="$emit('open', one)"
           >
             <div class="note-header">
               <svg-icon icon-class="编辑02" class="note-icon" />
               <span class="note-title">{{ one.title }}</span>
+              <svg-icon v-if="one.shared" icon-class="分享" class="shared-icon"
+                :title="one.permission === 'edit' ? '共享 · 可编辑' : '共享 · 只读'" role="img" aria-label="共享笔记" />
             </div>
             <div class="note-preview">
               {{ one.content && one.content.replace(regex, '') }}
@@ -118,9 +122,12 @@ export default {
     list: { type: Array, default: () => [] },
     listLoading: { type: Boolean, default: false },
     // 当前选中项 id
-    activeId: { default: undefined },
+    activeKey: { type: String, default: '' },
     // 去除 html 标签的预览正则
     regex: { type: RegExp, default: undefined }
+  },
+  methods: {
+    itemKey(item) { return `${item.shared ? 'shared' : 'own'}-${item.type}-${item.id}` }
   },
   computed: {
     searchModel: {
@@ -136,6 +143,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.shared-icon { flex-shrink: 0; color: var(--color-primary); margin-left: 6px; font-size: 14px; }
 .sidebar {
   width: 320px;
   background: var(--bg-card);

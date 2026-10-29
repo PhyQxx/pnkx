@@ -16,7 +16,7 @@
       :params="params"
       :list="list"
       :list-loading="listLoading"
-      :active-id="active.id"
+      :active-key="itemKey(active)"
       :regex="regex"
       @back="handleBack"
       @search="handleSearch"
@@ -32,6 +32,7 @@
       :active-type="active.type"
       :editor="editor"
       :note="note"
+      :read-only="!!note.shared && !note.editable"
       :loading="loading"
       @save="handleSaveNote"
     />
@@ -141,14 +142,20 @@
     </el-dialog>
 
     <!-- 右键菜单 -->
+    <Teleport to="body">
     <transition name="context-menu">
       <div 
         v-if="rightFlag" 
-        class="context-menu"
+        ref="contextMenu"
+        class="note-context-menu"
+        role="menu"
+        @contextmenu.prevent
         :style="rightStyle"
         v-clickOutSide="handleCloseEditNote"
       >
-        <div
+        <button
+          type="button"
+          role="menuitem"
           v-for="item in rightFunctions"
           :key="item.id"
           class="menu-item"
@@ -156,13 +163,11 @@
         >
           <svg-icon :icon-class="item.icon" class="menu-icon" />
           <span>{{ item.name }}</span>
-        </div>
+        </button>
       </div>
     </transition>
+    </Teleport>
         </div>
-      </el-tab-pane>
-      <el-tab-pane label="共享给我的" name="shared" lazy>
-        <shared-notes />
       </el-tab-pane>
       <el-tab-pane label="Obsidian 笔记" name="obsidian">
         <file-manager v-if="activeTab === 'obsidian'" />
@@ -173,6 +178,8 @@
 
 <script>
 import {
+  receivedShares,
+  browseShare,
   addFolder,
   addNote,
   delFolder,
@@ -185,14 +192,14 @@ import {
   updateNote
 } from '@/api/px/life/note'
 import ShareDialog from './components/ShareDialog.vue'
-import SharedNotes from './components/SharedNotes.vue'
+import DOMPurify from 'dompurify'
 import FileManager from '@/views/system/fileManager/index.vue'
 import NoteSidebar from './components/NoteSidebar.vue'
 import NoteEditor from './components/NoteEditor.vue'
 
 export default {
   name: 'Note',
-  components: { FileManager, NoteSidebar, NoteEditor, ShareDialog, SharedNotes },
+  components: { FileManager, NoteSidebar, NoteEditor, ShareDialog },
   data() {
     return {
       // 当前激活的 tab
@@ -262,10 +269,15 @@ export default {
       // 编辑器
       editor: true,
       // 笔记缓存
-      noteCache: undefined
+      noteCache: undefined,
+      listRequest: 0,
+      noteRequest: 0
     }
   },
   mounted() {
+    window.addEventListener('resize', this.handleCloseEditNote)
+    window.addEventListener('scroll', this.handleCloseEditNote, true)
+    window.addEventListener('keydown', this.handleMenuKeydown)
     if (this.$route.query.noteId) {
       this.params = [{ parentId: 0, breadcrumb: '我的笔记' }]
       this.handleOpenNote(this.$route.query.noteId)
@@ -273,13 +285,22 @@ export default {
       this.getFolderList()
     }
   },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleCloseEditNote)
+    window.removeEventListener('scroll', this.handleCloseEditNote, true)
+    window.removeEventListener('keydown', this.handleMenuKeydown)
+  },
+  deactivated() {
+    this.handleCloseEditNote()
+  },
   watch: {
+    activeTab() { this.handleCloseEditNote() },
     params(newDate) {
       this.setLocal('noteFolder', newDate)
     },
     note: {
       handler(newValue) {
-        if (this.firstGet || JSON.stringify(this.noteCache) === JSON.stringify(newValue)) return
+        if (this.firstGet || (newValue.shared && !newValue.editable) || JSON.stringify(this.noteCache) === JSON.stringify(newValue)) return
         this.$debounce(() => {
           this.handleSaveNote()
         }, 2000)()
@@ -288,6 +309,13 @@ export default {
     }
   },
   methods: {
+    itemKey(item) {
+      return `${item.shared ? 'shared' : 'own'}-${item.type}-${item.id}`
+    },
+    sharedItem(item, grant) {
+      return { ...item, name: item.type === 'folder' ? item.title : undefined,
+        shared: true, shareId: grant.shareId, permission: grant.permission }
+    },
     /**
      * 点击面包屑
      */
@@ -298,6 +326,9 @@ export default {
     /**
      * 关闭右键弹框
      */
+    handleMenuKeydown(event) {
+      if (event.key === 'Escape') this.handleCloseEditNote()
+    },
     handleCloseEditNote() {
       this.rightFlag = false
     },
@@ -374,6 +405,10 @@ export default {
      * 右键编辑笔记
      */
     handleEditNote(event, note) {
+      if (note.shared || (note === 'empty' && this.params.at(-1).shareId)) {
+        this.rightFlag = false
+        return
+      }
       if (note === 'empty') {
         this.rightFunctions = [
           { id: 1, name: '新建笔记', icon: '编辑02' },
@@ -402,13 +437,23 @@ export default {
         }
         this.rightObject = note
       }
+      this.rightStyle = { visibility: 'hidden', left: '0px', top: '0px' }
       this.rightFlag = true
-      this.rightStyle = `top: ${Math.min(event.y, window.innerHeight - this.rightFunctions.length * 48)}px; left: ${Math.min(event.x - 180, window.innerWidth - 200)}px;`
+      const { clientX, clientY } = event
+      this.$nextTick(() => {
+        const menu = this.$refs.contextMenu
+        if (!this.rightFlag || !menu) return
+        const { width, height } = menu.getBoundingClientRect()
+        const left = Math.max(8, Math.min(clientX, window.innerWidth - width - 8))
+        const top = Math.max(8, Math.min(clientY, window.innerHeight - height - 8))
+        this.rightStyle = { left: `${left}px`, top: `${top}px` }
+      })
     },
     /**
      * 拖动结束
      */
     drop(event, data) {
+      if (data.shared || this.dragObject.shared || this.params.at(-1).shareId) return
       if (data.name) {
         if (this.dragObject.type === 'folder') {
           this.listLoading = true
@@ -431,34 +476,14 @@ export default {
      * 拖动开始
      */
     drag(event, data) {
-      this.dragObject = data
+      this.dragObject = data.shared ? {} : data
     },
     /**
      * 搜索
      */
     handleSearch() {
-      if (this.searchTimer) {
-        clearTimeout(this.searchTimer)
-        this.searchTimer = setTimeout(() => {
-          if (this.searchCode) {
-            this.params.push({ name: this.searchCode })
-            this.getFolderList()
-          } else {
-            this.params = [{ parentId: 0, breadcrumb: '我的笔记' }]
-            this.getFolderList()
-          }
-        }, 500)
-      } else {
-        this.searchTimer = setTimeout(() => {
-          if (this.searchCode) {
-            this.params.push({ name: this.searchCode })
-            this.getFolderList()
-          } else {
-            this.params = [{ parentId: 0, breadcrumb: '我的笔记' }]
-            this.getFolderList()
-          }
-        }, 500)
-      }
+      clearTimeout(this.searchTimer)
+      this.searchTimer = setTimeout(() => this.getFolderList(), 500)
     },
     /**
      * 删除笔记
@@ -478,14 +503,17 @@ export default {
      */
     handleSaveNote() {
       const note = JSON.parse(JSON.stringify(this.note))
-      if (!note.id) return
+      if (!note.id || (note.shared && !note.editable)) return
       const document = new DOMParser().parseFromString(note.richText || '', 'text/html')
       note.content = document.body.textContent || ''
-      updateNote(note).then(() => {
-        this.noteCache = JSON.parse(JSON.stringify(this.note))
+      const payload = note.shared
+        ? { id: note.id, title: note.title, content: note.content, richText: note.richText }
+        : note
+      updateNote(payload).then(() => {
+        if (this.note.id === note.id) this.noteCache = JSON.parse(JSON.stringify(note))
         this.$notify.success('保存成功')
         const index = this.list.findIndex(item => item.type === 'note' && item.id === note.id)
-        if (index >= 0) this.list.splice(index, 1, { type: 'note', ...note })
+        if (index >= 0) this.list.splice(index, 1, { ...this.list[index], type: 'note', ...note })
       })
     },
     /**
@@ -574,9 +602,12 @@ export default {
      * 打开文件或文件夹
      */
     handleOpen(one, clickFlag) {
-      if (!clickFlag && this.active.id === one.id) return
+      if (!clickFlag && this.itemKey(this.active) === this.itemKey(one)) return
       this.firstGet = true
       this.active = one
+      this.noteRequest++
+      this.note = {}
+      this.loading = false
       if (one.type === 'folder') {
         if (clickFlag) {
           if (one.password) {
@@ -589,74 +620,141 @@ export default {
               },
               inputErrorMessage: '阅读密码不正确'
             }).then(({ value }) => {
-              this.params.push({ parentId: one.id, breadcrumb: one.name })
+              this.params.push({ parentId: one.id, breadcrumb: one.name, shareId: one.shareId, permission: one.permission })
               this.getFolderList()
             }).catch(() => {})
           } else {
-            this.params.push({ parentId: one.id, breadcrumb: one.name })
+            this.params.push({ parentId: one.id, breadcrumb: one.name, shareId: one.shareId, permission: one.permission })
             this.getFolderList()
           }
         }
       } else if (one.type === 'note') {
-        this.handleOpenNote(one.id)
+        this.handleOpenNote(one.id, one)
       }
     },
     /**
      * 获取文件目录
      */
-    getFolderList(data) {
+    async getFolderList(data) {
+      const request = ++this.listRequest
+      this.noteRequest++
+      this.firstGet = true
+      this.note = {}
+      this.active = {}
+      this.loading = false
       this.listLoading = true
-      listFolder(this.params[this.params.length - 1]).then(res => {
-        this.list = res.rows.map(item => {
-          if (item.title) {
-            item.type = 'note'
-          } else {
-            item.type = 'folder'
-          }
-          return item
-        })
-        if (this.list[0]) {
-          if (data) {
-            this.active = data
-          } else {
-            this.active = this.list[0]
-          }
-          if (this.active.type === 'note') {
-            this.loading = true
-            this.handleOpenNote(this.list[0].id)
-          } else if (this.active.type === 'folder') {
-            this.note = {}
-          }
+      const folder = this.params.at(-1)
+      const keyword = this.searchCode.trim()
+      try {
+        let items
+        if (folder.shareId) {
+          const res = await browseShare(folder.shareId, null, { type: 'folder', id: folder.parentId })
+          items = res.data.children.map(item => this.sharedItem(item, folder))
+          if (keyword) items = items.filter(item => (item.title || '').toLowerCase().includes(keyword.toLowerCase()))
         } else {
-          this.note = {}
+          const [own, received] = await Promise.all([
+            listFolder(keyword ? { name: keyword } : folder),
+            (!folder.parentId || keyword) ? receivedShares() : Promise.resolve({ data: [] })
+          ])
+          items = own.rows.map(item => ({ ...item, type: item.name != null ? 'folder' : 'note' }))
+          const shared = new Map()
+          for (const grant of received.data) {
+            if (keyword && !(grant.title || '').toLowerCase().includes(keyword.toLowerCase())) continue
+            const key = `${grant.resource_type}-${grant.resource_id}`
+            if (!shared.has(key) || grant.permission === 'edit') {
+              shared.set(key, this.sharedItem({ id: grant.resource_id, type: grant.resource_type, title: grant.title },
+                { shareId: grant.id, permission: grant.permission }))
+            }
+          }
+          items.push(...shared.values())
         }
-        this.listLoading = false
-      })
-      treeList().then(res => {
-        this.treeList = res.data
-      })
+        if (request !== this.listRequest) return
+        this.list = items
+        this.active = (data && items.find(item => item.id === data.id && item.type === (data.type || 'note'))) || items[0] || {}
+        if (this.active.type === 'note') this.handleOpenNote(this.active.id, this.active)
+      } catch {
+        if (request === this.listRequest) this.list = []
+      } finally {
+        if (request === this.listRequest) this.listLoading = false
+      }
+      if (!folder.shareId) treeList().then(res => { this.treeList = res.data })
     },
-    /**
-     * 打开笔记
-     */
-    handleOpenNote(id) {
+    /** 打开个人或共享笔记，权限以服务器当前响应为准。 */
+    async handleOpenNote(id, item = {}) {
+      const request = ++this.noteRequest
       this.firstGet = true
       this.loading = true
       this.editor = false
-      getNote(id).then(res => {
-        this.active = { ...res.data, type: 'note' }
-        this.note = res.data
-        this.noteCache = JSON.parse(JSON.stringify(res.data))
-        this.loading = false
+      this.note = {}
+      try {
+        const res = item.shared
+          ? await browseShare(item.shareId, null, { type: 'note', id })
+          : await getNote(id)
+        if (request !== this.noteRequest) return
+        const note = { ...res.data, shared: !!item.shared, shareId: item.shareId }
+        if (item.shared) {
+          note.richText = DOMPurify.sanitize(note.richText || '')
+          if (note.editable && !note.richText) {
+            note.richText = (note.content || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>')
+          }
+        }
+        this.active = { ...item, ...note, type: 'note' }
+        this.note = note
+        this.noteCache = JSON.parse(JSON.stringify(note))
         this.editor = true
-        setTimeout(() => this.firstGet = false, 1000)
-      })
+        await this.$nextTick()
+        if (request === this.noteRequest) this.firstGet = false
+      } catch {
+        if (request === this.noteRequest) this.active = {}
+      } finally {
+        if (request === this.noteRequest) this.loading = false
+      }
     }
+
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.note-context-menu {
+  position: fixed;
+  z-index: 3000;
+  width: min(200px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid var(--border-primary, #e5e7eb);
+  border-radius: 10px;
+  background: var(--bg-card, #fff);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary, #303133);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover, &:focus-visible {
+      background: var(--bg-hover, #f2f6fc);
+      color: var(--color-primary, #409eff);
+    }
+  }
+  .menu-icon { font-size: 16px; flex-shrink: 0; }
+}
+.context-menu-enter-active, .context-menu-leave-active { transition: opacity 0.12s; }
+.context-menu-enter-from, .context-menu-leave-to { opacity: 0; }
+
 // ==================== 容器 ====================
 
 .note-page {

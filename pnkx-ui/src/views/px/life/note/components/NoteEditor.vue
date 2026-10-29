@@ -18,10 +18,12 @@
         <div class="note-header-bar">
           <input
             v-model="note.title"
+            :readonly="readOnly"
             placeholder="输入笔记标题..."
             class="title-input"
           />
           <input
+            v-if="!note.shared"
             v-model="note.order"
             placeholder="排序"
             class="order-input"
@@ -29,7 +31,12 @@
           />
         </div>
         <div class="editor-wrapper">
+          <div v-if="readOnly" class="read-only-content">
+            <article v-if="note.richText" v-html="safeHtml" />
+            <pre v-else>{{ note.content }}</pre>
+          </div>
           <editor
+            v-else
             :key="note.id"
             ref="editor"
             height="100%"
@@ -38,7 +45,7 @@
         </div>
 
         <!-- 浮动保存按钮 -->
-        <div class="fab-save" @click="$emit('save')" title="保存 (自动保存已启用)">
+        <div v-if="!readOnly" class="fab-save" @click="$emit('save')" title="保存 (自动保存已启用)">
           <svg-icon icon-class="保存" />
         </div>
       </template>
@@ -47,13 +54,18 @@
 </template>
 
 <script>
+import DOMPurify from 'dompurify'
 import Editor from '@/components/Editor'
 
 export default {
   name: 'NoteEditor',
   components: { Editor },
   emits: ['save'],
+  computed: {
+    safeHtml() { return DOMPurify.sanitize(this.note.richText || '') }
+  },
   props: {
+    readOnly: { type: Boolean, default: false },
     // 当前选中项类型：folder 显示空状态，note 显示编辑器
     activeType: { type: String, default: '' },
     // 是否挂载编辑器（父组件控制重载场景）
@@ -66,6 +78,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.read-only-content { height: 100%; overflow: auto; overflow-wrap: anywhere; line-height: 1.7; }
+.read-only-content pre { white-space: pre-wrap; }
+.read-only-content :deep(img) { max-width: 100%; }
 .preview-area {
   flex: 1;
   display: flex;
