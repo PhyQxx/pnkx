@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class LocalCreateTools {
+  @jakarta.annotation.Resource private IPxRecipeService recipes;
   private final JdbcTemplate db;
   private final IPxNoteService notes;
   private final IPxDiaryService diaries;
@@ -29,7 +30,7 @@ public class LocalCreateTools {
   }
 
   public boolean supports(String code) {
-    return Set.of("note.create", "diary.create", "commemoration.create").contains(code);
+    return Set.of("note.create", "diary.create", "commemoration.create", "recipe.create").contains(code);
   }
 
   private void text(JSONObject a, String key, int max) {
@@ -40,7 +41,20 @@ public class LocalCreateTools {
 
   public void validate(String code, JSONObject args, String owner, boolean lock) {
     if (!supports(code)) throw new ServiceException("不支持的计划工具");
-    if ("note.create".equals(code)) {
+    if ("recipe.create".equals(code)) {
+      text(args, "title", 100);
+      text(args, "notes", 20000);
+      Integer servings = args.getInteger("servings");
+      if (servings == null || servings < 1 || servings > 100) throw new ServiceException("份数应为1至100");
+      var ingredients = args.getJSONArray("ingredients");
+      if (ingredients == null || ingredients.isEmpty() || ingredients.size() > 100) throw new ServiceException("请提供1至100种食材");
+      for (int i = 0; i < ingredients.size(); i++) {
+        text(ingredients.getJSONObject(i), "name", 100);
+        text(ingredients.getJSONObject(i), "quantity", 32);
+      }
+      String url = args.getString("url");
+      if (url != null && url.length() > 500) throw new ServiceException("来源链接过长");
+    } else if ("note.create".equals(code)) {
       text(args, "title", 255);
       text(args, "content", 100000);
       Long folder = args.getLong("folderId");
@@ -74,7 +88,27 @@ public class LocalCreateTools {
   public JSONObject run(String code, JSONObject args, String key, String owner) {
     String kind = code.substring(0, code.indexOf('.'));
     Long id;
-    if ("note".equals(kind)) {
+    if ("recipe".equals(kind)) {
+      var recipe = new PxRecipe();
+      recipe.setTitle(args.getString("title"));
+      recipe.setUrl(args.getString("url"));
+      recipe.setNotes(args.getString("notes"));
+      recipe.setServings(args.getInteger("servings"));
+      recipe.setDelFlag("0");
+      recipe.setClientUuid("plan:" + key);
+      var ingredients = new ArrayList<PxRecipeIngredient>();
+      for (int i = 0; i < args.getJSONArray("ingredients").size(); i++) {
+        var input = args.getJSONArray("ingredients").getJSONObject(i);
+        var ingredient = new PxRecipeIngredient();
+        ingredient.setName(input.getString("name"));
+        ingredient.setQuantity(input.getString("quantity"));
+        ingredient.setDelFlag("0");
+        ingredients.add(ingredient);
+      }
+      recipe.setIngredients(ingredients);
+      if (recipes.insertPxRecipe(recipe) != 1) throw new ServiceException("菜谱保存失败");
+      id = recipe.getId();
+    } else if ("note".equals(kind)) {
       var n = new PxNote();
       n.setTitle(args.getString("title"));
       n.setContent(args.getString("content"));
@@ -118,13 +152,14 @@ public class LocalCreateTools {
   }
 
   public boolean supportsKind(String kind) {
-    return Set.of("note", "diary", "commemoration").contains(kind);
+    return Set.of("note", "diary", "commemoration", "recipe").contains(kind);
   }
 
   public Map<String, Object> current(String kind, Long id, String owner, boolean lock) {
     if (!supportsKind(kind)) throw new ServiceException("不支持的撤销类型");
     String table =
         switch (kind) {
+          case "recipe" -> "px_recipe";
           case "note" -> "px_note";
           case "diary" -> "px_diary";
           default -> "px_commemoration_day";
@@ -138,11 +173,16 @@ public class LocalCreateTools {
             id,
             owner);
     if (rows.isEmpty()) throw new ServiceException("对象不存在、已移除或无权访问");
-    return rows.get(0);
+    var row = rows.get(0);
+    if ("recipe".equals(kind)) row.put("ingredients", db.queryForList(
+        "select * from px_recipe_ingredient where recipe_id=? order by id" + (lock ? " for update" : ""), id));
+    return row;
   }
 
   public void checkReferences(String kind, Long id, String owner) {
     current(kind, id, owner, true);
+    if ("recipe".equals(kind) && db.queryForObject("select count(*) from px_meal_plan where recipe_id=? and del_flag=0", Integer.class, id) > 0)
+      throw new ServiceException("菜谱已关联餐饮计划，请在菜谱库处理");
     if ("commemoration".equals(kind)) {
       if (db.queryForObject(
                   "select count(*) from px_commemoration_preparation where source_id=?",
@@ -161,6 +201,7 @@ public class LocalCreateTools {
   public void remove(String kind, Long id) {
     int count =
         switch (kind) {
+          case "recipe" -> recipes.deletePxRecipeById(id);
           case "note" -> notes.deletePxNoteById(id);
           case "diary" -> diaries.deletePxDiaryById(id);
           case "commemoration" -> days.deletePxCommemorationDayById(id);

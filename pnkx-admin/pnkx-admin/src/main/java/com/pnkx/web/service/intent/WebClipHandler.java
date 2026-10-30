@@ -41,7 +41,7 @@ public class WebClipHandler implements IntentHandler {
 
     @Override
     public String promptDescription() {
-        return "用户发送了网页链接（http/https/www 网址），或表示想收藏/剪藏某个网页。slots: {\"url\": \"用户提到的网址\"}";
+        return "用户明确想收藏/剪藏网页，或仅发送网页链接。明确要求生成或导入菜谱时必须选择 recipe。slots: {\"url\": \"用户提到的网址\"}";
     }
 
     @Override

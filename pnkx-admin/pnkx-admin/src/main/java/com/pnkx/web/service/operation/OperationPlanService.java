@@ -133,6 +133,8 @@ public class OperationPlanService {
                   Set.of("content", "planStartTime", "planEndTime", "label", "dueDate"),
                   "note.create",
                   Set.of("title", "content"),
+                  "recipe.create",
+                  Set.of("title", "notes", "servings", "ingredients"),
                   "diary.create",
                   Set.of("content", "date", "mood"),
                   "commemoration.create",

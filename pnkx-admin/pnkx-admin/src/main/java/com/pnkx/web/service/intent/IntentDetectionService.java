@@ -54,6 +54,10 @@ public class IntentDetectionService {
     }
 
     public IntentDetectionResult detect(AiClient aiClient, List<IntentHandler> handlers, String question) {
+        if (handlers.stream().anyMatch(h -> "recipe".equals(h.intentName())) && isRecipeCreation(question)) {
+            return IntentDetectionResult.builder().intent("recipe").confidence(BigDecimal.ONE)
+                    .slots(new JSONObject()).reason("明确的菜谱生成请求").source("keyword").build();
+        }
         long start = System.currentTimeMillis();
         String prompt = buildPrompt(handlers);
         String rawContent = null;
@@ -96,6 +100,11 @@ public class IntentDetectionService {
 
         // 关键词兜底
         return detectByKeywords(question, rawContent);
+    }
+
+    static boolean isRecipeCreation(String question) {
+        return question != null && question.matches("(?s).*(菜谱|食谱).*")
+                && java.util.regex.Pattern.compile("生成|导入|保存|加入|添加|录入|创建|整理|收录").matcher(question).find();
     }
 
     private JSONObject parseJson(String content) {
