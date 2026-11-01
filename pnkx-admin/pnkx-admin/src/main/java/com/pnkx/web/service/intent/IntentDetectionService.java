@@ -24,8 +24,11 @@ public class IntentDetectionService {
             Map.entry("analysis", List.of("消费分析", "本月花了", "账单", "花销")),
             Map.entry("commemoration_day", List.of("纪念日", "周年", "生日", "恋爱", "结婚", "在一起")),
             Map.entry("shopping_list", List.of("购物清单", "买东西", "超市", "买菜", "加入清单", "要买的")),
+            Map.entry("assignment", List.of("转派", "分工记录", "谁负责", "负责人", "可转派成员")),
+            Map.entry("calendar_query", List.of("日历安排", "日历查询", "查看日历", "时间冲突")),
+            Map.entry("shopping_manage", List.of("认领", "释放认领", "家里已有", "已买到", "改为待购", "我来买", "查看购物清单")),
             Map.entry("meal_plan", List.of("膳食计划", "吃什么", "明天吃", "这周吃")),
-            Map.entry("life_catalog", List.of("查订阅", "预算多少", "阅读计划", "查菜谱", "日历安排")),
+            Map.entry("life_catalog", List.of("查订阅", "预算多少", "阅读计划", "查菜谱")),
             Map.entry("content_publish", List.of("转成博客", "博客草稿", "读书笔记", "发布日记", "发布笔记")),
             Map.entry("web_clip", List.of("http://", "https://", "www.", "收藏链接", "收藏网址", "剪藏"))
     );
@@ -49,6 +52,8 @@ public class IntentDetectionService {
         sb.append("1. confidence 必须在 0 到 1 之间。\n");
         sb.append("2. slots 必须是对象，包含意图相关的参数。\n");
         sb.append("3. 如果不确定意图，请返回 chat，并将 confidence 设低。\n");
+        sb.append("4. 查询已有购物商品、认领或改变采购状态使用 shopping_manage；新增要买的商品才使用 shopping_list。\n");
+        sb.append("5. 查询分工、负责人、候选成员或转派使用assignment；按日期查看安排或检查冲突使用calendar_query。\n");
         sb.append("只返回 JSON，不要任何解释文字。");
         return sb.toString();
     }

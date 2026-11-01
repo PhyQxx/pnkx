@@ -24,6 +24,11 @@ import ParentView from '@/components/ParentView/index.vue'
 
 // 公共路由
 export const constantRoutes = [
+    {
+        path: '/ai/tools', component: Layout, hidden: true,
+        children: [{ path: '', component: () => import('@/views/px/ai/tools/index.vue'),
+            name: 'AiTools', meta: { title: 'AI 工具目录', noCache: true } }]
+    },
     { path: '/note-share', component: () => import('@/views/px/life/note/share.vue'), hidden: true },
     {
         path: '/',

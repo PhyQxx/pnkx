@@ -22,6 +22,7 @@
             </div>
           </div>
           <div class="header-actions">
+            <AiToolCatalogButton />
             <el-tooltip content="新对话" placement="top">
               <el-icon class="action-btn" @click="newConversation"><Plus /></el-icon>
             </el-tooltip>
@@ -79,6 +80,7 @@
 </template>
 
 <script setup>
+import AiToolCatalogButton from "@/components/AiToolCatalogButton.vue";
 import ChatPlanCard from "@/components/ChatPlanCard.vue"
 import { createChatStreamParser } from "@/utils/chatStreamParser"
 import { createChatHistoryStore, newSessionId } from "@/utils/chatHistoryPolicy"

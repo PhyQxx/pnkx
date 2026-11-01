@@ -33,6 +33,7 @@
                     <el-icon><Operation /></el-icon>
                 </el-button>
                 <span class="header-title">AI 助手</span>
+                <AiToolCatalogButton />
                 <el-select
                     v-model="selectedModel"
                     placeholder="选择模型"
@@ -105,6 +106,7 @@
 </template>
 
 <script setup>
+import AiToolCatalogButton from "@/components/AiToolCatalogButton.vue";
 import ChatPlanCard from '@/components/ChatPlanCard.vue';
 import { createChatStreamParser } from '@/utils/chatStreamParser';
 import { createChatHistoryStore, newSessionId, toLocalMessage } from '@/utils/chatHistoryPolicy';

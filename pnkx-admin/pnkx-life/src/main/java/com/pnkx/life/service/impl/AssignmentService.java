@@ -94,11 +94,14 @@ public class AssignmentService {
     return result;
   }
 
-  @Transactional(rollbackFor = Exception.class)
-  public JSONObject transfer(String type, Long id, String actor, JSONObject input) {
-    var row = source(type, id, true);
+  public void validateTransfer(String type, Long id, String actor, JSONObject input, boolean lock) {
+    validateTransferRow(type, id, actor, input, lock);
+  }
+
+  private Map<String, Object> validateTransferRow(String type, Long id, String actor, JSONObject input, boolean lock) {
+    var row = source(type, id, lock);
     String owner = String.valueOf(row.get("owner"));
-    db.queryForList(
+    if (lock) db.queryForList(
         "select t.user_id from px_data_group g join px_data_group_member o on o.group_id=g.id join"
             + " px_data_group_member t on t.group_id=g.id where o.user_id=? for update",
         owner);
@@ -119,6 +122,15 @@ public class AssignmentService {
         .noneMatch(x -> String.valueOf(x.get("userId")).equals(target)))
       throw new ServiceException("目标成员已退出、只读或不在可转派空间");
     if (Objects.equals(previous, target)) throw new ServiceException("新负责人未变化");
+    return row;
+  }
+
+  @Transactional(rollbackFor = Exception.class)
+  public JSONObject transfer(String type, Long id, String actor, JSONObject input) {
+    var row = validateTransferRow(type, id, actor, input, true);
+    String owner = String.valueOf(row.get("owner"));
+    String target = input.getString("assignee"), reason = input.getString("reason");
+    String previous = row.get("assignee") == null ? null : String.valueOf(row.get("assignee"));
     if ("shopping".equals(type))
       db.update(
           "update px_shopping_item set claimed_by=?,claimed_at=now(),revision=revision+1 where"

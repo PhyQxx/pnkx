@@ -20,6 +20,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class OperationPlanService {
   @jakarta.annotation.Resource private LifeFeatureGate featureGate;
   @jakarta.annotation.Resource private LocalCreateTools localCreates;
+  @jakarta.annotation.Resource private ShoppingManageTool shoppingManages;
+  @jakarta.annotation.Resource private AssignmentTool assignmentTools;
   @jakarta.annotation.Resource private ShoppingCreateTool shoppingCreates;
   @jakarta.annotation.Resource private BookkeepingCreateTool bookkeepingCreates;
   @jakarta.annotation.Resource private TodoMutationTool todoMutations;
@@ -170,6 +172,14 @@ public class OperationPlanService {
   }
 
   private void validate(String tool, JSONObject args, boolean lock, String owner) {
+    if ("assignment.transfer".equals(tool) && assignmentTools != null) {
+      assignmentTools.validate(args, owner, lock);
+      return;
+    }
+    if ("shopping.manage".equals(tool) && shoppingManages != null) {
+      shoppingManages.validate(args, owner, lock);
+      return;
+    }
     if ("shopping.add".equals(tool) && shoppingCreates != null) {
       shoppingCreates.validate(args, owner, lock);
       return;
@@ -409,6 +419,8 @@ public class OperationPlanService {
   }
 
   private JSONObject run(String tool, JSONObject args, String key, String owner) {
+    if ("assignment.transfer".equals(tool) && assignmentTools != null) return assignmentTools.run(args, owner);
+    if ("shopping.manage".equals(tool) && shoppingManages != null) return shoppingManages.run(args, owner);
     if ("shopping.add".equals(tool) && shoppingCreates != null)
       return shoppingCreates.run(args, key, owner);
     if ("bookkeeping.create".equals(tool) && bookkeepingCreates != null)
@@ -485,6 +497,8 @@ public class OperationPlanService {
     for (var step : steps) {
       var result = JSON.parseObject((String) step.get("result_json"));
       String kind = result.getString("sourceType");
+      if ("assignment_mutation".equals(kind)) throw new ServiceException("分工已转派，请重新发起转派操作，不能自动撤销");
+      if ("shopping_mutation".equals(kind)) throw new ServiceException("购物状态或认领已修改，请在购物清单核对处理，不能自动撤销");
       if ("shopping".equals(kind)) throw new ServiceException("采购清单已生成，请在购物清单中核对处理，不能自动撤销");
       if ("bookkeeping".equals(kind)) throw new ServiceException("记账记录已生成，请在记账模块核对处理，不能自动撤销");
       if ("content_publish".equals(kind))
