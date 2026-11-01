@@ -683,6 +683,30 @@ $bk-green: $theme-bookkeeping-green;
   }
 }
 
+// 记录弹窗：常规字段两列，备注整行
+.record-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-5);
+
+  > .el-form-item { min-width: 0; }
+  .record-form-wide { grid-column: 1 / -1; }
+
+  .money-input-wrapper {
+    width: 100%;
+    min-width: 0;
+    .money-preview {
+      max-width: 45%;
+      overflow: hidden;
+    }
+    .money-input { min-width: 0; }
+  }
+}
+
+@media (max-width: 600px) {
+  .record-form { grid-template-columns: minmax(0, 1fr); }
+}
+
 // 金额输入
 .money-input-wrapper {
   display: flex;

@@ -221,7 +221,7 @@
     <el-dialog
       :title="recordTitle"
       v-model="record"
-      width="520px"
+      width="min(720px, calc(100vw - 32px))"
       custom-class="modern-dialog"
       :modal-append-to-body="true"
       @closed="resetRecordForm"
@@ -231,7 +231,7 @@
         <el-tab-pane label="收入" name="0" :disabled="Boolean(recordForm.id)" />
         <el-tab-pane label="转账" name="2" :disabled="Boolean(recordForm.id)" />
       </el-tabs>
-      <el-form ref="recordForm" :model="recordForm" :rules="rules" label-position="top" class="modern-form">
+      <el-form ref="recordForm" :model="recordForm" :rules="rules" label-position="top" class="modern-form record-form">
         <el-form-item v-if="recordForm.typeDifference !== '2'" label="分类" prop="type">
           <el-cascader
             :key="1"
@@ -311,7 +311,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="备注">
+        <el-form-item label="备注" class="record-form-wide">
           <el-input
             v-model="recordForm.remark"
             type="textarea"
