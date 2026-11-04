@@ -139,6 +139,7 @@ public class ShoppingActionService {
     if (ids == null || ids.isEmpty() || ids.size() > 200)
       throw new ServiceException("请选择1至200个采购条目");
     List<Long> sorted = ids.toJavaList(Long.class).stream().distinct().sorted().toList();
+    List<String> purchasedContents = new ArrayList<>();
     for (Long id : sorted) {
       db.queryForList("select id from px_shopping_item where id=? for update", id);
       var item = items.selectPxShoppingItemById(id);
@@ -147,11 +148,12 @@ public class ShoppingActionService {
           || !"purchased".equals(item.getFulfillmentState())
           || item.getBatchId() != null
           || "1".equals(item.getDelFlag())) throw new ServiceException("采购条目已变化，请刷新");
+      purchasedContents.add(describeItem(item.getName(), item.getQuantity()));
     }
     Long recordId = null;
     BigDecimal amount = null;
     if (input.getBooleanValue("recordExpense")) {
-      recordId = createExpense(input, user, "purchase_" + user + "_" + key);
+      recordId = createExpense(input, user, "purchase_" + user + "_" + key, purchasedContents);
       amount = input.getBigDecimal("totalAmount");
     }
     db.update(
@@ -178,7 +180,25 @@ public class ShoppingActionService {
     return result;
   }
 
-  private Long createExpense(JSONObject input, String user, String stableKey) {
+  private static String describeItem(String name, String quantity) {
+    String label = name == null || name.isBlank() ? "未命名商品" : name.trim();
+    return quantity == null || quantity.isBlank() ? label : label + " × " + quantity.trim();
+  }
+
+  private static String expenseRemark(List<String> contents) {
+    String remark = "购物采购结算";
+    for (int i = 0; i < contents.size(); i++) {
+      String next = (i == 0 ? "：" : "、") + contents.get(i);
+      // remark 是 varchar(1000)，预留省略提示空间并保持商品名称完整。
+      if (remark.length() + next.length() > 970) {
+        return remark + "…（另有" + (contents.size() - i) + "项，详见采购批次）";
+      }
+      remark += next;
+    }
+    return remark;
+  }
+
+  private Long createExpense(JSONObject input, String user, String stableKey, List<String> contents) {
     BigDecimal amount = input.getBigDecimal("totalAmount");
     if (amount == null || amount.signum() < 0 || amount.scale() > 2)
       throw new ServiceException("请输入实际采购金额");
@@ -200,9 +220,11 @@ public class ShoppingActionService {
     r.setAccount(account);
     r.setType(category);
     r.setPayTime(java.sql.Date.valueOf(paid));
-    r.setClientUuid(stableKey);
-    r.setVersion(r.getClientUuid());
-    r.setRemark("购物采购结算");
+    // 幂等键固定为36字符，避免请求ID拼接后超过 client_uuid 列宽。
+    r.setClientUuid(UUID.nameUUIDFromBytes(stableKey.getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString());
+    // 账单 version 为 varchar(10)，新记录沿用表的初始版本0；不能写毫秒时间戳。
+    r.setVersion("0");
+    r.setRemark(expenseRemark(contents));
     r.setDelFlag(false);
     if (records.insertPxBookkeepingRecord(r) != 1 || r.getId() == null)
       throw new ServiceException("账单写入失败");
@@ -237,7 +259,10 @@ public class ShoppingActionService {
         throw new ServiceException("该批次已记账，请刷新");
       return result(batch);
     }
-    Long record = createExpense(input, user, "purchase_batch_" + id);
+    // 批次已经结算，归档商品仍应包含在补记账备注中。
+    List<String> contents = db.queryForList("select name,quantity from px_shopping_item where batch_id=? order by id", id)
+        .stream().map(row -> describeItem((String) row.get("name"), (String) row.get("quantity"))).toList();
+    Long record = createExpense(input, user, "purchase_batch_" + id, contents);
     db.update(
         "update px_shopping_batch set"
             + " record_id=?,total_amount=?,expense_request_id=?,expense_request_hash=? where id=?",

@@ -95,7 +95,11 @@
                                     value-format="YYYY-MM-DD"
                                     style="width: 100%" /></el-form-item
                             ><el-form-item label="扣费账户"
-                                ><el-select v-model="form.accountId" placeholder="请选择账户" style="width: 100%"
+                                ><el-select
+                                    v-model="form.accountId"
+                                    filterable
+                                    placeholder="请选择或搜索账户"
+                                    style="width: 100%"
                                     ><el-option
                                         v-for="a in accounts"
                                         :key="a.id"
@@ -104,7 +108,8 @@
                             ><el-form-item label="支出分类"
                                 ><el-select
                                     v-model="form.classificationId"
-                                    placeholder="请选择支出分类"
+                                    filterable
+                                    placeholder="请选择或搜索支出分类"
                                     style="width: 100%"
                                     ><el-option
                                         v-for="c in categories"

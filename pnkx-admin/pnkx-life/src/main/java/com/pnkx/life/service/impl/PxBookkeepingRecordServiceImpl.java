@@ -60,7 +60,11 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
     @Override
     public PxBookkeepingRecord selectPxBookkeepingRecordById(Long id) {
         var record=pxBookkeepingRecordMapper.selectPxBookkeepingRecordById(id);
-        requirePrivateOwner(record);return record;
+        if (record == null || !isReferenceVisible(record.getCreateBy(),
+                dataPermissionService.getVisibleUserIds("budget"))) {
+            throw new ServiceException("账单不存在或无权访问");
+        }
+        return record;
     }
 
     @Override
@@ -170,7 +174,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         return rows;
     }
 
-    @DataScopeSelf(alias = "r", onlySelf = true)
+    @DataScopeSelf(alias = "r", module = "budget")
     @Override
     public TableDataInfo selectPxBookkeepingRecordList(PxBookkeepingRecord pxBookkeepingRecord) {
         List<PxBookkeepingRecord> list = pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
@@ -188,7 +192,7 @@ public class PxBookkeepingRecordServiceImpl implements IPxBookkeepingRecordServi
         return rspData;
     }
 
-    @DataScopeSelf(alias = "r", onlySelf = true)
+    @DataScopeSelf(alias = "r", module = "budget")
     @Override
     public List<PxBookkeepingRecord> selectPxBookkeepingRecordAll(PxBookkeepingRecord pxBookkeepingRecord) {
         return pxBookkeepingRecordMapper.selectPxBookkeepingRecordList(pxBookkeepingRecord);
