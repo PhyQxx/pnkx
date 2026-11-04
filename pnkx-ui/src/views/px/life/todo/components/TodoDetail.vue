@@ -67,7 +67,7 @@
             class="detail-tag"
             :class="tagTypes[index % tagTypes.length]"
           >
-            {{ tag }}
+            {{ tag }}{{ tag === '采购' ? ' · 固定' : '' }}
             <el-icon class="tag-close" @click="handleDeleteLabel(tag)"><Close /></el-icon>
           </span>
           <el-select
@@ -80,7 +80,7 @@
             class="tag-select"
           >
             <el-option
-              v-for="item in labelOptions"
+              v-for="item in [...new Set(['采购', ...labelOptions])]"
               :key="item"
               :label="item"
               :value="item"
@@ -136,6 +136,8 @@
       </div>
     </div>
 
+    <todo-shopping v-if="toDoDetails.id && (toDoDetails.label || []).includes('采购')" :todo-id="toDoDetails.id" :completed="!!toDoDetails.status" @completed="toDoDetails.status=true; toDoDetails.kanbanStatus=2" />
+
     <!-- 备注 -->
     <div class="detail-editor">
       <editor
@@ -154,11 +156,12 @@
 
 <script>
 /* eslint-disable vue/no-mutating-props */
+import TodoShopping from '@/components/TodoShopping.vue'
 import Editor from '@/components/Editor'
 
 export default {
   name: 'TodoDetail',
-  components: { Editor },
+  components: { Editor, TodoShopping },
   emits: ['close', 'save', 'delete', 'open-reminder', 'update:time'],
   props: {
     // 待办详情对象（按引用共享，字段就地编辑；保存动作由父组件触发）
@@ -198,7 +201,8 @@ export default {
      */
     handleChangeLabel(value) {
       if (!this.toDoDetails.label) this.toDoDetails.label = []
-      this.toDoDetails.label.push(value)
+      if (!this.toDoDetails.label.includes(value)) this.toDoDetails.label.push(value)
+      this.newLabel = ''
     },
     /**
      * 删除待办标签

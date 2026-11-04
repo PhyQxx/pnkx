@@ -34,6 +34,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
 
     @Resource
     private PxToDoMapper pxToDoMapper;
+    @Resource private org.springframework.jdbc.core.JdbcTemplate shoppingTodoDb;
     @Resource private com.pnkx.system.service.ISysDataGroupService spaces;
 
     @Resource
@@ -114,6 +115,9 @@ public class PxToDoServiceImpl implements IPxToDoService {
     public int updatePxToDo(PxToDo pxToDo) {
         PxToDo before = pxToDo.getId() == null ? null : pxToDoMapper.lockById(pxToDo.getId());
         requireSharedWrite(before);
+        if (ShoppingTodoService.hasLabel(before.getLabel()) && pxToDo.getLabel() != null && !ShoppingTodoService.hasLabel(pxToDo.getLabel())
+                && shoppingTodoDb.queryForObject("select count(*) from px_shopping_todo_link l join px_shopping_item i on i.id=l.item_id where l.todo_id=? and i.del_flag='0'", Long.class, pxToDo.getId()) > 0)
+            throw new ServiceException("请先解除购物项关联，再移除采购标签");
         if(pxToDo.getPerformer()!=null && !java.util.Objects.equals(before.getPerformer(),pxToDo.getPerformer())) throw new ServiceException("负责人已变化或需要转派，请刷新后使用分工与转派入口填写原因");
         pxToDo.setCreateBy(before.getCreateBy());
         pxToDo.setUpdateTime(DateUtils.getNowDate());
@@ -135,8 +139,10 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
     public int deletePxToDoByIds(Long[] ids) {
         for (Long id : ids) requireSharedWrite(pxToDoMapper.selectPxToDoById(id));
+        for (Long id : ids) { requireSharedWrite(pxToDoMapper.lockById(id)); shoppingTodoDb.update("delete from px_shopping_todo_link where todo_id=?", id); }
         int rows = pxToDoMapper.deletePxToDoByIds(ids);
         for (Long id : ids) lifeReminderService.unbindReminder("todo", id, SecurityUtils.getUserId());
         return rows;
@@ -149,8 +155,11 @@ public class PxToDoServiceImpl implements IPxToDoService {
      * @return 结果
      */
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor=Exception.class)
     public int deletePxToDoById(Long id) {
         requireSharedWrite(pxToDoMapper.selectPxToDoById(id));
+        requireSharedWrite(pxToDoMapper.lockById(id));
+        shoppingTodoDb.update("delete from px_shopping_todo_link where todo_id=?", id);
         int rows = pxToDoMapper.deletePxToDoById(id);
         lifeReminderService.unbindReminder("todo", id, SecurityUtils.getUserId());
         return rows;
@@ -163,6 +172,7 @@ public class PxToDoServiceImpl implements IPxToDoService {
     @Override
     public List<String> getLabelList() {
         List<String> result = new ArrayList<>();
+        result.add(ShoppingTodoService.LABEL);
         PxToDo query = new PxToDo();
         // 数据权限：管理员不限；否则仅本人+群组成员
         List<Long> visibleUserIds = dataPermissionService.getVisibleUserIds();

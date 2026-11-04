@@ -2,15 +2,17 @@
     <el-button link @click="open">分工与转派记录</el-button>
     <el-dialog v-model="visible" title="分工与转派记录" width="min(640px, 94vw)" append-to-body>
         <el-alert v-if="error" :title="error" type="error" :closable="false" />
-        <p>当前负责人：{{ data.assignee || '未分配' }}</p>
+        <p>当前负责人：{{ userName(data.assignee) }}</p>
         <template v-if="data.canTransfer">
             <el-select v-model="target" placeholder="选择新的负责人"
                 ><el-option
                     v-for="c in data.candidates || []"
                     :key="c.userId"
-                    :label="'成员 ' + c.userId"
+                    :label="userName(c.userId) + (String(c.userId) === String(data.assignee) ? '（当前负责人）' : '')"
+                    :disabled="String(c.userId) === String(data.assignee)"
                     :value="String(c.userId)"
             /></el-select>
+            <p>转派原因（必填）</p>
             <el-input
                 v-model="reason"
                 type="textarea"
@@ -19,13 +21,13 @@
                 placeholder="填写转派原因（必填）"
                 style="margin: 12px 0"
             />
-            <el-button type="primary" :loading="busy" :disabled="!target || !reason.trim()" @click="transfer"
+            <el-button type="primary" :loading="busy" :disabled="!target || busy" @click="transfer"
                 >确认转派</el-button
             >
         </template>
         <el-empty v-if="!data.history?.length" description="暂无分工变更记录" />
         <div v-for="h in data.history || []" :key="h.id" style="padding: 12px 0; border-bottom: 1px solid #eee">
-            <div>{{ h.previous_assignee || '未分配' }} → {{ h.assignee || '未分配' }} · 操作人 {{ h.operator_id }}</div>
+            <div>{{ userName(h.previous_assignee) }} → {{ userName(h.assignee) }} · 操作人 {{ userName(h.operator_id) }}</div>
             <div>{{ h.reason }}</div>
             <small>{{ h.create_time }}</small>
         </div>
@@ -61,6 +63,10 @@ const visible = ref(false),
     target = ref(''),
     reason = ref(''),
     page = ref(1);
+function userName(id) {
+    if (id == null || id === '') return '未分配';
+    return data.value.userNames?.[String(id)] || `用户 ${id}（名称不可用）`;
+}
 let attempt = null;
 async function load() {
     try {
@@ -82,6 +88,12 @@ async function open() {
     await load();
 }
 async function transfer() {
+    if (busy.value || !target.value) return;
+    if (!reason.value.trim()) {
+        error.value = '请填写转派原因后再确认转派';
+        return;
+    }
+    error.value = '';
     const body = { assignee: target.value, expectedAssignee: data.value.assignee ?? null, reason: reason.value },
         hash = JSON.stringify(body);
     if (!attempt || attempt.hash !== hash)

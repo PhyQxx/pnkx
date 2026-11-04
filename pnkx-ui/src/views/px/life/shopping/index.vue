@@ -6,6 +6,9 @@
 -->
 <template>
     <div class="shopping-center">
+        <el-dialog :model-value="!!linkedTodoId" title="采购待办 · 关联清单" width="min(600px, 94vw)" append-to-body @close="linkedTodoId=null">
+            <todo-shopping v-if="linkedTodoId" :todo-id="linkedTodoId" @changed="loadItems" @completed="linkedTodoId=null; loadItems()" />
+        </el-dialog>
         <div class="shopping-layout">
             <!-- ============ 左侧：清单列表 ============ -->
             <div class="sidebar">
@@ -48,6 +51,7 @@
                             </el-tag>
                         </div>
                         <div class="toolbar-right">
+                            <shopping-todo-arrange :items="groups.needed.filter(item => !item.todoId)" @changed="loadItems" />
                             <feature-gate feature="shoppingPlanV2"><shopping-checkout ref="checkout" :items="items" :list-id="activeListId" @changed="loadItems"/></feature-gate>
                             <el-button
                                 size="small"
@@ -130,6 +134,7 @@
                                 />
                                 <span v-else class="row-pad"></span>
                                 <span class="item-name">{{ item.name }}</span>
+                                <el-button v-if="item.todoId" link type="primary" @click="linkedTodoId=item.todoId">采购待办</el-button>
                                 <span class="item-qty">× {{ item.quantity }}</span>
                                 <feature-gate feature="shoppingPlanV2"
                                     ><shopping-item-actions :item="item" @changed="loadItems"
@@ -188,6 +193,8 @@
 </template>
 
 <script>
+import TodoShopping from "@/components/TodoShopping.vue"
+import ShoppingTodoArrange from "@/components/ShoppingTodoArrange.vue"
 import ShoppingCheckout from "@/components/ShoppingCheckout.vue"
 import ShoppingItemActions from "@/components/ShoppingItemActions.vue"
 import { groupItems, groupMeta } from '@/utils/shoppingGroups'
@@ -206,9 +213,10 @@ import {
 
 export default {
     name: 'ShoppingList',
-    components: {ShoppingCheckout,ShoppingItemActions,Plus, Close, EditPen, Goods},
+    components: {TodoShopping,ShoppingTodoArrange,ShoppingCheckout,ShoppingItemActions,Plus, Close, EditPen, Goods},
     data() {
         return {
+            linkedTodoId: null,
             // 清单
             listLoading: false,
             lists: [],
@@ -243,6 +251,7 @@ export default {
             return this.groups.purchased.length > 0 && this.selectedIds.length === this.groups.purchased.length
         }
     },
+    props: { initialListId: { type: [String, Number], default: undefined } },
     created() {
         this.loadLists()
         this.refreshCheckoutEnabled()
@@ -255,7 +264,7 @@ export default {
                 this.lists = res.rows || res.data || []
                 if (this.lists.length > 0) {
                     if (!this.activeListId || !this.lists.find(l => l.id === this.activeListId)) {
-                        this.activeListId = this.lists[0].id
+                        this.activeListId = this.lists.find(l => String(l.id) === String(this.initialListId))?.id || this.lists[0].id
                         this.loadItems()
                     }
                 } else {

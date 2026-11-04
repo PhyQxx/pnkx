@@ -3,10 +3,11 @@
  * @Description: 工作台特殊提醒面板（姨妈助手/纪念日倒计时）—— 从 views/index.vue 拆出
 -->
 <template>
-  <div class="card-body reminder-body">
+  <div class="card-body reminder-body" :class="{ compact }">
+    <div v-if="compact && reminderCount > 1" class="reminder-pager"><el-button link :disabled="reminderPage === 0" @click="reminderPage--">‹</el-button><span>{{ reminderPage + 1 }} / {{ reminderCount }}</span><el-button link :disabled="reminderPage >= reminderCount - 1" @click="reminderPage++">›</el-button></div>
     <!-- 姨妈助手 -->
     <div
-      v-if="menstruation"
+      v-if="menstruation && (!compact || reminderPage === 0)"
       class="reminder-item"
       @click="$router.push('/mytool/menstruationAssistant')"
     >
@@ -39,7 +40,7 @@
     </div>
     <!-- 纪念日 -->
     <div
-      v-for="item in commemorationDayList"
+      v-for="item in visibleDays"
       :key="item.id"
       class="reminder-item"
       @click="$router.push({name: '/commemorationDay', params: {id: item.id}})"
@@ -74,7 +75,9 @@ import { sanitizeHtml } from '@/utils/sanitizeHtml'
 
 export default {
   name: 'ReminderPanel',
+  data() { return { reminderPage: 0 } },
   props: {
+    compact: Boolean,
     // 姨妈提醒富文本（空串表示无提醒）
     menstruation: { type: String, default: '' },
     // 经期设置
@@ -86,7 +89,10 @@ export default {
     // 纪念日列表
     commemorationDayList: { type: Array, default: () => [] }
   },
+  watch: { reminderCount() { this.reminderPage = Math.min(this.reminderPage, Math.max(0, this.reminderCount - 1)) } },
   computed: {
+    reminderCount() { return this.commemorationDayList.length + (this.menstruation ? 1 : 0) },
+    visibleDays() { return this.compact ? this.commemorationDayList.slice(Math.max(0, this.reminderPage - (this.menstruation ? 1 : 0)), this.reminderPage + (this.menstruation ? 0 : 1)) : this.commemorationDayList },
     safeMenstruation() {
       return sanitizeHtml(this.menstruation || '')
     }
@@ -222,4 +228,16 @@ export default {
   .empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 8px; }
   p { margin: 4px 0; font-size: 13px; }
 }
+</style>
+
+<style scoped>
+.compact { position:relative; padding:4px 12px !important; }
+.reminder-pager { display:flex; align-items:center; justify-content:flex-end; gap:10px; font-size:11px; height:20px; }
+.compact .reminder-item { padding:6px 8px; margin:0; min-height:0; }
+.compact .reminder-icon { width:28px; height:28px; }
+.compact .reminder-content { gap:4px; }
+.compact .reminder-title { font-size:13px; }
+.compact .reminder-desc,.compact .countdown-text,.compact .reminder-label { font-size:11px; }
+.compact .empty-reminders { padding:8px; }
+.compact .empty-icon { display:none; }
 </style>

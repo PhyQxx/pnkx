@@ -48,11 +48,11 @@ export function delShoppingList(ids) {
 // ===== 购物项 =====
 
 // 查询某清单下的购物项列表
-export function listShoppingItem(listId) {
+export function listShoppingItem(listId, pagination = {}) {
   return request({
     url: '/shoppingItem/list',
     method: 'get',
-    params: { listId: listId }
+    params: { ...pagination, listId: listId }
   })
 }
 

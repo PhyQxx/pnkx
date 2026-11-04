@@ -5,7 +5,7 @@
  * @Description: 首页仪表盘 - Modern UI/UX Refactored
 -->
 <template>
-  <div class="workbench-dashboard">
+  <div ref="workbench" class="workbench-dashboard" :class="{ 'single-screen': !centerActive }" :style="{ '--home-height': homeHeight + 'px' }">
     <div v-if="centerAllowed" class="home-view-switch">
       <el-button size="small" round @click="toggleHomeView">
         {{ viewMode === 'center' ? '切换到原版首页' : '切换到行动中心' }}
@@ -13,6 +13,10 @@
     </div>
     <div :class="['home-view-stage', centerActive ? 'stage-center' : 'stage-classic']">
     <feature-gate feature="actionCenterV2"><action-center v-if="centerActive" /></feature-gate>
+    <div v-if="!centerActive" class="home-greeting">
+      <div><h1>{{ $store.state.user.nickName ? '你好，' + $store.state.user.nickName : '你好，欢迎回来' }}</h1><p>{{ new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }) }} · 把生活安排得刚刚好</p></div>
+      <span>生活工作台</span>
+    </div>
     <!-- 管理员/超级管理员仪表盘 -->
     <div v-show="!centerActive" class="classic-home">
     <div v-hasRole="['super', 'admin']" class="dashboard-layout">
@@ -40,8 +44,8 @@
             </div>
           </div>
           <div class="card-body">
-            <el-table v-loading="billLoading" :data="recordList" size="small">
-              <el-table-column align="center" label="分类">
+            <el-table v-loading="billLoading" :data="recordList.slice((billPage - 1) * billSize, billPage * billSize)" size="small">
+              <el-table-column align="center" label="分类" show-overflow-tooltip>
                 <template v-slot="scope">
                   {{ scope.row.typeObject && scope.row.typeObject.typeName }}
                 </template>
@@ -69,66 +73,10 @@
               <el-table-column align="center" label="备注" prop="remark" show-overflow-tooltip />
             </el-table>
           </div>
+          <div class="bill-pagination mini-pager"><span>共 {{ recordList.length }} 条</span><el-button link :disabled="billPage === 1" @click="billPage--">‹</el-button><span>{{ billPage }} / {{ Math.max(1, Math.ceil(recordList.length / billSize)) }}</span><el-button link :disabled="billPage * billSize >= recordList.length" @click="billPage++">›</el-button></div>
         </div>
 
-        <!-- 待办事项 -->
-        <div class="dashboard-card todo-card urgent-list">
-          <div class="card-header">
-            <div class="card-header-left">
-              <div class="card-icon-wrapper todo-gradient">
-                <i class="el-icon-s-check" />
-              </div>
-              <span class="card-title">待办事项</span>
-              <el-tag v-if="toDoList.length" size="small" effect="dark" class="todo-count">
-                {{ toDoList.length }}
-              </el-tag>
-            </div>
-          </div>
-          <div class="card-body">
-            <el-table v-loading="toDoLoading" :data="toDoList" size="small">
-              <el-table-column align="center" label="序号" type="index" width="60" />
-              <el-table-column align="center" label="待办类型" prop="type">
-                <template #default="scope">
-                  <el-tag :type="tagMap[scope.row.type]" size="small">{{ scope.row.type }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column align="center" label="标题" prop="title" show-overflow-tooltip />
-              <el-table-column header-align="center" label="描述" prop="description" show-overflow-tooltip />
-              <el-table-column align="center" label="状态" prop="status">
-                <template #default="scope">
-                  <el-tag effect="plain" size="small">{{ scope.row.status }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column align="center" label="时间" prop="time" show-overflow-tooltip />
-              <el-table-column align="center" label="处理" width="80">
-                <template v-slot="scope">
-                  <el-button icon="el-icon-success" size="small" type="text" @click="handleDispose(scope.row)">
-                    处理
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
-
-        <!-- 特殊提醒 -->
-        <div class="dashboard-card reminder-card data-governance">
-          <div class="card-header">
-            <div class="card-header-left">
-              <div class="card-icon-wrapper reminder-gradient">
-                <i class="el-icon-bell" />
-              </div>
-              <span class="card-title">特殊提醒</span>
-            </div>
-          </div>
-          <reminder-panel
-            :menstruation="menstruation"
-            :menstruation-assistant-setting="menstruationAssistantSetting"
-            :pregnancy="pregnancy"
-            :menstruation-label="menstruationLabel"
-            :commemoration-day-list="commemorationDayList"
-          />
-        </div>
+        <shopping-summary compact :page-size="shoppingSize" />
       </div>
 
       <!-- 右栏：日历 -->
@@ -151,6 +99,36 @@
             <calendar :menstruationAssistantSetting="menstruationAssistantSetting" />
           </div>
         </div>
+        <div class="dashboard-card todo-card">
+          <div class="card-header"><div class="card-header-left"><span class="card-title">待办事项</span><el-tag size="small">{{ toDoList.length }}</el-tag></div>
+            <div class="mini-pager"><el-button link :disabled="todoPage === 1" @click="todoPage--">‹</el-button><span>{{ todoPage }} / {{ Math.max(1, Math.ceil(toDoList.length / todoSize)) }}</span><el-button link :disabled="todoPage * todoSize >= toDoList.length" @click="todoPage++">›</el-button></div>
+          </div>
+          <div v-loading="toDoLoading" class="compact-todos">
+            <div v-for="item in toDoList.slice((todoPage - 1) * todoSize, todoPage * todoSize)" :key="item.type + '-' + item.id" class="compact-todo">
+              <div class="todo-copy" :title="[item.title, item.description, item.type, item.status, item.time].filter(Boolean).join(' · ')"><strong>{{ item.title }}</strong><small>{{ item.type }} · {{ item.status }} · {{ item.description || item.time }}</small></div>
+              <el-button link type="primary" @click="handleDispose(item)">处理</el-button>
+            </div>
+            <div v-if="!toDoLoading && !toDoList.length" class="compact-empty">暂无待办事项</div>
+          </div>
+        </div>
+        <!-- 特殊提醒 -->
+        <div class="dashboard-card reminder-card data-governance">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon-wrapper reminder-gradient">
+                <i class="el-icon-bell" />
+              </div>
+              <span class="card-title">特殊提醒</span>
+            </div>
+          </div>
+          <reminder-panel compact
+            :menstruation="menstruation"
+            :menstruation-assistant-setting="menstruationAssistantSetting"
+            :pregnancy="pregnancy"
+            :menstruation-label="menstruationLabel"
+            :commemoration-day-list="commemorationDayList"
+          />
+        </div>
       </div>
     </div>
 
@@ -170,6 +148,7 @@
 </template>
 
 <script>
+import ShoppingSummary from '@/views/homepage/components/ShoppingSummary.vue'
 import ActionCenter from "@/components/ActionCenter.vue"
 import { getFeatureCapabilities } from '@/utils/featureCapabilities'
 import { listRecord } from '@/api/px/life/bookkeeping/record'
@@ -183,12 +162,14 @@ export default {
   name: 'Index',
   components: {
     ActionCenter,
+    ShoppingSummary,
     Calendar,
     ReminderPanel,
     BillAnalysisDialog
   },
   data() {
     return {
+      homeHeight: 700, billPage: 1, billSize: 4, todoPage: 1, todoSize: 2, shoppingSize: 4, homeObserver: null,
       // 今日账单记录
       recordList: [],
       // 今日账单加载标志
@@ -238,6 +219,7 @@ export default {
     }
   },
   watch: {
+    centerActive() { this.$nextTick(this.fitHome) },
     '$store.getters.token'() {
       this.refreshCenterAllowed()
     }
@@ -247,13 +229,36 @@ export default {
     this.getBookkeepingRecord()
   },
   mounted() {
+    this.$nextTick(() => {
+      this.homeObserver = new ResizeObserver(() => this.fitHome())
+      this.homeObserver.observe(this.$refs.workbench)
+      window.addEventListener('resize', this.fitHome)
+      this.fitHome()
+    })
     this.refreshCenterAllowed()
     this.centerTimer = setInterval(() => this.refreshCenterAllowed(), 30000)
   },
   beforeUnmount() {
+    this.homeObserver?.disconnect()
+    window.removeEventListener('resize', this.fitHome)
     clearInterval(this.centerTimer)
   },
   methods: {
+    fitHome() {
+      const root = this.$refs.workbench
+      if (!root || this.centerActive) return
+      this.homeHeight = Math.max(380, window.innerHeight - root.getBoundingClientRect().top - 8)
+      this.$nextTick(() => {
+        const bill = root.querySelector('.bill-card')
+        const shopping = root.querySelector('.shopping-summary')
+        const todo = root.querySelector('.todo-card')
+        this.billSize = Math.max(1, Math.floor(((bill?.clientHeight || 280) - 144) / 36))
+        this.shoppingSize = Math.max(2, Math.floor(((shopping?.clientHeight || 280) - 190) / 58) * 2)
+        this.todoSize = Math.max(1, Math.floor(((todo?.clientHeight || 160) - 48) / 48))
+        this.billPage = Math.min(this.billPage, Math.max(1, Math.ceil(this.recordList.length / this.billSize)))
+        this.todoPage = Math.min(this.todoPage, Math.max(1, Math.ceil(this.toDoList.length / this.todoSize)))
+      })
+    },
     toggleHomeView() {
       this.viewMode = this.viewMode === 'center' ? 'classic' : 'center'
       localStorage.setItem('pnkx-home-view', this.viewMode)
@@ -289,6 +294,7 @@ export default {
      * 获取今日账单
      */
     getBookkeepingRecord() {
+      this.billLoading = true
       listRecord({ version: 1 }).then(res => {
         this.expenditure = this.arraySum(res.rows.filter(r => {
           return r.typeObject && r.typeObject.typeDifference === '1'
@@ -297,7 +303,7 @@ export default {
           return r.typeObject && r.typeObject.typeDifference === '0'
         }), 'money')
         this.recordList = res.rows
-      })
+      }).finally(() => { this.billLoading = false })
     },
     /**
      * 获取待办事项
@@ -457,7 +463,9 @@ export default {
   transform: translateY(-1px);
   box-shadow: var(--el-box-shadow-light);
 }
-
+.stage-classic {
+    margin-top: -2rem;
+}
 /* 视图切换舞台：两个状态使用不同动画名，切换时重新播放入场动画 */
 .home-view-stage.stage-classic {
   animation: home-view-in-down 0.28s ease;
@@ -747,4 +755,56 @@ export default {
     min-height: 500px;
   }
 }
+
+.home-greeting { display:flex; align-items:center; justify-content:space-between; margin:8px 0 26px; padding:0 4px;
+  h1 { margin:0 0 10px; font-size:25px; font-weight:600; }
+  p, > span { margin:0; font-size:13px; color:var(--pnkx-text-muted); }
+}
+.workbench-dashboard { padding:24px; }
+.dashboard-layout { gap:22px; align-items:flex-start; }
+.dashboard-left { flex:1.65; gap:20px; }
+.dashboard-right { flex:1; width:auto; min-width:320px; display:flex; flex-direction:column; gap:20px; }
+.dashboard-card { border-radius:14px; overflow:hidden; }
+.bill-card,.todo-card { flex:none; }
+.card-header { padding:16px 22px; }
+.calendar-card { height:auto; min-height:0; }
+.calendar-body :deep(.el-calendar-table .el-calendar-day) { height:64px; }
+@media (max-width:1000px) { .dashboard-left,.dashboard-right { width:100%; min-width:0; } }
+
+/* The desktop workbench allocates a bounded viewport; lists paginate instead of scrolling. */
+.single-screen { height:var(--home-height); min-height:0; box-sizing:border-box; padding:12px 20px 8px; position:relative; }
+.single-screen .home-view-switch { position:absolute; right:20px; top:14px; margin:0; z-index:2; }
+.single-screen .home-view-stage { margin-top:0; height:100%; display:flex; flex-direction:column; }
+.single-screen .home-greeting { flex:none; height:44px; margin:0 0 12px; padding-right:150px; }
+.single-screen .home-greeting > div { display:flex; align-items:center; gap:18px; min-width:0; }
+.single-screen .home-greeting h1 { margin:0; font-size:21px; white-space:nowrap; }
+.single-screen .home-greeting p { font-size:12px; }
+.single-screen .home-greeting > span { display:none; }
+.single-screen .classic-home { flex:1; min-height:0; }
+.single-screen .dashboard-layout { height:100%; display:grid; grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:16px; }
+.single-screen .dashboard-left { display:grid; grid-template-rows:1fr 1fr; gap:14px; height:100%; min-height:0; }
+.single-screen .dashboard-right { display:grid; grid-template-rows:minmax(0,1fr) 26% 24%; gap:12px; height:100%; min-height:0; min-width:0; }
+.single-screen .dashboard-card { height:100%; min-height:0; }
+.single-screen .card-header { flex:none; padding:9px 16px; min-height:44px; }
+.single-screen .card-icon-wrapper { width:28px; height:28px; }
+.single-screen .card-body { padding:6px 12px; min-height:0; }
+.single-screen .bill-card :deep(.el-table__cell) { padding:5px 0; height:36px; }
+.single-screen .bill-card :deep(.el-table__empty-block) { min-height:48px; }
+.single-screen .bill-card :deep(.el-table .cell) { white-space:nowrap; }
+.mini-pager { display:flex; align-items:center; justify-content:flex-end; gap:10px; font-size:12px; color:var(--pnkx-text-muted); }
+.bill-pagination { padding:5px 16px 9px; flex:none; }
+.compact-todos { padding:0 16px; flex:1; min-height:0; }
+.compact-todo { display:flex; align-items:center; gap:12px; height:48px; border-bottom:1px solid var(--pnkx-border-soft); }
+.todo-copy { flex:1; min-width:0; strong,small { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } strong { font-size:13px; font-weight:500; } small { margin-top:4px; font-size:11px; color:var(--pnkx-text-muted); } }
+.compact-empty { padding:18px 0; text-align:center; color:var(--pnkx-text-muted); font-size:12px; }
+.single-screen .calendar-body { padding:0 10px 5px; }
+.single-screen .calendar-body :deep(.el-calendar) { height:100%; display:flex; flex-direction:column; }
+.single-screen .calendar-body :deep(.el-calendar__header) { padding:5px 0; }
+.single-screen .calendar-body :deep(.el-calendar__body) { padding:0; min-height:0; flex:1; }
+.single-screen .calendar-body :deep(.el-calendar-table) { height:100%; }
+.single-screen .calendar-body :deep(.el-calendar-table th) { padding:3px 0; font-size:11px; }
+.single-screen .calendar-body :deep(.el-calendar-table .el-calendar-day) { height:100%; min-height:20px; padding:1px 4px; }
+.single-screen .calendar-body :deep(.day) { font-size:11px; line-height:16px; height:16px; }
+.single-screen .calendar-body :deep(.affair .svg-icon) { font-size:12px; }
+@media (max-height:760px) { .single-screen .home-greeting p { display:none; } .single-screen .card-header { padding-top:5px; padding-bottom:5px; } }
 </style>

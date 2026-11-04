@@ -163,6 +163,8 @@
         </view>
       </uni-transition>
 
+      <view v-if="$store.getters.token" class="section"><home-shopping-summary ref="homeShopping" /></view>
+
       <!-- Today Bills -->
       <uni-transition ref="ani" custom-class="transition" :mode-class="['fade', 'zoom-in']"
                       :show="true">
@@ -260,6 +262,7 @@
 </template>
 
 <script>
+  import HomeShoppingSummary from "@/components/HomeShoppingSummary/index.vue";
 import ActionCenter from "@/components/ActionCenter/index.vue"
 	import { getFeatureCapabilities } from "@/utils/featureCapabilities";
 	import RecordList from "@/components/RecordList/index.vue"
@@ -278,7 +281,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 	import uniPopupDialog from '@/uni_modules/uni-popup/components/uni-popup-dialog/uni-popup-dialog.vue';
 
 	export default {
-		components: { ActionCenter,
+		components: { ActionCenter, HomeShoppingSummary,
 			RecordList,
 			uniPopup,
 			uniPopupDialog
@@ -390,6 +393,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 			this.checkAppUpdate();
 		},
 		onShow() {
+      this.$nextTick(() => this.$refs.homeShopping?.reload());
 			this.getBillList();
 			this.refreshUnreadCount();
 		},
@@ -417,6 +421,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 				}
 			},
 			refreshAll() {
+        this.$refs.homeShopping?.reload();
 				this.getNoticeList();
 				this.getTodayReminderData();
 				this.getBillList();

@@ -55,6 +55,7 @@
             <div v-for="(todo, index) in overdueTodos" :key="todo.id" class="ac-item ac-item--overdue" :style="{ '--i': index }">
                 <div class="ac-item__main">
                     <div class="ac-item__title">{{ todo.content }}</div>
+                    <el-button v-if="(todo.label || '').split(',').map(x => x.trim()).includes('采购')" link type="primary" @click="shoppingTodo = todo">采购清单与进度</el-button>
                     <div class="ac-item__meta">
                         <span class="ac-chip ac-chip--plain">{{ shortTime(todo.planEndTime) }}</span>
                         <span class="ac-tag ac-tag--danger">已逾期</span>
@@ -93,7 +94,8 @@
             <div class="ac-section__head">
                 <span class="ac-dot ac-dot--primary"></span>
                 <span class="ac-section__title">到期待办</span>
-                <span v-if="data.todoCount != null" class="ac-count">{{ data.todoCount }}</span>
+                <span v-if="data.todoCount != null" class="ac-count">{{ upcomingTodos.length }}</span>
+                <el-button link type="primary" @click="go('todo')">查看待办</el-button>
             </div>
             <div
                 v-for="(todo, index) in expanded ? upcomingTodos : upcomingTodos.slice(0, 5)"
@@ -103,6 +105,7 @@
             >
                 <div class="ac-item__main">
                     <div class="ac-item__title">{{ todo.content }}</div>
+                    <el-button v-if="(todo.label || '').split(',').map(x => x.trim()).includes('采购')" link type="primary" @click="shoppingTodo = todo">采购清单与进度</el-button>
                     <div class="ac-item__meta">
                         <span class="ac-chip ac-chip--plain">{{ shortTime(todo.planEndTime) }}</span>
                     </div>
@@ -117,7 +120,9 @@
                     >完成</el-button
                 >
             </div>
-            <el-empty v-if="data.todoCount === 0" description="暂无到期待办" :image-size="50" />
+            <p v-if="!loading && !error && !upcomingTodos.length" class="ac-empty" role="status">
+                {{ overdueTodos.length ? '当前页的逾期待办已列在上方“必须处理”中' : '当前页暂无到期待办' }}
+            </p>
             <el-button v-if="data.todoCount > 5" link type="primary" @click="expanded = !expanded">{{
                 expanded ? '收起' : '查看全部'
             }}</el-button
@@ -136,7 +141,9 @@
                 <span class="ac-dot ac-dot--success"></span>
                 <span class="ac-section__title">今日餐饮</span>
                 <span v-if="(data.meals || []).length" class="ac-count">{{ data.meals.length }}</span>
+                <el-button link type="primary" @click="go('meal')">查看餐饮计划</el-button>
             </div>
+            <p v-if="!loading && !error && !(data.meals || []).length" class="ac-empty" role="status">今天暂无餐饮计划</p>
             <div v-for="m in data.meals || []" :key="m.id" class="ac-item">
                 <div class="ac-item__main">
                     <div class="ac-item__title">{{ m.title }}</div>
@@ -198,6 +205,9 @@
             ><el-collapse-item title="AI 与报告操作计划" name="plans"
                 ><feature-gate feature="operationPlanV2"><operation-plans v-if="openPanels.includes('plans')" /></feature-gate></el-collapse-item
         ></el-collapse>
+        <el-dialog :model-value="!!shoppingTodo" title="采购清单" width="min(600px, 94vw)" append-to-body @close="shoppingTodo=null">
+            <todo-shopping v-if="shoppingTodo" :todo-id="shoppingTodo.id" :completed="!!shoppingTodo.status" @completed="shoppingTodo=null; load()" />
+        </el-dialog>
     </section>
 </template>
 <script setup>
@@ -207,10 +217,12 @@ import { useRouter } from 'vue-router';
 import { createActionMutations } from '../utils/actionCenterMutations';
 import { Refresh } from '@element-plus/icons-vue';
 import request from '@/utils/request';
+import TodoShopping from '@/components/TodoShopping.vue';
 import ChargeInstances from '@/components/ChargeInstances.vue';
 import OperationPlans from '@/components/OperationPlans.vue';
 import CommemorationPreparations from '@/components/CommemorationPreparations.vue';
 const openPanels = ref([]);
+const shoppingTodo = ref(null);
 const router = useRouter(),
     space = ref('personal'),
     spaces = ref([]),
@@ -618,6 +630,11 @@ onMounted(async () => {
 }
 .ac-collapse {
     border-top: 1px solid var(--el-border-color-lighter);
+}
+.ac-empty {
+    margin: 8px 0 14px;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
 }
 .loading-note {
     color: var(--el-text-color-secondary);

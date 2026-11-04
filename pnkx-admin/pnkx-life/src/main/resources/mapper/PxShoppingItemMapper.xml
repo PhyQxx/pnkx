@@ -5,6 +5,7 @@
 <mapper namespace="com.pnkx.life.mapper.PxShoppingItemMapper">
 
     <resultMap type="PxShoppingItem" id="PxShoppingItemResult">
+        <result property="todoId" column="todo_id"/>
         <result property="fulfillmentState" column="fulfillment_state"/>
         <result property="revision" column="revision"/>
         <result property="claimedBy" column="claimed_by"/>
@@ -28,7 +29,7 @@
     </resultMap>
 
     <sql id="selectPxShoppingItemVo">
-        select fulfillment_state, revision, claimed_by, batch_id, id,
+        select (select l.todo_id from px_shopping_todo_link l where l.item_id=px_shopping_item.id) as todo_id, fulfillment_state, revision, claimed_by, batch_id, id,
                list_id,
                name,
                quantity, classification_id, checked, added_from_meal, sort_order, version, client_uuid, del_flag, create_by, create_time, update_by, update_time, remark

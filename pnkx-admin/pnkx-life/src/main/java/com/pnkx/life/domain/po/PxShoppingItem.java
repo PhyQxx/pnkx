@@ -10,6 +10,10 @@ import com.pnkx.common.core.domain.BaseEntity;
  * @date 2026/07/05
  */
 public class PxShoppingItem extends BaseEntity {
+    private Long todoId;
+    public Long getTodoId() { return todoId; }
+    public void setTodoId(Long todoId) { this.todoId = todoId; }
+
     private static final long serialVersionUID = 1L;
 
     private String fulfillmentState;

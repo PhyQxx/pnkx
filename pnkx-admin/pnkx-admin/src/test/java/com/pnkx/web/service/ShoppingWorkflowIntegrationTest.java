@@ -35,6 +35,7 @@ class ShoppingWorkflowIntegrationTest {
     tx = new TransactionTemplate(new DataSourceTransactionManager(ds));
     for (String table :
         List.of(
+            "px_shopping_todo_link",
             "px_shopping_list",
             "px_shopping_item",
             "px_recipe",
@@ -52,6 +53,7 @@ class ShoppingWorkflowIntegrationTest {
     for (String sql :
         Files.readString(Path.of("src/main/resources/db/migration/V1.6.7__shopping_workflow.sql"))
             .split(";")) if (!sql.isBlank()) db.execute(sql);
+    db.execute(Files.readString(Path.of("src/main/resources/db/migration/V1.8.5__shopping_todo_link.sql")));
     var f = new SqlSessionFactoryBean();
     f.setDataSource(ds);
     f.setTypeAliasesPackage("com.pnkx.life.domain.po");

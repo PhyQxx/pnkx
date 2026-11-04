@@ -91,6 +91,30 @@ public class AssignmentService {
             type,
             id,
             (page - 1) * 30));
+    // Resolve only users referenced by this authorized response.
+    Set<String> userIds = new HashSet<>();
+    if (row.get("assignee") != null) userIds.add(String.valueOf(row.get("assignee")));
+    for (Object candidate : (List<?>) result.get("candidates")) {
+      userIds.add(String.valueOf(((Map<?, ?>) candidate).get("userId")));
+    }
+    for (Object entry : (List<?>) result.get("history")) {
+      Map<?, ?> history = (Map<?, ?>) entry;
+      for (String key : List.of("previous_assignee", "assignee", "operator_id")) {
+        if (history.get(key) != null) userIds.add(String.valueOf(history.get(key)));
+      }
+    }
+    Map<String, String> userNames = new HashMap<>();
+    if (!userIds.isEmpty()) {
+      String placeholders = String.join(",", Collections.nCopies(userIds.size(), "?"));
+      for (var user : db.queryForList(
+          "select user_id, nick_name, user_name from sys_user where del_flag='0' and user_id in ("
+              + placeholders + ")", userIds.toArray())) {
+        String nickname = Objects.toString(user.get("nick_name"), "").trim();
+        userNames.put(String.valueOf(user.get("user_id")),
+            nickname.isEmpty() ? Objects.toString(user.get("user_name"), "") : nickname);
+      }
+    }
+    result.put("userNames", userNames);
     return result;
   }
 
