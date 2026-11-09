@@ -27,6 +27,61 @@ public class PxBookkeepingRecordController extends BaseController {
     @Resource
     private IPxBookkeepingRecordService pxBookkeepingRecordService;
 
+    /** Read-only preview: never creates records. */
+    @PostMapping("/importWechat")
+    public AjaxResult importWechat(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) throws IOException {
+        if (file.isEmpty() || file.getSize() > 5 * 1024 * 1024) return AjaxResult.error("请选择不超过5MB的微信Excel账单");
+        java.util.List<com.alibaba.fastjson.JSONObject> rows = new java.util.ArrayList<>();
+        PxBookkeepingRecord query = new PxBookkeepingRecord();
+        query.setCreateBy(com.pnkx.common.utils.SecurityUtils.getUserId());
+        List<PxBookkeepingRecord> existing = pxBookkeepingRecordService.selectPxBookkeepingRecordAll(query);
+        try (org.apache.poi.ss.usermodel.Workbook book = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = book.getSheetAt(0);
+            org.apache.poi.ss.usermodel.DataFormatter fmt = new org.apache.poi.ss.usermodel.DataFormatter();
+            java.util.Map<String, Integer> columns = new java.util.HashMap<>();
+            for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                if (columns.isEmpty()) {
+                    for (org.apache.poi.ss.usermodel.Cell cell : row) {
+                        if ("交易时间".equals(fmt.formatCellValue(cell).trim())) {
+                            for (org.apache.poi.ss.usermodel.Cell header : row) columns.put(fmt.formatCellValue(header).trim(), header.getColumnIndex());
+                            break;
+                        }
+                    }
+                    if (!columns.isEmpty() && !columns.keySet().containsAll(java.util.List.of("交易时间", "收/支", "金额(元)", "交易单号", "支付方式", "当前状态"))) return AjaxResult.error("微信账单缺少必要列");
+                    continue;
+                }
+                java.util.function.Function<String, String> value = key -> columns.containsKey(key) ? fmt.formatCellValue(row.getCell(columns.get(key))).trim() : "";
+                if (value.apply("交易时间").isEmpty()) continue;
+                if (rows.size() >= 200) return AjaxResult.error("单次最多导入200条，请缩短账单时间范围");
+                com.alibaba.fastjson.JSONObject item = new com.alibaba.fastjson.JSONObject();
+                org.apache.poi.ss.usermodel.Cell date = row.getCell(columns.get("交易时间"));
+                String time = date.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC
+                    ? org.apache.poi.ss.usermodel.DateUtil.getLocalDateTime(date.getNumericCellValue()).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : value.apply("交易时间");
+                try { java.time.LocalDateTime.parse(time, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")); }
+                catch (RuntimeException e) { return AjaxResult.error("第" + (row.getRowNum()+1) + "行时间格式无效"); }
+                java.math.BigDecimal money;
+                try { money = new java.math.BigDecimal(value.apply("金额(元)").replace("¥", "").replace("￥", "").replace(",", "")).setScale(2, java.math.RoundingMode.UNNECESSARY); }
+                catch (RuntimeException e) { return AjaxResult.error("第" + (row.getRowNum()+1) + "行金额无效"); }
+                String direction = value.apply("收/支");
+                String source = value.apply("交易类型") + " / " + value.apply("交易对方") + " / " + value.apply("商品") + " / " + value.apply("支付方式") + " / " + value.apply("当前状态");
+                String order = value.apply("交易单号");
+                boolean duplicate = existing.stream().filter(r -> java.util.Objects.equals(r.getCreateBy(), com.pnkx.common.utils.SecurityUtils.getUserId())).anyMatch(r -> ( !order.isEmpty() && r.getRemark() != null && r.getRemark().contains(order)) || (r.getMoney() != null && r.getMoney().compareTo(money) == 0 && r.getPayTime() != null && new java.text.SimpleDateFormat("yyyy-MM-dd").format(r.getPayTime()).equals(time.substring(0,10))));
+                boolean supported = ("收入".equals(direction) || "支出".equals(direction)) && money.signum() > 0;
+                item.put("payTime", time); item.put("money", money.toPlainString());
+                item.put("typeDifference", "收入".equals(direction) ? "0" : "1");
+                item.put("remark", source + " 微信单号:" + order);
+                item.put("sourceOrder", order); item.put("source", source); item.put("imported", true);
+                item.put("selected", supported && !duplicate && !value.apply("当前状态").contains("退款") && !value.apply("当前状态").contains("关闭"));
+                item.put("importStatus", duplicate ? "疑似重复（同日同金额或同单号）" : supported ? "待核对" : "中性交易，请手动确认类型");
+                rows.add(item);
+            }
+            if (columns.isEmpty()) return AjaxResult.error("未找到微信账单明细表头");
+        } catch (IllegalArgumentException e) {
+            return AjaxResult.error("无法读取Excel文件");
+        }
+        return AjaxResult.success(rows);
+    }
+
     /**
      * 获取AI分析结果
      * @return 描述

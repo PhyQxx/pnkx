@@ -338,16 +338,23 @@
       :modal-append-to-body="true"
     >
       <div class="batch-toolbar">
+        <input ref="wechatFile" type="file" accept=".xlsx,.xls" hidden @change="importWechatFile" />
+        <el-button :loading="wechatLoading" :disabled="aiParsing || batchLoading" @click="$refs.wechatFile.click()">导入微信 Excel</el-button>
+        <el-button :loading="aiParsing" :disabled="wechatLoading || batchLoading" @click="recognizeWechat">AI 识别已勾选账单</el-button>
         <el-button type="primary" size="small" @click="addBatchRow">
           <el-icon><Plus /></el-icon> 添加一行
         </el-button>
         <el-button type="success" size="small" @click="aiImportVisible = true">
           <svg-icon icon-class="AI-Robot" /> AI 智能导入
         </el-button>
-        <el-button type="danger" size="small" plain @click="batchRecordList = []">清空</el-button>
+        <el-button type="danger" size="small" plain :disabled="aiParsing || wechatLoading || batchLoading" @click="batchRecordList = []">清空</el-button>
       </div>
 
-      <el-table :data="batchRecordList" height="50vh" class="modern-table">
+      <el-alert v-if="aiParsing" :title="`AI 识别中：已完成 ${wechatProgress.completed} / ${wechatProgress.total} 条，每条完成后立即回填`" type="info" :closable="false" />
+      <el-alert title="导入不会自动保存。疑似重复、退款和中性交易默认不勾选；请核对分类与账户后保存。" type="info" :closable="false" />
+      <el-table :data="batchRecordList" :inert="aiParsing || wechatLoading || batchLoading" height="50vh" class="modern-table">
+        <el-table-column label="保存" width="65"><template #default="scope"><el-checkbox v-if="scope.row.imported" v-model="scope.row.selected" /><span v-else>是</span></template></el-table-column>
+        <el-table-column prop="importStatus" label="核对提示" width="180" />
         <el-table-column label="类型" width="100">
           <template #default="scope">
             <el-select v-model="scope.row.typeDifference" size="small" @change="handleBatchTypeChange(scope.row)">
@@ -377,7 +384,7 @@
               :options="typeList"
               :props="typeProps"
               :show-all-levels="false"
-              :placeholder="scope.$index === 0 ? '分类' : '同上'"
+              :placeholder="scope.row.imported ? '请选择分类' : (scope.$index === 0 ? '分类' : '同上')"
               size="small"
               @change="(val) => scope.row.type = val[1]"
             />
@@ -391,7 +398,7 @@
               :options="accountList"
               :props="accountProps"
               :show-all-levels="false"
-              :placeholder="scope.$index === 0 ? '账户' : '同上'"
+              :placeholder="scope.row.imported ? '请选择账户' : (scope.$index === 0 ? '账户' : '同上')"
               size="small"
               @change="(val) => scope.row.account = val[1]"
             />
@@ -434,8 +441,8 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="batchVisible = false">取消</el-button>
-          <el-button type="primary" :loading="batchLoading" @click="submitBatch">
-            保存 {{ batchRecordList.length }} 条记录
+          <el-button type="primary" :loading="batchLoading" :disabled="wechatLoading || aiParsing" @click="submitBatch">
+            保存 {{ batchRecordList.filter(r => !r.imported || r.selected).length }} 条记录
           </el-button>
         </div>
       </template>

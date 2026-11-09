@@ -170,7 +170,13 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="Obsidian 笔记" name="obsidian">
-        <file-manager v-if="activeTab === 'obsidian'" />
+        <section v-if="activeTab === 'obsidian'" class="obsidian-workspace">
+          <div class="obsidian-toolbar">
+            <a :href="obsidianUrl" target="_blank" rel="noopener noreferrer">在新窗口打开 Obsidian ↗</a>
+          </div>
+          <iframe class="obsidian-frame" :src="obsidianUrl" title="Obsidian 笔记"
+            allow="clipboard-read; clipboard-write; fullscreen" />
+        </section>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -193,15 +199,15 @@ import {
 } from '@/api/px/life/note'
 import ShareDialog from './components/ShareDialog.vue'
 import DOMPurify from 'dompurify'
-import FileManager from '@/views/system/fileManager/index.vue'
 import NoteSidebar from './components/NoteSidebar.vue'
 import NoteEditor from './components/NoteEditor.vue'
 
 export default {
   name: 'Note',
-  components: { FileManager, NoteSidebar, NoteEditor, ShareDialog },
+  components: { NoteSidebar, NoteEditor, ShareDialog },
   data() {
     return {
+      obsidianUrl: import.meta.env.VITE_OBSIDIAN_URL || 'https://ob.pnkx.top:8/',
       // 当前激活的 tab
       activeTab: 'note',
       // 右键窗口样式
@@ -716,6 +722,25 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.obsidian-workspace {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 230px);
+  min-height: 480px;
+}
+.obsidian-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+  a { color: var(--el-color-primary); }
+}
+.obsidian-frame {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  background: var(--el-bg-color);
+}
 .note-context-menu {
   position: fixed;
   z-index: 3000;

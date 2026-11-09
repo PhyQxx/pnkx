@@ -126,11 +126,9 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="记账分类">
-                    <el-select v-model="form.classificationId" placeholder="选择支出分类" clearable filterable
-                               style="width: 100%">
-                        <el-option v-for="c in classificationOptions" :key="c.id" :value="c.id"
-                                   :label="c.typeName"/>
-                    </el-select>
+                    <el-cascader v-model="form.classificationId" :options="classificationOptions"
+                                 :props="{ value: 'id', label: 'typeName', children: 'children', emitPath: false, checkStrictly: true }"
+                                 placeholder="选择支出分类" clearable filterable style="width: 100%"/>
                 </el-form-item>
                 <el-form-item label="提前提醒">
                     <el-input-number v-model="form.reminderLeadDays" :min="0" :max="90"/> 天
@@ -156,7 +154,7 @@ import {
     delSubscription, forecast
 } from '@/api/px/life/subscription'
 import {listAccount} from '@/api/px/life/bookkeeping/account'
-import {listClassification} from '@/api/px/life/bookkeeping/classification'
+import {getClassificationList} from '@/api/px/life/bookkeeping/classification'
 import {bindReminder} from '@/api/px/life/reminder'
 
 export default {
@@ -209,9 +207,9 @@ export default {
             })
         },
         loadClassificationOptions() {
-            // 只查一级支出分类（typeDifference=1 支出, typeLevel=0 一级）
-            listClassification({typeDifference: '1', typeLevel: '0', pageSize: 100}).then(res => {
-                this.classificationOptions = res.rows || res.data || []
+            getClassificationList({typeDifference: '1'}).then(res => {
+                // “最近使用”是无 ID 的虚拟分组，避免重复节点和无效分类值。
+                this.classificationOptions = (res.data || []).filter(item => item.id != null)
             })
         },
         handleQuery() {

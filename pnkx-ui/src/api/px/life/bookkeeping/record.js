@@ -78,6 +78,7 @@ export function aiBatchParse(text) {
     return request({
         url: '/bookkeeping/record/aiBatchParse',
         method: 'post',
+        timeout: 120000,
         params: { text: text }
     })
 }
@@ -88,5 +89,17 @@ export function exportRecord(query) {
         url: '/bookkeeping/record/export',
         method: 'get',
         params: query
+    })
+}
+
+export function importWechat(file) {
+    const data = new FormData()
+    data.append('file', file)
+    return request({
+        url: '/bookkeeping/record/importWechat',
+        method: 'post',
+        data,
+        // 清除实例默认的 JSON 类型，让浏览器生成 multipart boundary。
+        headers: { 'Content-Type': undefined }
     })
 }
