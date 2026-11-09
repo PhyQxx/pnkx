@@ -50,10 +50,20 @@ $bk-green: $theme-bookkeeping-green;
 
 // 搜索栏
 .search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-5);
   border-bottom: 1px solid var(--border-primary);
 
+  .export-btn {
+    flex-shrink: 0;
+    margin-left: 0;
+  }
+
   .search-box {
+    flex: 1;
+    min-width: 0;
     position: relative;
     display: flex;
     align-items: center;
@@ -67,6 +77,8 @@ $bk-green: $theme-bookkeeping-green;
     }
 
     .search-input {
+      min-width: 0;
+      box-sizing: border-box;
       width: 100%;
       height: 40px;
       padding: 0 var(--space-4) 0 42px;
