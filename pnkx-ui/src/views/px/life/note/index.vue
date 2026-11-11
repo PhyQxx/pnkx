@@ -169,8 +169,9 @@
     </Teleport>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="Obsidian 笔记" name="obsidian">
-        <section v-if="activeTab === 'obsidian'" class="obsidian-workspace">
+      <!-- lazy 首次激活才挂载，后续由 TabPane 隐藏，保留 iframe 会话。 -->
+      <el-tab-pane label="Obsidian 笔记" name="obsidian" lazy>
+        <section class="obsidian-workspace">
           <div class="obsidian-toolbar">
             <a :href="obsidianUrl" target="_blank" rel="noopener noreferrer">在新窗口打开 Obsidian ↗</a>
           </div>
