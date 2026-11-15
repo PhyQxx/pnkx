@@ -5,6 +5,12 @@
 </template>
 
 <script>
+import { watch } from 'vue'
+import router from '@/router'
+import { modeRef, MODE_MOBILE } from '@/utils/device'
+import { isMobilePath, NEUTRAL_PATHS } from '@/mobile/router/guards'
+import { resolveMobileTarget, resolvePcTarget } from '@/mobile/router/map'
+
 export default {
     name: 'App',
     data() {
@@ -12,11 +18,34 @@ export default {
     },
     created() {
         this.$store.dispatch('app/initTheme')
+        // 视口跨越 768px 断点（或手动切换强制模式）时，自动在 PC/APP 两种形态间跳转
+        this.stopModeWatch = watch(modeRef, mode => {
+            clearTimeout(this._modeTimer)
+            this._modeTimer = setTimeout(() => this.switchForm(mode), 200)
+        })
+    },
+    beforeUnmount() {
+        if (this.stopModeWatch) this.stopModeWatch()
+        clearTimeout(this._modeTimer)
     },
     mounted() {
         let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
         let html = document.documentElement;
         html.style.fontSize = htmlWidth / 150 + 'px';
+    },
+    methods: {
+        switchForm(mode) {
+            const current = router.currentRoute.value
+            if (NEUTRAL_PATHS.includes(current.path)) return
+            if (mode === MODE_MOBILE && !isMobilePath(current.path)) {
+                const { path } = resolveMobileTarget(current.path)
+                if (path !== current.path) {
+                    router.replace({ path, query: current.query })
+                }
+            } else if (mode !== MODE_MOBILE && isMobilePath(current.path)) {
+                router.replace(resolvePcTarget(current.path))
+            }
+        }
     },
 }
 </script>

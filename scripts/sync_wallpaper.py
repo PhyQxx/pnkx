@@ -59,6 +59,16 @@ SERIES = [
      "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/更衣人偶坠入爱河", "parent_name": "更衣人偶坠入爱河"},
     {"key": "bleach",     "name": "死神",           "base": "/Users/peihaoyu/Pictures/裴浩宇/死神",
      "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/死神",           "parent_name": "死神"},
+    {"key": "ff",         "name": "最终幻想",       "base": "/Users/peihaoyu/Pictures/裴浩宇/最终幻想",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/最终幻想",       "parent_name": "最终幻想"},
+    {"key": "uzaki",      "name": "宇崎学妹想要玩！ω", "base": "/Users/peihaoyu/Pictures/裴浩宇/宇崎学妹想要玩！ω",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/宇崎学妹想要玩！ω", "parent_name": "宇崎学妹想要玩！ω"},
+    {"key": "nier",       "name": "尼尔：机械纪元", "base": "/Users/peihaoyu/Pictures/裴浩宇/尼尔：机械纪元",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/尼尔：机械纪元", "parent_name": "尼尔：机械纪元"},
+    {"key": "sticker",    "name": "贴纸",           "base": "/Users/peihaoyu/Pictures/裴浩宇/贴纸",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/贴纸",           "parent_name": "贴纸"},
+    {"key": "peixue",     "name": "Pei你看雪",      "base": "/Users/peihaoyu/Pictures/裴浩宇/Pei你看雪",
+     "url_prefix": "https://ftp.pnkx.top:8/ftp/我的图片/Pei你看雪",      "parent_name": "Pei你看雪"},
 ]
 EXCLUDE = {"NSFW"}
 IMG_EXT = (".png", ".jpg", ".jpeg", ".webp")
@@ -99,20 +109,22 @@ def scan_series(series):
     """
     扫描系列本地目录，返回 (root_imgs, subfolders)
       root_imgs: [img, ...]  根目录直接放的图片
-      subfolders: [(folder_name, [img,...]), ...]  子文件夹
+      subfolders: [(folder_name, [img,...]), ...]  子文件夹（支持嵌套，
+                  名称用相对路径，如 "2B/泳装"；EXCLUDE 目录整棵跳过）
     """
     base = series["base"]
     if not os.path.isdir(base):
         return None, None
     root_imgs = list_images(base)
     subfolders = []
-    for d in sorted(os.listdir(base)):
-        full = os.path.join(base, d)
-        if not os.path.isdir(full) or d in EXCLUDE:
+    for d, dirs, files in os.walk(base):
+        dirs[:] = sorted(x for x in dirs if x not in EXCLUDE)
+        if d == base:
             continue
-        imgs = list_images(full)
+        imgs = sorted(f for f in files if f.lower().endswith(IMG_EXT))
         if imgs:
-            subfolders.append((d, imgs))
+            subfolders.append((os.path.relpath(d, base), imgs))
+    subfolders.sort(key=lambda x: x[0])
     return root_imgs, subfolders
 
 

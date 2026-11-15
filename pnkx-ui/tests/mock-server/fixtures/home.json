@@ -1,0 +1,268 @@
+{
+    "GET /system/notice/list": {
+        "rows": [
+            {
+                "noticeId": 1,
+                "noticeTitle": "系统维护通知",
+                "noticeContent": "<p>本周六凌晨 2-4 点系统维护</p>",
+                "status": "0",
+                "createTime": "2026-11-10 09:00:00"
+            },
+            {
+                "noticeId": 2,
+                "noticeTitle": "新功能上线",
+                "noticeContent": "<p>移动端 APP 形态已上线，手机访问自动切换</p>",
+                "status": "0",
+                "createTime": "2026-11-12 10:00:00"
+            }
+        ],
+        "total": 2
+    },
+    "GET /system/notice/getUnreadNoticeList": {
+        "rows": [],
+        "total": 0
+    },
+    "GET /reminder/unread/count": {
+        "data": 3
+    },
+    "GET /reminder/today": {
+        "data": {
+            "commemorationDays": {
+                "scene": "upcoming",
+                "upcoming": [
+                    {
+                        "name": "恋爱纪念日",
+                        "date": "2026-11-20",
+                        "daysLeft": 5
+                    }
+                ]
+            },
+            "loversCards": {
+                "scene": "pending",
+                "cards": [
+                    {
+                        "title": "按摩卡",
+                        "description": "使用说明：一次全身按摩",
+                        "confirm": false,
+                        "score": null,
+                        "createTime": "2026-11-01 10:00:00"
+                    }
+                ]
+            },
+            "menstruation": {
+                "state": "zjjq",
+                "lastStartDate": "2026-11-10",
+                "daysSinceLastStart": 4
+            },
+            "menstruationAssistantSetting": {
+                "state": "zjjq",
+                "cycle": 28,
+                "duration": 5
+            },
+            "timeline": {
+                "todayEvents": [
+                    {
+                        "sourceType": "todo",
+                        "sourceId": 101,
+                        "title": "取快递",
+                        "time": "2026-11-15 18:00:00"
+                    }
+                ]
+            },
+            "todo": [
+                {
+                    "id": 101,
+                    "content": "取快递",
+                    "remark": "菜鸟驿站"
+                }
+            ]
+        }
+    },
+    "GET /bookkeeping/record/list": {
+        "rows": [
+            {
+                "id": 701,
+                "money": "25.50",
+                "payTime": "2026-11-15 12:10:00",
+                "remark": "公司楼下午餐",
+                "type": 12,
+                "typeDifference": "1",
+                "account": 71,
+                "typeObject": {
+                    "id": 12,
+                    "typeParentId": 10,
+                    "typeName": "午餐",
+                    "typeIcon": "c-can",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 702,
+                "money": "88.00",
+                "payTime": "2026-11-14 19:30:00",
+                "remark": "超市采购",
+                "type": 21,
+                "typeDifference": "1",
+                "account": 72,
+                "typeObject": {
+                    "id": 21,
+                    "typeParentId": 20,
+                    "typeName": "日用品",
+                    "typeIcon": "c-gouwu",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 703,
+                "money": "5000.00",
+                "payTime": "2026-11-10 10:00:00",
+                "remark": "工资",
+                "type": 31,
+                "typeDifference": "0",
+                "account": 71,
+                "typeObject": {
+                    "id": 31,
+                    "typeParentId": 30,
+                    "typeName": "工资",
+                    "typeIcon": "c-gongzi",
+                    "typeDifference": "0"
+                }
+            },
+            {
+                "id": 704,
+                "money": "200.00",
+                "payTime": "2026-11-12 09:00:00",
+                "remark": "还信用卡",
+                "type": 0,
+                "typeDifference": "2",
+                "account": 71,
+                "otherAccount": 72,
+                "typeObject": {
+                    "id": 0,
+                    "typeName": "转账",
+                    "typeDifference": "2"
+                }
+            },
+            {
+                "id": 705,
+                "money": "12.00",
+                "payTime": "2026-11-13 08:00:00",
+                "remark": "地铁",
+                "type": 41,
+                "typeDifference": "1",
+                "account": 73,
+                "typeObject": {
+                    "id": 41,
+                    "typeParentId": 40,
+                    "typeName": "交通",
+                    "typeIcon": "c-jiaotong",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 706,
+                "money": "15.00",
+                "payTime": "2026-11-05 15:00:00",
+                "remark": "奶茶",
+                "type": 12,
+                "typeDifference": "1",
+                "account": 73,
+                "typeObject": {
+                    "id": 12,
+                    "typeParentId": 10,
+                    "typeName": "午餐",
+                    "typeIcon": "c-can",
+                    "typeDifference": "1"
+                }
+            }
+        ],
+        "total": 6
+    },
+    "GET /shoppingList/list": {
+        "rows": [
+            {
+                "id": 11,
+                "name": "本周采购",
+                "icon": "gouwu",
+                "done": 1,
+                "total": 3,
+                "shoppingDate": "2026-11-16"
+            },
+            {
+                "id": 12,
+                "name": "家庭常备",
+                "icon": "gouwu",
+                "done": 0,
+                "total": 2,
+                "shoppingDate": null
+            }
+        ],
+        "total": 2
+    },
+    "GET /shoppingItem/list": {
+        "rows": [
+            {
+                "id": 111,
+                "listId": 11,
+                "name": "牛奶",
+                "quantity": "2盒",
+                "checked": false,
+                "fulfillmentState": "needed"
+            },
+            {
+                "id": 112,
+                "listId": 11,
+                "name": "鸡蛋",
+                "quantity": "1打",
+                "checked": true,
+                "fulfillmentState": "purchased"
+            }
+        ],
+        "total": 2
+    },
+    "GET /life/action-center": {
+        "data": {
+            "todos": [
+                {
+                    "id": 901,
+                    "content": "交房租",
+                    "planEndTime": "2026-11-13 18:00:00",
+                    "completePer": null
+                },
+                {
+                    "id": 902,
+                    "content": "写周报",
+                    "planEndTime": "2026-11-30 18:00:00",
+                    "completePer": null
+                }
+            ],
+            "reminders": [],
+            "commemorations": [],
+            "generationFailures": [],
+            "canEdit": true
+        }
+    },
+    "GET /life/action-center/spaces": {
+        "data": [
+            {
+                "key": "personal",
+                "label": "私人空间"
+            },
+            {
+                "key": "family",
+                "label": "家庭空间"
+            }
+        ]
+    },
+    "GET /life/action-center/preferences": {
+        "data": {
+            "pinned": [
+                "bookkeeping",
+                "todo"
+            ]
+        }
+    },
+    "PUT /life/action-center/preferences": {
+        "msg": "ok"
+    }
+}

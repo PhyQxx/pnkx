@@ -1,0 +1,438 @@
+{
+    "GET /bookkeeping/record/list": {
+        "rows": [
+            {
+                "id": 701,
+                "money": "25.50",
+                "payTime": "2026-11-15 12:10:00",
+                "remark": "公司楼下午餐",
+                "type": 12,
+                "typeDifference": "1",
+                "account": 71,
+                "typeObject": {
+                    "id": 12,
+                    "typeParentId": 10,
+                    "typeName": "午餐",
+                    "typeIcon": "c-can",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 702,
+                "money": "88.00",
+                "payTime": "2026-11-14 19:30:00",
+                "remark": "超市采购",
+                "type": 21,
+                "typeDifference": "1",
+                "account": 72,
+                "typeObject": {
+                    "id": 21,
+                    "typeParentId": 20,
+                    "typeName": "日用品",
+                    "typeIcon": "c-gouwu",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 703,
+                "money": "5000.00",
+                "payTime": "2026-11-10 10:00:00",
+                "remark": "工资",
+                "type": 31,
+                "typeDifference": "0",
+                "account": 71,
+                "typeObject": {
+                    "id": 31,
+                    "typeParentId": 30,
+                    "typeName": "工资",
+                    "typeIcon": "c-gongzi",
+                    "typeDifference": "0"
+                }
+            },
+            {
+                "id": 704,
+                "money": "200.00",
+                "payTime": "2026-11-12 09:00:00",
+                "remark": "还信用卡",
+                "type": 0,
+                "typeDifference": "2",
+                "account": 71,
+                "otherAccount": 72,
+                "typeObject": {
+                    "id": 0,
+                    "typeName": "转账",
+                    "typeDifference": "2"
+                }
+            },
+            {
+                "id": 705,
+                "money": "12.00",
+                "payTime": "2026-11-13 08:00:00",
+                "remark": "地铁",
+                "type": 41,
+                "typeDifference": "1",
+                "account": 73,
+                "typeObject": {
+                    "id": 41,
+                    "typeParentId": 40,
+                    "typeName": "交通",
+                    "typeIcon": "c-jiaotong",
+                    "typeDifference": "1"
+                }
+            },
+            {
+                "id": 706,
+                "money": "15.00",
+                "payTime": "2026-11-05 15:00:00",
+                "remark": "奶茶",
+                "type": 12,
+                "typeDifference": "1",
+                "account": 73,
+                "typeObject": {
+                    "id": 12,
+                    "typeParentId": 10,
+                    "typeName": "午餐",
+                    "typeIcon": "c-can",
+                    "typeDifference": "1"
+                }
+            }
+        ],
+        "total": 6
+    },
+    "GET /bookkeeping/record/701": {
+        "data": {
+            "id": 701,
+            "money": "88.00",
+            "payTime": "2026-11-14 19:30:00",
+            "remark": "超市采购",
+            "type": 12,
+            "typeDifference": "1",
+            "account": 71,
+            "images": "",
+            "typeObject": {
+                "id": 12,
+                "typeParentId": 10,
+                "typeName": "午餐",
+                "typeIcon": "c-can",
+                "typeDifference": "1"
+            }
+        }
+    },
+    "POST /bookkeeping/record": {
+        "msg": "新增成功"
+    },
+    "PUT /bookkeeping/record": {
+        "msg": "修改成功"
+    },
+    "DELETE /bookkeeping/record/701": {
+        "msg": "删除成功"
+    },
+    "POST /bookkeeping/record/aiParse": {
+        "data": {
+            "type": "0",
+            "typeId": 12,
+            "money": "30",
+            "account": 71,
+            "accountName": "工商银行"
+        }
+    },
+    "GET /bookkeeping/classification/getClassificationList": {
+        "data": [
+            {
+                "id": 10,
+                "typeName": "餐饮",
+                "typeIcon": "c-can",
+                "typeDifference": "1",
+                "children": [
+                    {
+                        "id": 12,
+                        "typeName": "午餐",
+                        "typeIcon": "c-can",
+                        "typeDifference": "1"
+                    },
+                    {
+                        "id": 13,
+                        "typeName": "晚餐",
+                        "typeIcon": "c-can",
+                        "typeDifference": "1"
+                    }
+                ]
+            },
+            {
+                "id": 20,
+                "typeName": "购物",
+                "typeIcon": "c-gouwu",
+                "typeDifference": "1",
+                "children": [
+                    {
+                        "id": 21,
+                        "typeName": "日用品",
+                        "typeIcon": "c-gouwu",
+                        "typeDifference": "1"
+                    }
+                ]
+            },
+            {
+                "id": 30,
+                "typeName": "工资",
+                "typeIcon": "c-gongzi",
+                "typeDifference": "0",
+                "children": []
+            }
+        ]
+    },
+    "GET /bookkeeping/account/getAccountList": {
+        "data": [
+            {
+                "dictLabel": "银行卡",
+                "dictValue": "bank",
+                "children": [
+                    {
+                        "id": 71,
+                        "accountName": "工商银行",
+                        "balance": "12500.50",
+                        "accountIcon": "a-gongshangyinhang",
+                        "accountType": "bank",
+                        "remark": "工资卡"
+                    },
+                    {
+                        "id": 72,
+                        "accountName": "招商银行",
+                        "balance": "3200.00",
+                        "accountIcon": "a-zhaoshangyinhang",
+                        "accountType": "bank",
+                        "remark": ""
+                    }
+                ]
+            },
+            {
+                "dictLabel": "现金",
+                "dictValue": "cash",
+                "children": [
+                    {
+                        "id": 73,
+                        "accountName": "现金钱包",
+                        "balance": "800.00",
+                        "accountIcon": "a-xianjinqianbao",
+                        "accountType": "cash",
+                        "remark": "零用"
+                    }
+                ]
+            }
+        ]
+    },
+    "GET /bookkeeping/account/list": {
+        "rows": [
+            {
+                "id": 71,
+                "accountName": "工商银行",
+                "balance": "12500.50",
+                "accountIcon": "a-gongshangyinhang",
+                "accountType": "bank",
+                "remark": "工资卡"
+            },
+            {
+                "id": 72,
+                "accountName": "招商银行",
+                "balance": "3200.00",
+                "accountIcon": "a-zhaoshangyinhang",
+                "accountType": "bank",
+                "remark": ""
+            },
+            {
+                "id": 73,
+                "accountName": "现金钱包",
+                "balance": "800.00",
+                "accountIcon": "a-xianjinqianbao",
+                "accountType": "cash",
+                "remark": "零用"
+            }
+        ],
+        "total": 3
+    },
+    "GET /bookkeeping/account/71": {
+        "data": {
+            "id": 71,
+            "accountName": "工商银行",
+            "balance": "12500.50",
+            "accountIcon": "a-gongshangyinhang",
+            "accountType": "bank",
+            "remark": "工资卡"
+        }
+    },
+    "POST /bookkeeping/account": {
+        "msg": "新增成功"
+    },
+    "PUT /bookkeeping/account": {
+        "msg": "修改成功"
+    },
+    "DELETE /bookkeeping/account/71": {
+        "msg": "删除成功"
+    },
+    "GET /system/dict/data/type/px_bookkeeping_account_type": {
+        "data": [
+            {
+                "dictValue": "bank",
+                "dictLabel": "银行卡"
+            },
+            {
+                "dictValue": "cash",
+                "dictLabel": "现金"
+            }
+        ]
+    },
+    "POST /bookkeeping/statistics/getLineChart": {
+        "data": [
+            {
+                "date": "2026-11-01",
+                "inflowMoney": 0,
+                "flowOutMoney": 88
+            },
+            {
+                "date": "2026-11-05",
+                "inflowMoney": 0,
+                "flowOutMoney": 15
+            },
+            {
+                "date": "2026-11-10",
+                "inflowMoney": 5000,
+                "flowOutMoney": 0
+            },
+            {
+                "date": "2026-11-15",
+                "inflowMoney": 0,
+                "flowOutMoney": 37.5
+            }
+        ]
+    },
+    "POST /bookkeeping/statistics/getPrimaryStatistics": {
+        "data": [
+            {
+                "name": "餐饮",
+                "value": 88
+            },
+            {
+                "name": "购物",
+                "value": 62
+            }
+        ]
+    },
+    "GET /bookkeeping/budget/status": {
+        "data": [
+            {
+                "id": 31,
+                "typeName": null,
+                "amount": 3000,
+                "used": 1800,
+                "exceeded": false
+            },
+            {
+                "id": 32,
+                "typeName": "餐饮",
+                "amount": 100,
+                "used": 150,
+                "exceeded": true
+            }
+        ]
+    },
+    "POST /bookkeeping/budget": {
+        "msg": "保存成功"
+    },
+    "DELETE /bookkeeping/budget/32": {
+        "msg": "删除成功"
+    },
+    "GET /bookkeeping/recurring/list": {
+        "data": [
+            {
+                "id": 81,
+                "name": "房租",
+                "money": 3500,
+                "typeDifference": "0",
+                "typeName": "住房",
+                "accountName": "工商银行",
+                "nextRunDate": "2026-12-01",
+                "enabled": true,
+                "lifecycle": "active"
+            },
+            {
+                "id": 82,
+                "name": "视频会员",
+                "money": 25,
+                "typeDifference": "0",
+                "typeName": "娱乐",
+                "accountName": "招商银行",
+                "nextRunDate": "2026-12-05",
+                "enabled": false,
+                "lifecycle": "active"
+            }
+        ]
+    },
+    "PUT /bookkeeping/recurring/toggle/81": {
+        "msg": "ok"
+    },
+    "PUT /bookkeeping/recurring/toggle/82": {
+        "msg": "ok"
+    },
+    "PUT /bookkeeping/recurring": {
+        "msg": "ok"
+    },
+    "POST /bookkeeping/recurring": {
+        "msg": "新增成功"
+    },
+    "GET /charge/instances": {
+        "data": [
+            {
+                "id": 91,
+                "dueDate": "2026-12-01",
+                "expectedAmount": "3500",
+                "status": "pending_confirm",
+                "sourceType": "recurring",
+                "sourceName": "房租"
+            },
+            {
+                "id": 92,
+                "dueDate": "2026-11-01",
+                "expectedAmount": "3500",
+                "status": "recorded",
+                "sourceType": "recurring",
+                "sourceName": "房租"
+            }
+        ]
+    },
+    "POST /charge/instances/91/confirm": {
+        "msg": "入账成功"
+    },
+    "POST /charge/rules/change-preview": {
+        "data": {
+            "previewId": "pv1",
+            "amountPerPeriod": 3600,
+            "periods": [
+                "2026-12-01"
+            ],
+            "notice": "将于 2026-12-01 生效",
+            "changes": [
+                {
+                    "field": "amount",
+                    "before": 3500,
+                    "after": 3600
+                }
+            ]
+        }
+    },
+    "POST /charge/rules/change-commit": {
+        "msg": "已生效"
+    },
+    "POST /charge/rules/backfill-preview": {
+        "data": {
+            "previewId": "pv2",
+            "amountPerPeriod": 3500,
+            "periods": [
+                "2026-11-01"
+            ],
+            "notice": "补齐 1 期"
+        }
+    },
+    "POST /charge/rules/backfill-commit": {
+        "msg": "已生成"
+    }
+}

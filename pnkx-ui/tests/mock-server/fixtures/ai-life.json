@@ -1,0 +1,341 @@
+{
+    "GET /ai/chat/sessions": { "data": [] },
+    "GET /ai/chat/messages": { "data": [] },
+    "POST /ai/chat/messages": { "data": { "id": 1 } },
+
+    "STREAM /ai/chat/stream": { "__stream": true },
+    "POST /ai/chat/stream": { "__stream": true },
+    "STREAM /ai/pending/confirm": { "__stream": true },
+    "POST /ai/pending/confirm": { "__stream": true },
+    "STREAM /ai/pending/cancel": { "__stream": true },
+    "POST /ai/pending/cancel": { "__stream": true },
+
+    "GET /operation-plans": {
+        "data": [
+            { "id": "aabbcc01-0123456789abcdef0123456789a", "title": "记一笔午餐支出", "status": "awaiting_confirmation" },
+            { "id": "bbccdd02-0123456789abcdef0123456789b", "title": "生成上周生活周报", "status": "succeeded" }
+        ]
+    },
+    "GET /operation-plans/:id": {
+        "data": {
+            "id": "aabbcc01-0123456789abcdef0123456789a",
+            "title": "记一笔午餐支出",
+            "status": "awaiting_confirmation",
+            "revision": 3,
+            "replacement_id": null,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "tool_code": "bookkeeping.create",
+                    "status": "pending",
+                    "input_json": "{\"money\":25.5,\"typeName\":\"午餐\",\"remark\":\"公司楼下午餐\",\"date\":\"2026-11-15\"}",
+                    "result_json": null
+                }
+            ]
+        }
+    },
+    "POST /operation-plans/:id/confirm": {
+        "data": {
+            "id": "aabbcc01-0123456789abcdef0123456789a",
+            "title": "记一笔午餐支出",
+            "status": "succeeded",
+            "revision": 4,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "tool_code": "bookkeeping.create",
+                    "status": "succeeded",
+                    "input_json": "{\"money\":25.5,\"typeName\":\"午餐\"}",
+                    "result_json": "{\"sourceId\":501}"
+                }
+            ]
+        }
+    },
+    "POST /operation-plans/:id/revise": {
+        "data": {
+            "id": "aabbcc01-0123456789abcdef0123456789a",
+            "title": "记一笔午餐支出",
+            "status": "awaiting_confirmation",
+            "revision": 4,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "tool_code": "bookkeeping.create",
+                    "status": "pending",
+                    "input_json": "{\"money\":30.5,\"typeName\":\"午餐\"}"
+                }
+            ]
+        }
+    },
+    "POST /operation-plans/:id/cancel": {
+        "data": { "id": "aabbcc01-0123456789abcdef0123456789a", "title": "记一笔午餐支出", "status": "cancelled", "steps": [] }
+    },
+
+    "GET /reminder/notifications": {
+        "data": [
+            { "id": 1, "title": "待办提醒", "content": "取快递：今天 18:00 前到菜鸟驿站", "status": "0", "sourceType": "notice", "sourceId": null, "sendTime": "2026-11-15 09:00:00" },
+            { "id": 2, "title": "纪念日提醒", "content": "恋爱纪念日还有 5 天，记得准备礼物", "status": "1", "sourceType": "commemoration", "sourceId": 801, "sendTime": "2026-11-14 20:00:00" },
+            { "id": 3, "title": "订阅扣费提醒", "content": "视频会员将于明天扣费 25 元", "status": "2", "sourceType": "subscription", "sourceId": 901, "sendTime": "2026-11-13 10:00:00" },
+            { "id": 4, "title": "经期提醒", "content": "经期第 5 天，注意保暖", "status": "0", "sourceType": "menstruation", "sourceId": null, "sendTime": "2026-11-12 08:00:00" }
+        ]
+    },
+    "PUT /reminder/notifications/read": { "msg": "ok" },
+    "DELETE /reminder/notifications/:id": { "msg": "ok" },
+    "POST /reminder/notifications/:id/retry": { "msg": "ok" },
+    "GET /reminder/preference": {
+        "data": { "websocketEnabled": true, "pushEnabled": true, "emailEnabled": false, "quietStart": "23:00", "quietEnd": "07:00" }
+    },
+    "PUT /reminder/preference": { "msg": "ok" },
+    "GET /reminder/list": { "rows": [], "total": 0 },
+    "POST /reminder/bind": { "msg": "ok" },
+    "DELETE /reminder/unbind": { "msg": "ok" },
+
+    "GET /calendar/month": { "data": [] },
+    "GET /calendar/cockpit": {
+        "data": {
+            "todayEventCount": 2,
+            "todoCount": 1,
+            "nextCommemoration": { "name": "恋爱纪念日", "daysLeft": 5 },
+            "todayTodos": [{ "id": 701, "content": "写周报", "overdue": false }]
+        }
+    },
+    "GET /admin/toDo/:id": {
+        "data": { "id": 701, "content": "写周报", "status": false, "remark": "本周工作总结", "planStartTime": "2026-11-15 09:00:00", "planEndTime": "2026-11-15 18:00:00" }
+    },
+    "PUT /admin/toDo": { "msg": "ok" },
+    "GET /admin/toDo/getLabelList": { "data": [] },
+
+    "GET /lifeReport/data": {
+        "data": {
+            "bookkeeping": { "totalExpense": 258.5, "recordCount": 3 },
+            "diary": { "count": 2, "samples": [] },
+            "todo": { "done": 2, "undone": 1 },
+            "dateRange": ["2026-11-09", "2026-11-15"]
+        }
+    },
+    "STREAM /lifeReport/stream": { "__stream": true },
+    "GET /lifeReport/stream": { "__stream": true },
+    "GET /lifeReport/insights": {
+        "data": [
+            {
+                "id": "ins1",
+                "fact_text": "本月咖啡支出 3 笔共 88 元，环比上升 40%。",
+                "status": "proposed",
+                "create_time": "2026-11-15 08:00:00",
+                "plan_id": null,
+                "candidates": [
+                    { "id": "c1", "title": "设置每周咖啡预算", "basis": "连续三周超预算", "content": "设置每周咖啡预算 50 元", "dueDate": "2026-11-20" }
+                ]
+            },
+            {
+                "id": "ins2",
+                "fact_text": "本周待办完成率 67%，低于上周。",
+                "status": "proposed",
+                "create_time": "2026-11-15 08:00:00",
+                "plan_id": null,
+                "candidates": []
+            }
+        ]
+    },
+    "POST /lifeReport/insights": { "msg": "ok" },
+    "POST /lifeReport/insights/:id/action-preview": {
+        "data": {
+            "id": "ccddee03-0123456789abcdef0123456789c",
+            "status": "awaiting_confirmation",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "tool_code": "todo.create",
+                    "status": "pending",
+                    "input_json": "{\"content\":\"设置每周咖啡预算 50 元\",\"dueDate\":\"2026-11-20\"}"
+                }
+            ]
+        }
+    },
+    "POST /lifeReport/insights/:id/accept": { "data": { "status": "succeeded" } },
+    "POST /lifeReport/insights/:id/dismiss": { "msg": "ok" },
+    "GET /lifeReport/insights/:id/sources": {
+        "data": [{ "id": 1, "pay_time": "2026-11-14 08:30:00", "type_name": "咖啡", "money": "28.00" }]
+    },
+
+    "GET /admin/globalSearch": {
+        "data": [
+            { "type": "todo", "id": 101, "title": "取快递", "subtitle": "菜鸟驿站", "createdAt": "2026-11-14", "tags": ["生活"], "appRoute": "/pages/todo/edit?id=101" },
+            { "type": "bookkeeping", "id": 501, "title": "午餐 25.5 元", "subtitle": "公司楼下午餐", "createdAt": "2026-11-15", "tags": [], "appRoute": "" },
+            { "type": "diary", "id": 601, "title": "晴，心情不错", "subtitle": "", "createdAt": "2026-11-15", "tags": ["周末"], "appRoute": "" }
+        ]
+    },
+    "POST /admin/globalSearch/summary": {
+        "data": "**搜索总结**\n\n- 3 条记录与「快递」相关，主要分布在待办与账单。\n- 建议顺手完成「取快递」。"
+    },
+
+    "GET /system/config/configKey/ymdqzt": { "msg": "aqq" },
+    "GET /system/dict/data/type/px_life_menstruation": {
+        "data": [
+            { "dictValue": "ymq", "dictLabel": "姨妈期" },
+            { "dictValue": "aqq", "dictLabel": "安全期" },
+            { "dictValue": "plq", "dictLabel": "排卵期" },
+            { "dictValue": "whyl", "dictLabel": "未怀孕" }
+        ]
+    },
+    "GET /myTool/menstruationRecord/list": { "rows": [], "total": 0 },
+    "GET /myTool/menstruationRecord/getPxMenstruationRecordList": { "rows": [], "total": 0 },
+    "GET /myTool/menstruationRecord/getLastStartDate": { "data": { "id": 201, "date": "2026-11-15" } },
+    "GET /myTool/menstruationRecord/:id": {
+        "data": { "id": 202, "date": "2026-11-15", "type": null, "makeLove": false, "temperature": 36.5, "weight": 52.5, "items": "排卵试纸", "results": "阴性", "remark": "轻微腹痛" }
+    },
+    "POST /myTool/menstruationRecord": { "msg": "ok" },
+    "PUT /myTool/menstruationRecord": { "msg": "ok" },
+    "DELETE /myTool/menstruationRecord/:id": { "msg": "ok" },
+
+    "GET /commemorationDay/list": { "rows": [], "total": 0 },
+    "GET /commemorationDay/:id": {
+        "data": { "id": 801, "name": "恋爱纪念日", "date": "2026-11-20 00:00:00", "repeat": true, "icon": "x-aiqing", "remark": "在一起的日子" }
+    },
+    "POST /commemorationDay": { "msg": "ok" },
+    "PUT /commemorationDay": { "msg": "ok" },
+    "DELETE /commemorationDay/:id": { "msg": "ok" },
+
+    "GET /px/card/getCardByUserId": {
+        "data": [{ "cardId": 1, "title": "按摩卡", "describe": "一次全身按摩", "cardNumber": 3 }]
+    },
+    "POST /px/card/useCard": { "msg": "ok" },
+    "GET /px/card/getToDoCard": {
+        "data": [
+            { "id": 11, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "周末兑现一次全身按摩", "createTime": "2026-11-10 10:00:00", "confirm": false, "score": 0 },
+            { "id": 12, "cardName": "电影卡", "userName": "我", "userId": 1, "instructions": "看一场电影", "createTime": "2026-11-08 20:00:00", "confirm": true, "score": 0 }
+        ]
+    },
+    "POST /px/card/confirmCard": { "msg": "ok" },
+    "POST /px/card/scoreCard": { "msg": "ok" },
+    "GET /px/card/listRecord": {
+        "rows": [
+            { "id": 301, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "第一次使用", "createTime": "2026-11-01 10:00:00", "confirm": true, "confirmTime": "2026-11-01 12:00:00", "score": 5 },
+            { "id": 302, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "第二次使用", "createTime": "2026-11-03 10:00:00", "confirm": true, "confirmTime": "2026-11-03 12:00:00", "score": 0 },
+            { "id": 303, "cardName": "电影卡", "userName": "我", "userId": 1, "instructions": "看了一场老片", "createTime": "2026-11-05 20:00:00", "confirm": true, "confirmTime": "2026-11-05 22:00:00", "score": 4 },
+            { "id": 304, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录4", "createTime": "2026-11-06 10:00:00", "confirm": false, "score": 0 },
+            { "id": 305, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录5", "createTime": "2026-11-06 11:00:00", "confirm": false, "score": 0 },
+            { "id": 306, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录6", "createTime": "2026-11-06 12:00:00", "confirm": false, "score": 0 },
+            { "id": 307, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录7", "createTime": "2026-11-07 10:00:00", "confirm": false, "score": 0 },
+            { "id": 308, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录8", "createTime": "2026-11-07 11:00:00", "confirm": false, "score": 0 },
+            { "id": 309, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录9", "createTime": "2026-11-07 12:00:00", "confirm": false, "score": 0 },
+            { "id": 310, "cardName": "按摩卡", "userName": "另一半", "userId": 2, "instructions": "记录10", "createTime": "2026-11-08 10:00:00", "confirm": false, "score": 0 }
+        ],
+        "total": 15
+    },
+
+    "GET /automation/rules": {
+        "data": [
+            {
+                "id": "r1",
+                "name": "纪念日提前准备",
+                "triggerType": "subscription_due",
+                "triggerConfig": "{}",
+                "conditionJson": "{\"daysBefore\":7}",
+                "actionType": "create_todo",
+                "actionConfig": "{\"content\":\"准备礼物\"}",
+                "enabled": true
+            },
+            {
+                "id": "r2",
+                "name": "周报转日记",
+                "triggerType": "todo_completed",
+                "triggerConfig": "{}",
+                "conditionJson": "{}",
+                "actionType": "todo_to_diary",
+                "actionConfig": "{}",
+                "enabled": false
+            }
+        ]
+    },
+    "GET /automation/templates": {
+        "data": [
+            { "code": "anniv_prep", "name": "纪念日提前准备", "description": "到期前 7 天自动创建准备待办", "triggerType": "subscription_due", "actionType": "create_todo" },
+            { "code": "meal_shop", "name": "膳食转购物", "description": "每周日汇总膳食生成购物清单", "triggerType": "schedule", "actionType": "meal_to_shopping" },
+            { "code": "sub_charge", "name": "订阅自动扣费", "description": "订阅到期自动记一笔支出", "triggerType": "subscription_due", "actionType": "subscription_charge" }
+        ]
+    },
+    "POST /automation/rules": { "msg": "ok" },
+    "PUT /automation/rules": { "msg": "ok" },
+    "DELETE /automation/rules/:id": { "msg": "ok" },
+    "POST /automation/rules/:id/run": { "data": { "status": "success", "summary": "已创建待办：准备礼物" } },
+    "POST /automation/rules/:id/dry-run": { "data": { "status": "preview", "summary": "试运行：将创建待办「准备礼物」" } },
+    "GET /automation/executions": {
+        "data": [
+            { "id": "e1", "ruleId": "r1", "status": "success", "createTime": "2026-11-14 08:00:00", "errorMsg": "" },
+            { "id": "e2", "ruleId": "r1", "status": "failed", "createTime": "2026-11-13 08:00:00", "errorMsg": "接口超时，请重试" }
+        ]
+    },
+    "POST /automation/executions/:id/retry": { "msg": "ok" },
+
+    "GET /recipe/list": {
+        "rows": [
+            { "id": 401, "title": "番茄炒蛋", "servings": 2, "url": "" },
+            { "id": 402, "title": "可乐鸡翅", "servings": 3, "url": "" }
+        ],
+        "total": 2
+    },
+    "GET /recipe/withIngredients/:id": {
+        "data": {
+            "id": 401,
+            "title": "番茄炒蛋",
+            "servings": 2,
+            "notes": "1. 鸡蛋打散加少许盐；\n2. 热油先炒蛋至凝固盛出；\n3. 番茄切块下锅炒出汁，倒回鸡蛋翻匀。",
+            "ingredients": [
+                { "name": "番茄", "quantity": "2个" },
+                { "name": "鸡蛋", "quantity": "3枚" }
+            ]
+        }
+    },
+    "GET /mealPlan/week": { "data": [] },
+    "POST /mealPlan": { "msg": "ok" },
+    "DELETE /mealPlan/:id": { "msg": "ok" },
+    "POST /mealPlan/shopping-preview": {
+        "data": {
+            "previewId": "pv-meal-1",
+            "groups": [
+                { "name": "蔬菜", "change": "+2", "beforeQuantity": "1盒", "needsReview": false, "quantity": 3, "unit": "个", "raw": "3 个" },
+                { "name": "鸡蛋", "change": "+6", "beforeQuantity": null, "needsReview": true, "quantity": 0, "unit": "枚", "raw": "6 枚" }
+            ]
+        }
+    },
+    "POST /mealPlan/shopping-commit": { "data": { "previewId": "pv-meal-1", "warnings": [] } },
+
+    "GET /subscription/list": {
+        "rows": [
+            { "id": 901, "name": "视频会员", "amount": 25, "cycle": "monthly", "cycleInterval": 1, "nextPaymentDate": "2026-11-20", "enabled": true, "lifecycle": "active", "logo": "🎬", "postingMode": "manual_confirm" },
+            { "id": 902, "name": "云存储", "amount": 96, "cycle": "yearly", "cycleInterval": 1, "nextPaymentDate": "2027-01-05", "enabled": true, "lifecycle": "active", "logo": "☁️", "postingMode": "manual_confirm" }
+        ],
+        "total": 2
+    },
+    "GET /subscription/forecast": { "data": { "monthlyTotal": 33, "yearlyTotal": 121, "count": 2 } },
+    "POST /subscription": { "msg": "ok" },
+    "PUT /subscription": { "msg": "ok" },
+    "DELETE /subscription/:id": { "msg": "ok" },
+    "POST /charge/rules/change-preview": {
+        "data": {
+            "previewId": "pv-sub-1",
+            "changes": [{ "field": "amount", "before": 25, "after": 30 }],
+            "duplicates": [],
+            "notice": "新账期自下一期起按 30 元生成。"
+        }
+    },
+    "POST /charge/rules/backfill-preview": {
+        "data": { "previewId": "pv-bf-1", "periods": ["2026-10-05", "2026-11-05"], "amountPerPeriod": 96 }
+    },
+    "POST /charge/rules/change-commit": { "msg": "ok" },
+    "GET /charge/instances": {
+        "data": [
+            { "id": "ci1", "sourceName": "视频会员", "dueDate": "2026-11-20", "expectedAmount": 25, "actualAmount": null, "status": "pending", "revision": 1, "accountId": 2, "classificationId": 5 },
+            { "id": "ci2", "sourceName": "云存储", "dueDate": "2026-10-05", "expectedAmount": 96, "actualAmount": null, "status": "payment_failed", "revision": 1, "accountId": 2, "classificationId": 5 }
+        ]
+    },
+    "GET /charge/instances/:id": {
+        "data": {
+            "instance": { "id": "ci1", "sourceName": "视频会员", "dueDate": "2026-11-20", "expectedAmount": 25, "status": "pending", "recordId": null },
+            "history": [{ "create_time": "2026-11-15 08:00:00", "result_json": "{\"status\":\"pending\"}" }]
+        }
+    },
+    "POST /charge/instances/:id/confirm": { "msg": "ok" },
+    "POST /charge/instances/:id/:action": { "msg": "ok" }
+}

@@ -34,6 +34,28 @@ export function clearChecked(listId) {
     return request({url: '/shoppingItem/clearChecked/' + listId, method: 'delete'})
 }
 
+// ============ 采购结算（shoppingPlanV2） ============
+
+// 查询某清单的采购批次列表
+export function listShoppingBatches(listId) {
+    return request({url: '/shoppingList/' + listId + '/batches', method: 'get'})
+}
+
+// 多个已买到商品生成采购批次（可选同时记支出）
+export function checkoutShoppingList(listId, data) {
+    return request({url: '/shoppingList/' + listId + '/checkout', method: 'post', data})
+}
+
+// 为已有采购批次补记一笔支出
+export function recordShoppingBatchExpense(batchId, data) {
+    return request({url: '/shopping-batches/' + batchId + '/record-expense', method: 'post', data})
+}
+
+// 购物项协作动作：claim 认领 / release 释放 / fulfillment 履约状态
+export function actShoppingItem(id, action, data) {
+    return request({url: '/shoppingItem/' + id + '/' + action, method: 'post', data})
+}
+
 // ============ 菜谱 ============
 export function listRecipe(query) {
     return request({url: '/recipe/list', method: 'get', params: query})

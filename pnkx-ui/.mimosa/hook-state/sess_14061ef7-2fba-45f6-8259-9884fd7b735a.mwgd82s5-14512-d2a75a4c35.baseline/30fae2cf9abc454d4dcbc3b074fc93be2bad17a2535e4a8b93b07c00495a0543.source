@@ -1,0 +1,101 @@
+/**
+ * 移动端（APP 效果）路由树
+ *
+ * - 全静态路由，不依赖后端菜单；路径与 pnkx-uniapp 页面路径同构
+ * - meta.tab = true 的 3 个页面挂底部 TabBar 并被 keep-alive 缓存
+ * - meta.plain = true 的页面隐藏 MobileLayout 默认导航栏（页面自绘）
+ */
+import MobileLayout from '@/mobile/layout/index.vue'
+
+export const mobileRoutes = [
+    {
+        path: '/m',
+        component: MobileLayout,
+        redirect: '/m/home',
+        children: [
+            // ---- TabBar ----
+            {
+                path: 'home',
+                name: 'MHome',
+                component: () => import('@/mobile/views/home/index.vue'),
+                meta: { title: '首页', tab: true }
+            },
+            {
+                path: 'function',
+                name: 'MFunction',
+                component: () => import('@/mobile/views/function/index.vue'),
+                meta: { title: '生活助手', tab: true }
+            },
+            {
+                path: 'mine',
+                name: 'MMine',
+                component: () => import('@/mobile/views/mine/index.vue'),
+                meta: { title: '我的', tab: true }
+            },
+            // ---- 个人中心 ----
+            {
+                path: 'mine/avatar',
+                name: 'MMineAvatar',
+                component: () => import('@/mobile/views/mine/avatar.vue'),
+                meta: { title: '修改头像' }
+            },
+            {
+                path: 'mine/info',
+                name: 'MMineInfo',
+                component: () => import('@/mobile/views/mine/info.vue'),
+                meta: { title: '个人信息' }
+            },
+            {
+                path: 'mine/info/edit',
+                name: 'MMineInfoEdit',
+                component: () => import('@/mobile/views/mine/info-edit.vue'),
+                meta: { title: '编辑资料' }
+            },
+            {
+                path: 'mine/pwd',
+                name: 'MMinePwd',
+                component: () => import('@/mobile/views/mine/pwd.vue'),
+                meta: { title: '修改密码' }
+            },
+            {
+                path: 'mine/setting',
+                name: 'MMineSetting',
+                component: () => import('@/mobile/views/mine/setting.vue'),
+                meta: { title: '应用设置' }
+            },
+            {
+                path: 'mine/setting/family',
+                name: 'MFamily',
+                component: () => import('@/mobile/views/mine/family.vue'),
+                meta: { title: '家庭与情侣空间' }
+            },
+            {
+                path: 'mine/help',
+                name: 'MMineHelp',
+                component: () => import('@/mobile/views/mine/help.vue'),
+                meta: { title: '常见问题' }
+            },
+            {
+                path: 'mine/about',
+                name: 'MMineAbout',
+                component: () => import('@/mobile/views/mine/about.vue'),
+                meta: { title: '关于我们' }
+            },
+            // ---- 通用页 ----
+            {
+                path: 'webview',
+                name: 'MWebview',
+                component: () => import('@/mobile/views/common/webview.vue'),
+                meta: { title: '浏览网页', plain: true }
+            },
+            {
+                path: 'textview',
+                name: 'MTextview',
+                component: () => import('@/mobile/views/common/textview.vue'),
+                meta: { title: '浏览文本' }
+            }
+        ]
+    }
+]
+
+export default mobileRoutes

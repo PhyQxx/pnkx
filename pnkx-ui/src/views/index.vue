@@ -311,8 +311,10 @@ export default {
     getAllTodoList() {
       this.toDoLoading = true
       getAllTodoList().then(res => {
+        // 空数据防御：后端 data 可能为 null（新用户/无待办）
+        const data = res.data || {}
         // 情侣卡券
-        res.data.card.forEach(item => {
+        ;(data.card || []).forEach(item => {
           this.toDoList.push({
             id: item.id,
             type: '情侣卡券',
@@ -323,7 +325,7 @@ export default {
           })
         })
         // 友链申请
-        res.data.link.forEach(item => {
+        ;(data.link || []).forEach(item => {
           this.toDoList.push({
             id: item.id,
             type: '友链申请',
@@ -334,7 +336,7 @@ export default {
           })
         })
         // 留言查看
-        res.data.message.forEach(item => {
+        ;(data.message || []).forEach(item => {
           this.toDoList.push({
             id: item.id,
             type: '留言查看',
@@ -345,7 +347,7 @@ export default {
           })
         })
         // 未读通知
-        res.data.notice.forEach(item => {
+        ;(data.notice || []).forEach(item => {
           this.toDoList.push({
             id: item.noticeId,
             type: '未读通知',
@@ -356,7 +358,7 @@ export default {
           })
         })
         // 待办事项
-        res.data.todo.forEach(item => {
+        ;(data.todo || []).forEach(item => {
           this.toDoList.push({
             id: item.id,
             type: '待办事项',
@@ -372,14 +374,17 @@ export default {
         })
 
         // 纪念日
-        this.commemorationDayList = res.data.commemoration
+        this.commemorationDayList = data.commemoration || []
 
-        // 姨妈提醒
-        this.menstruationAssistantSetting = res.data.menstruationAssistantSetting
+        // 姨妈提醒（无记录/记录不足时跳过，避免空数据崩溃）
+        this.menstruationAssistantSetting = data.menstruationAssistantSetting || null
         const prefix = '您的小可爱'
         const labelPrefix = '请提醒您的小可爱'
-        const menstruationRecord = res.data.menstruation
+        const menstruationRecord = data.menstruation
         this.toDoLoading = false
+        if (!Array.isArray(menstruationRecord) || menstruationRecord.length < 2) {
+          return
+        }
         // 计算孕周
         const timeDifference = this.getTimeDifference(menstruationRecord[1].date)
         const dayNumber = timeDifference.slice(0, timeDifference.indexOf('天'))

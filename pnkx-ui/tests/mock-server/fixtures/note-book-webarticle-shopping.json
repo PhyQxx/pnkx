@@ -1,0 +1,173 @@
+{
+    "GET /note/folder/treeList": {
+        "data": [
+            {
+                "id": 1,
+                "name": "工作",
+                "noteCount": 3,
+                "parentId": 0,
+                "children": [
+                    { "id": 11, "name": "项目A", "noteCount": 2, "parentId": 1 },
+                    { "id": 12, "name": "会议记录", "noteCount": 1, "parentId": 1 }
+                ]
+            },
+            { "id": 2, "name": "生活", "noteCount": 2, "parentId": 0 }
+        ]
+    },
+    "GET /note/folder/list": {
+        "rows": [
+            { "id": 1, "name": "工作", "noteCount": 3, "parentId": 0 },
+            { "id": 2, "name": "生活", "noteCount": 2, "parentId": 0 }
+        ],
+        "total": 2
+    },
+    "GET /note/list": {
+        "rows": [
+            { "id": 301, "title": "工作周报模板", "content": "本周完成事项与下周计划。", "folder": 1, "folderName": "工作", "updateTime": "2026-11-14 10:00:00" },
+            { "id": 302, "title": "购物灵感", "content": "人体工学椅、升降桌。", "folder": 0, "updateTime": "2026-11-13 09:00:00" }
+        ],
+        "total": 2
+    },
+    "GET /note/301": {
+        "data": {
+            "id": 301,
+            "title": "工作周报模板",
+            "content": "本周完成事项与下周计划。",
+            "folder": 1,
+            "order": 0,
+            "createTime": "2026-11-01 09:00:00",
+            "updateTime": "2026-11-14 10:00:00"
+        }
+    },
+    "GET /system/file-manager/list": {
+        "data": [
+            { "name": "日记", "path": "日记", "isDirectory": true },
+            { "name": "周报.md", "path": "周报.md", "isDirectory": false, "size": 2048 }
+        ]
+    },
+    "GET /system/file-manager/read": {
+        "data": {
+            "content": "# 观影笔记\n\n- 《星际穿越》\n- 《沙丘》\n\n```js\nconst x = 1\n```\n"
+        }
+    },
+    "GET /system/file-manager/search": {
+        "data": [
+            { "name": "周报.md", "path": "周报.md", "isDirectory": false, "matchedContent": "本周进展" }
+        ]
+    },
+    "GET /myBook/list": {
+        "rows": [
+            { "id": 1, "title": "三体", "author": "刘慈欣", "status": "reading", "chapterCount": 12, "lastReadChapterId": 201, "lastReadChapterName": "第一章 起点" },
+            { "id": 2, "title": "活着", "author": "余华", "status": "finished", "chapterCount": 10 },
+            { "id": 3, "title": "深入浅出Node.js", "author": "朴灵", "status": "shelved", "chapterCount": 8 },
+            { "id": 4, "title": "每周一书04", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 5, "title": "每周一书05", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 6, "title": "每周一书06", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 7, "title": "每周一书07", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 8, "title": "每周一书08", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 9, "title": "每周一书09", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 10, "title": "每周一书10", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 11, "title": "每周一书11", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 12, "title": "每周一书12", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 13, "title": "每周一书13", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 14, "title": "每周一书14", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 15, "title": "每周一书15", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 16, "title": "每周一书16", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 17, "title": "每周一书17", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 18, "title": "每周一书18", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 19, "title": "每周一书19", "author": "佚名", "status": "reading", "chapterCount": 5 },
+            { "id": 20, "title": "每周一书20", "author": "佚名", "status": "reading", "chapterCount": 5 }
+        ],
+        "total": 25
+    },
+    "GET /myBook/1": {
+        "data": {
+            "id": 1,
+            "title": "三体",
+            "author": "刘慈欣",
+            "status": "reading",
+            "description": "科幻名著。",
+            "chapterCount": 12,
+            "targetFinishDate": "2026-12-31",
+            "createTime": "2026-10-01 10:00:00",
+            "lastReadTime": "2026-11-14 21:00:00"
+        }
+    },
+    "GET /myBook/chapter/:id/reader": {
+        "data": {
+            "chapter": { "id": 201, "chapterName": "第一章 起点", "chapterNo": 1, "wordCount": 3200, "content": "这是第一章的正文内容，叶文洁望向了红岸的天线。" },
+            "previous": null,
+            "next": { "id": 202, "chapterName": "第二章 转折" }
+        }
+    },
+    "GET /webArticle/list": {
+        "rows": [
+            { "id": 61, "title": "Vue3 组合式 API 实战", "url": "https://example.com/vue3-guide", "category": "技术", "domain": "example.com", "tags": "vue,前端", "summary": "组合式 API 的核心概念与实战技巧。", "starFlag": "1", "readFlag": "0", "fetchStatus": "1", "aiStatus": "1", "createTime": "2026-11-14 09:30:00" },
+            { "id": 62, "title": "本周科技资讯汇总", "url": "https://news.example.com/weekly", "category": "资讯", "domain": "news.example.com", "tags": "新闻", "summary": "AI 与芯片行业动态。", "starFlag": "0", "readFlag": "1", "fetchStatus": "1", "aiStatus": "1", "createTime": "2026-11-13 18:00:00" },
+            { "id": 63, "title": "自动化工具推荐", "url": "https://tools.example.com/top", "category": "工具", "domain": "tools.example.com", "tags": "", "summary": "", "starFlag": "0", "readFlag": "0", "fetchStatus": "2", "aiStatus": "2", "fetchError": "目标站点返回 403", "createTime": "2026-11-12 12:00:00" },
+            { "id": 64, "title": "周末露营清单", "url": "https://life.example.com/camping", "category": "生活", "domain": "life.example.com", "tags": "生活", "summary": "装备与路线整理。", "starFlag": "0", "readFlag": "1", "fetchStatus": "1", "aiStatus": "1", "createTime": "2026-11-11 08:00:00" }
+        ],
+        "total": 4
+    },
+    "GET /webArticle/tags": { "data": ["vue", "前端", "新闻", "生活"] },
+    "GET /webArticle/61": {
+        "data": {
+            "id": 61,
+            "title": "Vue3 组合式 API 实战",
+            "url": "https://example.com/vue3-guide",
+            "category": "技术",
+            "domain": "example.com",
+            "tags": "vue,前端",
+            "summary": "文章摘要：组合式 API 的核心是 setup 与响应式系统。",
+            "remark": "",
+            "starFlag": "0",
+            "readFlag": "1",
+            "fetchStatus": "1",
+            "aiStatus": "1",
+            "publishTime": "2026-11-12 10:00:00",
+            "contentHtml": "<p>正文第一段：响应式基础。</p><script>window.__xss_script = 1</script><img src=\"x\" onerror=\"window.__xss_attr = 1\">"
+        }
+    },
+    "GET /webArticle/62": {
+        "data": {
+            "id": 62,
+            "title": "本周科技资讯汇总",
+            "url": "https://news.example.com/weekly",
+            "category": "资讯",
+            "domain": "news.example.com",
+            "tags": "新闻",
+            "summary": "AI 与芯片行业动态。",
+            "starFlag": "0",
+            "readFlag": "1",
+            "fetchStatus": "1",
+            "aiStatus": "1",
+            "contentHtml": "<p>资讯正文。</p>"
+        }
+    },
+    "GET /webArticle/feed/list": {
+        "rows": [
+            { "id": 1, "name": "少数派", "url": "https://sspai.com/feed", "enabled": "1", "lastFetchTime": "2026-11-14 08:00:00", "lastFetchCount": 3 },
+            { "id": 2, "name": "阮一峰周刊", "url": "https://ruanyifeng.com/feed", "enabled": "0", "lastFetchTime": "2026-11-10 08:00:00", "lastFetchCount": 0, "fetchError": "DNS 解析失败", "consecutiveFailures": 2 }
+        ],
+        "total": 2
+    },
+    "PUT /webArticle/feed/fetch/1": { "added": 2 },
+    "GET /life/assignments/shopping/301": {
+        "data": {
+            "assignee": "1",
+            "canTransfer": true,
+            "candidates": [{ "userId": 2 }, { "userId": 3 }],
+            "history": [
+                { "id": 1, "previous_assignee": null, "assignee": "1", "operator_id": "1", "reason": "初始分配", "create_time": "2026-11-10 09:00:00" }
+            ]
+        }
+    },
+    "POST /life/assignments/shopping/301/transfer": {
+        "data": {
+            "assignee": "2",
+            "canTransfer": true,
+            "candidates": [{ "userId": 1 }, { "userId": 3 }],
+            "history": []
+        }
+    }
+}

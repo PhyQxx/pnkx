@@ -4,6 +4,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '@/layout/index.vue'
 import ParentView from '@/components/ParentView/index.vue'
 
+/* 移动端（APP 效果）路由树 */
+import mobileRoutes from '@/mobile/router'
+
 /**
  * Note: 路由配置项
  *
@@ -218,7 +221,7 @@ export const constantRoutes = [
 
 const router = createRouter({
     history: createWebHistory(),
-    routes: constantRoutes,
+    routes: [...constantRoutes, ...mobileRoutes],
     scrollBehavior() {
         return {
             left: 0,

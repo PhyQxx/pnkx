@@ -92,6 +92,15 @@ export function exportRecord(query) {
     })
 }
 
+// AI解析自然语言为记账数据
+export function aiParse(text) {
+    return request({
+        url: '/bookkeeping/record/aiParse',
+        method: 'post',
+        params: { text }
+    })
+}
+
 export function importWechat(file) {
     const data = new FormData()
     data.append('file', file)

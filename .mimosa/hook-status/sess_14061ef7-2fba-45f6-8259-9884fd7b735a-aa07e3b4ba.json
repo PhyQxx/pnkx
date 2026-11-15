@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "mimosa-hook-status/v1",
+  "recordedAt": "2026-11-14T12:11:14.983Z",
+  "sessionId": "sess_14061ef7-2fba-45f6-8259-9884fd7b735a",
+  "event": "PostToolUse",
+  "toolName": "Edit",
+  "file": "pnkx-ui/src/App.vue",
+  "outcome": "clear",
+  "coverage": "complete",
+  "findingCount": 0,
+  "durationMs": 2,
+  "hostState": "hook_complete",
+  "reportHint": ".mimosa/reports/"
+}

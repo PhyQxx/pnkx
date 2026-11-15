@@ -1,0 +1,312 @@
+/**
+ * 移动端全局样式（随 MobileLayout 加载，PC 端不受影响）
+ *
+ * - Vant 主题变量对齐 --pnkx-* 设计令牌（自动跟随明暗主题切换）
+ * - 提供移动页面通用类：m-page / m-card / m-cell-card / m-fab / m-sticky-actions 等
+ * - 单位一律 px（不使用根字号 rem 方案，规避 App.vue 的 html fontSize 干扰）
+ */
+
+.m-app {
+    // Vant 主色/圆角对齐设计令牌
+    --van-primary-color: var(--pnkx-primary);
+    --van-button-primary-background: var(--pnkx-primary);
+    --van-button-primary-border-color: var(--pnkx-primary);
+    --van-cell-group-inset-border-radius: 12px;
+    --van-cell-vertical-padding: 12px;
+    --van-nav-bar-height: 46px;
+    --van-tabbar-height: 50px;
+
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--pnkx-bg);
+    color: var(--pnkx-text);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+
+    // 暗色下 Vant 弹层底色对齐 surface
+    .van-popup,
+    .van-dialog,
+    .van-nav-bar {
+        background: var(--pnkx-surface);
+    }
+    .van-nav-bar {
+        .van-nav-bar__title {
+            color: var(--pnkx-text);
+        }
+        .van-icon {
+            color: var(--pnkx-text);
+        }
+    }
+    .van-tabbar {
+        background: var(--pnkx-surface);
+        .van-tabbar-item {
+            color: var(--pnkx-text-muted);
+            &--active {
+                color: var(--pnkx-primary);
+                .m-app__tab-icon {
+                    transform: scale(1.06);
+                }
+            }
+        }
+    }
+}
+
+.m-app__body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    &--with-tabbar {
+        // 给固定 TabBar 留位（van-tabbar placeholder 由自身渲染，这里做双保险滚动区）
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+.m-app__main {
+    flex: 1;
+}
+
+.m-app__tab-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    transition: transform 0.15s ease;
+}
+
+// ============ 页面通用 ============
+
+// 页面容器：统一 12px 内容边距（DESIGN.md §8 移动档）
+.m-page {
+    padding: 12px;
+    min-height: calc(100vh - 46px);
+}
+
+// 卡片
+.m-card {
+    background: var(--pnkx-surface);
+    border: 1px solid var(--pnkx-border-soft);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+// 单元格分组卡片
+.m-cell-card {
+    background: var(--pnkx-surface);
+    border: 1px solid var(--pnkx-border-soft);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+// 区块标题
+.m-section-title {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--pnkx-text);
+    margin: 16px 2px 10px;
+
+    &::before {
+        content: '';
+        width: 3px;
+        height: 14px;
+        border-radius: 2px;
+        background: var(--pnkx-primary);
+        margin-right: 8px;
+    }
+}
+
+// 次要文字
+.m-text-secondary {
+    color: var(--pnkx-text-secondary);
+    font-size: 13px;
+}
+
+.m-text-muted {
+    color: var(--pnkx-text-muted);
+    font-size: 12px;
+}
+
+// 悬浮按钮（列表页新建入口）
+.m-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    z-index: 100;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--pnkx-primary);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(91, 141, 239, 0.4);
+
+    &:active {
+        transform: scale(0.94);
+    }
+
+    &--no-tabbar {
+        bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+}
+
+// 底部固定操作条（表单保存等）
+.m-sticky-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--pnkx-surface);
+    border-top: 1px solid var(--pnkx-border-soft);
+    display: flex;
+    gap: 10px;
+
+    .van-button {
+        flex: 1;
+    }
+}
+
+// 表单页正文（有底部操作条时留白）
+.m-form {
+    padding: 12px 12px calc(76px + env(safe-area-inset-bottom));
+}
+
+// 空态
+.m-empty {
+    padding: 48px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--pnkx-text-muted);
+    font-size: 13px;
+}
+
+// 下拉刷新容器
+.m-pull {
+    min-height: calc(100vh - 96px);
+}
+
+// 九宫格入口（功能页/记账主页）
+.m-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px 8px;
+
+    &--3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.m-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--pnkx-text);
+    text-align: center;
+    cursor: pointer;
+
+    .m-grid-item__icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--pnkx-primary-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+
+        img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+        }
+    }
+
+    &:active .m-grid-item__icon {
+        opacity: 0.8;
+    }
+}
+
+// 统计头部条（记账汇总等）
+.m-stat-bar {
+    display: flex;
+    gap: 10px;
+
+    .m-stat-bar__item {
+        flex: 1;
+        background: var(--pnkx-surface);
+        border: 1px solid var(--pnkx-border-soft);
+        border-radius: 12px;
+        padding: 10px 12px;
+
+        .m-stat-bar__label {
+            font-size: 12px;
+            color: var(--pnkx-text-muted);
+        }
+
+        .m-stat-bar__value {
+            margin-top: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--pnkx-text);
+            word-break: break-all;
+        }
+    }
+}
+
+// 徽标点
+.m-dot {
+    display: inline-block;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--pnkx-danger);
+    color: #fff;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+}
+
+// 富文本内容（AI 消息、收藏正文等）
+.m-rich-content {
+    line-height: 1.7;
+    font-size: 14px;
+    word-break: break-word;
+
+    img {
+        max-width: 100%;
+    }
+
+    pre {
+        overflow-x: auto;
+        background: var(--pnkx-surface-muted);
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    code {
+        font-size: 13px;
+    }
+
+    table {
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+}

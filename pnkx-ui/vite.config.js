@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import compression from 'vite-plugin-compression2'
+import Components from 'unplugin-vue-components/vite'
+import { VantResolver } from '@vant/auto-import-resolver'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -16,6 +18,12 @@ export default defineConfig(({ mode }) => {
             createSvgIconsPlugin({
                 iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
                 symbolId: 'icon-[name]'
+            }),
+            // Vant 按需引入：仅解析 van-* 标签（PC 端不使用，不影响现有组件注册习惯）
+            Components({
+                dirs: [],
+                dts: false,
+                resolvers: [VantResolver()]
             }),
             compression()
         ],
@@ -84,6 +92,7 @@ export default defineConfig(({ mode }) => {
                 'vue3-count-to',
                 'vue3-treeselect',
                 'vuedraggable',
+                'vant',
                 'vuex',
                 'x-markdown-vue'
             ]
@@ -94,7 +103,8 @@ export default defineConfig(({ mode }) => {
             open: true,
             proxy: {
                 [env.VUE_APP_BASE_API]: {
-                    target: 'http://localhost:8068',
+                    // E2E 并行时经 E2E_MOCK_PROXY 指向各自的 mock server（仅测试用途）
+                    target: process.env.E2E_MOCK_PROXY || 'http://localhost:8068',
                     changeOrigin: true,
                     rewrite: (path) => path.replace(new RegExp('^' + env.VUE_APP_BASE_API), '')
                 }
@@ -111,6 +121,7 @@ export default defineConfig(({ mode }) => {
                         'vue-vendor': ['vue', 'vue-router', 'vuex'],
                         'element-plus': ['element-plus', '@element-plus/icons-vue'],
                         'echarts': ['echarts'],
+                        'vant': ['vant'],
                     }
                 }
             }

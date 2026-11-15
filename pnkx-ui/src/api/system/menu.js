@@ -9,6 +9,15 @@ export function listMenu(query) {
     })
 }
 
+// 查询菜单列表（有参，移动端生活助手宫格用 isApp='1'）
+export function listByParams(query) {
+    return request({
+        url: '/system/menu/listByParams',
+        method: 'get',
+        params: query
+    })
+}
+
 // 查询菜单详细
 export function getMenu(menuId) {
     return request({

@@ -94,3 +94,36 @@ export function markNotificationsRead(ids) {
         data: ids || []
     })
 }
+
+// 删除单条通知
+export function deleteNotification(id) {
+    return request({
+        url: '/reminder/notifications/' + id,
+        method: 'delete'
+    })
+}
+
+// 重发发送失败的通知
+export function retryNotification(id) {
+    return request({
+        url: '/reminder/notifications/' + id + '/retry',
+        method: 'post'
+    })
+}
+
+// 查询提醒渠道偏好（站内/推送/邮件 + 免打扰时段）
+export function getReminderPreference() {
+    return request({
+        url: '/reminder/preference',
+        method: 'get'
+    })
+}
+
+// 保存提醒渠道偏好
+export function saveReminderPreference(data) {
+    return request({
+        url: '/reminder/preference',
+        method: 'put',
+        data: data
+    })
+}

@@ -1,0 +1,11 @@
+{
+    "GET /admin/toDo/list": {
+        "rows": [
+            { "id": 1, "content": "PC 端回归用例待办", "state": "1", "planStartTime": "2026-11-15 09:00:00", "planEndTime": "2026-11-15 18:00:00", "label": "回归测试" },
+            { "id": 2, "content": "第二条待办", "state": "0", "planStartTime": null, "planEndTime": null, "label": null }
+        ],
+        "total": 2
+    },
+    "GET /admin/toDo/getLabelList": { "data": ["回归测试", "日常"] },
+    "GET /admin/diary/list": { "rows": [], "total": 0 }
+}

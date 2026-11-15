@@ -1,0 +1,115 @@
+{
+    "GET /admin/toDo/getLabelList": { "data": ["工作", "生活"] },
+
+    "GET /admin/toDo/list": {
+        "rows": [
+            { "id": 9001, "content": "写周报", "planStartTime": "2026-11-16 09:00:00", "planEndTime": "2026-11-16 18:00:00", "status": false, "label": "工作", "performer": "2", "performerName": "小美" },
+            { "id": 9002, "content": "交房租", "planStartTime": "2026-11-10 09:00:00", "planEndTime": "2026-11-13 18:00:00", "status": false, "label": "生活" },
+            { "id": 9003, "content": "买牛奶和鸡蛋", "planStartTime": "2026-11-15 18:00:00", "planEndTime": "2026-11-15 20:00:00", "status": false, "label": "生活" },
+            { "id": 9004, "content": "预约体检", "planStartTime": "2026-11-18 09:00:00", "planEndTime": "2026-11-18 12:00:00", "status": false, "label": "生活" },
+            { "id": 9005, "content": "整理书架", "planStartTime": "2026-11-17 20:00:00", "planEndTime": "2026-11-17 21:00:00", "status": false, "label": "工作" },
+            { "id": 9006, "content": "取快递", "planStartTime": "2026-11-14 10:00:00", "planEndTime": "2026-11-14 12:00:00", "status": true, "label": "生活", "finishTime": "2026-11-14 11:00:00" },
+            { "id": 9007, "content": "缴水电费", "planStartTime": "2026-11-12 09:00:00", "planEndTime": "2026-11-12 18:00:00", "status": true, "label": "生活", "finishTime": "2026-11-12 17:00:00" },
+            { "id": 9008, "content": "寄退换货包裹", "planStartTime": "2026-11-11 09:00:00", "planEndTime": "2026-11-11 18:00:00", "status": true, "label": "工作", "finishTime": "2026-11-11 16:00:00" },
+            { "id": 9009, "content": "更新简历", "planStartTime": "2026-11-08 09:00:00", "planEndTime": "2026-11-09 18:00:00", "status": true, "label": "工作", "finishTime": "2026-11-09 20:00:00" },
+            { "id": 9010, "content": "给植物浇水", "planStartTime": "2026-11-13 08:00:00", "planEndTime": "2026-11-13 09:00:00", "status": true, "label": "生活", "finishTime": "2026-11-13 08:40:00" }
+        ],
+        "total": 5
+    },
+
+    "GET /admin/toDo/9101": {
+        "data": {
+            "id": 9101,
+            "content": "准备家庭旅行",
+            "performer": "2",
+            "performerName": "小美",
+            "planStartTime": "2026-11-18 09:00:00",
+            "planEndTime": "2026-11-20 18:00:00",
+            "label": "生活",
+            "remark": "订酒店和车票",
+            "status": false
+        }
+    },
+    "POST /admin/toDo": {},
+    "PUT /admin/toDo": {},
+    "DELETE /admin/toDo/:id": {},
+
+    "GET /system/user/list": {
+        "rows": [
+            { "userId": 1, "nickName": "测试用户" },
+            { "userId": 2, "nickName": "小美" },
+            { "userId": 3, "nickName": "阿强" }
+        ],
+        "total": 3
+    },
+
+    "GET /reminder/list": { "rows": [], "total": 0 },
+    "POST /reminder/bind": {},
+
+    "GET /life/assignments/todo/9101": {
+        "data": {
+            "assignee": "2",
+            "canTransfer": true,
+            "candidates": [{ "userId": 1 }, { "userId": 3 }],
+            "history": [
+                { "id": 11, "previous_assignee": "1", "assignee": "2", "operator_id": "1", "reason": "出差转交", "create_time": "2026-11-10 09:00:00" }
+            ]
+        }
+    },
+    "POST /life/assignments/todo/9101/transfer": {
+        "data": {
+            "assignee": "3",
+            "canTransfer": true,
+            "candidates": [{ "userId": 1 }, { "userId": 2 }],
+            "history": [
+                { "id": 11, "previous_assignee": "1", "assignee": "2", "operator_id": "1", "reason": "出差转交", "create_time": "2026-11-10 09:00:00" },
+                { "id": 12, "previous_assignee": "2", "assignee": "3", "operator_id": "1", "reason": "下周我出差，转给阿强跟进", "create_time": "2026-11-15 10:00:00" }
+            ]
+        }
+    },
+
+    "GET /admin/diary/list": {
+        "rows": [
+            { "id": 9201, "title": "周末爬山", "content": "早上八点出发，走了一条新路线，山顶风景很好。", "mood": "x-gaoxing", "weather": "w-qing", "date": "2026-11-14" },
+            { "id": 9202, "title": "加班的一天", "content": "改了三版方案，晚上十点才到家。", "mood": "x-ku", "weather": "w-yin", "date": "2026-11-12" }
+        ],
+        "total": 2
+    },
+    "GET /admin/diary/9201": {
+        "data": {
+            "id": 9201,
+            "title": "周末爬山",
+            "content": "早上八点出发，走了一条新路线，山顶风景很好。",
+            "richText": "早上八点出发，走了一条新路线，山顶风景很好。",
+            "mood": "x-gaoxing",
+            "weather": "w-qing",
+            "date": "2026-11-14"
+        }
+    },
+    "POST /admin/diary": {},
+    "PUT /admin/diary": {},
+    "DELETE /admin/diary/:id": {},
+
+    "GET /diary/analysis/data": {
+        "data": {
+            "total": 6,
+            "moodDistribution": [
+                { "name": "x-gaoxing", "value": 4 },
+                { "name": "x-ku", "value": 2 }
+            ],
+            "timeline": [
+                { "date": "2026-11-14", "mood": "x-gaoxing", "weather": "w-qing", "title": "周末爬山", "contentPreview": "山顶风景很好" },
+                { "date": "2026-11-12", "mood": "x-ku", "weather": "w-yin", "title": "加班的一天", "contentPreview": "改了三版方案" }
+            ]
+        }
+    },
+    "GET /diary/analysis/stream": {
+        "__stream": true,
+        "chunks": [
+            { "data": "本月整体心情平稳", "delay": 0 },
+            { "data": "，建议早睡早起", "delay": 900 },
+            { "data": "。", "delay": 900 },
+            { "data": "[DONE]", "delay": 0 }
+        ]
+    }
+}

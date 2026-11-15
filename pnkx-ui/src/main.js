@@ -104,6 +104,10 @@ const globalProperties = {
     getDicts: getDicts,
     getConfigKey: getConfigKey,
     parseTime: parseTime,
+    // uniapp 风格别名（移动端 src/mobile 沿用 $parseTime 等命名）
+    $parseTime: parseTime,
+    $getTimeDifference: getTimeDifference,
+    $arraySum: arraySum,
     resetForm: resetForm,
     addDateRange: addDateRange,
     selectDictLabel: selectDictLabel,
