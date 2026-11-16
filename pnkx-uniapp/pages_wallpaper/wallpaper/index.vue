@@ -24,25 +24,25 @@
         <!-- 登录态徽标：点击跳壁纸应用专属「我的」页；未登录跳登录页 -->
         <user-badge theme="light" to="/pages_wallpaper/wallpaper/mine" />
       </view>
-      <view class="wp-stats">
-        <view class="stat-card">
-          <text class="stat-value">{{ wallpaperList.length }}</text>
-          <text class="stat-label">本页壁纸</text>
-        </view>
-        <view class="stat-card">
-          <text class="stat-value">{{ folderList.length }}</text>
-          <text class="stat-label">子文件夹</text>
-        </view>
-        <!-- 批量下载入口：仅在二级（folderPath 非空）且有壁纸时显示，再次点击退出选择 -->
-        <view
-          v-if="folderPath.length > 0 && wallpaperList.length > 0"
-          class="batch-btn"
-          :class="{ active: selectMode }"
-          @click="toggleSelectMode"
-        >
-          <uni-icons type="download" size="16" :color="selectMode ? '#fff' : '#38BDF8'" />
-          <text class="batch-btn-text">{{ selectMode ? '退出选择' : '批量下载' }}</text>
-        </view>
+    </view>
+
+    <!-- 分段Tab（方案A）：文件夹/壁纸各带总数，各自独立无限滚动，互不干扰 -->
+    <view class="wp-tabs" v-if="!selectMode">
+      <view
+        class="wp-tab-item"
+        :class="{ active: activeTab === 'folder' }"
+        @click="switchTab('folder')"
+      >
+        <text class="tab-count">{{ folderTotal }}</text>
+        <text>文件夹</text>
+      </view>
+      <view
+        class="wp-tab-item"
+        :class="{ active: activeTab === 'wp' }"
+        @click="switchTab('wp')"
+      >
+        <text class="tab-count">{{ wpTotal }}</text>
+        <text>壁纸</text>
       </view>
     </view>
 
@@ -90,21 +90,33 @@
         <uni-icons :type="searchMode ? 'search' : 'folder'" size="14" color="#9BA8B7" />
         <text>{{ searchMode ? ('「' + keyword + '」的搜索结果') : '全部壁纸' }}</text>
       </view>
+      <!-- 批量下载入口：仅在二级（folderPath 非空）且有壁纸时显示，再次点击退出选择 -->
+      <view
+        v-if="folderPath.length > 0 && wallpaperList.length > 0"
+        class="batch-btn"
+        :class="{ active: selectMode }"
+        @click="toggleSelectMode"
+      >
+        <uni-icons type="download" size="16" :color="selectMode ? '#fff' : '#38BDF8'" />
+        <text class="batch-btn-text">{{ selectMode ? '退出选择' : '批量下载' }}</text>
+      </view>
     </view>
 
     <!-- 内容区域 -->
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollTopData"
       @scrolltolower="loadMore"
       refresher-enabled
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
     >
-      <!-- 文件夹列表（多行网格） -->
-      <view class="folder-section" v-if="folderList.length > 0">
-        <view class="section-header">
+      <!-- 文件夹 Tab：独立无限滚动 -->
+      <view class="folder-section" v-if="activeTab === 'folder' && (folderList.length > 0 || loading)">
+        <view class="section-header" v-if="folderList.length > 0">
           <text class="section-title">文件夹</text>
+          <text class="section-extra">已加载 {{ folderList.length }}/{{ folderTotal }}</text>
         </view>
         <view class="folder-grid">
           <view
@@ -135,18 +147,28 @@
             </view>
             <view class="folder-card-body">
               <view class="folder-card-name">{{ folder.name }}</view>
-              <view class="folder-card-count">{{ folder.wallpaperCount || 0 }} 张</view>
+              <view class="folder-card-count">{{ folderCardMeta(folder) }}</view>
             </view>
           </view>
         </view>
+        <uni-load-more :status="folderLoadStatus" />
       </view>
 
-      <!-- 壁纸网格 -->
-      <view class="wallpaper-section" :class="{ 'select-padding': selectMode }">
+      <!-- 文件夹Tab空态（该层级只有壁纸时由 fixTabFallback 自动落到壁纸Tab，这里是手动切回时的兜底） -->
+      <view class="empty-state empty-state-folder" v-else-if="activeTab === 'folder' && !loading">
+        <view class="empty-icon">
+          <uni-icons type="folder" size="42" color="#38BDF8" />
+        </view>
+        <text class="empty-text">{{ folderEmpty.text }}</text>
+        <text class="empty-hint">{{ folderEmpty.hint }}</text>
+      </view>
+
+      <!-- 壁纸 Tab：独立无限滚动 -->
+      <view class="wallpaper-section" :class="{ 'select-padding': selectMode }" v-else>
         <view class="section-header" v-if="wallpaperList.length > 0">
           <text class="section-title">壁纸</text>
           <text class="section-extra">
-            {{ selectMode ? '已选 ' + selectedCount + ' 张' : wallpaperList.length + ' 张' }}
+            {{ selectMode ? '已选 ' + selectedCount + ' 张' : '已加载 ' + wallpaperList.length + '/' + wpTotal }}
           </text>
         </view>
 
@@ -196,16 +218,16 @@
         </view>
 
         <!-- 空状态 -->
-        <view class="empty-state" v-if="wallpaperList.length === 0 && folderList.length === 0 && !loading">
+        <view class="empty-state" v-if="wallpaperList.length === 0 && !loading">
           <view class="empty-icon">
             <uni-icons type="image" size="42" color="#38BDF8" />
           </view>
-          <text class="empty-text">{{ searchMode ? '没有找到相关内容' : '这里还没有壁纸' }}</text>
-          <text class="empty-hint">{{ searchMode ? '换个关键词试试吧' : '下拉刷新试试，或换个文件夹看看' }}</text>
+          <text class="empty-text">{{ wpEmpty.text }}</text>
+          <text class="empty-hint">{{ wpEmpty.hint }}</text>
         </view>
 
         <!-- 加载状态 -->
-        <uni-load-more :status="loadStatus" />
+        <uni-load-more v-if="wallpaperList.length > 0 || loading" :status="wpLoadStatus" />
       </view>
     </scroll-view>
 
@@ -312,8 +334,19 @@ export default {
       loading: false,
       isRefreshing: false,
       hasMore: true,
-      loadStatus: 'more',
       initialized: false,
+      // ===== 分段Tab（方案A） =====
+      // 当前激活的Tab：folder=文件夹 / wp=壁纸
+      activeTab: 'folder',
+      // 文件夹总数（Tab角标 + 已加载进度）
+      folderTotal: 0,
+      // 壁纸总数
+      wpTotal: 0,
+      // 两个Tab各自的加载状态（独立无限滚动）
+      folderLoadStatus: 'more',
+      wpLoadStatus: 'more',
+      // scroll-view 回顶用的 scroll-top 值（0/0.1 交替赋值保证属性变化触发回顶）
+      scrollTopData: 0,
       // 排序（默认按最热）
       currentSort: 'like',
       sortOptions: [
@@ -369,6 +402,26 @@ export default {
     isAllSelected() {
       return this.wallpaperList.length > 0 &&
         this.wallpaperList.every(item => this.selectedIds.includes(item.id))
+    },
+    // 文件夹Tab空态文案
+    folderEmpty() {
+      if (this.wpTotal > 0) {
+        return { text: '这里还没有文件夹', hint: '该层级只有壁纸，去「壁纸」Tab 浏览' }
+      }
+      return {
+        text: this.searchMode ? '没有找到相关文件夹' : '这里还没有文件夹',
+        hint: this.searchMode ? '换个关键词试试吧' : '下拉刷新试试'
+      }
+    },
+    // 壁纸Tab空态文案
+    wpEmpty() {
+      if (this.folderTotal > 0) {
+        return { text: '这里还没有壁纸', hint: '该层级只有文件夹，去「文件夹」Tab 逛逛' }
+      }
+      return {
+        text: this.searchMode ? '没有找到相关壁纸' : '这里还没有壁纸',
+        hint: this.searchMode ? '换个关键词试试吧' : '下拉刷新试试，或换个文件夹看看'
+      }
     }
   },
   onLoad(options = {}) {
@@ -465,28 +518,33 @@ export default {
         this.folderPath = this.folderPath.slice(0, this.folderPath.length - 1)
         this.currentFolderId = this.folderPath[this.folderPath.length - 1].id
       }
+      this.activeTab = 'folder'
       this.refreshData()
     },
 
     /**
-     * 加载数据
+     * 加载数据（两个Tab的第一页并行加载，保证Tab角标和切换后内容即时可用）
      */
     async loadData() {
       if (this.loading) return
       this.loading = true
-      this.loadStatus = 'loading'
+      this.folderLoadStatus = 'loading'
+      this.wpLoadStatus = 'loading'
       try {
         await Promise.all([
           this.loadFolders(),
           this.loadWallpapers()
         ])
+        // 空层级自动落位：当前Tab无内容且另一Tab有内容时自动切换
+        this.fixTabFallback()
       } catch (error) {
         console.error('加载数据失败:', error)
         uni.showToast({ title: '加载失败', icon: 'none' })
       } finally {
         this.loading = false
         this.isRefreshing = false
-        this.loadStatus = (this.hasMore || this.folderHasMore) ? 'more' : 'noMore'
+        this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
+        this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
       }
     },
 
@@ -504,6 +562,7 @@ export default {
       const res = await listWallpaperFolder(params)
       const rows = res.rows || []
       this.folderList = append ? [...this.folderList, ...rows] : rows
+      this.folderTotal = Number(res.total) || 0
       // 以 total 判断是否还有下一页；返回空页时兜底结束
       this.folderHasMore = rows.length > 0 && this.folderList.length < (Number(res.total) || 0)
     },
@@ -526,6 +585,7 @@ export default {
       }
       const res = await listWallpaper(params)
       const rows = res.rows || []
+      this.wpTotal = Number(res.total) || 0
       if (this.queryParams.pageNum === 1) {
         this.wallpaperList = rows
       } else {
@@ -553,13 +613,74 @@ export default {
     },
 
     /**
-     * 切换排序方式
+     * 切换排序方式（排序仅作用于壁纸列表，文件夹无需重载）
      */
     changeSort(sort) {
       if (this.currentSort === sort) return
       this.currentSort = sort
-      this.resetPaging()
-      this.loadData()
+      this.queryParams.pageNum = 1
+      this.hasMore = true
+      this.wpLoadStatus = 'loading'
+      this.loadWallpapers()
+        .then(() => {
+          this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
+        })
+        .catch(error => {
+          console.error('加载壁纸失败:', error)
+          this.wpLoadStatus = 'more'
+        })
+    },
+
+    // ===== 分段Tab（方案A） =====
+
+    /**
+     * 切换文件夹/壁纸Tab：两个列表各自保持已加载的分页数据，切换后回到顶部
+     */
+    switchTab(tab) {
+      if (this.activeTab === tab) return
+      this.activeTab = tab
+      // 0/0.1 交替赋值，保证 scroll-top 属性一定发生变化从而触发回顶（两个值都等价于顶部）
+      this.scrollTopData = this.scrollTopData === 0 ? 0.1 : 0
+    },
+
+    /**
+     * 空层级自动落位：当前Tab无内容而另一Tab有内容时，自动切到有内容的Tab
+     */
+    fixTabFallback() {
+      if (this.activeTab === 'folder' && this.folderTotal === 0 && this.wpTotal > 0) {
+        this.activeTab = 'wp'
+      } else if (this.activeTab === 'wp' && this.wpTotal === 0 && this.folderTotal > 0) {
+        this.activeTab = 'folder'
+      }
+    },
+
+    /**
+     * 文件夹卡片第二行文案：N 张 · 最后图片时间
+     * 时间口径：夹内（含子夹）最后一张图片的时间，后端返回 lastImageTime
+     */
+    folderCardMeta(folder) {
+      const count = (folder && folder.wallpaperCount) || 0
+      const time = this.formatFolderTime(folder && folder.lastImageTime)
+      return time ? `${count} 张 · ${time}` : `${count} 张`
+    },
+
+    /**
+     * 最后图片时间的展示格式：今天/昨天/N天前，本年 M-D，往年 Y-M-D
+     * 兼容 "yyyy-MM-dd HH:mm:ss" 字符串与时间戳两种输入
+     */
+    formatFolderTime(time) {
+      if (!time) return ''
+      const d = new Date(typeof time === 'number' ? time : String(time).replace(/-/g, '/'))
+      if (isNaN(d.getTime())) return ''
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+      const t = d.getTime()
+      if (t >= startOfToday) return '今天'
+      if (t >= startOfToday - 86400000) return '昨天'
+      const days = Math.floor((startOfToday - t) / 86400000)
+      if (days < 30) return days + '天前'
+      if (d.getFullYear() === now.getFullYear()) return (d.getMonth() + 1) + '-' + d.getDate()
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()
     },
 
     // ===== 关键字搜索 =====
@@ -578,6 +699,7 @@ export default {
       // 全局搜索无层级概念，清空文件夹上下文
       this.currentFolderId = 0
       this.folderPath = []
+      this.activeTab = 'folder'
       this.resetPaging()
       this.loadData()
     },
@@ -620,6 +742,7 @@ export default {
       this.searchMode = false
       this.currentFolderId = 0
       this.folderPath = []
+      this.activeTab = 'folder'
       this.resetPaging()
       this.loadData()
     },
@@ -633,14 +756,20 @@ export default {
     },
 
     /**
-     * 加载更多：先翻完文件夹分页，再翻壁纸分页（与页面渲染顺序一致）
+     * 加载更多：按当前Tab独立翻页（方案A两个列表互不干扰）
      */
     async loadMore() {
       if (this.loading) return
-      if (!this.folderHasMore && !this.hasMore) return
+      const isFolderTab = this.activeTab === 'folder'
+      if (isFolderTab ? !this.folderHasMore : !this.hasMore) return
       this.loading = true
+      if (isFolderTab) {
+        this.folderLoadStatus = 'loading'
+      } else {
+        this.wpLoadStatus = 'loading'
+      }
       try {
-        if (this.folderHasMore) {
+        if (isFolderTab) {
           this.folderPageNum++
           await this.loadFolders(true)
         } else {
@@ -649,9 +778,16 @@ export default {
         }
       } catch (error) {
         console.error('加载更多失败:', error)
+        // 失败回滚页码，下次触底重试同一页
+        if (isFolderTab) {
+          this.folderPageNum--
+        } else {
+          this.queryParams.pageNum--
+        }
       } finally {
         this.loading = false
-        this.loadStatus = (this.hasMore || this.folderHasMore) ? 'more' : 'noMore'
+        this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
+        this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
       }
     },
 
@@ -673,6 +809,8 @@ export default {
      */
     navigateToFolder(target, pathIndex = -1) {
       const folderId = typeof target === 'object' ? target.id : target
+      // 进入新层级时回到文件夹Tab（空层级由 fixTabFallback 自动落位）
+      this.activeTab = 'folder'
       if (folderId === 0) {
         this.folderPath = []
         this.currentFolderId = 0
@@ -783,6 +921,8 @@ export default {
     enterSelectMode() {
       this.selectMode = true
       this.selectedIds = []
+      // 选择操作只针对壁纸：从文件夹Tab进入时自动落到壁纸Tab（已在壁纸Tab则无副作用）
+      this.switchTab('wp')
     },
 
     /** 退出选择模式 */
@@ -1176,69 +1316,50 @@ export default {
         color: $text-secondary;
       }
     }
+  }
 
-    .wp-stats {
+  // 分段Tab（方案A）：文件夹/壁纸各带总数，独立无限滚动
+  .wp-tabs {
+    display: flex;
+    margin: 8rpx 24rpx 0;
+    padding: 8rpx;
+    border-radius: 28rpx;
+    background-color: rgba(255, 255, 255, 0.92);
+    border: 1rpx solid rgba(15, 23, 42, 0.06);
+    box-shadow: $shadow-sm;
+
+    .wp-tab-item {
+      flex: 1;
       display: flex;
-      margin-top: 20rpx;
+      align-items: center;
+      justify-content: center;
+      padding: 18rpx 0;
+      border-radius: 20rpx;
+      font-size: $font-body;
+      color: $text-secondary;
+      transition: background-color 0.15s ease, color 0.15s ease;
 
-      .stat-card {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 20rpx 22rpx;
-        border-radius: $radius-lg;
-        background-color: rgba(255, 255, 255, 0.86);
-        border: 1rpx solid rgba(255, 255, 255, 0.7);
-        box-shadow: $shadow-sm;
-
-        & + .stat-card {
-          margin-left: 16rpx;
-        }
-
-        .stat-value {
-          font-size: 34rpx;
-          line-height: 1.2;
-          color: #172033;
-          font-weight: $font-weight-bold;
-        }
-
-        .stat-label {
-          margin-top: 6rpx;
-          font-size: $font-caption;
-          color: $text-tertiary;
-        }
+      .tab-count {
+        margin-right: 8rpx;
+        font-weight: $font-weight-bold;
       }
 
-      // 批量下载入口按钮
-      .batch-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6rpx;
-        margin-left: 16rpx;
-        padding: 0 26rpx;
-        height: 96rpx;
-        border-radius: $radius-lg;
-        background-color: rgba(56, 189, 248, 0.12);
-        border: 1rpx solid rgba(56, 189, 248, 0.3);
+      &.active {
+        color: #fff;
+        font-weight: $font-weight-semibold;
+        background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+        box-shadow: 0 8rpx 24rpx rgba(14, 165, 233, 0.35);
+      }
 
-        .batch-btn-text {
-          font-size: $font-caption;
-          color: #38BDF8;
-          font-weight: $font-weight-semibold;
-          white-space: nowrap;
-        }
-
-        &:active {
-          opacity: 0.8;
-        }
+      &:active {
+        opacity: 0.85;
       }
     }
   }
 
   // 搜索栏
   .search-bar {
-    margin: 4rpx 24rpx 16rpx;
+    margin: 16rpx 24rpx 16rpx;
 
     .search-input-wrap {
       position: relative;
@@ -1283,6 +1404,8 @@ export default {
   }
 
   .toolbar {
+    display: flex;
+    align-items: center;
     margin: 0 24rpx 18rpx;
     padding: 8rpx 10rpx 14rpx;
     border-radius: $radius-xl;
@@ -1291,7 +1414,8 @@ export default {
   }
 
   .breadcrumb {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     margin-top: 10rpx;
     white-space: nowrap;
 
@@ -1308,6 +1432,8 @@ export default {
   }
 
   .breadcrumb-placeholder {
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     padding: 2rpx 16rpx 0;
@@ -1316,6 +1442,42 @@ export default {
 
     text {
       margin-left: 8rpx;
+    }
+  }
+
+  // 批量下载入口按钮（工具栏右侧）
+  .batch-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6rpx;
+    margin-left: 12rpx;
+    margin-top: 10rpx;
+    padding: 0 24rpx;
+    height: 72rpx;
+    border-radius: $radius-full;
+    background-color: rgba(56, 189, 248, 0.12);
+    border: 1rpx solid rgba(56, 189, 248, 0.3);
+
+    .batch-btn-text {
+      font-size: $font-caption;
+      color: #38BDF8;
+      font-weight: $font-weight-semibold;
+      white-space: nowrap;
+    }
+
+    &:active {
+      opacity: 0.8;
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%);
+      border-color: transparent;
+
+      .batch-btn-text {
+        color: #fff;
+      }
     }
   }
 
@@ -1450,6 +1612,9 @@ export default {
           margin-top: 10rpx;
           font-size: $font-caption;
           color: $text-tertiary;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         &:active {
@@ -1638,6 +1803,11 @@ export default {
       color: $text-disabled;
       margin-top: 12rpx;
     }
+  }
+
+  // 文件夹Tab空态直接挂在 scroll-view 下，需自带左右边距
+  .empty-state-folder {
+    margin: 32rpx 24rpx;
   }
 
   // 底部批量操作栏

@@ -19,6 +19,7 @@
         <result property="updateTime" column="update_time"/>
         <result property="remark" column="remark"/>
         <result property="wallpaperCount" column="wallpaper_count"/>
+        <result property="lastImageTime" column="last_image_time"/>
     </resultMap>
 
     <sql id="selectPxWallpaperFolderVo">
@@ -72,10 +73,11 @@
                f.update_by,
                f.update_time,
                f.remark,
-               coalesce(wps.cnt, 0) as wallpaper_count
+               coalesce(wps.cnt, 0) as wallpaper_count,
+               wps.last_time        as last_image_time
         from px_wallpaper_folder f
         left join (
-            select root_id, count(*) as cnt
+            select root_id, count(*) as cnt, max(coalesce(w.update_time, w.create_time)) as last_time
             from folder_tree ft
                      inner join px_wallpaper w on ft.sub_id = w.folder and w.del_flag = 0
             group by root_id

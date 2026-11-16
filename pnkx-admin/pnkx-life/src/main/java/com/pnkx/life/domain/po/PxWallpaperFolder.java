@@ -1,8 +1,11 @@
 package com.pnkx.life.domain.po;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.pnkx.common.annotation.Excel;
 import com.pnkx.common.core.domain.BaseEntity;
 import lombok.Data;
+
+import java.util.Date;
 
 /**
  * @author PHY
@@ -64,4 +67,11 @@ public class PxWallpaperFolder extends BaseEntity {
      */
     @Excel(name = "壁纸数量")
     private Integer wallpaperCount;
+
+    /**
+     * 文件夹内最后一张图片的时间（子树内壁纸的最大时间，查询计算字段，非表字段）
+     * 口径与封面挑选/最新排序一致：优先 update_time，缺失时回退 create_time
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date lastImageTime;
 }
