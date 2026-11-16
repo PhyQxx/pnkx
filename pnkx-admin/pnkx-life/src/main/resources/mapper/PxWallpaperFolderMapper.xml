@@ -95,7 +95,8 @@
                 and f.version = #{version}
             </if>
         </where>
-        ORDER BY isnull(f.`order`) || f.`order` = '', f.`order`, f.update_time DESC
+        <!-- 默认按创建时间倒序（id 倒序兜底，保证同一秒创建的文件夹顺序稳定） -->
+        ORDER BY f.create_time DESC, f.id DESC
     </select>
 
     <!--
@@ -147,7 +148,8 @@
                 and f.version = #{version}
             </if>
         </where>
-        ORDER BY isnull(f.`order`) || f.`order` = '', f.`order`, f.update_time DESC
+        <!-- 默认按创建时间倒序（id 倒序兜底，保证同一秒创建的文件夹顺序稳定） -->
+        ORDER BY f.create_time DESC, f.id DESC
     </select>
 
     <select id="selectPxWallpaperFolderById" parameterType="Long"
