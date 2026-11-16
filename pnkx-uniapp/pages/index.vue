@@ -7,32 +7,32 @@
         <view class="greeting-header__decor greeting-header__decor--dot"></view>
       </view>
       <view class="greeting-header__content">
-        <view class="greeting-header__text">
-          <view class="greeting-header__row">
+        <view class="greeting-header__top">
+          <view class="greeting-header__text">
             <text class="greeting-header__hello">{{ greetingText }}，</text>
             <text class="greeting-header__name">{{ nickName }}</text>
           </view>
-          <text class="greeting-header__date">{{ todayDate }}</text>
+          <view class="greeting-header__actions">
+            <!-- 通知中心入口 -->
+            <view class="greeting-header__bell" @click="navigateToNotifications">
+              <uni-icons type="notification" size="22" color="#fff" />
+              <view v-if="unreadNotificationCount > 0" class="greeting-header__bell-dot">
+                <text class="greeting-header__bell-dot-text">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</text>
+              </view>
+            </view>
+            <!-- 工具台入口 -->
+            <view class="greeting-header__tools" @click="navigateToTools">
+              <uni-icons type="grid" size="20" color="#fff" />
+              <text class="greeting-header__tools-text">工具箱</text>
+            </view>
+          </view>
         </view>
-        <view class="greeting-header__actions">
-          <view v-if="centerAllowed && $store.getters.token" class="greeting-header__bell home-view-toggle" @click="toggleHomeView">
-            <text class="home-view-toggle__text">{{ viewMode === 'center' ? '原版' : '行动中心' }}</text>
-          </view>
-          <view class="greeting-header__bell" @click="navigateToSearch">
-            <uni-icons type="search" size="22" color="#334155" />
-          </view>
-          <view class="greeting-header__bell" @click="navigateToReminder">
-            <svg-icon icon-class="tongzhi" size="42rpx" class-name="greeting-header__bell-icon" />
-            <view v-if="unreadCount > 0" class="greeting-header__bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
-          </view>
-        </view>
+        <text class="greeting-header__date">{{ todayDate }}</text>
       </view>
     </view>
 
     <!-- Content Body -->
-    <view :class="['home-view-stage', centerActive ? 'stage-center' : 'stage-classic']">
-    <feature-gate feature="actionCenterV2"><action-center v-if="$store.getters.token && centerActive"/></feature-gate>
-    <view v-show="!centerActive" class="home-body">
+    <view class="home-body">
 
       <!-- Notice Carousel -->
       <view v-if="(noticeList || []).length > 0" class="section">
@@ -78,22 +78,22 @@
 
       <!-- Today's Reminders (Aggregated) -->
       <uni-transition ref="ani" custom-class="transition"
-                      :mode-class="['fade', 'zoom-in']" :show="true" v-if="hasReminders">
+                      :mode-class="['fade', 'zoom-in']" v-if="hasReminders">
         <view class="section">
           <view class="section-card">
             <view class="section-card__header">
               <view class="section-card__icon section-card__icon--reminder">
-                <svg-icon icon-class="naozhong" size="34rpx" />
+                <text class="reminder-header-icon">🔔</text>
               </view>
               <text class="section-card__title">今日提醒</text>
             </view>
 
             <!-- Commemoration Days Items -->
             <view v-if="(reminderCommemorationDays || []).length > 0" class="reminder-group">
-              <view v-for="item in reminderCommemorationDays" :key="'commemoration-' + item.name"
+              <view v-for="item in reminderCommemorationDays" :key="'commemoration-' + item.id"
                     class="reminder-item" @click="navigateToCommemoration">
                 <view class="reminder-item__icon reminder-item__icon--commemoration">
-                  <svg-icon icon-class="date" size="36rpx" />
+                  <text>🎂</text>
                 </view>
                 <view class="reminder-item__content">
                   <text class="reminder-item__title">{{ item.name }}</text>
@@ -102,7 +102,7 @@
                   </text>
                 </view>
                 <view class="reminder-item__action">
-                  <text class="reminder-item__days">{{ item.daysLeft }}天</text>
+                  <text class="reminder-item__days">{{ dateFormatDay(item) }}天</text>
                   <text class="reminder-item__arrow">&gt;</text>
                 </view>
               </view>
@@ -110,18 +110,16 @@
 
             <!-- Lovers Cards Items -->
             <view v-if="(reminderCards || []).length > 0" class="reminder-group">
-              <view v-for="item in reminderCards" :key="'card-' + (item.createTime || '') + '-' + item.title"
+              <view v-for="item in reminderCards" :key="'card-' + item.id"
                     class="reminder-item" @click="navigateToCard">
                 <view class="reminder-item__icon reminder-item__icon--card">
-                  <svg-icon icon-class="aixin" size="36rpx" />
+                  <text>💕</text>
                 </view>
                 <view class="reminder-item__content">
-                  <text class="reminder-item__title">{{ item.title }}</text>
-                  <text class="reminder-item__desc">{{ item.description }}</text>
+                  <text class="reminder-item__title">{{ item.cardName }}</text>
+                  <text class="reminder-item__desc">{{ item.instructions }}</text>
                 </view>
                 <view class="reminder-item__action">
-                  <text v-if="item.confirm !== true" class="reminder-item__status reminder-item__status--pending">待确认</text>
-                  <text v-else-if="item.score === null || item.score === 0" class="reminder-item__status reminder-item__status--scoring">待评分</text>
                   <text class="reminder-item__arrow">&gt;</text>
                 </view>
               </view>
@@ -131,7 +129,7 @@
             <view v-if="reminderMenstruation && reminderMenstruation.length > 0" class="reminder-group">
               <view class="reminder-item" @click="navigateToMenstruation">
                 <view class="reminder-item__icon reminder-item__icon--menstruation">
-                  <svg-icon icon-class="yimazhushou" size="36rpx" />
+                  <text>🌸</text>
                 </view>
                 <view class="reminder-item__content">
                   <text class="reminder-item__title">姨妈提醒</text>
@@ -147,27 +145,13 @@
                 </view>
               </view>
             </view>
-
-            <view v-if="todayTimeline.length > 0" class="reminder-group">
-              <view v-for="item in todayTimeline" :key="item.sourceType + '-' + item.sourceId"
-                    class="reminder-item" @click="navigateTimeline(item)">
-                <view class="reminder-item__icon"><text>📅</text></view>
-                <view class="reminder-item__content">
-                  <text class="reminder-item__title">{{ item.title }}</text>
-                  <text class="reminder-item__desc">{{ timelineType(item.sourceType) }}</text>
-                </view>
-                <view class="reminder-item__action"><text class="reminder-item__arrow">&gt;</text></view>
-              </view>
-            </view>
           </view>
         </view>
       </uni-transition>
 
-      <view v-if="$store.getters.token" class="section"><home-shopping-summary ref="homeShopping" /></view>
-
       <!-- Today Bills -->
       <uni-transition ref="ani" custom-class="transition" :mode-class="['fade', 'zoom-in']"
-                      :show="true">
+                      :show="(billList || []).length > 0">
         <view class="section">
           <view class="section-card section-card--bill">
             <view class="section-card__header" style="padding: 0 24rpx;">
@@ -185,7 +169,7 @@
 
       <!-- Today Todos -->
       <uni-transition @click="handleClickToDoList" ref="ani" custom-class="transition"
-                      :mode-class="['fade', 'zoom-in']" :show="true" v-if="(toDoList || []).length > 0">
+                      :mode-class="['fade', 'zoom-in']" v-if="(toDoList || []).length > 0">
         <view class="section">
           <view class="section-card">
             <view class="section-card__header">
@@ -218,28 +202,22 @@
     <view v-if="fabExpanded" class="fab-overlay" @click="fabExpanded = false"></view>
     <view class="fab-wrapper">
       <view v-if="fabExpanded" class="fab-menu">
-        <view class="fab-menu-item" @click="handleFabAction('ai')">
-          <text class="fab-menu-label">AI助手</text>
-          <view class="fab-menu-icon fab-menu-icon--ai">
-            <text class="fab-menu-icon-text">AI</text>
-          </view>
-        </view>
         <view class="fab-menu-item" @click="handleFabAction('diary')">
           <text class="fab-menu-label">写日记</text>
           <view class="fab-menu-icon fab-menu-icon--diary">
-            <svg-icon icon-class="edit" size="34rpx" class-name="fab-menu-icon-text" />
+            <text class="fab-menu-icon-text">📝</text>
           </view>
         </view>
         <view class="fab-menu-item" @click="handleFabAction('todo')">
           <text class="fab-menu-label">记待办</text>
           <view class="fab-menu-icon fab-menu-icon--todo">
-            <svg-icon icon-class="daiban" size="34rpx" class-name="fab-menu-icon-text" />
+            <text class="fab-menu-icon-text">📋</text>
           </view>
         </view>
         <view class="fab-menu-item" @click="handleFabAction('bookkeeping')">
           <text class="fab-menu-label">记一笔</text>
           <view class="fab-menu-icon fab-menu-icon--bookkeeping">
-            <svg-icon icon-class="jizhang" size="34rpx" class-name="fab-menu-icon-text" />
+            <text class="fab-menu-icon-text">¥</text>
           </view>
         </view>
       </view>
@@ -257,18 +235,27 @@
         </view>
       </uni-popup-dialog>
     </uni-popup>
-    </view>
   </view>
 </template>
 
 <script>
-  import HomeShoppingSummary from "@/components/HomeShoppingSummary/index.vue";
-import ActionCenter from "@/components/ActionCenter/index.vue"
-	import { getFeatureCapabilities } from "@/utils/featureCapabilities";
 	import RecordList from "@/components/RecordList/index.vue"
 	import {
 		listNotice
 	} from '@/api/system/notice';
+	import {
+		getLastStartDate,
+		selectMenstruationRecordList
+	} from '@/api/px/life/menstruationRecord';
+	import {
+		getCommemorationDayList
+	} from '@/api/px/life/commemorationDay';
+	import {
+		getToDoCard
+	} from "@/api/px/life/card";
+	import {
+		listDo
+	} from '@/api/px/life/todo';
 	import {
 		listRecord
 	} from '@/api/px/life/bookkeeping/record';
@@ -281,17 +268,13 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 	import uniPopupDialog from '@/uni_modules/uni-popup/components/uni-popup-dialog/uni-popup-dialog.vue';
 
 	export default {
-		components: { ActionCenter, HomeShoppingSummary,
+		components: {
 			RecordList,
 			uniPopup,
 			uniPopupDialog
 		},
 		data() {
 			return {
-				// 首页视图：classic 原版内容 / center 行动中心，选择本地持久化
-				viewMode: uni.getStorageSync('pnkx-home-view') === 'center' ? 'center' : 'classic',
-				centerAllowed: false,
-				centerTimer: null,
 				// 当前所在滑块的 index
 				current: 0,
 				// 当前所在滑块的 index
@@ -312,6 +295,10 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 					cycle: undefined,
 					duration: undefined
 				},
+				// 纪念日提醒
+				commemorationDayList: [],
+				// 情侣卡券使用历史
+				toDoCardList: [],
 				// 待办列表
 				toDoList: [],
 				// 今日总支出
@@ -326,15 +313,11 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 				fabExpanded: false,
 				// 今日提醒聚合数据
 				reminderData: null,
-				// 未读通知数（铃铛红点）
-				unreadCount: 0,
+				// 未读通知数（顶部铃铛红点）
+				unreadNotificationCount: 0,
 			}
 		},
 		computed: {
-			// 功能开关关闭时回落原版视图，避免空白首页
-			centerActive() {
-				return this.centerAllowed && this.viewMode === 'center'
-			},
 			nickName() {
 				return this.$store.getters.name || '小可爱'
 			},
@@ -353,77 +336,86 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 				const day = now.getDate()
 				const weekDay = weekDays[now.getDay()]
 				return `${month}月${day}日 星期${weekDay}`
-			},
-			hasReminders() {
-				if (!this.reminderData) return false
-				const days = this.reminderCommemorationDays || []
-				const cards = this.reminderCards || []
-				const mens = this.reminderMenstruation
-				return days.length > 0 || cards.length > 0 || (mens && mens.length > 0) || this.todayTimeline.length > 0
-			},
-			todayTimeline() {
-				return this.reminderData?.timeline?.todayEvents || []
-			},
-			reminderCommemorationDays() {
-				if (!this.reminderData || !this.reminderData.commemorationDays) return []
-				const data = this.reminderData.commemorationDays
-				// envelope 形态：{ scene, upcoming: [...] }
-				if (data && Array.isArray(data.upcoming)) return data.upcoming
-				return Array.isArray(data) ? data : []
-			},
-			reminderCards() {
-				if (!this.reminderData || !this.reminderData.loversCards) return []
-				const data = this.reminderData.loversCards
-				// envelope 形态：{ scene, cards: [...] }
-				if (data && Array.isArray(data.cards)) return data.cards
-				return Array.isArray(data) ? data : []
-			},
-			reminderMenstruation() {
-				if (!this.reminderData || !this.reminderData.menstruation) return null
-				const data = this.reminderData.menstruation
-				// envelope 形态：{ scene, records, lastStartDate, ... }
-				if (data && Array.isArray(data.records)) return data.records
-				if (Array.isArray(data)) return data
-				return null
 			}
+		},
+		hasReminders() {
+			if (!this.reminderData) return false
+			const days = this.reminderCommemorationDays || []
+			const cards = this.reminderCards || []
+			const mens = this.reminderMenstruation
+			return days.length > 0 || cards.length > 0 || (mens && mens.length > 0)
+		},
+		reminderCommemorationDays() {
+			if (!this.reminderData || !this.reminderData.commemorationDays) return []
+			const data = this.reminderData.commemorationDays
+			return Array.isArray(data) ? data : (data.data || [])
+		},
+		reminderCards() {
+			if (!this.reminderData || !this.reminderData.loversCards) return []
+			const data = this.reminderData.loversCards
+			return Array.isArray(data) ? data : (data.data || [])
+		},
+		reminderMenstruation() {
+			if (!this.reminderData || !this.reminderData.menstruation) return null
+			const data = this.reminderData.menstruation
+			if (Array.isArray(data)) return data
+			if (data && typeof data === 'object') {
+				return data.data || (Object.keys(data).length > 0 ? [data] : null)
+			}
+			return null
 		},
 		onLoad() {
 			this.getNoticeList();
+			this.getMenstruationRecordList();
+			this.getLastStartDate();
 			this.getTodayReminderData();
+			this.getTodayToDoList();
+			this.getUnreadNotificationCount();
 			this.checkAppUpdate();
 		},
 		onShow() {
-      this.$nextTick(() => this.$refs.homeShopping?.reload());
 			this.getBillList();
-			this.refreshUnreadCount();
+			// 刷新未读通知数（从通知中心返回时也能及时更新红点）
+			this.getUnreadNotificationCount();
 		},
 		onPullDownRefresh() {
 			this.refreshAll();
 		},
 		mounted() {
-			this.refreshCenterAllowed()
-			this.centerTimer = setInterval(() => this.refreshCenterAllowed(), 30000)
-		},
-		beforeUnmount() {
-			clearInterval(this.centerTimer)
 		},
 		methods: {
-			toggleHomeView() {
-				this.viewMode = this.viewMode === 'center' ? 'classic' : 'center'
-				uni.setStorageSync('pnkx-home-view', this.viewMode)
+			/**
+			 * 跳转到工具台（清空页面栈）
+			 */
+			navigateToTools() {
+				uni.reLaunch({
+					url: '/pages/tools'
+				})
 			},
-			async refreshCenterAllowed() {
-				try {
-					const capabilities = await getFeatureCapabilities()
-					this.centerAllowed = !!capabilities.actionCenterV2
-				} catch (e) {
-					this.centerAllowed = false
-				}
+			/**
+			 * 跳转到通知中心
+			 */
+			navigateToNotifications() {
+				uni.navigateTo({
+					url: '/pages_blog/notification/index'
+				})
+			},
+			/**
+			 * 拉取未读通知数（顶部铃铛红点）
+			 */
+			getUnreadNotificationCount() {
+				getUnreadCount().then(res => {
+					if (res.code === 200) {
+						this.unreadNotificationCount = Number(res.data) || 0
+					}
+				}).catch(() => {})
 			},
 			refreshAll() {
-        this.$refs.homeShopping?.reload();
 				this.getNoticeList();
+				this.getMenstruationRecordList();
+				this.getLastStartDate();
 				this.getTodayReminderData();
+				this.getTodayToDoList();
 				this.getBillList();
 				setTimeout(() => {
 					uni.stopPullDownRefresh();
@@ -434,7 +426,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
        */
       navigateToMenstruation() {
         uni.navigateTo({
-          url: '/pages_life/menstruationAssistant/index'
+          url: '/pages_blog/menstruationAssistant/index'
         })
       },
       /**
@@ -442,7 +434,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
        */
       navigateToCommemoration() {
         uni.navigateTo({
-          url: '/pages_life/commemorationDay/index'
+          url: '/pages_blog/commemorationDay/index'
         })
       },
       /**
@@ -450,46 +442,20 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
        */
       navigateToCard() {
         uni.navigateTo({
-          url: '/pages_life/card/index'
+          url: '/pages_blog/card/index'
         })
-      },
-      /**
-       * 跳转到提醒中心
-       */
-      navigateToReminder() {
-        uni.navigateTo({
-          url: '/pages_life/reminder/index'
-        })
-      },
-      navigateToSearch() {
-        uni.navigateTo({ url: '/pages_life/search/index' })
-      },
-      timelineType(type) {
-        const labels = { todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账', subscription: '订阅扣费', meal_plan: '餐饮计划', shopping_plan: '购物计划', reading_goal: '阅读目标', life_report: '生活报告' }
-        return labels[type] || '生活事项'
-      },
-      navigateTimeline(item) {
-        if (item.appRoute) uni.navigateTo({ url: item.appRoute })
-      },
-      /**
-       * 刷新未读通知数（首页铃铛红点）
-       */
-      refreshUnreadCount() {
-        getUnreadCount().then(res => {
-          this.unreadCount = res.data || 0;
-        }).catch(() => {});
       },
       /**
        * 跳转到待办列表页面
        */
       handleClickToDoList() {
         uni.navigateTo({
-          url: '/pages_life/todo/index'
+          url: '/pages_blog/todo/index'
         })
       },
 			goToAccounting() {
 				uni.navigateTo({
-					url: '/pages_life/bookkeeping/record/add'
+					url: '/pages_blog/bookkeeping/record/add'
 				})
 			},
 			/**
@@ -504,14 +470,29 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 			handleFabAction(action) {
 				this.fabExpanded = false
 				const routes = {
-					bookkeeping: '/pages_life/bookkeeping/record/add',
-					diary: '/pages_life/diary/edit',
-					todo: '/pages_life/todo/edit',
-					ai: '/pages_life/ai/chat'
+					bookkeeping: '/pages_blog/bookkeeping/record/add',
+					diary: '/pages_blog/diary/edit',
+					todo: '/pages_blog/todo/edit',
+					ai: '/pages_blog/ai/chat'
 				}
 				if (routes[action]) {
 					uni.navigateTo({ url: routes[action] })
 				}
+			},
+			/**
+			 * 格式化纪念日天数
+			 */
+			dateFormatDay(item) {
+				let date = this.$getTimeDifference(this.nowTime, (new Date().getFullYear()) + '-' + item.date.slice(5, item.date.length));
+				return date.slice(0, date.indexOf('天'));
+			},
+			/**
+			 * 格式化时间
+			 */
+			dateFormatHour(item) {
+				let date = this.$getTimeDifference(this.nowTime, (new Date().getFullYear()) + '-' + item.date.slice(5, item
+					.date.length));
+				return date.slice(date.indexOf('天') + 1, date.indexOf('小'))
 			},
 			/**
 			 * 后台下载
@@ -524,14 +505,12 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 			 */
 			getNoticeList() {
 				const regex = /(<([^>]+)>)/ig;
-				// 从富文本 HTML 中提取第一张图片的 src，不依赖固定偏移量
-				const imgSrcRegex = /<img[^>]*\ssrc=["']([^"']+)["']/i;
 				listNotice().then(response => {
 					this.noticeList = response.rows;
 					this.noticeList.map(item => {
 						if (item.firstPicture) {
-							const matched = item.firstPicture.match(imgSrcRegex);
-							item.firstPicture = matched ? matched[1] : '';
+							item.firstPicture = item.firstPicture.slice(10, item.firstPicture.indexOf(
+								' alt') - 1)
 						}
 						return item
 					})
@@ -561,77 +540,97 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 				this.current = e.detail.current
 			},
 			/**
-			 * 获取今日提醒聚合数据（纪念日 / 情侣卡 / 经期 / 今日待办 / 经期配置）。
-			 * 作为首页“今日仪表盘”的唯一数据出口，避免并发多次拉取重复数据。
+			 * 获取姨妈提醒
+			 */
+			async getMenstruationRecordList() {
+				this.$getConfigKey("ymdqzt").then(response => {
+					this.menstruationAssistantSetting.state = response.msg;
+				});
+				await this.$getConfigKey("ymzq").then(response => {
+					this.menstruationAssistantSetting.cycle = response.msg;
+				});
+				await this.$getConfigKey("ymsc").then(response => {
+					this.menstruationAssistantSetting.duration = response.msg;
+				});
+				selectMenstruationRecordList().then(res => {
+					if (!res.data || res.data.length === 0) return;
+					let prefix = '您的小可爱'
+					let labelPrefix = '请提醒您的小可爱'
+					if (res.data[0].type === '0') {
+						let day = this.$getTimeDifference(res.data[0].date, this.nowTime).slice(0, this
+							.$getTimeDifference(res.data[0].date, this.nowTime).indexOf('天'));
+						this.menstruation =
+							`${prefix}大姨妈已经<span class="theme-blue" style="font-weight: bold;"> ${Number(day) + 1} </span>天`;
+						this.menstruationLabel = `${labelPrefix}不要吃冰的、辣的，注意保暖、少生气！！！`
+					} else if (res.data[0].type === '1' && res.data[1]) {
+						let day = this.$getTimeDifference(this.nowTime, res.data[1].date).slice(0, this
+							.$getTimeDifference(this.nowTime, res.data[1].date).indexOf('天'));
+						if (Number(day) + Number(this.menstruationAssistantSetting.cycle) > 5 && Number(day) +
+							Number(this.menstruationAssistantSetting.cycle) <= Number(this
+								.menstruationAssistantSetting.cycle)) {
+							return
+						}
+						if (Number(day) + Number(this.menstruationAssistantSetting.cycle) < 0) {
+							this.menstruation =
+								`${prefix}大姨妈已经推迟<span class="theme-red" style="font-weight: bold; font-size: 1.4rem;"> ${(Number(day) + Number(this.menstruationAssistantSetting.cycle)) * (-1)} </span>天`
+							this.menstruationLabel = `${labelPrefix}不要着急，大不了养个娃！！！`
+							return
+						}
+						this.menstruation =
+							`${prefix}大姨妈还有<span class="theme-blue" style="font-weight: bold;"> ${Number(day) + Number(this.menstruationAssistantSetting.cycle) + 1} </span>天`
+						this.menstruationLabel = `${labelPrefix}提前准备好姨妈巾！！！`
+					}
+				})
+			},
+			/**
+			 * 获取最后一次开始信息
+			 */
+			getLastStartDate() {
+				getLastStartDate().then(res => {
+					if (!res.data || !res.data.date) return;
+					let timeDifference = this.$getTimeDifference(res.data.date).slice(0, 8);
+					let day = timeDifference.slice(0, timeDifference.indexOf('天'));
+					this.pregnancy = [Math.floor(day / 7), day % 7, timeDifference];
+				})
+			},
+			/**
+			 * 获取今日提醒聚合数据
 			 */
 			getTodayReminderData() {
 				getTodayReminders().then(res => {
 					this.reminderData = res.data || null;
-					if (!this.reminderData) return;
-					// 经期配置（替代原先 3 个 $getConfigKey 调用）
-					const setting = this.reminderData.menstruationAssistantSetting;
-					if (setting) {
-						this.menstruationAssistantSetting = {
-							state: setting.state || '',
-							cycle: setting.cycle,
-							duration: setting.duration
-						};
-					}
-					// 经期文案（数据源由 reminderData.menstruation.records 提供）
-					this.computeMenstruation();
-					// 孕周（数据源由 reminderData.menstruation.lastStartDate 提供）
-					this.computePregnancy();
-					// 今日待办（数据源由 reminderData.todo 提供）
-					this.toDoList = (this.reminderData.todo || []).map(item => {
+				})
+			},
+			/**
+			 * 获取纪念日提醒
+			 */
+			getCommemorationDayList() {
+				getCommemorationDayList().then(res => {
+					this.commemorationDayList = res.data || [];
+				})
+			},
+			/**
+			 * 获取使用历史记录列表
+			 */
+			getToDoCard() {
+				getToDoCard().then(res => {
+					this.toDoCardList = res.data || [];
+				})
+			},
+			/**
+			 * 获取今日待办
+			 */
+			getTodayToDoList() {
+				listDo({
+					planEndTime: this.$getNow(),
+					performer: this.$store.getters.userId,
+					status: false
+				}).then(res => {
+					this.toDoList = (res.rows || []).map(item => {
 						item.remark = item.remark?.replace(/<[^>]*>/g, '')
 						return item;
 					});
 				})
-			},
-			/**
-			 * 计算经期文案。数据来源：reminderData.menstruation.records（按日期倒序，索引 0 为最新）。
-			 * records[i].type：'0'=开始，'1'=结束。
-			 */
-			computeMenstruation() {
-				const records = this.reminderMenstruation;
-				if (!records || records.length === 0) {
-					return;
-				}
-				const prefix = '您的小可爱'
-				const labelPrefix = '请提醒您的小可爱'
-				if (records[0].type === '0') {
-					let day = this.$getTimeDifference(records[0].date, this.nowTime).slice(0, this
-						.$getTimeDifference(records[0].date, this.nowTime).indexOf('天'));
-					this.menstruation =
-						`${prefix}大姨妈已经<span class="theme-blue" style="font-weight: bold;"> ${Number(day) + 1} </span>天`;
-					this.menstruationLabel = `${labelPrefix}不要吃冰的、辣的，注意保暖、少生气！！！`
-				} else if (records[0].type === '1' && records[1]) {
-					let day = this.$getTimeDifference(this.nowTime, records[1].date).slice(0, this
-						.$getTimeDifference(this.nowTime, records[1].date).indexOf('天'));
-					if (Number(day) + Number(this.menstruationAssistantSetting.cycle) > 5 && Number(day) +
-						Number(this.menstruationAssistantSetting.cycle) <= Number(this
-							.menstruationAssistantSetting.cycle)) {
-						return
-					}
-					if (Number(day) + Number(this.menstruationAssistantSetting.cycle) < 0) {
-						this.menstruation =
-							`${prefix}大姨妈已经推迟<span class="theme-red" style="font-weight: bold; font-size: 1.4rem;"> ${(Number(day) + Number(this.menstruationAssistantSetting.cycle)) * (-1)} </span>天`
-						this.menstruationLabel = `${labelPrefix}不要着急，大不了养个娃！！！`
-						return
-					}
-					this.menstruation =
-						`${prefix}大姨妈还有<span class="theme-blue" style="font-weight: bold;"> ${Number(day) + Number(this.menstruationAssistantSetting.cycle) + 1} </span>天`
-					this.menstruationLabel = `${labelPrefix}提前准备好姨妈巾！！！`
-				}
-			},
-			/**
-			 * 计算孕周。数据来源：reminderData.menstruation.lastStartDate / daysSinceLastStart。
-			 */
-			computePregnancy() {
-				const menstruation = this.reminderData.menstruation;
-				if (!menstruation || !menstruation.lastStartDate) return;
-				const day = menstruation.daysSinceLastStart || 0;
-				this.pregnancy = [Math.floor(day / 7), day % 7, day + '天'];
 			},
 			/**
 			 * 获取今日账单
@@ -735,6 +734,9 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
   &__content {
     position: relative;
     z-index: $z-base;
+  }
+
+  &__top {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -744,14 +746,75 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
     display: flex;
     flex-direction: column;
     margin-bottom: $spacing-xs;
-    flex: 1;
-    min-width: 0;
   }
 
-  &__row {
+  // 铃铛 + 工具箱 按钮组
+  &__actions {
     display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-sm;
+    flex-shrink: 0;
+  }
+
+  // 通知中心铃铛入口
+  &__bell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: $radius-full;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    &:active {
+      opacity: 0.7;
+    }
+
+    &-dot {
+      position: absolute;
+      top: -6rpx;
+      right: -6rpx;
+      min-width: 28rpx;
+      height: 28rpx;
+      padding: 0 6rpx;
+      border-radius: $radius-full;
+      background-color: #EF4444;
+      border: 2rpx solid rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &-dot-text {
+      font-size: 18rpx;
+      color: #fff;
+      line-height: 1;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__tools {
+    display: flex;
+    align-items: center;
+    padding: $spacing-2xs $spacing-sm;
+    border-radius: $radius-full;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    flex-shrink: 0;
+
+    &:active {
+      opacity: 0.7;
+    }
+
+    &-text {
+      font-size: $font-caption;
+      color: #fff;
+      margin-left: $spacing-2xs;
+    }
   }
 
   &__hello {
@@ -773,76 +836,6 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
     font-size: $font-caption;
     color: rgba(255, 255, 255, 0.7);
     margin-top: $spacing-sm;
-  }
-
-  &__bell {
-    position: relative;
-    flex-shrink: 0;
-    width: 72rpx;
-    height: 72rpx;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: $spacing-2xs;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
-  }
-
-  &__bell-icon {
-    font-size: 32rpx;
-  }
-
-  &__bell-badge {
-    position: absolute;
-    top: -6rpx;
-    right: -6rpx;
-    min-width: 32rpx;
-    height: 32rpx;
-    line-height: 32rpx;
-    padding: 0 8rpx;
-    border-radius: $radius-full;
-    background: #FF4D4F;
-    color: #fff;
-    font-size: $font-mini;
-    text-align: center;
-    border: 2rpx solid var(--primary, #287BF8);
-  }
-}
-
-/* 视图切换舞台：两个状态使用不同动画名，切换时重新播放入场动画 */
-.home-view-stage.stage-classic {
-  animation: home-view-in-down 0.28s ease;
-}
-
-.home-view-stage.stage-center {
-  animation: home-view-in-up 0.28s ease;
-}
-
-@keyframes home-view-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(28rpx);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes home-view-in-down {
-  from {
-    opacity: 0;
-    transform: translateY(-28rpx);
-  }
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -1132,23 +1125,6 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
     margin-right: $spacing-xs;
   }
 
-  &__status {
-    font-size: $font-small;
-    padding: 2rpx 12rpx;
-    border-radius: $radius-full;
-    margin-right: $spacing-xs;
-
-    &--pending {
-      color: $card;
-      background: rgba($card, 0.1);
-    }
-
-    &--scoring {
-      color: $commemoration;
-      background: rgba($commemoration, 0.1);
-    }
-  }
-
   &__arrow {
     font-size: $font-caption;
     color: $text-tertiary;
@@ -1289,7 +1265,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
 
 .fab-menu-label {
   font-size: 26rpx;
-  color: #123B70;
+  color: #303133;
   background: #fff;
   padding: 10rpx 20rpx;
   border-radius: 8rpx;
@@ -1308,7 +1284,7 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 
   &--ai {
-    background: linear-gradient(135deg, #4F86F7, #6C63FF);
+    background: linear-gradient(135deg, #5A8DEE, #6C63FF);
   }
 
   &--diary {
@@ -1351,95 +1327,5 @@ import ActionCenter from "@/components/ActionCenter/index.vue"
   font-size: 48rpx;
   font-weight: bold;
   line-height: 1;
-}
-
-/* Glacier morning refresh */
-.home-page {
-  background:
-    linear-gradient(180deg, rgba(248, 251, 255, 0.02) 0%, $bg-page 720rpx),
-    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
-}
-
-.greeting-header {
-  min-height: 340rpx;
-  background: transparent;
-}
-
-.greeting-header__bg { opacity: 0; }
-
-.greeting-header__content {
-  padding-top: calc(var(--status-bar-height, 44px) + 28rpx);
-  align-items: flex-start;
-}
-
-.greeting-header__hello,
-.greeting-header__name {
-  color: $text-primary;
-  font-size: 40rpx;
-  font-weight: $font-weight-semibold;
-}
-
-.greeting-header__date {
-  color: $text-secondary;
-  margin-top: 14rpx;
-}
-
-.greeting-header__bell {
-  color: $text-primary;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
-  box-shadow: $shadow-md;
-  backdrop-filter: blur(20rpx);
-}
-
-.home-view-toggle {
-  display: flex;
-  align-items: center;
-  padding: 0 20rpx;
-}
-
-.home-view-toggle__text {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: $text-primary;
-  white-space: nowrap;
-}
-
-.home-body {
-  margin-top: -42rpx;
-  padding-bottom: 180rpx;
-}
-
-.section-card {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
-  border-radius: $radius-2xl;
-  box-shadow: $shadow-card;
-  backdrop-filter: blur(26rpx);
-}
-
-.section-card__title,
-.reminder-item__title,
-.todo-item__title { color: $text-primary; }
-
-.fab-menu-label {
-  color: $text-primary;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: $radius-full;
-  box-shadow: $shadow-md;
-}
-
-.fab-menu-icon {
-  background: rgba(255, 255, 255, 0.94) !important;
-  color: $primary;
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
-  box-shadow: $shadow-md;
-}
-
-.fab-menu-icon-text { color: $primary; }
-
-.fab-btn {
-  background: linear-gradient(135deg, #6EA2FF 0%, $primary 55%, #8789FF 100%);
-  box-shadow: 0 12rpx 30rpx rgba(79, 134, 247, 0.28);
 }
 </style>

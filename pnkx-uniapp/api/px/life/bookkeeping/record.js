@@ -1,7 +1,4 @@
 import request from '@/utils/request'
-import config from '@/config'
-import { getToken } from '@/utils/auth'
-import { tansParams } from '@/utils/common'
 
 // 查询账本记录列表
 export function listRecord(query) {
@@ -53,21 +50,6 @@ export function exportRecord(query) {
     method: 'get',
     params: query
   })
-}
-
-// 下载月度账单文件，返回临时文件路径
-export function downloadRecordExport(query) {
-  return exportRecord(query).then(res => new Promise((resolve, reject) => {
-    const queryString = tansParams({ fileName: res.msg, delete: true }).replace(/&$/, '')
-    uni.downloadFile({
-      url: config.baseUrl + '/common/download?' + queryString,
-      header: { Authorization: 'Bearer ' + getToken() },
-      success(downloadRes) {
-        if (downloadRes.statusCode === 200) resolve(downloadRes.tempFilePath)
-        else reject(new Error('下载失败，状态码：' + downloadRes.statusCode))
-      }, fail: reject
-    })
-  }))
 }
 
 // AI解析自然语言为记账数据

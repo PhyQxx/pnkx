@@ -34,18 +34,6 @@ export function logout() {
   })
 }
 
-// 微信快捷登录
-export function wxLogin(code) {
-  return request({
-    'url': '/wx/login',
-    headers: {
-      isToken: false
-    },
-    'method': 'post',
-    'data': { code }
-  })
-}
-
 // 获取验证码
 export function getCodeImg() {
   return request({
@@ -55,5 +43,25 @@ export function getCodeImg() {
     },
     method: 'get',
     timeout: 20000
+  })
+}
+
+// 微信登录（wx.login 的 code 换 token）
+export function wxLogin(code) {
+  return request({
+    url: '/wx/login',
+    headers: { isToken: false },
+    method: 'post',
+    data: { code }
+  })
+}
+
+// 微信手机号授权登录
+export function wxPhoneLogin(loginCode, phoneCode) {
+  return request({
+    url: '/wx/phoneLogin',
+    headers: { isToken: false },
+    method: 'post',
+    data: { loginCode, phoneCode }
   })
 }

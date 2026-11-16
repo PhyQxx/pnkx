@@ -9,6 +9,15 @@ export function listMenstruationRecord(query) {
   })
 }
 
+// 首页查询姨妈提醒列表
+export function selectMenstruationRecordList(query) {
+  return request({
+    url: '/homepage/selectMenstruationRecordList',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询姨妈记录列表
 export function getPxMenstruationRecordList(query) {
   return request({

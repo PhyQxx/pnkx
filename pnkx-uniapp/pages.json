@@ -1,5 +1,4 @@
 {
-  "lazyCodeLoading": "requiredComponents",
   "easycom": {
     "autoscan": true,
     "custom": {
@@ -44,536 +43,225 @@
     {
       "path": "pages/login",
       "style": {
-        "navigationStyle": "custom"
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/tools",
+      "style": {
+        "navigationBarTitleText": "工具箱"
       }
     },
     {
       "path": "pages/index",
       "style": {
-        "navigationStyle": "custom",
+        "navigationBarTitleText": "Pei你看雪",
         "enablePullDownRefresh": true
       }
     },
     {
-      "path": "pages/function/index",
+      "path": "pages/common/webview/index",
       "style": {
-        "navigationStyle": "custom"
+        "navigationBarTitleText": ""
       }
     },
     {
-      "path": "pages/mine/index",
+      "path": "pages/common/textview/index",
       "style": {
-        "navigationStyle": "custom"
+        "navigationBarTitleText": ""
       }
     }
   ],
   "subPackages": [
     {
-      "root": "pages_system",
+      "root": "pages_blog",
       "pages": [
         {
-          "path": "mine/avatar/index",
-          "style": {
-            "navigationBarTitleText": "修改头像"
-          }
+          "path": "todo/index",
+          "style": { "navigationBarTitleText": "待办事项" }
         },
         {
-          "path": "mine/info/index",
-          "style": {
-            "navigationBarTitleText": "个人信息"
-          }
+          "path": "todo/edit",
+          "style": { "navigationBarTitleText": "待办详情" }
         },
         {
-          "path": "mine/info/edit",
-          "style": {
-            "navigationBarTitleText": "编辑资料"
-          }
+          "path": "note/folder",
+          "style": { "navigationBarTitleText": "笔记" }
         },
         {
-          "path": "mine/pwd/index",
-          "style": {
-            "navigationBarTitleText": "修改密码"
-          }
+          "path": "note/index",
+          "style": { "navigationBarTitleText": "笔记列表" }
         },
         {
-          "path": "mine/setting/index",
-          "style": {
-            "navigationBarTitleText": "应用设置"
-          }
+          "path": "note/detail",
+          "style": { "navigationBarTitleText": "笔记详情" }
         },
         {
-          "path": "mine/setting/sync",
-          "style": {
-            "navigationBarTitleText": "离线同步"
-          }
+          "path": "diary/index",
+          "style": { "navigationBarTitleText": "日记" }
         },
         {
-          "path": "mine/setting/family",
-          "style": {
-            "navigationBarTitleText": "家庭与情侣空间"
-          }
+          "path": "diary/edit",
+          "style": { "navigationBarTitleText": "写日记" }
         },
         {
-          "path": "mine/help/index",
-          "style": {
-            "navigationBarTitleText": "常见问题"
-          }
+          "path": "diary/analysis",
+          "style": { "navigationBarTitleText": "日记分析" }
         },
         {
-          "path": "mine/about/index",
-          "style": {
-            "navigationBarTitleText": "关于我们"
-          }
+          "path": "bookkeeping/index",
+          "style": { "navigationBarTitleText": "记账" }
         },
         {
-          "path": "common/webview/index",
-          "style": {
-            "navigationBarTitleText": "浏览网页"
-          }
+          "path": "bookkeeping/record/index",
+          "style": { "navigationBarTitleText": "账单" }
         },
         {
-          "path": "common/textview/index",
-          "style": {
-            "navigationBarTitleText": "浏览文本"
-          }
+          "path": "bookkeeping/record/add",
+          "style": { "navigationBarTitleText": "记一笔" }
+        },
+        {
+          "path": "bookkeeping/account/index",
+          "style": { "navigationBarTitleText": "账户管理" }
+        },
+        {
+          "path": "bookkeeping/account/details",
+          "style": { "navigationBarTitleText": "账户明细" }
+        },
+        {
+          "path": "bookkeeping/account/maintenance",
+          "style": { "navigationBarTitleText": "账户维护" }
+        },
+        {
+          "path": "bookkeeping/statistics/index",
+          "style": { "navigationBarTitleText": "统计" }
+        },
+        {
+          "path": "commemorationDay/index",
+          "style": { "navigationBarTitleText": "纪念日" }
+        },
+        {
+          "path": "commemorationDay/add",
+          "style": { "navigationBarTitleText": "纪念日详情" }
+        },
+        {
+          "path": "card/index",
+          "style": { "navigationBarTitleText": "情侣卡券" }
+        },
+        {
+          "path": "card/history",
+          "style": { "navigationBarTitleText": "卡券记录" }
+        },
+        {
+          "path": "menstruationAssistant/index",
+          "style": { "navigationBarTitleText": "姨妈助手" }
+        },
+        {
+          "path": "menstruationAssistant/record",
+          "style": { "navigationBarTitleText": "经期记录" }
+        },
+        {
+          "path": "menstruationAssistant/statistics",
+          "style": { "navigationBarTitleText": "经期统计" }
+        },
+        {
+          "path": "menstruationAssistant/settings",
+          "style": { "navigationBarTitleText": "姨妈设置" }
+        },
+        {
+          "path": "report/index",
+          "style": { "navigationBarTitleText": "生活报告" }
+        },
+        {
+          "path": "ai/chat",
+          "style": { "navigationBarTitleText": "AI 助手" }
         },
         {
           "path": "search/index",
-          "style": {
-            "navigationBarTitleText": "",
-            "enablePullDownRefresh": false
-          }
+          "style": { "navigationBarTitleText": "搜索" }
+        },
+        {
+          "path": "notification/index",
+          "style": { "navigationBarTitleText": "通知中心" }
+        },
+        {
+          "path": "recipe/index",
+          "style": { "navigationBarTitleText": "菜谱" }
+        },
+        {
+          "path": "recipe/detail",
+          "style": { "navigationBarTitleText": "菜谱详情" }
+        },
+        {
+          "path": "mealPlan/index",
+          "style": { "navigationBarTitleText": "膳食计划" }
+        },
+        {
+          "path": "shoppingList/index",
+          "style": { "navigationBarTitleText": "购物清单" }
+        },
+        {
+          "path": "shoppingList/detail",
+          "style": { "navigationBarTitleText": "购物清单详情" }
+        },
+        {
+          "path": "mine/info/index",
+          "style": { "navigationBarTitleText": "个人资料" }
+        },
+        {
+          "path": "mine/info/edit",
+          "style": { "navigationBarTitleText": "编辑资料" }
+        },
+        {
+          "path": "mine/pwd/index",
+          "style": { "navigationBarTitleText": "修改密码" }
+        },
+        {
+          "path": "mine/avatar/index",
+          "style": { "navigationBarTitleText": "修改头像" }
+        },
+        {
+          "path": "mine/setting/index",
+          "style": { "navigationBarTitleText": "设置" }
+        },
+        {
+          "path": "mine/about/index",
+          "style": { "navigationBarTitleText": "关于" }
+        },
+        {
+          "path": "mine/help/index",
+          "style": { "navigationBarTitleText": "帮助" }
         }
       ]
     },
     {
-      "root": "pages_life",
+      "root": "pages_wallpaper",
       "pages": [
         {
-          "path": "book/index",
+          "path": "wallpaper/index",
           "style": {
-            "navigationBarTitleText": "我的书城",
-            "enablePullDownRefresh": false
+            "navigationBarTitleText": "壁纸下载"
           }
         },
         {
-          "path": "webArticle/index",
+          "path": "wallpaper/detail",
           "style": {
-            "navigationBarTitleText": "网址收藏",
-            "enablePullDownRefresh": false
+            "navigationBarTitleText": "壁纸预览",
+            "navigationBarBackgroundColor": "#000000",
+            "navigationBarTextStyle": "white"
           }
         },
         {
-          "path": "webArticle/detail",
+          "path": "wallpaper/mine",
           "style": {
-            "navigationBarTitleText": "收藏详情",
-            "enablePullDownRefresh": false
+            "navigationBarTitleText": "我的"
           }
         },
         {
-          "path": "webArticle/edit",
+          "path": "wallpaper/records",
           "style": {
-            "navigationBarTitleText": "编辑收藏",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "webArticle/rss",
-          "style": {
-            "navigationBarTitleText": "RSS 订阅",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "reminder/settings",
-          "style": {
-            "navigationBarTitleText": "提醒偏好"
-          }
-        },
-        {
-          "path": "book/detail",
-          "style": {
-            "navigationBarTitleText": "书籍详情",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "编辑",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "book/reader",
-          "style": {
-            "navigationBarTitleText": "阅读"
-          }
-        },
-        {
-          "path": "book/edit",
-          "style": {
-            "navigationBarTitleText": "编辑书籍",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "bookkeeping/index",
-          "style": {
-            "navigationBarTitleText": "生活账本"
-          }
-        },
-        {
-          "path": "search/index",
-          "style": {
-            "navigationBarTitleText": "全局搜索"
-          }
-        },
-        {
-          "path": "bookkeeping/account/index",
-          "style": {
-            "navigationBarTitleText": "账户管理"
-          }
-        },
-        {
-          "path": "bookkeeping/account/details",
-          "style": {
-            "navigationBarTitleText": "账户详情",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "编辑",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "bookkeeping/account/maintenance",
-          "style": {
-            "navigationBarTitleText": "账户维护"
-          }
-        },
-        {
-          "path": "bookkeeping/record/index",
-          "style": {
-            "navigationBarTitleText": "账目清单"
-          }
-        },
-        {
-          "path": "bookkeeping/statistics/index",
-          "style": {
-            "navigationBarTitleText": "账目统计"
-          }
-        },
-        {
-          "path": "bookkeeping/budget/index",
-          "style": {
-            "navigationBarTitleText": "预算管理"
-          }
-        },
-        {
-          "path": "bookkeeping/recurring/index",
-          "style": {
-            "navigationBarTitleText": "周期记账"
-          }
-        },
-        {
-          "path": "bookkeeping/record/add",
-          "style": {
-            "navigationBarTitleText": "记一笔"
-          }
-        },
-        {
-          "path": "note/index",
-          "style": {
-            "navigationBarTitleText": "我的笔记",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "note/detail",
-          "style": {
-            "navigationBarTitleText": "笔记详情",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#2563EB",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "note/obsidian",
-          "style": {
-            "navigationBarTitleText": "Obsidian 笔记"
-          }
-        },
-        {
-          "path": "note/obsidianEdit",
-          "style": {
-            "navigationBarTitleText": "编辑",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "note/folder",
-          "style": {
-            "navigationBarTitleText": "文件夹管理",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "新建",
-                    "color": "#2563EB",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "diary/index",
-          "style": {
-            "navigationBarTitleText": "我的日记",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "diary/edit",
-          "style": {
-            "navigationBarTitleText": "日记",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "diary/analysis",
-          "style": {
-            "navigationBarTitleText": "日记分析"
-          }
-        },
-        {
-          "path": "todo/index",
-          "style": {
-            "navigationBarTitleText": "待办事项",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "todo/edit",
-          "style": {
-            "navigationBarTitleText": "编辑待办",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "menstruationAssistant/index",
-          "style": {
-            "navigationBarTitleText": "姨妈助手",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "menstruationAssistant/record",
-          "style": {
-            "navigationBarTitleText": "记录详情",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#FD6697",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "menstruationAssistant/settings",
-          "style": {
-            "navigationBarTitleText": "经期设置"
-          }
-        },
-        {
-          "path": "menstruationAssistant/statistics",
-          "style": {
-            "navigationBarTitleText": "统计分析"
-          }
-        },
-        {
-          "path": "commemorationDay/index",
-          "style": {
-            "navigationBarTitleText": "纪念日",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "commemorationDay/add",
-          "style": {
-            "navigationBarTitleText": "编辑纪念日",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "保存",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "card/index",
-          "style": {
-            "navigationBarTitleText": "情侣卡券",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "使用记录",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "card/history",
-          "style": {
-            "navigationBarTitleText": "使用记录"
-          }
-        },
-        {
-          "path": "ai/chat",
-          "style": {
-            "navigationBarTitleText": "AI助手",
-            "app-plus": {
-              "titleNView": {
-                "buttons": [
-                  {
-                    "text": "新建",
-                    "color": "#5A8DEE",
-                    "fontSize": "14px"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        {
-          "path": "report/index",
-          "style": {
-            "navigationBarTitleText": "生活报告"
-          }
-        },
-        {
-          "path": "reminder/index",
-          "style": {
-            "navigationBarTitleText": "提醒中心"
-          }
-        },
-        {
-          "path": "shoppingList/index",
-          "style": {
-            "navigationBarTitleText": "购物清单"
-          }
-        },
-        {
-          "path": "shoppingList/detail",
-          "style": {
-            "navigationBarTitleText": "清单详情"
-          }
-        },
-        {
-          "path": "recipe/index",
-          "style": {
-            "navigationBarTitleText": "菜谱库",
-            "enablePullDownRefresh": false
-          }
-        },
-        {
-          "path": "recipe/detail",
-          "style": {
-            "navigationBarTitleText": "菜谱详情"
-          }
-        },
-        {
-          "path": "mealPlan/index",
-          "style": {
-            "navigationBarTitleText": "膳食计划"
-          }
-        },
-        {
-          "path": "lifeManager/index",
-          "style": {
-            "navigationBarTitleText": "生活管家"
-          }
-        },
-        {
-          "path": "calendar/index",
-          "style": {
-            "navigationBarTitleText": "家庭日历"
-          }
-        },
-        {
-          "path": "subscription/index",
-          "style": {
-            "navigationBarTitleText": "订阅管理"
-          }
-        },
-        {
-          "path": "automation/index",
-          "style": {
-            "navigationBarTitleText": "生活自动化"
+            "navigationBarTitleText": "我的记录",
+            "enablePullDownRefresh": true
           }
         }
       ]
@@ -587,50 +275,10 @@
       ]
     }
   ],
-  "tabBar": {
-    "color": "#8EA0B8",
-    "selectedColor": "#4F86F7",
-    "borderStyle": "white",
-    "backgroundColor": "#F8FBFF",
-    "list": [
-      {
-        "pagePath": "pages/index",
-        "iconPath": "static/images/tabbar/home.png",
-        "selectedIconPath": "static/images/tabbar/home_.png",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/function/index",
-        "iconPath": "static/images/tabbar/work.png",
-        "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "生活助手"
-      },
-      {
-        "pagePath": "pages/mine/index",
-        "iconPath": "static/images/tabbar/mine.png",
-        "selectedIconPath": "static/images/tabbar/mine_.png",
-        "text": "我的"
-      }
-    ]
-  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Pei你看雪",
-    "navigationBarBackgroundColor": "#F8FBFF"
+    "navigationBarBackgroundColor": "#FFFFFF"
   },
-  "preloadRule": {
-    "pages/index": {
-      "network": "all",
-      "packages": [
-        "pages_life"
-      ]
-    },
-    "pages/function/index": {
-      "network": "all",
-      "packages": [
-        "pages_life",
-        "pages_system"
-      ]
-    }
-  }
+  "preloadRule": {}
 }

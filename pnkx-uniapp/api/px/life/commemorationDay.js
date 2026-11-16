@@ -9,6 +9,15 @@ export function listDay(query) {
   })
 }
 
+// 首页查询纪念日列表
+export function getCommemorationDayList(query) {
+  return request({
+    url: '/homepage/getCommemorationDayList',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询纪念日详细
 export function getDay(id) {
   return request({

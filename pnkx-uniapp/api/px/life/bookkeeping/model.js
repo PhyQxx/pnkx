@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询账本记录模板列表
 export function listModel(query) {
     return request({
-        url: '/bookkeeping/recordModel/list',
+        url: '/myTool/menstruationRecordModel/list',
         method: 'get',
         params: query
     })
@@ -12,7 +12,7 @@ export function listModel(query) {
 // 查询账本记录模板详细
 export function getModel(id) {
     return request({
-        url: '/bookkeeping/recordModel/' + id,
+        url: '/myTool/menstruationRecordModel/' + id,
         method: 'get'
     })
 }
@@ -20,7 +20,7 @@ export function getModel(id) {
 // 新增账本记录模板
 export function addModel(data) {
     return request({
-        url: '/bookkeeping/recordModel',
+        url: '/myTool/menstruationRecordModel',
         method: 'post',
         data: data
     })
@@ -29,7 +29,7 @@ export function addModel(data) {
 // 修改账本记录模板
 export function updateModel(data) {
     return request({
-        url: '/bookkeeping/recordModel',
+        url: '/myTool/menstruationRecordModel',
         method: 'put',
         data: data
     })
@@ -38,7 +38,7 @@ export function updateModel(data) {
 // 删除账本记录模板
 export function delModel(id) {
     return request({
-        url: '/bookkeeping/recordModel/' + id,
+        url: '/myTool/menstruationRecordModel/' + id,
         method: 'delete'
     })
 }
@@ -46,7 +46,7 @@ export function delModel(id) {
 // 导出账本记录模板
 export function exportModel(query) {
     return request({
-        url: '/bookkeeping/recordModel/export',
+        url: '/myTool/menstruationRecordModel/export',
         method: 'get',
         params: query
     })

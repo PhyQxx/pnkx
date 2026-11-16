@@ -1,33 +1,5 @@
 <template>
   <view class="function-page">
-    <view class="assistant-hero">
-      <view>
-        <text class="assistant-hero__title">生活助手</text>
-        <text class="assistant-hero__subtitle">把日子过成喜欢的样子</text>
-      </view>
-      <view class="assistant-hero__search" @tap="openSearch">
-        <svg-icon icon-class="sousuo" size="40rpx" />
-      </view>
-    </view>
-
-    <view class="quick-panel">
-      <text class="quick-panel__title">今天想做什么？</text>
-      <view class="quick-panel__items">
-        <view class="quick-entry quick-entry--active" @tap="handleQuick('/pages_life/diary/edit')">
-          <view class="quick-entry__icon"><svg-icon icon-class="edit" size="46rpx" /></view>
-          <text>写日记</text>
-        </view>
-        <view class="quick-entry" @tap="handleQuick('/pages_life/bookkeeping/record/add')">
-          <view class="quick-entry__icon"><svg-icon icon-class="jizhang" size="46rpx" /></view>
-          <text>记一笔</text>
-        </view>
-        <view class="quick-entry" @tap="handleQuick('/pages_life/todo/edit')">
-          <view class="quick-entry__icon"><svg-icon icon-class="jiahao" size="46rpx" /></view>
-          <text>加待办</text>
-        </view>
-      </view>
-    </view>
-
     <view
       class="menu-group"
       v-for="(group, groupIndex) in manageList"
@@ -48,18 +20,11 @@
           @tap="changeGrid({ detail: { index: menu.menuId } }, group)"
         >
           <view class="menu-icon-bg">
-            <text v-if="!menu.icon && emojiOf(menu)" class="menu-emoji">{{ emojiOf(menu) }}</text>
-            <svg-icon v-else :icon-class="menu.icon" size="40rpx" class-name="menu-icon" />
+            <svg-icon :icon-class="menu.icon" size="40rpx" class-name="menu-icon" />
           </view>
           <text class="menu-name">{{ menu.menuName }}</text>
         </view>
       </view>
-    </view>
-
-    <!-- Empty -->
-    <view class="empty" v-if="!loading && manageList.length === 0">
-      <text class="empty__text">暂无可用功能</text>
-      <text class="empty__hint">请在后台开启 App 菜单</text>
     </view>
   </view>
 </template>
@@ -67,43 +32,23 @@
 <script>
 import {listByParams} from "@/api/system/menu";
 
-// emoji 兜底表：菜单 icon 找不到对应 svg 时，按菜单名匹配 emoji
-const EMOJI_FALLBACK = {
-  '纪念日': '🎂', '情侣卡': '💕', '日记': '📝',
-  '菜谱': '🍳', '膳食计划': '🥗', '姨妈助手': '🌸',
-  '提醒中心': '🔔', '家庭日历': '📅'
-}
-
 export default {
   data() {
     return {
-      // 管理列表（后端菜单驱动）
+      // 管理列表
       manageList: uni.getStorageSync('bolgMenu') || [],
-      loading: true
     }
   },
   onLoad() {
     this.getMenuList();
   },
   methods: {
-    openSearch() {
-      uni.navigateTo({ url: '/pages_system/search/index' })
-    },
-    handleQuick(url) {
-      uni.navigateTo({ url })
-    },
-    emojiOf(menu) {
-      return EMOJI_FALLBACK[menu.menuName] || ''
-    },
     changeGrid(e, group) {
-      const menu = group.children.find(item => item.menuId === e.detail.index);
-      if (!menu) return;
-      // 移动端路由：优先用 appPath，为空时按 path 推导（兼容旧菜单）
-      const target = menu.appPath || ('/pages_life/' + menu.path.replace(/\//g, '') + '/index');
-      uni.navigateTo({ url: target });
+      const path = group.children.find(item => item.menuId === e.detail.index).path;
+      this.$tab.navigateTo('/pages_blog/' + path.replace(/\//g, '') + '/index');
     },
     /**
-     * 获取路由（后端菜单驱动，isApp='1' 的菜单才显示）
+     * 获取路由
      */
     getMenuList() {
       listByParams({
@@ -120,9 +65,6 @@ export default {
         })
         this.manageList = Array.from(groupMap.values())
         uni.setStorageSync('bolgMenu', this.manageList);
-        this.loading = false
-      }).catch(() => {
-        this.loading = false
       })
     },
   }
@@ -138,101 +80,8 @@ page {
 
 .function-page {
   min-height: 100vh;
-  padding: calc(var(--status-bar-height, 44px) + 28rpx) $page-padding 160rpx;
+  padding: $spacing-sm $spacing-md $spacing-xl;
   box-sizing: border-box;
-  background:
-    linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, $bg-page 650rpx),
-    url('/static/images/glacier-aurora-bg.jpg') top center / 100% auto no-repeat;
-}
-
-.assistant-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 176rpx;
-
-  &__title,
-  &__subtitle { display: block; }
-
-  &__title {
-    color: $text-primary;
-    font-size: 48rpx;
-    line-height: 1.2;
-    font-weight: $font-weight-bold;
-    letter-spacing: 1rpx;
-  }
-
-  &__subtitle {
-    margin-top: 16rpx;
-    color: $text-secondary;
-    font-size: 27rpx;
-  }
-
-  &__search {
-    width: 88rpx;
-    height: 88rpx;
-    border-radius: $radius-full;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: $primary;
-    background: rgba(255, 255, 255, 0.84);
-    border: 1rpx solid rgba(255, 255, 255, 0.9);
-    box-shadow: $shadow-md;
-    backdrop-filter: blur(20rpx);
-  }
-}
-
-.quick-panel {
-  margin: 18rpx 0 42rpx;
-  padding: 38rpx 28rpx 28rpx;
-  border-radius: $radius-2xl;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
-  box-shadow: $shadow-card;
-  backdrop-filter: blur(28rpx);
-
-  &__title {
-    color: $text-primary;
-    font-size: $font-h2;
-    font-weight: $font-weight-semibold;
-  }
-
-  &__items {
-    display: flex;
-    margin-top: 32rpx;
-  }
-}
-
-.quick-entry {
-  position: relative;
-  width: 33.333%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14rpx;
-  color: $text-primary;
-  font-size: $font-body;
-
-  &:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 8rpx;
-    right: 0;
-    width: 1rpx;
-    height: 76rpx;
-    background: $border-color;
-  }
-
-  &--active { color: $primary; }
-
-  &__icon {
-    width: 70rpx;
-    height: 70rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 }
 
 /* ---- Section Title ---- */
@@ -240,7 +89,7 @@ page {
   display: flex;
   align-items: center;
   margin-bottom: $spacing-md;
-  padding-left: 12rpx;
+  padding-left: $spacing-xs;
 
   .section-title-accent {
     width: 6rpx;
@@ -273,12 +122,6 @@ page {
   display: flex;
   flex-wrap: wrap;
   margin: 0;
-  padding: 28rpx 10rpx 22rpx;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1rpx solid rgba(255, 255, 255, 0.92);
-  border-radius: $radius-2xl;
-  box-shadow: $shadow-card;
-  backdrop-filter: blur(24rpx);
 }
 
 .menu-item {
@@ -311,11 +154,7 @@ page {
   margin-bottom: $spacing-xs;
   transition: box-shadow $duration-fast $ease-default,
               transform $duration-fast $ease-spring;
-  box-shadow: 0 6rpx 18rpx rgba(66, 108, 166, 0.08);
-}
-
-.menu-emoji {
-  font-size: 44rpx;
+  box-shadow: $shadow-sm;
 }
 
 .menu-icon {
@@ -344,29 +183,10 @@ page {
 
 /* ---- Group Spacing ---- */
 .menu-group {
-  margin-bottom: 42rpx;
+  margin-bottom: $spacing-lg;
 
   &:last-child {
     margin-bottom: 0;
-  }
-}
-
-/* ---- Empty ---- */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 200rpx;
-
-  &__text {
-    font-size: $font-body;
-    color: $text-tertiary;
-  }
-
-  &__hint {
-    font-size: $font-caption;
-    color: $text-tertiary;
-    margin-top: $spacing-xs;
   }
 }
 </style>

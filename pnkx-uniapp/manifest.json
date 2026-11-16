@@ -2,8 +2,8 @@
     "name" : "Pei你看雪",
     "appid" : "__UNI__8BA81F0",
     "description" : "",
-    "versionName" : "2.3.2",
-    "versionCode" : 232,
+    "versionName" : "2.2.7",
+    "versionCode" : 227,
     "transformPx" : false,
     "app-plus" : {
         "usingComponents" : true,
@@ -16,8 +16,7 @@
         },
         "modules" : {
             "SQLite" : {},
-            "Camera" : {},
-            "Push" : {}
+            "Camera" : {}
         },
         "distribute" : {
             "android" : {
@@ -46,14 +45,7 @@
             "ios" : {
                 "dSYMs" : false
             },
-            "sdkConfigs" : {
-                "push" : {
-                    "unipush" : {
-                        "version" : "2",
-                        "offline" : false
-                    }
-                }
-            },
+            "sdkConfigs" : {},
             "icons" : {
                 "android" : {
                     "hdpi" : "unpackage/res/icons/72x72.png",
@@ -100,6 +92,7 @@
         "optimization" : {
             "subPackages" : true
         },
+        "__usePrivacyCheck__" : true,
         "lazyCodeLoading" : "requiredComponents",
         "usingComponents" : true
     },

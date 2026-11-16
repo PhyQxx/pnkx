@@ -3,12 +3,6 @@
     <!-- Gradient header with wave bottom -->
     <view class="header-section">
       <view class="header-bg">
-        <view class="mine-navbar">
-          <text class="mine-navbar__title">我的</text>
-          <view class="mine-navbar__setting" @click="handleToSetting">
-            <view class="iconfont icon-setting"></view>
-          </view>
-        </view>
         <view class="header-content">
           <view class="user-row">
             <view class="avatar-wrapper" @click="handleToAvatar">
@@ -26,7 +20,6 @@
                 {{ name }}
               </view>
               <view v-if="name" class="user-desc">记录生活，陪伴每一刻</view>
-              <view v-if="name" class="companionship">Pei你看雪 · 温柔陪伴每一天</view>
             </view>
           </view>
           <view class="info-link" @click="handleToInfo">
@@ -44,19 +37,6 @@
     <!-- Menu sections -->
     <view class="menu-section">
       <view class="menu-card">
-        <!-- 个人资料 -->
-        <view class="menu-item" @click="handleToEditInfo" hover-class="menu-item-active">
-          <view class="stat-icon-wrapper stat-icon-pink">
-            <view class="iconfont icon-edit stat-icon"></view>
-          </view>
-          <view class="menu-item-content">
-            <text class="menu-item-title">编辑资料</text>
-            <text class="menu-item-desc">修改个人资料</text>
-          </view>
-          <view class="menu-item-arrow">
-            <view class="iconfont icon-right"></view>
-          </view>
-        </view>
 
         <!-- Divider -->
         <view class="menu-divider"></view>
@@ -128,6 +108,7 @@
 
 <script>
 import { getAppVersion } from '@/utils/version'
+import { toLogin } from '@/permission'
 
 export default {
   data() {
@@ -146,19 +127,19 @@ export default {
   },
   methods: {
     handleToInfo() {
-      this.$tab.navigateTo('/pages_system/mine/info/index')
+      this.$tab.navigateTo('/pages_blog/mine/info/index')
     },
     handleToEditInfo() {
-      this.$tab.navigateTo('/pages_system/mine/info/edit')
+      this.$tab.navigateTo('/pages_blog/mine/info/edit')
     },
     handleToSetting() {
-      this.$tab.navigateTo('/pages_system/mine/setting/index')
+      this.$tab.navigateTo('/pages_blog/mine/setting/index')
     },
     handleToLogin() {
-      this.$tab.reLaunch('/pages/login')
+      toLogin()
     },
     handleToAvatar() {
-      this.$tab.navigateTo('/pages_system/mine/avatar/index')
+      this.$tab.navigateTo('/pages_blog/mine/avatar/index')
     },
     async handleLogout() {
       await this.$modal.confirm('确定注销并退出系统吗？')
@@ -166,10 +147,10 @@ export default {
       this.$tab.reLaunch('/pages/index')
     },
     handleHelp() {
-      this.$tab.navigateTo('/pages_system/mine/help/index')
+      this.$tab.navigateTo('/pages_blog/mine/help/index')
     },
     handleAbout() {
-      this.$tab.navigateTo('/pages_system/mine/about/index')
+      this.$tab.navigateTo('/pages_blog/mine/about/index')
     },
     handleBuilding() {
       this.$modal.showToast('模块建设中~')
@@ -199,38 +180,9 @@ page {
 }
 
 .header-bg {
-  background:
-    linear-gradient(180deg, rgba(248, 251, 255, 0.02), rgba(242, 247, 254, 0.18)),
-    url('/static/images/glacier-aurora-bg.jpg') top center / cover no-repeat;
-  padding: calc(var(--status-bar-height, 44px) + 24rpx) $page-padding 112rpx;
+  background: linear-gradient(160deg, $primary 0%, $primary-dark 100%);
+  padding: calc(var(--status-bar-height, 44px) + $spacing-lg) $page-padding $spacing-3xl;
   position: relative;
-}
-
-.mine-navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 42rpx;
-
-  &__title {
-    color: $text-primary;
-    font-size: 44rpx;
-    font-weight: $font-weight-bold;
-  }
-
-  &__setting {
-    width: 76rpx;
-    height: 76rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: $text-primary;
-    font-size: 36rpx;
-    border-radius: $radius-full;
-    background: rgba(255, 255, 255, 0.84);
-    border: 1rpx solid rgba(255, 255, 255, 0.92);
-    box-shadow: $shadow-md;
-  }
 }
 
 .header-content {
@@ -296,54 +248,50 @@ page {
 .username {
   font-size: $font-h1;
   font-weight: $font-weight-bold;
-  color: $text-primary;
+  color: $text-inverse;
   line-height: $line-height-tight;
 }
 
 .login-tip {
   font-size: $font-h2;
   font-weight: $font-weight-medium;
-  color: $text-primary;
+  color: $text-inverse;
   opacity: 0.9;
 }
 
 .user-desc {
   font-size: $font-caption;
-  color: $text-secondary;
+  color: rgba(255, 255, 255, 0.7);
   margin-top: $spacing-2xs;
-}
-
-.companionship {
-  margin-top: 10rpx;
-  color: $primary-dark;
-  font-size: $font-mini;
 }
 
 .info-link {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: $radius-full;
   padding: $spacing-xs $spacing-sm $spacing-xs $spacing-md;
   margin-left: $spacing-sm;
 
   .info-link-text {
     font-size: $font-caption;
-    color: $primary;
+    color: $text-inverse;
     white-space: nowrap;
   }
 
   .info-link-arrow {
     font-size: $font-caption;
-    color: $primary;
+    color: rgba(255, 255, 255, 0.8);
     margin-left: $spacing-2xs;
   }
 }
 
 /* Wave bottom edge */
 .header-wave {
-  display: none;
+  position: relative;
+  height: 40rpx;
+  margin-top: -2rpx;
 }
 
 .wave-curve {
@@ -425,18 +373,14 @@ page {
    Menu Section
    ================================ */
 .menu-section {
-  margin: -56rpx $page-padding 0;
-  position: relative;
-  z-index: 2;
+  margin: $section-gap $page-padding 0;
 }
 
 .menu-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
-  border-radius: $radius-2xl;
+  background: $bg-card;
+  border-radius: $radius-xl;
   box-shadow: $shadow-card;
   overflow: hidden;
-  backdrop-filter: blur(24rpx);
 }
 
 .menu-item {
@@ -461,7 +405,7 @@ page {
 }
 
 .menu-icon-blue {
-  background: rgba(79, 134, 247, 0.12);
+  background: rgba(108, 158, 255, 0.12);
 
   .menu-item-icon {
     color: $primary;
@@ -536,9 +480,8 @@ page {
   align-items: center;
   justify-content: center;
   gap: $spacing-xs;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1rpx solid rgba(255, 255, 255, 0.92);
-  border-radius: $radius-2xl;
+  background: $bg-card;
+  border-radius: $radius-xl;
   padding: $spacing-md 0;
   font-size: $font-body;
   color: $danger;

@@ -63,13 +63,14 @@
 
         <button @click="handleLogin" class="login-btn">登 录</button>
 
+        <!-- 微信快捷登录 -->
         <!-- #ifdef MP-WEIXIN -->
         <view class="wx-divider">
           <view class="wx-divider-line"></view>
           <text class="wx-divider-text">其他登录方式</text>
           <view class="wx-divider-line"></view>
         </view>
-        <button @click="handleWxLogin" class="wx-login-btn">快捷登录</button>
+        <button class="wx-login-btn" @click="handleWxLogin">快捷登录</button>
         <!-- #endif -->
       </view>
     </view>
@@ -83,7 +84,7 @@
 
 <script>
 import { getToken, setToken } from '@/utils/auth'
-import { getCodeImg, wxLogin } from '@/api/login'
+import { wxLogin } from '@/api/login'
 
 export default {
   data() {
@@ -91,6 +92,8 @@ export default {
       codeUrl: "",
       captchaEnabled: false,
       globalConfig: getApp().globalData.config,
+      // 登录前所在路由（登录成功后跳回），为空则跳默认首页
+      redirect: "",
       loginForm: {
         userName: "",
         password: "",
@@ -99,9 +102,20 @@ export default {
       }
     }
   },
+  onLoad(options) {
+    // 登录页可能由拦截器带 redirect 参数进来，登录成功后跳回该路由
+    if (options && options.redirect) {
+      try {
+        this.redirect = decodeURIComponent(options.redirect)
+      } catch (e) {
+        this.redirect = options.redirect
+      }
+    }
+  },
   created() {
     if (getToken()) {
-      uni.reLaunch({ url: 'index' })
+      // 已登录则直接离开登录页：优先按 redirect 跳回，否则进默认首页
+      uni.reLaunch({ url: this.redirect || '/pages/index' })
     }
     if (this.captchaEnabled) {
       this.getCode()
@@ -137,35 +151,6 @@ export default {
         this.pwdLogin()
       }
     },
-    // 微信快捷登录：wx.login 拿 code 换 token
-    handleWxLogin() {
-      uni.login({
-        provider: 'weixin',
-        success: (loginRes) => {
-          if (!loginRes.code) {
-            this.$modal.msgError("微信登录失败")
-            return
-          }
-          this.$modal.loading("登录中...")
-          wxLogin(loginRes.code).then(res => {
-            this.$modal.closeLoading()
-            if (res.token) {
-              setToken(res.token)
-              this.$store.commit('SET_TOKEN', res.token)
-              this.loginSuccess()
-            } else {
-              this.$modal.msgError(res.msg || "微信登录失败")
-            }
-          }).catch(() => {
-            this.$modal.closeLoading()
-            this.$modal.msgError("网络异常，请重试")
-          })
-        },
-        fail: () => {
-          this.$modal.msgError("微信授权失败")
-        }
-      })
-    },
     async pwdLogin() {
       this.$store.dispatch('Login', this.loginForm).then(() => {
         this.$modal.closeLoading()
@@ -178,7 +163,47 @@ export default {
     },
     loginSuccess(result) {
       this.$store.dispatch('GetInfo').then(res => {
-        this.$tab.reLaunch('/pages/index')
+        // 优先跳回登录前所在路由，没有才跳默认首页
+        const target = this.redirect || '/pages/index'
+        this.$tab.reLaunch(target)
+      })
+    },
+
+    /**
+     * 微信快捷登录
+     * 调用 wx.login 获取 code，发送到后端换取 token
+     */
+    handleWxLogin() {
+      console.log('=== 快捷登录点击 ===')
+      uni.login({
+        provider: 'weixin',
+        success: (loginRes) => {
+          console.log('wx.login 成功, code:', loginRes.code)
+          if (!loginRes.code) {
+            this.$modal.msgError('微信登录失败')
+            return
+          }
+          this.$modal.loading('登录中...')
+          wxLogin(loginRes.code).then(res => {
+            this.$modal.closeLoading()
+            console.log('后端返回:', JSON.stringify(res))
+            if (res.token) {
+              setToken(res.token)
+              this.$store.commit('SET_TOKEN', res.token)
+              this.loginSuccess()
+            } else {
+              this.$modal.msgError(res.msg || '微信登录失败')
+            }
+          }).catch((err) => {
+            this.$modal.closeLoading()
+            console.error('登录请求失败:', err)
+            this.$modal.msgError('网络异常，请重试')
+          })
+        },
+        fail: (err) => {
+          console.error('wx.login 失败:', err)
+          this.$modal.msgError('微信授权失败')
+        }
       })
     }
   }
@@ -192,9 +217,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background:
-    linear-gradient(180deg, rgba(247, 251, 255, 0.02) 0%, rgba(242, 247, 254, 0.78) 100%),
-    url('/static/images/glacier-aurora-bg.jpg') center / cover no-repeat;
+  background: linear-gradient(160deg, #6C9EFF 0%, #A8C8FF 50%, #D6E4FF 100%);
   padding: 0 $page-padding;
   position: relative;
   overflow: hidden;
@@ -212,7 +235,7 @@ export default {
     position: absolute;
     border-radius: 50%;
     opacity: 0.12;
-    background: rgba(255, 255, 255, 0.65);
+    background: #FFFFFF;
   }
 
   .circle-1 {
@@ -257,34 +280,33 @@ export default {
     width: 140rpx;
     height: 140rpx;
     border-radius: $radius-2xl;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.3);
     padding: 16rpx;
     margin-bottom: $spacing-lg;
-    box-shadow: $shadow-md;
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
   }
 
   .brand-name {
     font-size: $font-h1;
     font-weight: $font-weight-bold;
-    color: $text-primary;
+    color: #FFFFFF;
     margin-bottom: $spacing-xs;
     letter-spacing: 4rpx;
   }
 
   .brand-slogan {
     font-size: $font-caption;
-    color: $text-secondary;
+    color: rgba(255, 255, 255, 0.8);
     letter-spacing: 2rpx;
   }
 }
 
 .login-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: $radius-2xl;
   padding: $spacing-xl $spacing-lg;
-  box-shadow: $shadow-lg;
-  border: 1rpx solid rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   position: relative;
@@ -309,7 +331,7 @@ export default {
   &:focus-within {
     background: #FFFFFF;
     border-color: $primary-light;
-    box-shadow: 0 0 0 4rpx rgba(79, 134, 247, 0.15);
+    box-shadow: 0 0 0 4rpx rgba(108, 158, 255, 0.15);
   }
 
   .input-icon {
@@ -353,7 +375,7 @@ export default {
 .login-btn {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #6EA2FF 0%, $primary 55%, #8388FF 100%);
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
   color: #FFFFFF;
   font-size: $font-h3;
   font-weight: $font-weight-semibold;
@@ -361,58 +383,12 @@ export default {
   border-radius: $radius-lg;
   margin-top: $spacing-lg;
   letter-spacing: 4rpx;
-  box-shadow: 0 10rpx 26rpx rgba(79, 134, 247, 0.26);
+  box-shadow: 0 8rpx 24rpx rgba(108, 158, 255, 0.35);
   transition: all $duration-fast $ease-default;
 
   &:active {
     transform: scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(79, 134, 247, 0.25);
-  }
-
-  &::after {
-    border: none;
-  }
-}
-
-.wx-divider {
-  display: flex;
-  align-items: center;
-  margin-top: 32rpx;
-
-  .wx-divider-line {
-    flex: 1;
-    height: 1rpx;
-    background-color: #e8ecf1;
-  }
-
-  .wx-divider-text {
-    padding: 0 24rpx;
-    font-size: 24rpx;
-    color: #9ba8b7;
-  }
-}
-
-.wx-login-btn {
-  width: 100%;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #07c160;
-  color: #FFFFFF;
-  font-size: 28rpx;
-  font-weight: $font-weight-semibold;
-  border: none;
-  border-radius: 16rpx;
-  margin-top: 24rpx;
-  padding: 0;
-  box-shadow: 0 6rpx 18rpx rgba(7, 193, 96, 0.3);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: center;
-
-  &:active {
-    transform: scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.25);
+    box-shadow: 0 4rpx 12rpx rgba(108, 158, 255, 0.25);
   }
 
   &::after {
@@ -429,7 +405,55 @@ export default {
 
   .footer-text {
     font-size: $font-small;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// 微信登录分隔线
+.wx-divider {
+  display: flex;
+  align-items: center;
+  margin-top: $spacing-lg;
+
+  .wx-divider-line {
+    flex: 1;
+    height: 1rpx;
+    background-color: $gray-200;
+  }
+
+  .wx-divider-text {
+    padding: 0 $spacing-md;
+    font-size: $font-caption;
     color: $text-tertiary;
+  }
+}
+
+// 微信一键登录按钮
+.wx-login-btn {
+  width: 100%;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07C160;
+  color: #FFFFFF;
+  font-size: $font-body;
+  font-weight: $font-weight-semibold;
+  border: none;
+  border-radius: $radius-lg;
+  margin-top: $spacing-md;
+  padding: 0;
+  box-shadow: 0 6rpx 18rpx rgba(7, 193, 96, 0.3);
+  transition: all $duration-fast $ease-default;
+  text-align: center;
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: 0 4rpx 12rpx rgba(7, 193, 96, 0.25);
+  }
+
+  &::after {
+    border: none;
   }
 }
 </style>

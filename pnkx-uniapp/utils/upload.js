@@ -3,6 +3,7 @@ import config from '@/config'
 import {getToken} from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import {showConfirm, tansParams, toast} from '@/utils/common'
+import { toLogin } from '@/permission'
 
 let timeout = 10000
 const baseUrl = config.baseUrl
@@ -29,15 +30,7 @@ const upload = config => {
       header: config.header,
       formData: config.formData,
       success: (res) => {
-        let result
-        try {
-          result = JSON.parse(res.data)
-        } catch (e) {
-          // 网关/代理返回 HTML 错误页时 res.data 不是 JSON
-          toast('上传失败：服务返回异常(' + res.statusCode + ')')
-          reject('上传响应解析失败')
-          return
-        }
+        let result = JSON.parse(res.data)
         const code = result.code || 200
         const msg = errorCode[code] || result.msg || errorCode['default']
         if (code === 200) {
@@ -46,7 +39,7 @@ const upload = config => {
           showConfirm("登录状态已过期，您可以继续留在该页面，或者重新登录?").then(res => {
             if (res.confirm) {
               store.dispatch('LogOut').then(res => {
-                uni.reLaunch({url: '/pages/login'})
+                toLogin()
               })
             }
           })
@@ -60,16 +53,15 @@ const upload = config => {
         }
       },
       fail: (error) => {
-        // uni.uploadFile 失败对象字段为 errMsg，兼容 message
-        let message = (error && (error.errMsg || error.message)) || ''
-        if (message === 'Network Error') {
+        let {message} = error
+        if (message == 'Network Error') {
           message = '后端接口连接异常'
         } else if (message.includes('timeout')) {
           message = '系统接口请求超时'
-        } else if (message.includes('uploadFile:fail')) {
-          message = '文件上传失败'
+        } else if (message.includes('Request failed with status code')) {
+          message = '系统接口' + message.substr(message.length - 3) + '异常'
         }
-        toast(message || '文件上传失败')
+        toast(message)
         reject(error)
       }
     })

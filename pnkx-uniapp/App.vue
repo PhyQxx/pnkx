@@ -1,8 +1,6 @@
 <script>
 import config from './config'
-import { clearSharedCache } from '@/utils/sharedCache'
 import {getToken} from '@/utils/auth'
-import { parsePushPayload, resolvePushRoute } from '@/utils/pushRouter'
 // #ifdef APP-PLUS
 import sqliteDB from '@/utils/sqliteDB'
 import syncScheduler from '@/utils/syncScheduler'
@@ -14,7 +12,6 @@ export default {
     this.initApp()
     // #ifdef APP-PLUS
     this.initOffline()
-    this.initPush()
     // #endif
   },
   onShow: function () {
@@ -23,41 +20,6 @@ export default {
     // #endif
   },
   methods: {
-    /**
-     * App 推送（uniPush 2.0）：登记设备 + 通知点击监听
-     * 后端未配置 UNIPUSH_* 时上报仅落库不推送，无副作用
-     */
-    initPush() {
-      try {
-        uni.getPushClientId({
-          success: (res) => {
-            const token = getToken()
-            if (!res.clientId || !token) return
-            uni.request({
-              url: config.baseUrl + '/system/push/device',
-              method: 'POST',
-              header: {'Authorization': 'Bearer ' + token},
-              data: {
-                clientId: res.clientId,
-                platform: uni.getSystemInfoSync().platform,
-                appVersion: plus.runtime.version || ''
-              }
-            })
-          }
-        })
-        uni.onPushMessage((msg) => {
-          if (msg.type === 'click') {
-            const payload = parsePushPayload(msg)
-            if (!payload) return
-            const target = resolvePushRoute(payload)
-            if (target === '/pages/index/index') uni.switchTab({ url: target })
-            else uni.navigateTo({ url: target })
-          }
-        })
-      } catch (e) {
-        console.warn('推送初始化失败（不影响应用）', e)
-      }
-    },
     // 初始化应用
     initApp() {
       // 初始化应用配置
@@ -72,7 +34,18 @@ export default {
     },
     checkLogin() {
       if (!getToken()) {
-        this.$tab.reLaunch('/pages/login')
+        // 白名单页面（工具箱、壁纸等免登录页面）不强制跳登录
+        // H5 刷新时当前页 URL 形如 http://host/#/pages/tools
+        const currentPage = window.location.hash.replace(/^#/, '').split('?')[0] || '/pages/launch'
+        const whiteList = ['/pages/launch', '/pages/login', '/pages/register',
+          '/pages/common/webview/index', '/pages/tools',
+          '/pages_wallpaper/wallpaper/index', '/pages_wallpaper/wallpaper/detail',
+          '/pages_wallpaper/wallpaper/mine']
+        if (whiteList.indexOf(currentPage) === -1) {
+          // 携带当前路由，登录成功后跳回原页面
+          const current = window.location.hash.replace(/^#/, '')
+          this.$tab.reLaunch(`/pages/login?redirect=${encodeURIComponent(current)}`)
+        }
       }
     },
 
@@ -81,7 +54,6 @@ export default {
       try {
         await sqliteDB.open()
         await sqliteDB.initTables()
-        await clearSharedCache()
         this._offlineReady = true
         syncScheduler.start()
         if (isOnline.value) {
@@ -94,9 +66,8 @@ export default {
     },
 
     // ★ App 回前台时触发同步
-    async triggerOnlineSync() {
+    triggerOnlineSync() {
       try {
-        await clearSharedCache()
         if (isOnline.value) {
           syncScheduler.triggerSync('app_show')
         }
@@ -109,38 +80,17 @@ export default {
 </script>
 
 <style lang="scss">
-@import '@/static/scss/global.scss';
-@import '@/static/scss/colorui.css';
-@import '@/static/font/iconfont.css';
+@import '@/static/scss/index.scss';
 
 .uni-page-head__title {
-  color: $text-primary;
+  color: $primary;
   font-weight: $font-weight-semibold;
-}
-
-.uni-page-head .uni-btn-icon,
-.uni-page-head .uni-page-head-btn,
-.uni-page-head .uni-page-head__btn {
-  color: $text-primary !important;
-}
-
-.uni-page-head {
-  background: rgba(248, 251, 255, 0.88) !important;
-  border-bottom: 1rpx solid rgba(215, 229, 247, 0.66) !important;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
 }
 
 uni-page {
   position: fixed;
   overflow: auto;
   background-color: $bg-page;
-  background-image:
-    linear-gradient(180deg, rgba(246, 250, 255, 0.08) 0%, $bg-page 520rpx),
-    url('/static/images/glacier-aurora-bg.jpg');
-  background-repeat: no-repeat;
-  background-position: top center;
-  background-size: 100% auto;
 }
 
 uni-page-body {

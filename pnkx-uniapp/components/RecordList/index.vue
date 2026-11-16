@@ -100,7 +100,7 @@ export default {
         })
       } else {
         uni.navigateTo({
-          url: '/pages_life/bookkeeping/record/add?recordId=' + record.id
+          url: '/pages_blog/bookkeeping/record/add?recordId=' + record.id
         })
       }
     },

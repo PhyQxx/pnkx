@@ -1,38 +1,6 @@
 import request from '@/utils/request'
 
-export function listReminder(query) {
-  return request({
-    url: '/reminder/list',
-    method: 'get',
-    params: query
-  })
-}
-
-export function bindReminder(data) {
-  return request({
-    url: '/reminder/bind',
-    method: 'post',
-    data
-  })
-}
-
-export function unbindReminder(sourceType, sourceId) {
-  return request({
-    url: '/reminder/unbind',
-    method: 'delete',
-    params: { sourceType, sourceId }
-  })
-}
-
-export function getReminderPreference() {
-  return request({ url: '/reminder/preference', method: 'get' })
-}
-
-export function saveReminderPreference(data) {
-  return request({ url: '/reminder/preference', method: 'put', data })
-}
-
-// 获取今日提醒聚合数据（纪念日 / 情侣卡 / 经期 / 今日待办 / 经期配置）
+// 获取今日提醒聚合数据（纪念日 / 情侣卡 / 经期）
 export function getTodayReminders() {
   return request({
     url: '/reminder/today',
@@ -40,7 +8,7 @@ export function getTodayReminders() {
   })
 }
 
-// 获取通知列表（提醒中心）
+// 查询当前用户的通知列表（提醒投递记录）
 export function getNotifications() {
   return request({
     url: '/reminder/notifications',
@@ -48,7 +16,7 @@ export function getNotifications() {
   })
 }
 
-// 获取未读通知数（首页铃铛红点）
+// 统计当前用户未读通知数（首页铃铛红点用）
 export function getUnreadCount() {
   return request({
     url: '/reminder/unread/count',
@@ -56,7 +24,7 @@ export function getUnreadCount() {
   })
 }
 
-// 标记已读（ids 为空数组则全部已读）
+// 标记通知已读（ids 为空数组/不传则全部已读）
 export function markRead(ids) {
   return request({
     url: '/reminder/notifications/read',
@@ -65,7 +33,6 @@ export function markRead(ids) {
   })
 }
 
-// 删除单条通知
 export function deleteNotification(id) {
   return request({
     url: '/reminder/notifications/' + id,
@@ -73,6 +40,17 @@ export function deleteNotification(id) {
   })
 }
 
-export function retryNotification(id) {
-  return request({ url: '/reminder/notifications/' + id + '/retry', method: 'post' })
+export function getWechatTemplateIds() {
+  return request({
+    url: '/reminder/wechat-template-ids',
+    method: 'get'
+  })
+}
+
+export function saveWechatSubscription(data) {
+  return request({
+    url: '/reminder/wechat-subscription',
+    method: 'post',
+    data
+  })
 }

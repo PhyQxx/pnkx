@@ -1,4 +1,3 @@
-import { clearSharedCache } from '@/utils/sharedCache'
 /**
  * 同步调度器
  *
@@ -18,9 +17,6 @@ import request from '@/utils/request'
 const SYNC_INTERVAL = 30_000   // 30秒轮询
 const MAX_RETRY = 3             // 最大重试次数
 const BATCH_SIZE = 20            // 每批同步任务数
-const IDEMPOTENT_BATCH_TABLES = new Set([
-  'px_diary', 'px_todo', 'px_bookkeeping_record', 'px_note', 'px_commemoration_day'
-])
 
 let syncTimer = null
 let isSyncing = false
@@ -34,16 +30,7 @@ const SYNC_MODULES = [
   { table: 'px_bookkeeping_account', syncUrl: '/offline/sync/account' },
   { table: 'px_note', syncUrl: '/offline/sync/note' },
   { table: 'px_commemoration_day', syncUrl: '/offline/sync/commemorationDay' },
-  { table: 'px_card', syncUrl: '/offline/sync/card' },
-  { table: 'px_shopping_list', syncUrl: '/offline/sync/extended/shoppingList' },
-  { table: 'px_shopping_item', syncUrl: '/offline/sync/extended/shoppingItem' },
-  { table: 'px_recipe', syncUrl: '/offline/sync/extended/recipe' },
-  { table: 'px_meal_plan', syncUrl: '/offline/sync/extended/mealPlan' },
-  { table: 'px_subscription', syncUrl: '/offline/sync/extended/subscription' },
-  { table: 'px_menstruation_record', syncUrl: '/offline/sync/extended/menstruation' },
-  { table: 'px_bookkeeping_budget', syncUrl: '/offline/sync/extended/budget' },
-  { table: 'px_bookkeeping_recurring', syncUrl: '/offline/sync/extended/recurring' },
-  { table: 'px_book', syncUrl: '/offline/sync/extended/book' }
+  { table: 'px_card', syncUrl: '/offline/sync/card' }
 ]
 
 const syncScheduler = {
@@ -161,47 +148,27 @@ const syncScheduler = {
     const payload = JSON.parse(task.payload || '{}')
 
     // 附加 clientUuid 用于服务端幂等去重
-    if (!payload.clientUuid) payload.clientUuid = task.id
+    if (!payload.client_uuid) {
+      payload.client_uuid = task.id
+    }
 
-    let res
-    let serverId = null
-    if (IDEMPOTENT_BATCH_TABLES.has(task.table_name)) {
-      res = await request({
-        url: '/offline/batch',
-        method: 'post',
-        data: {
-          operations: [{
-            tableName: task.table_name,
-            method: String(task.method || '').toUpperCase(),
-            payload,
-            clientUuid: task.id
-          }]
-        },
-        offline: false,
-        _isSyncCall: true
-      })
-      const result = res.data?.results?.[0]
-      if (!result || !['success', 'skip'].includes(result.status)) {
-        throw new Error(result?.errorMsg || '离线批量同步失败')
-      }
-      serverId = result.id || null
-    } else {
-      res = await request({
+    const res = await new Promise((resolve, reject) => {
+      request({
         url: task.url,
         method: task.method,
         data: payload,
-        offline: false,
-        _isSyncCall: true
-      })
-      serverId = res.data?.id || res.data || null
-    }
+        offline: false,  // ★ 强制走在线，跳过离线代理
+        _isSyncCall: true  // 标记为同步调用，避免缓存
+      }).then(resolve).catch(reject)
+    })
 
     // 同步成功 → 更新本地 _server_id + 状态
     if (res.code === 200) {
       await offlineQueue.updateStatus(task.id, 'synced')
 
       // 更新本地业务表的 _server_id 和 _sync_status
-      if (task.table_name && serverId) {
+      if (task.table_name && res.data) {
+        const serverId = res.data.id || res.data
         if (serverId && (typeof serverId === 'number' || (typeof serverId === 'string' && /^\d+$/.test(serverId)))) {
           const numServerId = Number(serverId)
           try {
@@ -238,7 +205,6 @@ const syncScheduler = {
     if (!isOnline.value) return
 
     await Promise.all(SYNC_MODULES.map(mod => this._pullModule(mod)))
-    await clearSharedCache()
     // #endif
   },
 
@@ -380,8 +346,7 @@ const syncScheduler = {
           }
 
           hasMore = res.data.hasMore === true
-          // offset 基于服务端原始页大小推进；若整页都是软删除记录，按正常记录数推进会死循环。
-          offset += res.data.items.length
+          offset += items.length
 
           if (res.data.nextSince) {
             lastNextSince = res.data.nextSince
