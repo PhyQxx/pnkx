@@ -5,6 +5,7 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import compression from 'vite-plugin-compression2'
 import Components from 'unplugin-vue-components/vite'
 import { VantResolver } from '@vant/auto-import-resolver'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -25,7 +26,67 @@ export default defineConfig(({ mode }) => {
                 dts: false,
                 resolvers: [VantResolver()]
             }),
-            compression()
+            compression(),
+            // PWA：让移动端(/m)可以"添加到主屏幕"装成 app（桌面图标 + 无浏览器外壳的独立窗口 + 离线外壳）。
+            // - start_url 指向 /m：安装后点图标直接进移动端模块；PC 浏览器正常访问完全不受影响
+            // - autoUpdate：新版本 Service Worker 安装完成后自动接管，已安装的 app 下次打开即为最新版
+            // - 缓存策略同时服务于 PC 管理端：HTML 走 network-first（发版即时生效），
+            //   业务 JS/CSS 依赖文件名 hash 由 precache 全权管理，接口 GET 仅做短时离线兜底
+            VitePWA({
+                registerType: 'autoUpdate',
+                includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192.png', 'pwa-512.png'],
+                manifest: {
+                    name: 'Pei你看雪',
+                    short_name: 'Pei你看雪',
+                    description: 'Pei你看雪博客管理系统',
+                    lang: 'zh-CN',
+                    start_url: '/m',
+                    scope: '/',
+                    display: 'standalone',
+                    orientation: 'portrait',
+                    theme_color: '#5b8def',
+                    background_color: '#fbfdff',
+                    icons: [
+                        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+                        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' }
+                    ]
+                },
+                workbox: {
+                    // 主入口 chunk 4MB+、vendor 手动分包后均超过 workbox 默认 2MiB 预缓存上限，
+                    // 放宽到 8MB：漏掉入口 chunk 会导致已安装的 app 断网时无法启动
+                    maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+                    // 断网时导航类请求统一回落到 SPA 外壳，由 vue-router 接管路由
+                    navigateFallback: '/index.html',
+                    // API / websocket 的导航类请求绝不回落到 index.html
+                    navigateFallbackDenylist: [/^\/prod-api\//, /^\/websocket\//],
+                    runtimeCaching: [
+                        {
+                            // 接口 GET：网络优先，断网时回落最近一次结果（短时兜底，不当长缓存用）
+                            urlPattern: ({ url }) => url.pathname.startsWith('/prod-api/'),
+                            handler: 'NetworkFirst',
+                            options: {
+                                cacheName: 'pnkx-api-cache',
+                                networkTimeoutSeconds: 5,
+                                expiration: { maxEntries: 50, maxAgeSeconds: 10 * 60 },
+                                cacheableResponse: { statuses: [200] }
+                            }
+                        },
+                        {
+                            // 图片：仅同源（应用 UI 图/上传文件），缓存优先，离线时已看过的仍可显示
+                            urlPattern: ({ request, url }) =>
+                                request.destination === 'image' && url.origin === self.location.origin,
+                            handler: 'CacheFirst',
+                            options: {
+                                cacheName: 'pnkx-image-cache',
+                                expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 },
+                                cacheableResponse: { statuses: [200] }
+                            }
+                        }
+                    ]
+                },
+                // 本地 dev 与 e2e（均跑 vite dev server）不注册 SW，避免影响调试和测试
+                devOptions: { enabled: false }
+            })
         ],
         resolve: {
             extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],

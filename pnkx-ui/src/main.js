@@ -23,6 +23,7 @@ import directive from './directive' // directive
 import svgIcons from './assets/icons'
 import 'virtual:svg-icons-register'
 import './permission' // permission control
+import '@/mobile/utils/pwa' // PWA：尽早注册 beforeinstallprompt 监听（事件只触发一次，晚了会错过）
 import { getDicts, listData } from '@/api/system/dict/data'
 import { getConfigKey } from '@/api/system/config'
 import {

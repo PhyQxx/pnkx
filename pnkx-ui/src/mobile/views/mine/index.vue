@@ -61,6 +61,14 @@
                         <div class="mine-menu__desc">通知、隐私与账号管理</div>
                     </template>
                 </van-cell>
+                <!-- 已以独立窗口运行（已安装）时隐藏 -->
+                <van-cell v-if="!standalone" is-link @click="handleInstall">
+                    <template #icon><span class="mine-menu__icon mine-menu__icon--blue"><van-icon name="apps-o" /></span></template>
+                    <template #title>
+                        <div class="mine-menu__title">安装到桌面</div>
+                        <div class="mine-menu__desc">把 Pei你看雪 装成手机应用</div>
+                    </template>
+                </van-cell>
             </van-cell-group>
         </div>
 
@@ -76,13 +84,16 @@
 
 <script>
 import { appVersion } from '@/mobile/utils/version'
-import { mConfirm, mSuccess } from '@/mobile/utils/ui'
+import { mConfirm, mSuccess, showDialog } from '@/mobile/utils/ui'
+import { canPromptInstall, isIOS, isStandalone, promptInstall } from '@/mobile/utils/pwa'
 
 export default {
     name: 'MMine',
     data() {
         return {
-            version: appVersion
+            version: appVersion,
+            // 是否已以独立窗口（已安装的 app）形态运行
+            standalone: isStandalone()
         }
     },
     computed: {
@@ -121,6 +132,22 @@ export default {
         },
         handleAbout() {
             this.$router.push('/m/mine/about')
+        },
+        /** 安装到桌面：Android/Chromium 走原生安装弹窗，其余端按浏览器给手动引导 */
+        async handleInstall() {
+            if (canPromptInstall()) {
+                const outcome = await promptInstall()
+                if (outcome === 'accepted') mSuccess('安装成功，可从桌面打开')
+                return
+            }
+            showDialog({
+                title: '添加到主屏幕',
+                message: isIOS()
+                    ? '1. 点击 Safari 底部工具栏的「分享」按钮<br>2. 选择「添加到主屏幕」<br>3. 点击右上角「添加」即可'
+                    : '当前浏览器不支持一键安装，<br>可使用 Chrome / Edge / Safari 打开本站，<br>在浏览器菜单中选择「添加到主屏幕」。',
+                allowHtml: true,
+                confirmButtonText: '知道了'
+            })
         },
         async handleLogout() {
             try {
