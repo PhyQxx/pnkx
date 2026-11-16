@@ -17,7 +17,7 @@
                     <div class="mine-header__meta">
                         <div v-if="!name" class="mine-header__login-tip" @click="handleToLogin">点击登录</div>
                         <template v-else>
-                            <div class="mine-header__name" @click="handleToInfo">{{ name }}</div>
+                            <div class="mine-header__name" @click="handleToInfo">{{ displayName }}</div>
                             <div class="mine-header__desc">记录生活，陪伴每一刻</div>
                             <div class="mine-header__companionship">Pei你看雪 · 温柔陪伴每一天</div>
                         </template>
@@ -88,6 +88,10 @@ export default {
     computed: {
         name() {
             return this.$store.state.user.name
+        },
+        displayName() {
+            // 优先展示昵称，未设置昵称时回落账号名
+            return this.$store.getters.nickName || this.$store.state.user.name
         },
         avatar() {
             return this.$store.state.user.avatar

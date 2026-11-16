@@ -290,7 +290,8 @@ export default {
             return this.$store.getters.token
         },
         nickName() {
-            return this.$store.getters.name || '小可爱'
+            // 优先展示昵称，未设置昵称时回落账号名
+            return this.$store.getters.nickName || this.$store.getters.name || '小可爱'
         },
         greetingText() {
             const hour = new Date().getHours()
