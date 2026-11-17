@@ -51,6 +51,19 @@ class FeatureMigrationIntegrationTest {
       db.update(
           "insert into px_shopping_item(list_id,name,quantity,checked,create_by)"
               + " values(1,'盐','适量',1,'1')");
+      // V1.8.6 会清理菜单/任务/提醒/自动化中的订阅残留，测试库需建对应最小表
+      db.execute("create table sys_menu(menu_id bigint primary key, component varchar(255))");
+      db.execute("create table sys_role_menu(role_id bigint, menu_id bigint)");
+      db.execute("create table sys_job(job_id bigint primary key, invoke_target varchar(255))");
+      db.execute(
+          "create table px_automation_rule(id bigint primary key, trigger_type varchar(32),"
+              + " action_type varchar(64))");
+      db.update("insert into sys_menu(menu_id, component) values(9001, 'px/life/subscription/index')");
+      db.update("insert into sys_role_menu(role_id, menu_id) values(1, 9001)");
+      db.update("insert into sys_job(job_id, invoke_target) values(9001, 'subscriptionTask.generateDueRecords')");
+      db.update(
+          "insert into px_automation_rule(id, trigger_type, action_type)"
+              + " values(9001, 'subscription_due', 'subscription_charge')");
       var files =
           Files.list(folder)
               .filter(p -> p.getFileName().toString().matches("V1\\.(6\\.[4-9]|[78]\\.[0-9]+)__.*"))
@@ -61,11 +74,14 @@ class FeatureMigrationIntegrationTest {
           ScriptUtils.executeSqlScript(connection, new FileSystemResource(file));
       }
       assertEquals(
-          "auto_record",
-          db.queryForObject("select posting_mode from px_subscription", String.class));
-      assertEquals(31, db.queryForObject("select anchor_day from px_subscription", Integer.class));
-      assertEquals(
-          1, db.queryForObject("select legacy_resume_policy from px_subscription", Integer.class));
+          0,
+          db.queryForObject(
+              "select count(*) from information_schema.tables where table_schema=database()"
+                  + " and table_name='px_subscription'",
+              Integer.class));
+      assertEquals(0, db.queryForObject("select count(*) from sys_menu", Integer.class));
+      assertEquals(0, db.queryForObject("select count(*) from sys_job", Integer.class));
+      assertEquals(0, db.queryForObject("select count(*) from px_automation_rule", Integer.class));
       assertEquals(3, db.queryForObject("select servings from px_meal_plan", Integer.class));
       assertEquals("适量", db.queryForObject("select quantity from px_shopping_item", String.class));
       assertEquals(

@@ -2,7 +2,7 @@ import { test, expect, skipUnlessProject } from './helpers/setup.mjs'
 import { TOKENS, loginAs, clearForceMode, overrideRoute, clearOverride, waitForRequest, getRequests, clearRequests } from './helpers/mock.mjs'
 
 /**
- * 生活域：姨妈助手 / 纪念日 / 情侣卡券 / 自动化 / 生活管家(菜谱+膳食+订阅)
+ * 生活域：姨妈助手 / 纪念日 / 情侣卡券 / 自动化 / 生活管家(菜谱+膳食)
  * 专属 token：test-token-ld（V2 全关）；M10 需同时开 shoppingPlanV2 + chargeInstanceV2 → TOKENS.ALL
  */
 const LD = 'test-token-ld'
@@ -347,7 +347,7 @@ test.describe('生活自动化', () => {
         await conditionBlock.locator('textarea').fill('{"daysBefore":3}')
         await editor.getByRole('button', { name: '保存规则' }).click()
         const post = await waitForRequest(LD, r => r.method === 'POST' && r.path === '/automation/rules')
-        expect(post.body).toMatchObject({ name: '纪念日提前准备', templateCode: 'anniv_prep', triggerType: 'subscription_due', conditionJson: '{"daysBefore":3}' })
+        expect(post.body).toMatchObject({ name: '纪念日提前准备', templateCode: 'anniv_prep', triggerType: 'schedule', conditionJson: '{"daysBefore":3}' })
         await expect(editor).toBeHidden({ timeout: 5000 })
         // 规则启停
         const rule2 = page.locator('.rule-card', { hasText: '周报转日记' })
@@ -419,7 +419,7 @@ test.describe('菜谱与膳食', () => {
         await waitForRequest(LD, r => r.method === 'DELETE' && r.path === '/mealPlan/501')
     })
 
-    test('M10 膳食生成购物清单预览/提交 + 订阅预测/启停/编辑 + 订阅账期面板', async ({ page }) => {
+    test('M10 膳食生成购物清单预览/提交', async ({ page }) => {
         const ALL = TOKENS.ALL
         await loginAs(page, ALL)
         await clearForceMode(page)
@@ -443,62 +443,5 @@ test.describe('菜谱与膳食', () => {
         expect(commit.body).toEqual({ previewId: 'pv-meal-1' })
         await expect(page.locator('.van-toast')).toContainText('已生成购物清单')
         await clearOverride(ALL, 'GET', '/mealPlan/week')
-
-        // 订阅管理：预测卡 + 账期面板（chargeInstanceV2）
-        await page.goto('/m/subscription')
-        const subPage = page.locator('.subscription-page')
-        await expect(subPage.locator('.subscription-page__summary-value').first()).toHaveText('¥33', { timeout: 8000 })
-        await expect(subPage.locator('.subscription-page__summary-value--plain')).toHaveText('¥121')
-        await expect(subPage.locator('.subscription-page__summary-sub')).toHaveText('2 项订阅')
-        await expect(subPage.locator('.subscription-page__item')).toHaveCount(2)
-        // 账期面板
-        const charges = page.locator('.charges')
-        await expect(charges).toBeVisible({ timeout: 8000 })
-        await expect(charges.locator('.charges__item')).toHaveCount(2)
-        await expect(charges.locator('.van-tag', { hasText: '待确认' })).toBeVisible()
-        await expect(charges.locator('.van-tag', { hasText: '扣费失败' })).toBeVisible()
-        // 账期详情 + 确认入账
-        await charges.locator('.charges__item', { hasText: '视频会员' }).getByRole('button', { name: '详情' }).click()
-        const detail = page.locator('.charges__detail')
-        await expect(detail).toBeVisible({ timeout: 8000 })
-        await expect(detail).toContainText('账期详情')
-        await detail.getByRole('button', { name: '收起详情' }).click()
-        await charges.locator('.charges__item', { hasText: '视频会员' }).getByRole('button', { name: '确认入账' }).click()
-        const editor = page.locator('.charges__editor')
-        await expect(editor).toBeVisible({ timeout: 8000 })
-        await expect(page.getByPlaceholder('实际金额')).toHaveValue('25')
-        await editor.getByRole('button', { name: '确认入账' }).click()
-        await waitForRequest(ALL, r => r.method === 'POST' && r.path === '/charge/instances/ci1/confirm')
-        await expect(page.locator('.van-toast')).toContainText('已入账')
-        // 订阅启停
-        const sub1 = subPage.locator('.subscription-page__item', { hasText: '视频会员' })
-        await sub1.locator('.subscription-page__item-toggle', { hasText: '停用' }).click()
-        const toggle = await waitForRequest(ALL, r => r.method === 'PUT' && r.path === '/subscription')
-        expect(toggle.body).toMatchObject({ id: 901, enabled: false })
-        // 编辑订阅（金额 25 → 30，三步确认流程）
-        await page.waitForTimeout(300)
-        const sub1b = page.locator('.subscription-page__item', { hasText: '视频会员' })
-        await sub1b.getByRole('button', { name: '编辑' }).click()
-        const subEditor = page.locator('.subscription-page__editor')
-        await expect(subEditor).toBeVisible({ timeout: 8000 })
-        await expect(subEditor).toContainText('编辑订阅')
-        await page.getByPlaceholder('0.00').fill('30')
-        await subEditor.getByRole('button', { name: '保存' }).click()
-        const change = await waitForRequest(ALL, r => r.method === 'POST' && r.path === '/charge/rules/change-preview')
-        expect(change.body).toMatchObject({ sourceType: 'subscription', sourceId: 901 })
-        expect(change.body.changes.amount).toBe(30)
-        // 三步：变化摘要 → 影响账期 → 确认执行
-        const flow = page.locator('.flow')
-        await expect(flow).toBeVisible({ timeout: 8000 })
-        await expect(flow.locator('.flow__diff')).toContainText('金额')
-        await expect(flow.locator('.flow__diff-after')).toHaveText('30')
-        await flow.getByRole('button', { name: '下一步' }).click()
-        await expect(flow.locator('.flow__step--on', { hasText: '影响账期' })).toBeVisible()
-        await flow.getByRole('button', { name: '下一步' }).click()
-        await flow.getByRole('button', { name: '确认执行' }).click()
-        const commitChange = await waitForRequest(ALL, r => r.method === 'POST' && r.path === '/charge/rules/change-commit')
-        expect(commitChange.body).toEqual({ previewId: 'pv-sub-1' })
-        // 向导 toast「规则已更新」随后被订阅页自身 toast「已保存」覆盖
-        await expect(page.locator('.van-toast')).toContainText('已保存')
     })
 })

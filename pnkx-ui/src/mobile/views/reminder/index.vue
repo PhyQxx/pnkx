@@ -140,7 +140,6 @@ export default {
                 commemoration: { emoji: '🎂', tone: 'warning' },
                 menstruation: { emoji: '🌸', tone: 'danger' },
                 lovers_card: { emoji: '💕', tone: 'danger' },
-                subscription: { emoji: '💰', tone: 'warning' },
                 todo: { emoji: '📋', tone: 'primary' }
             }
             return map[item.sourceType] || { emoji: '🔔', tone: 'info' }
@@ -175,7 +174,6 @@ export default {
             const routes = {
                 todo: '/m/todo/edit?id=' + item.sourceId,
                 commemoration: '/m/commemoration-day/add?id=' + item.sourceId,
-                subscription: '/m/subscription?highlight=' + item.sourceId,
                 menstruation: '/m/menstruation'
             }
             return routes[item.sourceType] || ''

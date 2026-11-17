@@ -130,7 +130,7 @@
                     <el-checkbox-group v-model="form.visibilityModules">
                         <el-checkbox v-for="item in visibilityOptions" :key="item.value" :label="item.value">{{ item.label }}</el-checkbox>
                     </el-checkbox-group>
-                    <div class="form-tip">日记、笔记、经期、订阅和 AI 日志始终仅本人可见。</div>
+                    <div class="form-tip">日记、笔记、经期和 AI 日志始终仅本人可见。</div>
                 </el-form-item>
                 <share-preview :modules="form.visibilityModules || []" :group-id="form.id" />
                 <el-form-item label="群组成员" prop="userIds">

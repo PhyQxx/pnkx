@@ -320,14 +320,13 @@ test.describe('全局搜索', () => {
 test.describe('通知深链', () => {
     test.beforeEach(skipUnlessProject('mobile'))
 
-    test('R10 通知跳转 todo/纪念日/订阅/经期 deep link', async ({ page }) => {
+    test('R10 通知跳转 todo/纪念日/经期 deep link', async ({ page }) => {
         await loginAs(page, RC)
         await clearForceMode(page)
         await overrideRoute(RC, 'GET', '/reminder/notifications', {
             data: [
                 { id: 11, title: '待办提醒', content: '取快递', status: '0', sourceType: 'todo', sourceId: 101, sendTime: '2026-11-15 09:00:00' },
                 { id: 12, title: '纪念日提醒', content: '恋爱纪念日还有 5 天', status: '0', sourceType: 'commemoration', sourceId: 801, sendTime: '2026-11-15 08:00:00' },
-                { id: 13, title: '订阅扣费提醒', content: '视频会员明天扣费', status: '0', sourceType: 'subscription', sourceId: 901, sendTime: '2026-11-15 07:00:00' },
                 { id: 14, title: '经期提醒', content: '经期第 5 天', status: '0', sourceType: 'menstruation', sourceId: null, sendTime: '2026-11-15 06:00:00' }
             ]
         })
@@ -339,9 +338,6 @@ test.describe('通知深链', () => {
         await expect(page).toHaveURL(/\/m\/todo\/edit\?id=101/, { timeout: 8000 })
         await open('纪念日提醒')
         await expect(page).toHaveURL(/\/m\/commemoration-day\/add\?id=801/)
-        await open('订阅扣费提醒')
-        await expect(page).toHaveURL(/\/m\/subscription\?highlight=901/)
-        await expect(page.locator('.subscription-page__list-title')).toContainText('我的订阅')
         await open('经期提醒')
         await expect(page).toHaveURL(/\/m\/menstruation$/)
         await expect(page.locator('.menstruation-hero__eyebrow')).toHaveText('姨妈助手')

@@ -191,7 +191,7 @@ export default {
                 this.$debounce(() => {
                     this.retrievalLoading = true;
                     globalSearch({q: query}).then(res => {
-                        const labels = { article: '博客文章', todo: '待办事项', bookkeeping: '生活账本', diary: '日记', note: '笔记', book: '书籍', recipe: '菜谱', commemoration: '纪念日', subscription: '订阅', shopping: '购物清单' }
+                        const labels = { article: '博客文章', todo: '待办事项', bookkeeping: '生活账本', diary: '日记', note: '笔记', book: '书籍', recipe: '菜谱', commemoration: '纪念日', shopping: '购物清单' }
                         const groups = new Map()
                         ;(res.data || []).forEach(item => {
                             const label = labels[item.type] || item.type

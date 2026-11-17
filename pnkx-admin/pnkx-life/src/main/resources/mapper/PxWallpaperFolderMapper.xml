@@ -97,8 +97,8 @@
                 and f.version = #{version}
             </if>
         </where>
-        <!-- 默认按创建时间倒序（id 倒序兜底，保证同一秒创建的文件夹顺序稳定） -->
-        ORDER BY f.create_time DESC, f.id DESC
+        <!-- 客户端按最后一张图片的时间倒序（最近更新的文件夹在前，空文件夹 null 排最后），创建时间兜底 -->
+        ORDER BY last_image_time DESC, f.create_time DESC, f.id DESC
     </select>
 
     <!--

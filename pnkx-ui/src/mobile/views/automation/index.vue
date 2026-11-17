@@ -236,11 +236,9 @@ export default {
             triggerOptions: [
                 { label: '手动', value: 'manual' },
                 { label: '定时', value: 'schedule' },
-                { label: '订阅到期', value: 'subscription_due' },
                 { label: '待办完成', value: 'todo_completed' }
             ],
             actionOptions: [
-                { label: '订阅扣费', value: 'subscription_charge' },
                 { label: '餐饮转购物', value: 'meal_to_shopping' },
                 { label: '创建待办', value: 'create_todo' },
                 { label: '创建阅读待办', value: 'create_reading_todo' },

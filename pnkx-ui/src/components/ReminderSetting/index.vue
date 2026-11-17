@@ -68,7 +68,7 @@ import {bindReminder, listReminder, unbindReminder} from '@/api/px/life/reminder
 export default {
     name: 'ReminderSetting',
     props: {
-        // 来源类型 todo / commemoration / menstruation / subscription
+        // 来源类型 todo / commemoration / menstruation
         sourceType: {type: String, required: true},
         // 来源实体ID
         sourceId: {type: [Number, String], required: true},
@@ -96,7 +96,7 @@ export default {
     },
     computed: {
         sourceLabel() {
-            const map = {todo: '待办', commemoration: '纪念日', menstruation: '经期', subscription: '订阅'}
+            const map = {todo: '待办', commemoration: '纪念日', menstruation: '经期'}
             return map[this.sourceType] || '事件'
         },
         eventTimeText() {

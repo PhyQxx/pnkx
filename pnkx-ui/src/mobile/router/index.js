@@ -297,13 +297,6 @@ export const mobileRoutes = [
                 component: () => import('@/mobile/views/meal-plan/index.vue'),
                 meta: { title: '膳食计划' }
             },
-            // ---- 订阅 ----
-            {
-                path: 'subscription',
-                name: 'MSubscription',
-                component: () => import('@/mobile/views/subscription/index.vue'),
-                meta: { title: '订阅管理' }
-            },
             // ---- AI 助手 ----
             {
                 path: 'ai/chat',

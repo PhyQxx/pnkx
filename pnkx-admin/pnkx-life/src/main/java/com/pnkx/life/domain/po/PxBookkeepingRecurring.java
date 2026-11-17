@@ -43,12 +43,12 @@ public class PxBookkeepingRecurring extends BaseEntity {
     private String name;
 
     /**
-     * 频率：month 每月 / week 每周
+     * 频率：month 每月 / quarter 每3个月 / week 每周
      */
     private String frequency;
 
     /**
-     * 月频率为几号(1-28)；周频率为周几(1-7，周一=1)
+     * 月/季度频率为几号(1-28)；周频率为周几(1-7，周一=1)
      */
     private Integer dayNumber;
 

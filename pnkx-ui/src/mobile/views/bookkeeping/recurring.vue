@@ -176,8 +176,8 @@ export default {
             typeLabels: ['支出', '收入', '转账'],
             typeValues: ['1', '0', '2'],
             typeIndex: 0,
-            frequencyLabels: ['每月', '每周'],
-            frequencyValues: ['month', 'week'],
+            frequencyLabels: ['每月', '每3个月', '每周'],
+            frequencyValues: ['month', 'quarter', 'week'],
             frequencyIndex: 0,
             dayIndex: 0,
             categoryIndex: 0,
@@ -415,7 +415,9 @@ export default {
             this.load()
         },
         cycleText(rule) {
-            return rule.frequency === 'week' ? '每周' + this.dayLabelsForWeek(rule.dayNumber) : '每月' + rule.dayNumber + '号'
+            if (rule.frequency === 'week') return '每周' + this.dayLabelsForWeek(rule.dayNumber)
+            if (rule.frequency === 'quarter') return '每3个月' + rule.dayNumber + '号'
+            return '每月' + rule.dayNumber + '号'
         },
         dayLabelsForWeek(day) {
             return ['一', '二', '三', '四', '五', '六', '日'][day - 1] || ''

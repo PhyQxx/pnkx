@@ -43,8 +43,6 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
     @Resource
     private PxBookkeepingRecordMapper pxBookkeepingRecordMapper;
     @Resource
-    private PxSubscriptionMapper pxSubscriptionMapper;
-    @Resource
     private PxMealPlanMapper pxMealPlanMapper;
     @Resource
     private PxShoppingListMapper pxShoppingListMapper;
@@ -92,12 +90,6 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             log.error("聚合记账事件失败", e);
         }
 
-        // 5. 订阅扣费
-        try {
-            events.addAll(buildSubscriptionEvents(start, end));
-        } catch (Exception e) {
-            log.error("聚合订阅事件失败", e);
-        }
 
         // 6. 餐饮计划
         try {
@@ -265,28 +257,6 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
         return events;
     }
 
-    private List<CalendarEventVo> buildSubscriptionEvents(LocalDate start, LocalDate end) {
-        PxSubscription query = new PxSubscription();
-        query.setEnabled(true);
-        attachDataScope(query);
-        List<CalendarEventVo> events = new ArrayList<>();
-        for (PxSubscription subscription : pxSubscriptionMapper.selectPxSubscriptionList(query)) {
-            if (subscription.getNextPaymentDate() == null) continue;
-            LocalDate date = subscription.getNextPaymentDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            if (date.isBefore(start) || date.isAfter(end)) continue;
-            CalendarEventVo vo = new CalendarEventVo();
-            vo.setSourceType("subscription");
-            vo.setSourceId(subscription.getId());
-            vo.setTitle("💳 " + subscription.getName() + " ¥" + subscription.getAmount());
-            vo.setDate(java.sql.Date.valueOf(date));
-            vo.setColor("subscription");
-            vo.setStatus("pending");
-            vo.setRoute("/mytool/subscription");
-            vo.setAppRoute("/pages_life/subscription/index?highlight=" + subscription.getId());
-            events.add(vo);
-        }
-        return events;
-    }
 
     private List<CalendarEventVo> buildMealPlanEvents(LocalDate start, LocalDate end) {
         PxMealPlan query = new PxMealPlan();

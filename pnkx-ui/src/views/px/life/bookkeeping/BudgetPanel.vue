@@ -103,8 +103,8 @@ export default {
         },
         loadClassifications() {
             getClassificationList({typeDifference: '1'}).then(res => {
-                // 只取二级分类（记账记录的 type 即二级分类）
-                this.classificationOptions = (res.data || []).filter(c => c.typeLevel === '1')
+                // 接口返回树形（一级分类含 children，且附带无ID的“最近使用”虚拟分组）；预算绑定二级分类，拍平取全部二级
+                this.classificationOptions = (res.data || []).reduce((all, item) => all.concat((item.children || []).filter(c => c.id != null)), [])
             })
         },
         changeMonth(direction) {

@@ -14,32 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChargeRuleChangeService {
   @jakarta.annotation.Resource private ChargeInstanceService instances;
   private final JdbcTemplate db;
-  private final PxSubscriptionMapper subscriptions;
   private final PxBookkeepingRecurringMapper recurring;
-  private final PxSubscriptionServiceImpl subscriptionService;
   private final PxBookkeepingRecurringService recurringService;
 
   public ChargeRuleChangeService(
       JdbcTemplate db,
-      PxSubscriptionMapper subscriptions,
       PxBookkeepingRecurringMapper recurring,
-      PxSubscriptionServiceImpl subscriptionService,
       PxBookkeepingRecurringService recurringService) {
     this.db = db;
-    this.subscriptions = subscriptions;
     this.recurring = recurring;
-    this.subscriptionService = subscriptionService;
     this.recurringService = recurringService;
   }
 
   private JSONObject source(String type, Long id, String owner, boolean lock) {
     Object value;
-    if ("subscription".equals(type)) {
-      var s = lock ? subscriptions.selectForCharge(id) : subscriptions.selectPxSubscriptionById(id);
-      if (s == null || !owner.equals(s.getCreateBy()) || "1".equals(s.getDelFlag()))
-        throw new ServiceException("SOURCE_UNAVAILABLE");
-      value = s;
-    } else if ("recurring".equals(type)) {
+    if ("recurring".equals(type)) {
       value = lock ? recurring.lockForCharge(id, owner) : recurring.selectById(id, owner);
       if (value == null) throw new ServiceException("SOURCE_UNAVAILABLE");
     } else throw new ServiceException("INVALID_ACTION");
@@ -57,34 +46,18 @@ public class ChargeRuleChangeService {
     JSONObject old = source(type, id, owner, false), changes = input.getJSONObject("changes");
     if (changes == null) throw new ServiceException("缺少变更内容");
     var allowed =
-        "subscription".equals(type)
-            ? Set.of(
-                "name",
-                "amount",
-                "cycle",
-                "cycleInterval",
-                "nextPaymentDate",
-                "accountId",
-                "classificationId",
-                "paymentMethod",
-                "reminderLeadDays",
-                "enabled",
-                "lifecycle",
-                "trialEndDate",
-                "postingMode",
-                "remark")
-            : Set.of(
-                "name",
-                "money",
-                "frequency",
-                "dayNumber",
-                "account",
-                "type",
-                "otherAccount",
-                "typeDifference",
-                "postingMode",
-                "remark",
-                "enabled");
+        Set.of(
+            "name",
+            "money",
+            "frequency",
+            "dayNumber",
+            "account",
+            "type",
+            "otherAccount",
+            "typeDifference",
+            "postingMode",
+            "remark",
+            "enabled");
     var merged = JSON.parseObject(old.toJSONString());
     var differences = new JSONArray();
     for (String key : allowed) {
@@ -97,13 +70,6 @@ public class ChargeRuleChangeService {
       diff.put("after", after);
       differences.add(diff);
       merged.put(key, after);
-    }
-    if ("subscription".equals(type)
-        && changes.containsKey("trialEndDate")
-        && changes.get("trialEndDate") == null) {
-      var params = new JSONObject();
-      params.put("clearTrialEndDate", true);
-      merged.put("params", params);
     }
     merged.put("id", id);
     var payload = new JSONObject(true);
@@ -121,23 +87,17 @@ public class ChargeRuleChangeService {
     var result = new JSONObject();
     result.put("previewId", preview);
     result.put("changes", differences);
-    Object amount = merged.get("subscription".equals(type) ? "amount" : "money");
+    Object amount = merged.get("money");
     var duplicates =
         db.queryForList(
-            "select name from px_subscription where create_by=? and enabled=1 and del_flag='0' and"
-                + " amount=? and not(?='subscription' and id=?) union all select name from"
-                + " px_bookkeeping_recurring where create_by=? and enabled=1 and del_flag=0 and"
-                + " money=? and not(?='recurring' and id=?) limit 10",
-            owner,
-            amount,
-            type,
-            id,
+            "select name from px_bookkeeping_recurring where create_by=? and enabled=1 and"
+                + " del_flag=0 and money=? and not(?='recurring' and id=?) limit 10",
             owner,
             amount,
             type,
             id);
     result.put("duplicates", duplicates);
-    result.put("notice", "仅修改后续规则；待确认与已入账账期保留原金额。终止追踪不会取消服务平台续费。");
+    result.put("notice", "仅修改后续规则；待确认与已入账账期保留原金额。");
     return result;
   }
 
@@ -145,28 +105,15 @@ public class ChargeRuleChangeService {
     String type = input.getString("sourceType");
     Long sourceId = input.getLong("sourceId");
     var rule = source(type, sourceId, owner, false);
-    if (rule.getBooleanValue("enabled") || "cancelled".equals(rule.getString("lifecycle")))
-      throw new ServiceException("请仅为暂停中的规则补齐账期");
-    boolean subscription = "subscription".equals(type);
-    var due =
-        SubscriptionSchedule.date(rule.getDate(subscription ? "nextPaymentDate" : "nextRunDate"));
+    if (rule.getBooleanValue("enabled")) throw new ServiceException("请仅为暂停中的规则补齐账期");
+    var due = SubscriptionSchedule.date(rule.getDate("nextRunDate"));
     var today = java.time.LocalDate.now(SubscriptionSchedule.ZONE);
     var periods = new JSONArray();
     int scanned = 0;
     while (!due.isAfter(today) && scanned++ < 100) {
-      if (!subscription
-          || rule.getDate("trialEndDate") == null
-          || !due.isBefore(SubscriptionSchedule.date(rule.getDate("trialEndDate"))))
-        periods.add(due.toString());
-      due =
-          subscription
-              ? SubscriptionSchedule.next(
-                  due,
-                  rule.getString("cycle"),
-                  rule.getInteger("cycleInterval"),
-                  rule.getInteger("anchorDay"))
-              : PxBookkeepingRecurringService.computeNextRunDate(
-                  rule.toJavaObject(PxBookkeepingRecurring.class), due);
+      periods.add(due.toString());
+      due = PxBookkeepingRecurringService.computeNextRunDate(
+          rule.toJavaObject(PxBookkeepingRecurring.class), due);
     }
     if (periods.isEmpty()) throw new ServiceException("该规则暂无可补齐的已到期付费账期");
     var payload = new JSONObject(true);
@@ -186,14 +133,13 @@ public class ChargeRuleChangeService {
     var result = new JSONObject();
     result.put("previewId", id);
     result.put("periods", periods);
-    result.put("amountPerPeriod", rule.get(subscription ? "amount" : "money"));
+    result.put("amountPerPeriod", rule.get("money"));
     result.put("notice", "仅补齐待确认账期，不直接增加支出；规则保持暂停。每批最多100期，剩余可再次预览补齐。");
     return result;
   }
 
   private int backfill(JSONObject input, String owner) {
     String type = input.getString("sourceType");
-    boolean sub = "subscription".equals(type);
     Long id = input.getLong("sourceId");
     var rule = input.getJSONObject("rule");
     for (String period : input.getJSONArray("periods").toJavaList(String.class))
@@ -203,22 +149,14 @@ public class ChargeRuleChangeService {
           id,
           rule.getString("name"),
           java.time.LocalDate.parse(period),
-          rule.getBigDecimal(sub ? "amount" : "money"),
-          rule.getLong(sub ? "accountId" : "account"),
-          sub
-              ? rule.getLong("classificationId")
-              : ("2".equals(rule.getString("typeDifference"))
-                  ? Long.valueOf(0L)
-                  : rule.getLong("type")),
-          sub ? null : rule.getLong("otherAccount"),
+          rule.getBigDecimal("money"),
+          rule.getLong("account"),
+          "2".equals(rule.getString("typeDifference"))
+              ? Long.valueOf(0L)
+              : rule.getLong("type"),
+          rule.getLong("otherAccount"),
           "manual_confirm",
-          sub ? "sub_" + id + "_" + period : null);
-    if (sub) {
-      var update = new PxSubscription();
-      update.setId(id);
-      update.setNextPaymentDate(java.sql.Date.valueOf(input.getString("nextDate")));
-      return subscriptions.updatePxSubscription(update);
-    }
+          null);
     return recurring.advanceRunDate(
         id,
         java.sql.Date.valueOf(input.getString("nextDate")),
@@ -250,11 +188,8 @@ public class ChargeRuleChangeService {
     int count =
         "charge_backfill".equals(preview.get("kind"))
             ? backfill(input, owner)
-            : "subscription".equals(type)
-                ? subscriptionService.updatePxSubscription(
-                    input.getJSONObject("rule").toJavaObject(PxSubscription.class))
-                : recurringService.update(
-                    input.getJSONObject("rule").toJavaObject(PxBookkeepingRecurring.class));
+            : recurringService.update(
+                input.getJSONObject("rule").toJavaObject(PxBookkeepingRecurring.class));
     if (count != 1) throw new ServiceException("REVISION_CONFLICT");
     var result = new JSONObject();
     result.put("sourceId", sourceId);

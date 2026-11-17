@@ -30,7 +30,6 @@ const LIGHT_PAGES = [
     ['/m/shopping-list', '购物清单'],
     ['/m/recipe', '菜谱库'],
     ['/m/meal-plan', '膳食计划'],
-    ['/m/subscription', '订阅管理'],
     ['/m/ai/chat', 'AI助手'],
     ['/m/reminder', '提醒中心'],
     ['/m/calendar', '家庭日历'],

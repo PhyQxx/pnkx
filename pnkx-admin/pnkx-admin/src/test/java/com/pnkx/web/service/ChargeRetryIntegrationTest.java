@@ -33,20 +33,20 @@ class ChargeRetryIntegrationTest {
 
   @Test
   void retryDelayDoublesAndCapsThenSuccessClearsIt() {
-    assertTrue(service.ready("1", "subscription", 1L, due));
+    assertTrue(service.ready("1", "recurring", 1L, due));
     for (int i = 0; i < 9; i++) {
-      service.failed("1", "subscription", 1L, due);
+      service.failed("1", "recurring", 1L, due);
       int seconds =
           db.queryForObject(
               "select timestampdiff(second,now(),next_retry_at) from px_charge_execution",
               Integer.class);
       int expected = Math.min(3600, 60 * (1 << i));
       assertTrue(seconds <= expected && seconds >= expected - 2, "delay=" + seconds);
-      assertFalse(service.ready("1", "subscription", 1L, due));
+      assertFalse(service.ready("1", "recurring", 1L, due));
     }
-    assertTrue(service.ready("2", "subscription", 1L, due));
-    service.resolved("1", "subscription", 1L, due);
-    assertTrue(service.ready("1", "subscription", 1L, due));
+    assertTrue(service.ready("2", "recurring", 1L, due));
+    service.resolved("1", "recurring", 1L, due);
+    assertTrue(service.ready("1", "recurring", 1L, due));
     assertNull(
         db.queryForObject(
             "select next_retry_at from px_charge_execution", java.sql.Timestamp.class));

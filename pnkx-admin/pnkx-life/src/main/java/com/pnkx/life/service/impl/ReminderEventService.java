@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ReminderEventService {
-  @jakarta.annotation.Resource private PxSubscriptionMapper subscriptions;
-  @jakarta.annotation.Resource private PxChargeInstanceMapper charges;
   private final PxReminderEventMapper events;
   private final PxToDoMapper todos;
   private final PxLifeReminderMapper reminders;
@@ -53,8 +51,7 @@ public class ReminderEventService {
       var r = reminders.selectPxLifeReminderById(e.getReminderId());
       if (r != null
           && Boolean.TRUE.equals(r.getEnabled())
-          && ("subscription".equals(e.getSourceType())
-              || Objects.equals(r.getRemindTime(), e.getOccurrenceAt()))) {
+          && Objects.equals(r.getRemindTime(), e.getOccurrenceAt())) {
         // 延后的是这一次事件，不把提醒错误地投递为下一账期。
         r.setRemindTime(e.getOccurrenceAt());
         result.add(r);
@@ -126,18 +123,6 @@ public class ReminderEventService {
       var t = todos.selectPxToDoById(e.getSourceId());
       if (t == null) state = "cancelled";
       else if (Boolean.TRUE.equals(t.getStatus())) state = "resolved";
-    }
-    if ("subscription".equals(e.getSourceType())) {
-      var sub = subscriptions.selectPxSubscriptionById(e.getSourceId());
-      if (sub == null || "1".equals(sub.getDelFlag()) || !Boolean.TRUE.equals(sub.getEnabled()))
-        state = "cancelled";
-      else if (e.getSourceDueDate() != null) {
-        var charge =
-            charges.period(e.getUserId(), "subscription", e.getSourceId(), e.getSourceDueDate());
-        if (charge != null
-            && Set.of("posted", "skipped", "cancelled", "voided").contains(charge.getStatus()))
-          state = "resolved";
-      }
     }
     if (state != null) {
       e.setState(state);

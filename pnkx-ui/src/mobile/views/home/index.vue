@@ -414,7 +414,6 @@ export default {
                 commemoration: '纪念日',
                 menstruation: '经期',
                 bookkeeping: '记账',
-                subscription: '订阅扣费',
                 meal_plan: '餐饮计划',
                 shopping_plan: '购物计划',
                 reading_goal: '阅读目标',

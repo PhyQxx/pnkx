@@ -1,7 +1,7 @@
 <template>
     <div class="bk-page">
         <!-- 本月账单汇总头部 -->
-        <div class="bk-header m-page">
+        <div class="bk-header m-section">
             <div class="bk-header__card">
                 <div class="bk-header__month">
                     <span class="bk-header__month-num">{{ currentMonth }}</span>
@@ -29,7 +29,7 @@
         </div>
 
         <!-- 功能入口宫格 -->
-        <div class="m-page bk-menu">
+        <div class="m-section bk-menu">
             <div class="bk-menu__card" v-for="menu in menuList" :key="menu.id" @click="go(menu.path)">
                 <div class="bk-menu__icon" :class="'bk-menu__icon--' + menu.theme">
                     <van-icon :name="menu.icon" />
@@ -43,7 +43,7 @@
         </div>
 
         <!-- 最近记录 -->
-        <div class="m-page bk-recent" v-if="recentRecords.length > 0">
+        <div class="m-section bk-recent" v-if="recentRecords.length > 0">
             <div class="bk-recent__header">
                 <span class="m-section-title bk-recent__title">最近记录</span>
                 <span class="bk-recent__link" @click="go('/m/bookkeeping/record')">查看全部</span>

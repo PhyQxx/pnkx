@@ -54,10 +54,9 @@ public class ChargeExecutionService {
   public List<Map<String, Object>> list(String owner) {
     return db.queryForList(
         "select"
-            + " e.id,e.source_type,e.source_id,e.due_date,e.error_code,e.attempt_count,e.update_time,e.next_retry_at,coalesce(s.name,r.name,'来源已移除')"
-            + " source_name from px_charge_execution e left join px_subscription s on"
-            + " e.source_type='subscription' and s.id=e.source_id and s.create_by=e.owner_id left"
-            + " join px_bookkeeping_recurring r on e.source_type='recurring' and r.id=e.source_id"
+            + " e.id,e.source_type,e.source_id,e.due_date,e.error_code,e.attempt_count,e.update_time,e.next_retry_at,coalesce(r.name,'来源已移除')"
+            + " source_name from px_charge_execution e left join px_bookkeeping_recurring r on"
+            + " e.source_type='recurring' and r.id=e.source_id"
             + " and r.create_by=e.owner_id where e.owner_id=? and e.status='failed' order by"
             + " e.update_time desc limit 30",
         owner);

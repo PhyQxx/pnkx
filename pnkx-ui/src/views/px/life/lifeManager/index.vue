@@ -17,9 +17,6 @@
             <el-tab-pane label="购物清单" name="shopping">
                 <shopping-center v-if="activeTab === 'shopping'" />
             </el-tab-pane>
-            <el-tab-pane label="订阅管理" name="subscription">
-                <subscription-center v-if="activeTab === 'subscription'" />
-            </el-tab-pane>
             <el-tab-pane label="生活报告" name="report">
                 <life-report v-if="activeTab === 'report'" />
             </el-tab-pane>
@@ -32,12 +29,11 @@ import FamilyCalendar from '@/views/px/life/calendar/index.vue'
 import RecipeCenter from '@/views/px/life/recipe/index.vue'
 import MealCenter from '@/views/px/life/meal/index.vue'
 import ShoppingCenter from '@/views/px/life/shopping/index.vue'
-import SubscriptionCenter from '@/views/px/life/subscription/index.vue'
 import LifeReport from '@/views/px/life/report/index.vue'
 
 export default {
     name: 'LifeManager',
-    components: { FamilyCalendar, RecipeCenter, MealCenter, ShoppingCenter, SubscriptionCenter, LifeReport },
+    components: { FamilyCalendar, RecipeCenter, MealCenter, ShoppingCenter, LifeReport },
     data() {
         return {
             activeTab: 'calendar'

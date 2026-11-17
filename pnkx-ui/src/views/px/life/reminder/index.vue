@@ -148,8 +148,7 @@ export default {
             sourceTypeMap: {
                 todo: '待办',
                 commemoration: '纪念日',
-                menstruation: '经期',
-                subscription: '订阅'
+                menstruation: '经期'
             },
             channelMap: {
                 websocket: '站内',
@@ -226,7 +225,7 @@ export default {
             return `${Math.round(minutes / 1440)}天`
         },
         sourceTagType(type) {
-            const map = {todo: 'warning', commemoration: 'success', menstruation: 'danger', subscription: 'info'}
+            const map = {todo: 'warning', commemoration: 'success', menstruation: 'danger'}
             return map[type] || ''
         },
         notifStatusType(status) {

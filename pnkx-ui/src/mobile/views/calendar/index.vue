@@ -9,7 +9,7 @@
 
         <van-pull-refresh v-model="refreshing" class="m-pull" @refresh="onRefresh">
             <!-- 今日驾驶舱 -->
-            <div class="m-page cockpit">
+            <div class="m-section cockpit">
                 <div class="m-card cockpit-card" @click="goToday">
                     <div class="cockpit-card__row">
                         <div class="cockpit-card__item">
@@ -39,7 +39,7 @@
             </div>
 
             <!-- 星期 -->
-            <div class="m-page cal-body">
+            <div class="m-section cal-body">
                 <div class="cal-weekdays">
                     <span v-for="(w, i) in weekdays" :key="i" class="cal-weekday">{{ w }}</span>
                 </div>
@@ -79,7 +79,7 @@
             </div>
 
             <!-- 选中日的事件 -->
-            <div class="m-page">
+            <div class="m-section">
                 <div class="m-card cal-events">
                     <div class="cal-events__title">
                         <span class="m-section-title cal-events__heading">{{ selectedDateLabel }}</span>
@@ -130,7 +130,6 @@ const COLOR_MAP = {
     commemoration: 'var(--pnkx-warning)',
     menstruation: 'var(--pnkx-danger)',
     bookkeeping: 'var(--pnkx-info)',
-    subscription: 'var(--pnkx-warning)',
     meal_plan: 'var(--pnkx-success)',
     shopping_plan: 'var(--pnkx-primary)',
     reading_goal: 'var(--pnkx-info)',
@@ -257,7 +256,7 @@ export default {
         typeLabel(type) {
             const map = {
                 todo: '待办', commemoration: '纪念日', menstruation: '经期', bookkeeping: '记账',
-                subscription: '订阅', meal_plan: '餐饮计划', shopping_plan: '购物计划',
+                meal_plan: '餐饮计划', shopping_plan: '购物计划',
                 reading_goal: '阅读目标', life_report: '生活报告'
             }
             return map[type] || type

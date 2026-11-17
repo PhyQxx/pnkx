@@ -27,8 +27,11 @@ test.describe('记账域', () => {
         await expect(page.locator('.bk-header__summary-value').first()).toHaveText(EXPENSE_TOTAL, { timeout: 8000 })
         // 6 个功能入口
         await expect(page.locator('.bk-menu__card')).toHaveCount(6)
-        // 最近记录最多 5 条
+        // 宫格必须落在首屏视口内（回归防护：section 误用整屏 .m-page 会把宫格推到折叠线下，页面看似"没数据"）
+        await expect(page.locator('.bk-menu__card').first()).toBeInViewport({ ratio: 0.5 })
+        // 最近记录最多 5 条，且首条也在首屏内
         await expect(page.locator('.bk-recent__list .record-card').first()).toBeVisible()
+        await expect(page.locator('.bk-recent__list .record-card').first()).toBeInViewport()
         const recentCount = await page.locator('.bk-recent__list > *').count()
         expect(recentCount).toBeLessThanOrEqual(5)
         // FAB → 记一笔

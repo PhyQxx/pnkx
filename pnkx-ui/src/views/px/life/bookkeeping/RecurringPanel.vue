@@ -10,7 +10,7 @@
       <el-table-column label="名称" prop="name" min-width="120" />
       <el-table-column label="周期" width="140">
         <template #default="{row}">
-          {{ row.frequency === 'month' ? `每月 ${row.dayNumber} 号` : `每周${weekName(row.dayNumber)}` }}
+          {{ cycleText(row) }}
         </template>
       </el-table-column>
       <el-table-column label="分类" prop="typeName" min-width="110">
@@ -47,7 +47,7 @@
           <el-input v-model="form.name" placeholder="如：房租、视频会员" maxlength="30" />
         </el-form-item>
         <el-form-item label="收支类型">
-          <el-radio-group v-model="form.typeDifference" :disabled="Boolean(form.id)">
+          <el-radio-group v-model="form.typeDifference" :disabled="Boolean(form.id)" @change="onTypeDifferenceChange">
             <el-radio label="1">支出</el-radio>
             <el-radio label="0">收入</el-radio>
             <el-radio label="2">转账</el-radio>
@@ -56,6 +56,7 @@
         <el-form-item label="频率">
           <el-select v-model="form.frequency" style="width: 110px" @change="onFrequencyChange">
             <el-option label="每月" value="month" />
+            <el-option label="每3个月" value="quarter" />
             <el-option label="每周" value="week" />
           </el-select>
           <el-select v-model="form.dayNumber" style="width: 130px; margin-left: 8px">
@@ -63,18 +64,28 @@
           </el-select>
         </el-form-item>
         <el-form-item v-if="form.typeDifference !== '2'" label="分类">
-          <el-select v-model="form.type" placeholder="选择分类" style="width: 100%" filterable>
-            <el-option v-for="c in classificationOptions" :key="c.id" :label="c.typeName" :value="c.id" />
-          </el-select>
+          <el-cascader
+            v-model="form.type"
+            :options="classificationOptions"
+            :props="{ value: 'id', label: 'typeName', emitPath: false }"
+            placeholder="选择分类"
+            style="width: 100%"
+            filterable
+            clearable
+          />
         </el-form-item>
         <el-form-item label="账户">
           <el-select v-model="form.account" placeholder="选择账户" style="width: 100%">
-            <el-option v-for="a in accountOptions" :key="a.id" :label="a.accountName" :value="a.id" />
+            <el-option-group v-for="g in accountOptions" :key="g.accountType" :label="g.accountName">
+              <el-option v-for="a in g.children" :key="a.id" :label="a.accountName" :value="a.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item v-if="form.typeDifference === '2'" label="转入账户">
           <el-select v-model="form.otherAccount" placeholder="选择转入账户" style="width: 100%">
-            <el-option v-for="a in accountOptions" :key="a.id" :label="a.accountName" :value="a.id" />
+            <el-option-group v-for="g in accountOptions" :key="g.accountType" :label="g.accountName">
+              <el-option v-for="a in g.children" :key="a.id" :label="a.accountName" :value="a.id" />
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item label="金额（元）">
@@ -126,15 +137,31 @@ export default {
     },
     created() {
         this.load()
-        getClassificationList({}).then(res => {
-            this.classificationOptions = (res.data || []).filter(c => c.typeLevel === '1')
-        })
-        getAccountList().then(res => {
-            this.accountOptions = res.data || []
-        })
+        this.loadClassifications()
+        this.loadAccounts()
     },
     methods: {
         async backfill(row){await backfillRule('recurring',row.id);this.load()},
+        loadClassifications() {
+            // 分类接口按收支类型过滤；转账无消费分类，与支出共用一套
+            const typeDifference = this.form.typeDifference === '2' ? '1' : this.form.typeDifference
+            getClassificationList({typeDifference}).then(res => {
+                // 接口返回树形（一级分类含 children），并附带无ID的“最近使用”虚拟分组；过滤空分组后交由级联选择
+                this.classificationOptions = (res.data || []).filter(item => item.id != null && (item.children || []).length > 0)
+            })
+        },
+        loadAccounts() {
+            // 账户接口按账户类型字典分组返回（组节点无ID），组内 children 才是真实账户
+            getAccountList().then(res => {
+                this.accountOptions = res.data || []
+            })
+        },
+        onTypeDifferenceChange() {
+            if (this.form.typeDifference !== '2') {
+                this.form.type = null
+            }
+            this.loadClassifications()
+        },
         emptyForm() {
             return {
                 postingMode: 'manual_confirm', id: null, name: '', frequency: 'month', dayNumber: 1,
@@ -153,11 +180,17 @@ export default {
         weekName(day) {
             return ['一', '二', '三', '四', '五', '六', '日'][day - 1] || ''
         },
+        cycleText(row) {
+            if (row.frequency === 'week') return `每周${this.weekName(row.dayNumber)}`
+            if (row.frequency === 'quarter') return `每3个月 ${row.dayNumber} 号`
+            return `每月 ${row.dayNumber} 号`
+        },
         onFrequencyChange() {
             this.form.dayNumber = 1
         },
         openAdd() {
             this.form = this.emptyForm()
+            this.loadClassifications()
             this.visible = true
         },
         openEdit(row) {
@@ -173,6 +206,7 @@ export default {
                 amount: Number(row.money),
                 remark: row.remark
             }
+            this.loadClassifications()
             this.visible = true
         },
         handleSave() {

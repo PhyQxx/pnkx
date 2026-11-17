@@ -63,12 +63,12 @@ public interface IPxOfflineSyncService {
 
     public List<PxBookkeepingAccount> selectAccountIncremental(String userId, String since, int offset, int limit);
 
-    // ──────────── 扩展模块（购物/菜谱/订阅/经期/预算/周期记账/读书等，只读） ────────────
+    // ──────────── 扩展模块（购物/菜谱/经期/预算/周期记账/读书等，只读） ────────────
 
     /**
      * 扩展模块增量查询（模块名→表名的白名单映射在实现层维护，防止动态表名注入）
      *
-     * @param module 模块名（shoppingList/shoppingItem/recipe/mealPlan/subscription/menstruation/budget/recurring/book）
+     * @param module 模块名（shoppingList/shoppingItem/recipe/mealPlan/menstruation/budget/recurring/book）
      * @param userId 用户ID
      * @param since  增量游标时间
      * @param offset 偏移

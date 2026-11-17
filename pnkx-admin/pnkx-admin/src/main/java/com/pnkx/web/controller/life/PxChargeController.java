@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.*;
 public class PxChargeController {
   @jakarta.annotation.Resource private com.pnkx.life.service.impl.ChargeExecutionService executions;
 
-  @jakarta.annotation.Resource
-  private com.pnkx.life.service.impl.SubscriptionChargeService subscriptions;
-
   @jakarta.annotation.Resource private com.pnkx.life.service.impl.RecurringChargeService recurring;
   private final ChargeInstanceService service;
 
@@ -40,10 +37,7 @@ public class PxChargeController {
     Long source = ((Number) failure.get("source_id")).longValue();
     Object result;
     try {
-      result =
-          "subscription".equals(failure.get("source_type"))
-              ? subscriptions.charge(source, owner, due, today, true)
-              : recurring.charge(source, owner, due, today, true);
+      result = recurring.charge(source, owner, due, today, true);
     } catch (RuntimeException error) {
       executions.failed(owner, String.valueOf(failure.get("source_type")), source, due);
       throw error;

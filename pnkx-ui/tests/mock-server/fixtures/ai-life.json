@@ -75,7 +75,6 @@
         "data": [
             { "id": 1, "title": "待办提醒", "content": "取快递：今天 18:00 前到菜鸟驿站", "status": "0", "sourceType": "notice", "sourceId": null, "sendTime": "2026-11-15 09:00:00" },
             { "id": 2, "title": "纪念日提醒", "content": "恋爱纪念日还有 5 天，记得准备礼物", "status": "1", "sourceType": "commemoration", "sourceId": 801, "sendTime": "2026-11-14 20:00:00" },
-            { "id": 3, "title": "订阅扣费提醒", "content": "视频会员将于明天扣费 25 元", "status": "2", "sourceType": "subscription", "sourceId": 901, "sendTime": "2026-11-13 10:00:00" },
             { "id": 4, "title": "经期提醒", "content": "经期第 5 天，注意保暖", "status": "0", "sourceType": "menstruation", "sourceId": null, "sendTime": "2026-11-12 08:00:00" }
         ]
     },
@@ -229,7 +228,7 @@
             {
                 "id": "r1",
                 "name": "纪念日提前准备",
-                "triggerType": "subscription_due",
+                "triggerType": "schedule",
                 "triggerConfig": "{}",
                 "conditionJson": "{\"daysBefore\":7}",
                 "actionType": "create_todo",
@@ -250,9 +249,8 @@
     },
     "GET /automation/templates": {
         "data": [
-            { "code": "anniv_prep", "name": "纪念日提前准备", "description": "到期前 7 天自动创建准备待办", "triggerType": "subscription_due", "actionType": "create_todo" },
-            { "code": "meal_shop", "name": "膳食转购物", "description": "每周日汇总膳食生成购物清单", "triggerType": "schedule", "actionType": "meal_to_shopping" },
-            { "code": "sub_charge", "name": "订阅自动扣费", "description": "订阅到期自动记一笔支出", "triggerType": "subscription_due", "actionType": "subscription_charge" }
+            { "code": "anniv_prep", "name": "纪念日提前准备", "description": "到期前 7 天自动创建准备待办", "triggerType": "schedule", "actionType": "create_todo" },
+            { "code": "meal_shop", "name": "膳食转购物", "description": "每周日汇总膳食生成购物清单", "triggerType": "schedule", "actionType": "meal_to_shopping" }
         ]
     },
     "POST /automation/rules": { "msg": "ok" },
@@ -301,17 +299,6 @@
     },
     "POST /mealPlan/shopping-commit": { "data": { "previewId": "pv-meal-1", "warnings": [] } },
 
-    "GET /subscription/list": {
-        "rows": [
-            { "id": 901, "name": "视频会员", "amount": 25, "cycle": "monthly", "cycleInterval": 1, "nextPaymentDate": "2026-11-20", "enabled": true, "lifecycle": "active", "logo": "🎬", "postingMode": "manual_confirm" },
-            { "id": 902, "name": "云存储", "amount": 96, "cycle": "yearly", "cycleInterval": 1, "nextPaymentDate": "2027-01-05", "enabled": true, "lifecycle": "active", "logo": "☁️", "postingMode": "manual_confirm" }
-        ],
-        "total": 2
-    },
-    "GET /subscription/forecast": { "data": { "monthlyTotal": 33, "yearlyTotal": 121, "count": 2 } },
-    "POST /subscription": { "msg": "ok" },
-    "PUT /subscription": { "msg": "ok" },
-    "DELETE /subscription/:id": { "msg": "ok" },
     "POST /charge/rules/change-preview": {
         "data": {
             "previewId": "pv-sub-1",

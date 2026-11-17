@@ -36,6 +36,11 @@ public class PxBookkeepingRecurringService {
     private static final String FREQ_MONTH = "month";
 
     /**
+     * 频率：每3个月
+     */
+    private static final String FREQ_QUARTER = "quarter";
+
+    /**
      * 频率：每周
      */
     private static final String FREQ_WEEK = "week";
@@ -165,6 +170,10 @@ public class PxBookkeepingRecurringService {
             }
             return base.plusDays(diff);
         }
+        if (FREQ_QUARTER.equals(rule.getFrequency())) {
+            // quarter：3个月后的 dayNumber（dayNumber 已限 1-28，无月末溢出问题）
+            return base.plusMonths(3).withDayOfMonth(rule.getDayNumber());
+        }
         // month：下一个月的 dayNumber（dayNumber 已限 1-28，无月末溢出问题）
         LocalDate nextMonth = base.plusMonths(1).withDayOfMonth(rule.getDayNumber());
         return nextMonth;
@@ -178,15 +187,17 @@ public class PxBookkeepingRecurringService {
         if (StringUtils.isEmpty(rule.getName())) {
             throw new ServiceException("规则名称不能为空");
         }
-        if (!FREQ_MONTH.equals(rule.getFrequency()) && !FREQ_WEEK.equals(rule.getFrequency())) {
-            throw new ServiceException("频率仅支持 month（每月）/ week（每周）");
+        if (!FREQ_MONTH.equals(rule.getFrequency()) && !FREQ_QUARTER.equals(rule.getFrequency()) && !FREQ_WEEK.equals(rule.getFrequency())) {
+            throw new ServiceException("频率仅支持 month（每月）/ quarter（每3个月）/ week（每周）");
         }
         int day = rule.getDayNumber() == null ? 0 : rule.getDayNumber();
-        if (FREQ_MONTH.equals(rule.getFrequency()) && (day < 1 || day > 28)) {
-            throw new ServiceException("每月执行日仅支持 1-28 号");
-        }
-        if (FREQ_WEEK.equals(rule.getFrequency()) && (day < 1 || day > 7)) {
-            throw new ServiceException("每周执行日为 1-7（周一=1）");
+        if (FREQ_WEEK.equals(rule.getFrequency())) {
+            if (day < 1 || day > 7) {
+                throw new ServiceException("每周执行日为 1-7（周一=1）");
+            }
+        } else if (day < 1 || day > 28) {
+            // month / quarter 均按月内日期执行
+            throw new ServiceException("执行日仅支持 1-28 号");
         }
         if (rule.getMoney() == null || rule.getMoney().signum() <= 0) {
             throw new ServiceException("金额必须大于 0");

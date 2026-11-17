@@ -3,7 +3,7 @@
         <!-- 头部 -->
         <div class="lm-header">
             <span class="lm-header__title">生活管家</span>
-            <span class="lm-header__desc">日历 · 菜谱 · 膳食 · 购物 · 订阅 · 报告</span>
+            <span class="lm-header__desc">日历 · 菜谱 · 膳食 · 购物 · 报告</span>
         </div>
 
         <!-- 六宫格入口（与 PC 端生活管家一致） -->
@@ -38,7 +38,6 @@ export default {
                 { key: 'recipe', path: '/m/recipe', icon: 'c-huacai', title: '菜谱库', desc: '管理你的拿手菜' },
                 { key: 'meal', path: '/m/meal-plan', icon: 'qingdan', title: '膳食计划', desc: '规划每周三餐' },
                 { key: 'shopping', path: '/m/shopping-list', icon: 'shopping', title: '购物清单', desc: '买菜购物不遗漏' },
-                { key: 'subscription', path: '/m/subscription', icon: 'finance', title: '订阅管理', desc: '周期出账 + 支出预测' },
                 { key: 'report', path: '/m/report', icon: 'chart', title: '生活报告', desc: 'AI 周报 / 月报' }
             ]
         }
@@ -137,10 +136,6 @@ export default {
 
         &--shopping {
             background: var(--pnkx-warning-soft);
-        }
-
-        &--subscription {
-            background: var(--pnkx-danger-soft);
         }
 
         &--report {

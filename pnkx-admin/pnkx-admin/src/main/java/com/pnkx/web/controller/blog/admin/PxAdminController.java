@@ -62,8 +62,6 @@ public class PxAdminController extends BaseController {
     @Resource
     private IPxCommemorationDayService commemorationDayService;
     @Resource
-    private IPxSubscriptionService subscriptionService;
-    @Resource
     private IPxRecipeService recipeService;
     @Resource
     private IPxShoppingListService shoppingListService;
@@ -125,13 +123,6 @@ public class PxAdminController extends BaseController {
             commemorationDayService.selectPxCommemorationDayList(query).stream().limit(10).forEach(item ->
                     addSearchResult(results, "commemoration", item.getId(), item.getName(), "纪念日",
                             "/commemorationDay", "/pages_life/commemorationDay/add?id=" + item.getId(), item, startDate, endDate, tag));
-        }
-        if (matchesType(type, "subscription")) {
-            PxSubscription query = new PxSubscription();
-            query.setName(keyword);
-            subscriptionService.selectPxSubscriptionList(query).stream().limit(10).forEach(item ->
-                    addSearchResult(results, "subscription", item.getId(), item.getName(), "订阅 ¥" + item.getAmount(),
-                            "/mytool/subscription", "/pages_life/subscription/index?highlight=" + item.getId(), item, startDate, endDate, tag));
         }
         if (matchesType(type, "recipe")) {
             PxRecipe query = new PxRecipe();
@@ -278,9 +269,6 @@ public class PxAdminController extends BaseController {
         PxCommemorationDay dayQuery = new PxCommemorationDay();
         dayQuery.setName(searchCode);
         result.add(searchGroup("纪念日", commemorationDayService.selectPxCommemorationDayList(dayQuery)));
-        PxSubscription subscriptionQuery = new PxSubscription();
-        subscriptionQuery.setName(searchCode);
-        result.add(searchGroup("订阅", subscriptionService.selectPxSubscriptionList(subscriptionQuery)));
         PxRecipe recipeQuery = new PxRecipe();
         recipeQuery.setTitle(searchCode);
         result.add(searchGroup("菜谱", recipeService.selectPxRecipeList(recipeQuery)));

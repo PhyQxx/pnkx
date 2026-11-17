@@ -28,6 +28,13 @@ class PxBookkeepingRecurringServiceTest {
         return rule;
     }
 
+    private PxBookkeepingRecurring quarterRule(int day) {
+        PxBookkeepingRecurring rule = new PxBookkeepingRecurring();
+        rule.setFrequency("quarter");
+        rule.setDayNumber(day);
+        return rule;
+    }
+
     @Test
     void 每月规则_常规推进() {
         // 9月23日 → 10月15日
@@ -75,5 +82,28 @@ class PxBookkeepingRecurringServiceTest {
         // 周日(2026-09-27) → 下周日(2026-10-04)
         assertEquals(LocalDate.of(2026, 10, 4),
                 PxBookkeepingRecurringService.computeNextRunDate(weekRule(7), LocalDate.of(2026, 9, 27)));
+    }
+
+    @Test
+    void 每3个月规则_常规推进() {
+        // 9月23日 → 12月15日（推进整整3个月）
+        assertEquals(LocalDate.of(2026, 12, 15),
+                PxBookkeepingRecurringService.computeNextRunDate(quarterRule(15), LocalDate.of(2026, 9, 23)));
+    }
+
+    @Test
+    void 每3个月规则_跨年() {
+        // 11月20日 → 次年2月20日
+        assertEquals(LocalDate.of(2027, 2, 20),
+                PxBookkeepingRecurringService.computeNextRunDate(quarterRule(20), LocalDate.of(2026, 11, 20)));
+    }
+
+    @Test
+    void 每3个月规则_连续推进覆盖季度间隔() {
+        // 模拟连续两期：3月10日 → 6月10日 → 9月10日，验证间隔为3个月而非1个月
+        LocalDate first = PxBookkeepingRecurringService.computeNextRunDate(quarterRule(10), LocalDate.of(2026, 3, 10));
+        assertEquals(LocalDate.of(2026, 6, 10), first);
+        assertEquals(LocalDate.of(2026, 9, 10),
+                PxBookkeepingRecurringService.computeNextRunDate(quarterRule(10), first));
     }
 }

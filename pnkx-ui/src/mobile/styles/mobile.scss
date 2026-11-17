@@ -78,9 +78,16 @@
 // ============ 页面通用 ============
 
 // 页面容器：统一 12px 内容边距（DESIGN.md §8 移动档）
+// 注意：min-height 是整屏占位，只能挂在页面最外层容器上，
+// 多 section 页面（如记账主页）的每个区块请用 .m-section。
 .m-page {
     padding: 12px;
     min-height: calc(100vh - 46px);
+}
+
+// 页面内区块：只有 12px 内容边距，不撑整屏高度
+.m-section {
+    padding: 12px;
 }
 
 // 卡片

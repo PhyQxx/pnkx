@@ -57,7 +57,7 @@ public class CalendarQueryHandler implements IntentHandler {
     private String typeLabel(String type) {
         return switch(type==null?"":type) {
             case "todo" -> "待办"; case "commemoration" -> "纪念日"; case "menstruation" -> "生理期";
-            case "bookkeeping" -> "记账"; case "meal", "meal_plan" -> "餐饮"; case "subscription" -> "订阅"; default -> "日历事项";
+            case "bookkeeping" -> "记账"; case "meal", "meal_plan" -> "餐饮"; default -> "日历事项";
         };
     }
 }

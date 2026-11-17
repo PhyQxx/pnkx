@@ -33,6 +33,7 @@ const valueLabels = {
     auto_record: '自动记账',
     monthly: '每月',
     month: '每月',
+    quarter: '每3个月',
     weekly: '每周',
     week: '每周',
     yearly: '每年',

@@ -250,8 +250,6 @@ export default {
                     return {path: '/commemorationDay', query: {id: sourceId}}
                 case 'menstruation':
                     return {path: '/mytool/menstruationAssistant'}
-                case 'subscription':
-                    return {path: '/mytool/subscription'}
                 default:
                     return null
             }
@@ -319,11 +317,11 @@ export default {
             }
         },
         sourceLabel(type) {
-            const map = {todo: '待办', commemoration: '纪念日', menstruation: '经期', subscription: '订阅'}
+            const map = {todo: '待办', commemoration: '纪念日', menstruation: '经期'}
             return map[type] || '提醒'
         },
         sourceTagType(type) {
-            const map = {todo: 'warning', commemoration: 'success', menstruation: 'danger', subscription: 'info'}
+            const map = {todo: 'warning', commemoration: 'success', menstruation: 'danger'}
             return map[type] || ''
         },
         channelLabel(ch) {

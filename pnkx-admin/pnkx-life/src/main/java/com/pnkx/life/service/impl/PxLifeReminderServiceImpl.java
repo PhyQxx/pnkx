@@ -7,7 +7,6 @@ import com.pnkx.life.domain.po.PxLifeNotification;
 import com.pnkx.life.domain.po.PxLifeReminder;
 import com.pnkx.life.domain.po.PxCommemorationDay;
 import com.pnkx.life.domain.po.PxToDo;
-import com.pnkx.life.domain.po.PxSubscription;
 import com.pnkx.life.domain.po.PxBookkeepingAccount;
 import com.pnkx.life.domain.po.PxMenstruationRecord;
 import com.pnkx.life.domain.po.PxReminderPreference;
@@ -15,7 +14,6 @@ import com.pnkx.life.mapper.PxCommemorationDayMapper;
 import com.pnkx.life.mapper.PxLifeNotificationMapper;
 import com.pnkx.life.mapper.PxLifeReminderMapper;
 import com.pnkx.life.mapper.PxToDoMapper;
-import com.pnkx.life.mapper.PxSubscriptionMapper;
 import com.pnkx.life.mapper.PxBookkeepingAccountMapper;
 import com.pnkx.life.mapper.PxMenstruationRecordMapper;
 import com.pnkx.life.mapper.PxReminderPreferenceMapper;
@@ -63,8 +61,6 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
     private PxToDoMapper pxToDoMapper;
     @Resource
     private PxCommemorationDayMapper pxCommemorationDayMapper;
-    @Resource
-    private PxSubscriptionMapper pxSubscriptionMapper;
     @Resource
     private PxBookkeepingAccountMapper pxBookkeepingAccountMapper;
     @Resource
@@ -140,7 +136,7 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
 
     private void validateReminderSource(PxLifeReminder reminder) {
         if (reminder == null || reminder.getSourceId() == null || reminder.getRemindTime() == null
-                || !Arrays.asList("todo", "commemoration", "menstruation", "subscription").contains(reminder.getSourceType())) {
+                || !Arrays.asList("todo", "commemoration", "menstruation").contains(reminder.getSourceType())) {
             throw new ServiceException("提醒来源或提醒时间无效");
         }
         boolean owned;
@@ -153,10 +149,6 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
             case "commemoration":
                 PxCommemorationDay day = pxCommemorationDayMapper.selectPxCommemorationDayById(reminder.getSourceId());
                 owned = day != null && Objects.equals(reminder.getUserId(), day.getCreateBy());
-                break;
-            case "subscription":
-                PxSubscription subscription = pxSubscriptionMapper.selectPxSubscriptionById(reminder.getSourceId());
-                owned = subscription != null && Objects.equals(reminder.getUserId(), subscription.getCreateBy());
                 break;
             case "menstruation":
                 PxMenstruationRecord record = pxMenstruationRecordMapper.selectPxMenstruationRecordById(reminder.getSourceId());
@@ -434,20 +426,6 @@ public class PxLifeReminderServiceImpl implements IPxLifeReminderService {
                 return new ReminderContent(
                         "💗 叮咚！经期提醒",
                         "根据周期预测，经期即将到来，请注意");
-            }
-            case "subscription": {
-                PxSubscription subscription = pxSubscriptionMapper.selectPxSubscriptionById(reminder.getSourceId());
-                if (subscription == null) return null;
-                var occurrence=reminder.getRemindTime().toInstant().plusSeconds(60L*(reminder.getLeadMinutes()==null?0:reminder.getLeadMinutes())).atZone(SubscriptionSchedule.ZONE).toLocalDate();
-                String date = subscription.getNextPaymentDate() == null
-                        ? "近期"
-                        : occurrence.toString();
-                PxBookkeepingAccount account = subscription.getAccountId() == null
-                        ? null : pxBookkeepingAccountMapper.selectPxBookkeepingAccountById(subscription.getAccountId());
-                String accountText = account == null ? "" : "，账户 " + account.getAccountName();
-                return new ReminderContent(
-                        "💳 订阅续费提醒：" + subscription.getName(),
-                        "订阅「" + subscription.getName() + "」的 " + date + " 账期提醒，请在周期账单中核对实际扣费状态。");
             }
             default:
                 return new ReminderContent("叮咚！生活提醒", "您有一条新的提醒");

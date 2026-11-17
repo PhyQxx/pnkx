@@ -136,7 +136,6 @@ export default {
                 { label: '书籍', value: 'book' },
                 { label: '菜谱', value: 'recipe' },
                 { label: '纪念日', value: 'commemoration' },
-                { label: '订阅', value: 'subscription' },
                 { label: '购物', value: 'shopping' }
             ],
             showRangePicker: false
@@ -254,7 +253,7 @@ export default {
         icon(type) {
             const icons = {
                 article: '📝', todo: '✅', bookkeeping: '💰', diary: '📔', note: '📌',
-                book: '📚', recipe: '🍳', commemoration: '🎉', subscription: '💳', shopping: '🛒'
+                book: '📚', recipe: '🍳', commemoration: '🎉', shopping: '🛒'
             }
             return icons[type] || '🔎'
         }
