@@ -90,9 +90,9 @@
         <uni-icons :type="searchMode ? 'search' : 'folder'" size="14" color="#9BA8B7" />
         <text>{{ searchMode ? ('「' + keyword + '」的搜索结果') : '全部壁纸' }}</text>
       </view>
-      <!-- 批量下载入口：仅在二级（folderPath 非空）且有壁纸时显示，再次点击退出选择 -->
+      <!-- 批量下载入口：仅在二级（viewLevel>0）且有壁纸时显示；绑 viewLevel 与列表数据同步出现 -->
       <view
-        v-if="folderPath.length > 0 && wallpaperList.length > 0"
+        v-if="viewLevel > 0 && wallpaperList.length > 0"
         class="batch-btn"
         :class="{ active: selectMode }"
         @click="toggleSelectMode"
@@ -136,13 +136,13 @@
               <view v-else class="cover-placeholder">
                 <text class="cover-placeholder-text">{{ folder.name }}</text>
               </view>
-              <!-- 整夹下载按钮：仅二级文件夹卡片显示（一级不显示） -->
+              <!-- 整夹下载按钮：仅二级文件夹卡片显示（一级不显示）；绑 viewLevel 而非 folderPath，避免点击瞬间旧列表闪现图标 -->
               <view
-                v-if="folderPath.length > 0 && folder.wallpaperCount"
+                v-if="viewLevel > 0 && folder.wallpaperCount"
                 class="folder-download"
                 @click.stop="downloadFolder(folder)"
               >
-                <uni-icons type="download" size="14" color="#fff" />
+                <text class="folder-download-text">下载</text>
               </view>
             </view>
             <view class="folder-card-body">
@@ -332,6 +332,10 @@ export default {
       folderHasMore: true,
       // 加载状态
       loading: false,
+      // 加载代次：换文件夹会发起新一轮加载，旧一轮的响应按代次丢弃
+      loadSeq: 0,
+      // 列表层级展示口径：数据真正换血后才更新，避免点击瞬间在旧列表上闪现二级图标
+      viewLevel: 0,
       isRefreshing: false,
       hasMore: true,
       initialized: false,
@@ -526,25 +530,35 @@ export default {
      * 加载数据（两个Tab的第一页并行加载，保证Tab角标和切换后内容即时可用）
      */
     async loadData() {
-      if (this.loading) return
+      // 不再因 loading 直接 return：点击换夹总是发起新一轮加载，
+      // 旧一轮响应按代次丢弃，保证快速连续切换也能落在最后一次点击的文件夹
+      const seq = ++this.loadSeq
       this.loading = true
       this.folderLoadStatus = 'loading'
       this.wpLoadStatus = 'loading'
       try {
         await Promise.all([
-          this.loadFolders(),
-          this.loadWallpapers()
+          this.loadFolders(false, seq),
+          this.loadWallpapers(seq)
         ])
+        if (seq !== this.loadSeq) return
+        // 数据换血成功后再切换层级外观，点击瞬间的旧列表不显示新层级的下载图标
+        this.viewLevel = this.folderPath.length
         // 空层级自动落位：当前Tab无内容且另一Tab有内容时自动切换
         this.fixTabFallback()
       } catch (error) {
         console.error('加载数据失败:', error)
+        // 过期轮次的失败不打扰用户（由最新一轮负责提示）
+        if (seq !== this.loadSeq) return
         uni.showToast({ title: '加载失败', icon: 'none' })
       } finally {
-        this.loading = false
-        this.isRefreshing = false
-        this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
-        this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
+        // 仅最新一轮负责收尾，避免旧轮次把新轮次的状态提前置回
+        if (seq === this.loadSeq) {
+          this.loading = false
+          this.isRefreshing = false
+          this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
+          this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
+        }
       }
     },
 
@@ -552,7 +566,9 @@ export default {
      * 加载文件夹列表（分页，只加载当前层级）
      * 搜索态：忽略层级，按 name 全局模糊匹配所有启用文件夹
      */
-    async loadFolders(append = false) {
+    async loadFolders(append = false, seq = null) {
+      // 请求发出前快照代次；响应回来时若已切换文件夹/发起新一轮加载则丢弃
+      if (seq === null) seq = this.loadSeq
       const params = this.searchMode
         ? { name: this.keyword }
         : { parentId: this.currentFolderId }
@@ -560,6 +576,7 @@ export default {
       params.pageNum = this.folderPageNum
       params.pageSize = this.queryParams.pageSize
       const res = await listWallpaperFolder(params)
+      if (seq !== this.loadSeq) return
       const rows = res.rows || []
       this.folderList = append ? [...this.folderList, ...rows] : rows
       this.folderTotal = Number(res.total) || 0
@@ -571,7 +588,9 @@ export default {
      * 加载壁纸列表
      * 搜索态：跨文件夹全局按 name 模糊匹配（不传 folder，避免后端按空串过滤）
      */
-    async loadWallpapers() {
+    async loadWallpapers(seq = null) {
+      // 请求发出前快照代次；响应回来时若已切换文件夹/发起新一轮加载则丢弃
+      if (seq === null) seq = this.loadSeq
       const params = {
         pageNum: this.queryParams.pageNum,
         pageSize: this.queryParams.pageSize,
@@ -584,6 +603,7 @@ export default {
         params.folder = this.currentFolderId || ''
       }
       const res = await listWallpaper(params)
+      if (seq !== this.loadSeq) return
       const rows = res.rows || []
       this.wpTotal = Number(res.total) || 0
       if (this.queryParams.pageNum === 1) {
@@ -763,6 +783,7 @@ export default {
       const isFolderTab = this.activeTab === 'folder'
       if (isFolderTab ? !this.folderHasMore : !this.hasMore) return
       this.loading = true
+      const seq = this.loadSeq
       if (isFolderTab) {
         this.folderLoadStatus = 'loading'
       } else {
@@ -778,16 +799,21 @@ export default {
         }
       } catch (error) {
         console.error('加载更多失败:', error)
-        // 失败回滚页码，下次触底重试同一页
-        if (isFolderTab) {
-          this.folderPageNum--
-        } else {
-          this.queryParams.pageNum--
+        // 失败回滚页码，下次触底重试同一页（已被新加载接管时无需回滚）
+        if (seq === this.loadSeq) {
+          if (isFolderTab) {
+            this.folderPageNum--
+          } else {
+            this.queryParams.pageNum--
+          }
         }
       } finally {
-        this.loading = false
-        this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
-        this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
+        // 期间发起了新的整页加载（如切换文件夹）时，状态交给新轮次收尾
+        if (seq === this.loadSeq) {
+          this.loading = false
+          this.folderLoadStatus = this.folderHasMore ? 'more' : 'noMore'
+          this.wpLoadStatus = this.hasMore ? 'more' : 'noMore'
+        }
       }
     },
 
@@ -825,7 +851,9 @@ export default {
       }
       const folder = typeof target === 'object' ? target : this.folderList.find(f => f.id === target)
       this.currentFolderId = folderId
-      if (folder) {
+      // 同层不重复压栈：快速连点同一卡片不会产生两层同名面包屑；重点同一夹仍会刷新（失败可重试）
+      const lastFolder = this.folderPath[this.folderPath.length - 1]
+      if (folder && (!lastFolder || lastFolder.id !== folder.id)) {
         this.folderPath.push({ id: folder.id, name: folder.name })
       }
       this.refreshData()
@@ -1559,18 +1587,24 @@ export default {
             height: 100%;
           }
 
-          // 整夹下载按钮（右上角浮层）
+          // 整夹下载按钮（右上角浮层，文字「下载」胶囊）
           .folder-download {
             position: absolute;
             top: 12rpx;
             right: 12rpx;
-            width: 48rpx;
-            height: 48rpx;
+            padding: 8rpx 16rpx;
             border-radius: $radius-full;
             background-color: rgba(0, 0, 0, 0.45);
             display: flex;
             align-items: center;
             justify-content: center;
+
+            .folder-download-text {
+              font-size: 22rpx;
+              line-height: 1;
+              font-weight: 500;
+              color: #fff;
+            }
 
             &:active {
               background-color: rgba(0, 0, 0, 0.6);

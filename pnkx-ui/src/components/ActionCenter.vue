@@ -243,17 +243,28 @@ const entryLabels = {
     diary: '日记',
     report: '月末复盘'
 };
-const menuTitles = {
-    todo: ['待办事项', '待办'],
-    meal: ['餐饮计划', '生活管家'],
-    shopping: ['购物清单', '生活管家'],
-    bookkeeping: ['生活账本', '记账'],
-    diary: ['日记'],
-    report: ['生活报告', 'AI生活报告', '生活管家']
+// 快捷入口定位标识：viewPath（后端菜单组件标识，不受菜单改名/换路径影响）优先，
+// 其次按菜单名匹配。按优先级逐个查找——桌面端注册了移动端 /m 同名路由，
+// 且动态菜单路由注册在后，直接 find(title) 会误中移动路由再被守卫弹到 404。
+const menuKeys = {
+    todo: ['px/life/todo', '待办事项'],
+    meal: ['px/life/meal/index', 'px/life/lifeManager/index', '餐饮计划', '生活管家'],
+    shopping: ['px/life/shopping/index', 'px/life/lifeManager/index', '购物清单', '生活管家'],
+    bookkeeping: ['px/life/bookkeeping/record', '生活账本'],
+    diary: ['px/life/diary', '日记'],
+    report: ['px/life/report/index', 'px/life/lifeManager/index', '生活报告', '生活管家']
 };
 function go(key) {
-    const route = router.getRoutes().find((r) => menuTitles[key]?.includes(r.meta?.title));
-    if (route) router.push(route.path);
+    const routes = router.getRoutes();
+    for (const id of menuKeys[key] || []) {
+        const route = routes.find(
+            (r) => r.meta?.viewPath === id || (!r.path.startsWith('/m/') && r.meta?.title === id)
+        );
+        if (route) {
+            router.push(route.path);
+            return;
+        }
+    }
 }
 function changeSpace() {
     mutations.contextChanged();

@@ -30,10 +30,16 @@ router.beforeEach((to, from, next) => {
             }
         } else if (resolveMode() !== MODE_MOBILE && isMobilePath(to.path)) {
             // 桌面视口访问移动路由 → 跳对应 PC 页
-            const target = resolvePcTarget(to.path)
-            next({ path: target, replace: true })
-            NProgress.done()
-            return
+            // 冷启动时动态菜单路由尚未注册，等 GenerateRoutes 后重入再分流，
+            // 否则 resolve 判空会把合法目标误判为 404 兜底
+            if (store.getters.roles.length) {
+                const target = resolvePcTarget(to.path)
+                // 映射表可能落后于后端菜单调整：目标未注册时回落首页，避免落进 404
+                const safeTarget = router.resolve(target).matched.length ? target : '/index'
+                next({ path: safeTarget, replace: true })
+                NProgress.done()
+                return
+            }
         }
     }
     if (getToken()) {

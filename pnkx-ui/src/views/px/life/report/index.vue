@@ -108,8 +108,9 @@
         <el-card shadow="never" class="panel-card">
             <template #header><span>历史报告</span></template>
             <el-empty v-if="historyList.length === 0" description="暂无历史报告" />
-            <el-collapse v-else>
-                <el-collapse-item v-for="item in historyList" :key="item.id" :title="`${item.createTime} · ${periodName(item.period)}`">
+            <el-collapse v-else v-model="historyActiveNames">
+                <el-collapse-item v-for="item in historyList" :key="item.id" :name="String(item.id)"
+                                  :title="`${item.createTime} · ${periodName(item.period)}`">
                     <XMarkDown :content="item.content" />
                 </el-collapse-item>
             </el-collapse>
@@ -124,6 +125,10 @@ import {getLifeReportData, getLifeReportHistory} from '@/api/px/life/report'
 export default {
  components:{ReportActions},
     name: 'LifeReport',
+    props: {
+        // 从家庭日历跳转时携带的历史报告 id，用于自动展开对应报告
+        focusHistoryId: {type: [String, Number], default: null}
+    },
     data() {
         return {
             period: 'week',
@@ -132,7 +137,8 @@ export default {
             aiReportText: '',
             dataLoading: false,
             streaming: false,
-            historyList: []
+            historyList: [],
+            historyActiveNames: []
         }
     },
     computed: {
@@ -151,6 +157,11 @@ export default {
             const undone = this.reportData.todo?.undone || 0
             const total = done + undone
             return total === 0 ? '0%' : Math.round(done / total * 100) + '%'
+        }
+    },
+    watch: {
+        focusHistoryId() {
+            this.applyFocusHistory()
         }
     },
     created() {
@@ -183,7 +194,19 @@ export default {
         loadHistory() {
             getLifeReportHistory().then(res => {
                 this.historyList = res.data || []
+                this.applyFocusHistory()
             })
+        },
+        applyFocusHistory() {
+            if (!this.focusHistoryId) return
+            const hit = this.historyList.find(item => String(item.id) === String(this.focusHistoryId))
+            if (hit) {
+                this.historyActiveNames = [String(hit.id)]
+                this.$nextTick(() => {
+                    const el = document.querySelector('.report-page .el-collapse-item.is-active')
+                    if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'})
+                })
+            }
         },
         async generateAiReport() {
             this.streaming = true

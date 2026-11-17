@@ -18,7 +18,7 @@
                 <shopping-center v-if="activeTab === 'shopping'" />
             </el-tab-pane>
             <el-tab-pane label="生活报告" name="report">
-                <life-report v-if="activeTab === 'report'" />
+                <life-report v-if="activeTab === 'report'" :focus-history-id="focusHistoryId" />
             </el-tab-pane>
         </el-tabs>
     </div>
@@ -36,7 +36,25 @@ export default {
     components: { FamilyCalendar, RecipeCenter, MealCenter, ShoppingCenter, LifeReport },
     data() {
         return {
-            activeTab: 'calendar'
+            activeTab: 'calendar',
+            focusHistoryId: null
+        }
+    },
+    watch: {
+        // 同页面内仅 query 变化时（如从家庭日历点击生活报告事件）也要切换 Tab
+        '$route.query.tab': {
+            immediate: true,
+            handler(tab) {
+                if (tab && ['calendar', 'recipe', 'meal', 'shopping', 'report'].includes(tab)) {
+                    this.activeTab = tab
+                }
+            }
+        },
+        '$route.query.historyId': {
+            immediate: true,
+            handler(id) {
+                this.focusHistoryId = id || null
+            }
         }
     }
 }

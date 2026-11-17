@@ -193,6 +193,11 @@ export default {
             })
         },
         handleEventClick(ev) {
+            // 生活报告在生活管家的报告 Tab 内，携带 tab + historyId 直达对应报告
+            if (ev.sourceType === 'life_report') {
+                this.$router.push({path: '/mytool/lifeManager', query: {tab: 'report', historyId: ev.sourceId}}).catch(() => {})
+                return
+            }
             if (ev.route) {
                 // 记账详情按项目约定读取 recordId 参数
                 const queryKey = ev.sourceType === 'bookkeeping' ? 'recordId' : 'id'

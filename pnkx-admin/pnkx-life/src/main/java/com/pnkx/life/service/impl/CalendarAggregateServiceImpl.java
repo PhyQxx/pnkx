@@ -339,7 +339,8 @@ public class CalendarAggregateServiceImpl implements CalendarAggregateService {
             vo.setDate(java.sql.Date.valueOf(date));
             vo.setColor("life_report");
             vo.setStatus("completed");
-            vo.setRoute("/mytool/lifeReport");
+            // 桌面端报告页是生活管家内的 Tab，需携带 tab 参数定位（见 lifeManager/index.vue）
+            vo.setRoute("/mytool/lifeManager");
             vo.setAppRoute("/pages_life/report/index?historyId=" + report.getId());
             events.add(vo);
         }
