@@ -154,6 +154,7 @@
 import draggable from 'vuedraggable'
 import {Search, Refresh, Plus, Clock, User, ArrowUp, ArrowDown} from '@element-plus/icons-vue'
 import {kanbanDo, sortDo, addDo, updateDo, subtaskDo} from '@/api/px/life/todo'
+import {listUser} from '@/api/system/user'
 
 export default {
     name: 'TodoKanban',
@@ -170,6 +171,8 @@ export default {
                 {key: 'done', title: '已完成', color: '#67c23a', status: 2}
             ],
             kanbanData: {todo: [], doing: [], done: []},
+            // 用户列表（用于把执行者 userId 映射为昵称）
+            userList: [],
             // 已完成真实总数（后端截断后 done 列表可能只有 50 条）
             doneTotal: 0,
             // 已完成列默认折叠（数据量大时避免撑长页面）
@@ -195,6 +198,7 @@ export default {
     },
     mounted() {
         this.loadKanban()
+        this.loadUserList()
     },
     methods: {
         /**
@@ -347,11 +351,21 @@ export default {
             if (!t) return false
             return new Date(t) < new Date()
         },
+        /**
+         * 获取人员列表（与列表页 index.vue 一致）
+         */
+        loadUserList() {
+            listUser().then(res => {
+                this.userList = res.rows || []
+            })
+        },
         formatPerformer(p) {
-            // performer 存的是 userId 列表，简化展示
+            // performer 存的是 userId 列表，映射为昵称展示
             if (!p) return ''
             const ids = String(p).split(',')
-            return ids.length > 1 ? `${ids.length}人` : `用户${ids[0]}`
+            if (ids.length > 1) return `${ids.length}人`
+            const user = this.userList.find(u => String(u.userId) === ids[0])
+            return (user && user.nickName) || `用户${ids[0]}`
         }
     }
 }

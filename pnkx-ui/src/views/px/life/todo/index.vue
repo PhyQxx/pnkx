@@ -342,7 +342,7 @@ export default {
         this.toDoDetails.finishTime = this.getNow()
         this.toDoDetails.finishBy = this.$store.state.user.id
       }
-      if (Array.isArray(this.toDoDetails.label) && this.toDoDetails.label.length > 0) {
+      if (Array.isArray(this.toDoDetails.label)) {
         this.toDoDetails.label = this.toDoDetails.label.join(',')
       }
       updateDo(this.toDoDetails).then(res => {
