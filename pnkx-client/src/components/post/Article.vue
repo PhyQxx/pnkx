@@ -55,6 +55,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  gallery.value?.destroy()
   if (clipboard) {
     clipboard.destroy()
   }

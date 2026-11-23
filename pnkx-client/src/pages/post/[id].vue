@@ -17,14 +17,8 @@ const id = +route.params.id
 const {article, like} = useApi()
 
 // 获取文章详情
-const articleInfo = ref<Article>()
-const pending = ref<boolean>(true);
-loadingBar.start();
-article.getArticle(id).then().then(res => {
-  articleInfo.value = res.data.value?.data
-  pending.value = res.pending.value
-  loadingBar.finish();
-})
+const { data: articleData, pending, error: articleError, refresh: retryArticle } = await article.getArticle(id)
+const articleInfo = computed(() => articleData.value?.data)
 watch(
     articleInfo,
     (value) => {
@@ -69,7 +63,8 @@ const handleLike = useThrottleFn(async (id: number) => {
     return
   }
   loadingBar.start();
-  like.likeArticle(id).then(res => {
+  try {
+    const res = await like.likeArticle(id)
     if (res.data.value?.data) {
       if (userStore.userInfo?.articleLikeSet?.includes(id)) {
         likeNumber.value--
@@ -82,8 +77,9 @@ const handleLike = useThrottleFn(async (id: number) => {
       }
       userStore.setLikeArticle(id)
     }
-    loadingBar.finish();
-  })
+  } finally {
+    loadingBar.finish()
+  }
 }, 500)
 
 /**
@@ -191,6 +187,10 @@ onMounted(() => {
     </div>
     <div v-else-if="pending">
       <BaseLoading/>
+    </div>
+    <div v-else-if="articleError" class="flex h-screen flex-col items-center justify-center gap-4">
+      <p>文章加载失败，请稍后重试</p>
+      <button type="button" class="underline" @click="retryArticle()">重新加载</button>
     </div>
     <div v-else>
       <div class="flex h-screen items-center justify-center text-lg">暂无数据</div>

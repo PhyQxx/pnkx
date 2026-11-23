@@ -39,7 +39,7 @@ function renderMarkdown(text: string): string {
   try {
     return $markdownIt(text)
   } catch {
-    return text
+    return text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!))
   }
 }
 

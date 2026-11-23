@@ -24,9 +24,10 @@ useHead({
     }
   ]
 })
-watch(route, () => {
-  if (_hmt) {
-    _hmt.push(['_trackPageview', route.path])
+watch(() => route.path, (path) => {
+  if (process.client) {
+    const analytics = (window as Window & { _hmt?: { push: (event: string[]) => void } })._hmt
+    analytics?.push(['_trackPageview', path])
   }
 })
 

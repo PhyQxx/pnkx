@@ -8,6 +8,11 @@ export const useUserStore = defineStore(
 
     // 获取用户信息
     async function getUserInfo() {
+      const { getToken } = useToken()
+      if (!getToken()) {
+        userInfo.value = null
+        return
+      }
       const { user } = useApi()
       const { data } = await user.getUserInfo()
       if (data.value?.user) {

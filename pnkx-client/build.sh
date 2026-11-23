@@ -1,27 +1,44 @@
 #!/bin/bash
-# 设置变量
+set -euo pipefail
+cd "$(dirname "$0")"
 CONTAINER_NAME="pnkx-client"
+BACKUP_NAME="${CONTAINER_NAME}-backup"
 
-echo "开始构建镜像"
+# Build before touching the running service.
 docker build -t pnkx-client .
-echo "构建镜像结束"
-# 检查容器是否正在运行
-if docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
-    echo "$CONTAINER_NAME 容器正在运行，现在停止并删除..."
-    # 停止并删除容器
-    docker stop $CONTAINER_NAME
-    docker rm $CONTAINER_NAME
-    echo "$CONTAINER_NAME 容器已停止并删除。"
+if docker container inspect "$BACKUP_NAME" >/dev/null 2>&1; then
+  echo "备份容器已存在，请先检查上次部署状态：$BACKUP_NAME" >&2
+  exit 1
 fi
-
-# 检查是否有停止的容器（未运行），如果有则删除
-if docker ps -a --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
-    echo "$CONTAINER_NAME 容器存在但未运行，现在删除..."
-    # 删除停止的容器
-    docker rm $CONTAINER_NAME
-    echo "$CONTAINER_NAME 容器已删除。"
+had_previous=false
+was_running=false
+if docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+  was_running=$(docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")
+  docker rename "$CONTAINER_NAME" "$BACKUP_NAME"
+  had_previous=true
 fi
-# 启动新的容器
-echo "启动新的 $CONTAINER_NAME 容器..."
-docker run --name pnkx-client -d -p 3001:3000 pnkx-client
-echo "运行容器成功"
+rollback() {
+  trap - ERR
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  if [ "$had_previous" = true ]; then
+    docker rename "$BACKUP_NAME" "$CONTAINER_NAME"
+    if [ "$was_running" = true ]; then docker start "$CONTAINER_NAME"; fi
+  fi
+  echo "部署失败，已尝试恢复原容器" >&2
+  exit 1
+}
+trap rollback ERR
+if [ "$was_running" = true ]; then docker stop "$BACKUP_NAME"; fi
+docker run --name "$CONTAINER_NAME" --restart unless-stopped -d -p 3001:3000 pnkx-client
+healthy=false
+for attempt in {1..30}; do
+  if docker exec "$CONTAINER_NAME" node -e 'fetch("http://127.0.0.1:3000/api/health", {signal: AbortSignal.timeout(2000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))' >/dev/null 2>&1; then
+    healthy=true
+    break
+  fi
+  sleep 2
+done
+[ "$healthy" = true ] || rollback
+trap - ERR
+if [ "$had_previous" = true ]; then docker rm "$BACKUP_NAME"; fi
+echo "部署成功，健康检查通过"

@@ -24,6 +24,7 @@ function sanitize(html: string): string {
 export default defineNuxtPlugin(() => {
   return {
     provide: {
+      sanitizeHtml: sanitize,
       markdownIt: (data: string) => {
         const md = new MarkdownIt({
           html: true,

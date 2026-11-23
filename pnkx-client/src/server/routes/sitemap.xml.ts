@@ -10,7 +10,7 @@ interface ArticleBrief {
 }
 
 export default defineEventHandler(async (event) => {
-  const staticPages = ['', '/archives', '/album', '/link', '/message', '/videos', '/share']
+  const staticPages = ['', '/archives', '/album', '/link', '/message', '/video', '/share']
   let urls = staticPages.map(p => `  <url><loc>${SITE_URL}${p}</loc><changefreq>daily</changefreq></url>`).join('\n')
   try {
     const res = await $fetch<any>(`${apiBase()}/client/article/listNotContent`, {

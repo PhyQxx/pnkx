@@ -73,7 +73,7 @@ const gotoArticle = (id: number) => {
           <!-- eslint-disable -->
           <h2
             class="mb-2 inline-block cursor-pointer text-base font-semibold underline"
-            v-html="item.title"
+            v-html="$sanitizeHtml(item.title)"
             @click="gotoArticle(item.id)"
           ></h2>
           <p

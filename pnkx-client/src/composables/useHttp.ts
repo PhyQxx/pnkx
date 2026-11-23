@@ -1,5 +1,5 @@
 import { createDiscreteApi } from 'naive-ui'
-import type { FetchResponse, SearchParameters } from 'ofetch'
+import type { SearchParameters } from 'ofetch'
 import type { UseFetchOptions } from '#app'
 import type { Result } from '@/types'
 import { API_BASE_URL } from '@/utils/apiBase'
@@ -8,28 +8,12 @@ type UrlType = string | Request | Ref<string | Request> | (() => string | Reques
 
 export type HttpOption<T> = UseFetchOptions<Result<T>>
 
-const { message } = createDiscreteApi(['message'])
-
-function handleError<T>(response: FetchResponse<Result<T>> & FetchResponse<ResponseType>) {
-  const err = (text: string) => {
-    message.error(response?._data?.msg ?? text)
-  }
-  if (!response._data) {
-    err('请求超时，服务器无响应！')
-    return
-  }
-
-  const handleMap: { [key: number]: () => void } = {
-    404: () => err('服务器资源不存在'),
-    500: () => err('服务器内部错误'),
-    403: () => err('没有权限访问该资源'),
-    401: () => {
-      err('登录状态已过期，需要重新登录')
-      // TODO 跳转实际登录页
-      // navigateTo('/')
-    }
-  }
-  handleMap[response.status] ? handleMap[response.status]() : err('未知错误！')
+// UI notifications are created only in the browser, never during SSR.
+let message: ReturnType<typeof createDiscreteApi>['message'] | undefined
+function notifyError(text: string) {
+  if (!process.client) return
+  message ??= createDiscreteApi(['message']).message
+  message.error(text)
 }
 // get方法传递数组形式参数
 function paramsSerializer(params?: SearchParameters) {
@@ -45,44 +29,47 @@ function paramsSerializer(params?: SearchParameters) {
   return query
 }
 function fetch<T>(url: UrlType, option: any) {
+  const nuxtApp = useNuxtApp()
+  const userStore = useUserStore()
+  const { tokenPrefix, getToken, removeToken } = useToken()
+  const route = useRoute()
+  async function fail(status: number, text?: string) {
+    if (status === 401) {
+      const hadToken = !!getToken()
+      removeToken()
+      userStore.userInfo = null
+      if (hadToken) {
+        notifyError('登录状态已过期，需要重新登录')
+        if (route.path !== '/login') {
+          await nuxtApp.runWithContext(() => navigateTo('/login'))
+        }
+      }
+    } else {
+      notifyError(text || (({ 403: '没有权限访问该资源', 404: '服务器资源不存在', 500: '服务器内部错误' } as Record<number, string>)[status] ?? '请求失败，请稍后重试'))
+    }
+    throw new Error(text || `请求失败（${status}）`)
+  }
   return useFetch<Result<T>>(url, {
-    // 请求拦截器
+    retry: 0,
+    timeout: 15000,
     onRequest({ options }) {
-      // get方法传递数组形式参数
       options.params = paramsSerializer(options.params)
-      // 统一后端地址（含兜底，见 utils/apiBase.ts）
       options.baseURL = API_BASE_URL
       options.headers = new Headers(options.headers)
-      const { tokenPrefix, getToken } = useToken()
-      // 携带token
-      if (getToken()) {
-        options.headers.set('Authorization', tokenPrefix + getToken())
+      if (getToken()) options.headers.set('Authorization', tokenPrefix + getToken())
+    },
+    async onResponse({ response }) {
+      // HTTP failures belong exclusively to onResponseError.
+      if (!response.ok) return
+      if (response._data?.code !== 200) {
+        await fail(response._data?.code ?? 500, response._data?.msg)
       }
     },
-    // 响应拦截
-    onResponse({ response }) {
-      if (response.status !== 200) {
-        message.error(response.statusText)
-        handleError<T>(response)
-        return Promise.reject(response._data)
-      }
-      // 在这里判断错误
-      if (response._data.code === 401) {
-        // token过期
-        navigateTo('/login')
-        return Promise.reject(response._data)
-      } else if (response._data.code !== 200) {
-        message.error(response._data.msg)
-        handleError<T>(response)
-        return Promise.reject(response._data)
-      }
-      // 成功返回
-      return response._data
+    async onResponseError({ response }) {
+      await fail(response.status, response._data?.msg)
     },
-    // 错误处理
-    onResponseError({ response }) {
-      handleError<T>(response)
-      return Promise.reject(response?._data ?? null)
+    onRequestError() {
+      notifyError('网络连接失败或请求超时，请稍后重试')
     },
     // 合并参数
     ...option
