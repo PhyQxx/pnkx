@@ -2,7 +2,7 @@
     <div class="ai-chat" :style="{ '--chat-kb': keyboardInset + 'px' }">
         <!-- 顶部工具行：新建会话 / 操作计划入口（标题栏是共享的，入口放页面内） -->
         <div class="chat-toolbar">
-            <button type="button" class="chat-toolbar__btn" :disabled="isLoading" @click="newConversation">
+            <button type="button" class="chat-toolbar__btn" :disabled="isLoading || voiceBusy" @click="newConversation">
                 <van-icon name="plus" />
                 <span>新建会话</span>
             </button>
@@ -90,6 +90,7 @@
 
         <!-- 输入区域（固定在页面底部） -->
         <div class="chat-footer">
+            <voice-input :disabled="isLoading" @busy="voiceBusy = $event" @result="appendVoiceText" />
             <div class="chat-footer__wrapper">
                 <input
                     v-model="inputText"
@@ -102,7 +103,8 @@
                 <button
                     type="button"
                     class="send-btn"
-                    :class="{ 'is-disabled': !inputText.trim() || isLoading }"
+                    :disabled="!inputText.trim() || isLoading || voiceBusy"
+                    :class="{ 'is-disabled': !inputText.trim() || isLoading || voiceBusy }"
                     @click="handleSend"
                 >
                     ➤
@@ -126,14 +128,16 @@ import {
     appendChatMessage,
     clearChatSession
 } from '@/api/px/ai/chat'
+import VoiceInput from './components/VoiceInput.vue'
 import ChatPlanCard from './components/ChatPlanCard.vue'
 import OperationPlans from './components/OperationPlans.vue'
 
 export default {
     name: 'MAiChat',
-    components: { ChatPlanCard, OperationPlans },
+    components: { ChatPlanCard, OperationPlans, VoiceInput },
     data() {
         return {
+            voiceBusy: false,
             showOperationPlans: false,
             sessionId: newSessionId(),
             inputText: '',
@@ -177,6 +181,9 @@ export default {
         }
     },
     methods: {
+        appendVoiceText(text) {
+            this.inputText = this.inputText ? `${this.inputText} ${text}` : text
+        },
         handleViewportChange() {
             const vv = window.visualViewport
             if (!vv) return
@@ -218,7 +225,7 @@ export default {
         },
 
         newConversation() {
-            if (this.isLoading) return
+            if (this.isLoading || this.voiceBusy) return
             const previous = this.sessionId
             this.sessionId = newSessionId()
             this.messages = []
@@ -229,6 +236,7 @@ export default {
         },
 
         handleQuickPrompt(text) {
+            if (this.isLoading || this.voiceBusy) return
             this.inputText = text
             this.handleSend()
         },
@@ -265,14 +273,14 @@ export default {
 
         async handleSend() {
             const text = this.inputText.trim()
-            if (!text || this.isLoading) return
+            if (!text || this.isLoading || this.voiceBusy) return
 
             this.inputText = ''
             await this.sendText(text)
         },
 
         async handlePendingAction(action) {
-            if (this.isLoading) return
+            if (this.isLoading || this.voiceBusy) return
             this.clearPendingActions()
             this.isLoading = true
             this.isThinking = true
@@ -674,6 +682,7 @@ export default {
 
 .chat-input {
     flex: 1;
+    min-width: 0;
     height: 38px;
     background: var(--pnkx-surface-muted);
     border: none;

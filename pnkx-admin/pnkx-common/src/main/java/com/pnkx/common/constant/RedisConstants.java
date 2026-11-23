@@ -34,4 +34,24 @@ public class RedisConstants {
      * AI 待确认操作
      */
     public static final String AI_PENDING_ACTION = "AI_PENDING_ACTION:";
+
+    /**
+     * 工具箱：AI 创意文案 IP 限流
+     */
+    public static final String TOOL_CREATIVE_RATE_LIMIT = "TOOL_CREATIVE_RATE_LIMIT:";
+
+    /**
+     * 工具箱：汇率缓存（后缀拼接基准币种，backup 后缀为 7 天兜底副本）
+     */
+    public static final String TOOL_EXRATE_CACHE = "TOOL_EXRATE_CACHE:";
+
+    /**
+     * 工具箱：汇率查询 IP 限流
+     */
+    public static final String TOOL_EXRATE_RATE_LIMIT = "TOOL_EXRATE_RATE_LIMIT:";
+
+    /**
+     * 工具箱：使用打点 IP 限流
+     */
+    public static final String TOOL_USE_LOG_RATE_LIMIT = "TOOL_USE_LOG_RATE_LIMIT:";
 }

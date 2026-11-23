@@ -112,6 +112,10 @@ public class AiClient {
                     .filter(response -> response.getContent() != null && response.getContent().stream()
                             .anyMatch(block -> !(block instanceof TextBlock text)
                                     || (text.getText() != null && !text.getText().isEmpty())))
+                    // 超时基于「可见文本输出」计算：部分厂商（如 SenseNova）默认输出 reasoning
+                    // 思考分块（非标准字段，解析后为空文本），会不断重置原始流的空闲超时导致
+                    // 永不完成且无法触发 fallback；在过滤后计时，60s 内无可见输出即降级下一模型
+                    .timeout(Duration.ofSeconds(idleTimeoutSeconds))
                     .switchIfEmpty(Flux.error(new IllegalStateException("模型未返回内容")))
                     .doOnNext(response -> emitted.set(true))
                     .onErrorResume(error -> {

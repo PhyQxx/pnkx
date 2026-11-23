@@ -9,7 +9,11 @@ const WHITE_LIST_SET = new Set([
   '/pages/launch', '/pages/login', '/pages/register', '/pages/common/webview/index',
   '/pages/tools',
   '/pages_wallpaper/wallpaper/index', '/pages_wallpaper/wallpaper/detail',
-  '/pages_wallpaper/wallpaper/mine'
+  '/pages_wallpaper/wallpaper/mine',
+  // 工具箱（pages_tools 分包，免登录工具）
+  '/pages_tools/mortgage/index', '/pages_tools/tax/index', '/pages_tools/what-to-eat/index',
+  '/pages_tools/ai-pickup/index', '/pages_tools/exchange/index', '/pages_tools/date-calc/index',
+  '/pages_tools/img-compress/index'
 ])
 
 // 白名单路径缓存（避免重复解析 URL）

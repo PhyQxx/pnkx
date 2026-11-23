@@ -118,6 +118,9 @@ public class SecurityConfig {
                         // 壁纸下载需登录：识别下载人并记录。放在 /client/** 放行规则之前，优先命中
                         .requestMatchers("/client/wallpaper/download/**").authenticated()
                         .requestMatchers("/client/**").permitAll()
+                        // 工具箱免登录接口：AI 创意文案 / 汇率查询（permitAll 保证登录用户也可用，IP 限流在控制器内实现）
+                        // 打点 record 匿名可写（防刷限流），stats 保持需登录
+                        .requestMatchers("/ai/creative/**", "/tools/exrate/**", "/tools/use/log/record").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/*.html"

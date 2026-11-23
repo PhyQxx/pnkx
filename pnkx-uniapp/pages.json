@@ -267,6 +267,39 @@
       ]
     },
     {
+      "root": "pages_tools",
+      "pages": [
+        {
+          "path": "mortgage/index",
+          "style": { "navigationBarTitleText": "房贷计算器" }
+        },
+        {
+          "path": "tax/index",
+          "style": { "navigationBarTitleText": "个税计算器" }
+        },
+        {
+          "path": "what-to-eat/index",
+          "style": { "navigationBarTitleText": "今天吃什么" }
+        },
+        {
+          "path": "ai-pickup/index",
+          "style": { "navigationBarTitleText": "AI 情话生成" }
+        },
+        {
+          "path": "exchange/index",
+          "style": { "navigationBarTitleText": "汇率换算" }
+        },
+        {
+          "path": "date-calc/index",
+          "style": { "navigationBarTitleText": "日期计算器" }
+        },
+        {
+          "path": "img-compress/index",
+          "style": { "navigationBarTitleText": "图片压缩" }
+        }
+      ]
+    },
+    {
       "root": "staticPackage",
       "pages": [
         {

@@ -6,7 +6,9 @@
 -->
 <template>
     <div class="app-container">
-        <el-card shadow="never" class="config-card">
+        <el-tabs v-model="activeTab" class="config-tabs">
+            <el-tab-pane label="工具配置" name="config">
+                <el-card shadow="never" class="config-card">
             <template #header>
                 <div class="card-header">
                     <div class="card-header-left">
@@ -95,6 +97,11 @@
                 </div>
             </div>
         </el-card>
+            </el-tab-pane>
+            <el-tab-pane label="使用统计" name="stats" lazy>
+                <ToolUseStats/>
+            </el-tab-pane>
+        </el-tabs>
 
         <!-- 添加/编辑对话框 -->
         <el-dialog :title="dialog.title" v-model="dialog.open" width="560px" append-to-body>
@@ -148,14 +155,16 @@
 <script>
 import { listConfig, updateConfig, addConfig } from '@/api/system/config'
 import { Tools, ArrowRight } from '@element-plus/icons-vue'
+import ToolUseStats from '@/views/px/life/toolUseLog/stats.vue'
 
 const CONFIG_KEY = 'sys.tools.list'
 
 export default {
     name: 'ToolsConfig',
-    components: {Tools, ArrowRight},
+    components: {Tools, ArrowRight, ToolUseStats},
     data() {
         return {
+            activeTab: 'config',
             loading: false,
             saving: false,
             // 已存在的配置ID（编辑用），新增时为空

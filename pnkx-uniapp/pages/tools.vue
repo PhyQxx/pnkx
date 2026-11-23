@@ -2,6 +2,8 @@
  * @File: tools
  * @Author: PHY
  * @Description: 工具箱（免登录，工具列表由后台配置 sys.tools.list 驱动）
+ * v2：按 group 分组渲染 + 最近使用 + NEW 角标（字段缺省时向后兼容旧配置）
+ *     分组区块顺序跟随后台配置数组中各组首次出现的顺序，后台排序对小程序完全生效
 -->
 <template>
   <view class="tools-page">
@@ -18,43 +20,71 @@
 
     <!-- 工具列表 -->
     <view class="tools-body">
-      <view class="section-title">
-        <view class="section-accent"></view>
-        <text class="section-text">全部工具</text>
-      </view>
+      <!-- 最近使用 -->
+      <template v-if="recentTools.length > 0">
+        <view class="section-title">
+          <view class="section-accent" style="background-color: #38BDF8;"></view>
+          <text class="section-text">最近使用</text>
+        </view>
+        <scroll-view class="recent-strip" scroll-x>
+          <view
+            v-for="tool in recentTools"
+            :key="'recent-' + tool.id"
+            class="recent-chip"
+            @click="openTool(tool)"
+          >
+            <text class="recent-chip__text">{{ tool.name }}</text>
+          </view>
+        </scroll-view>
+      </template>
 
-      <!-- 工具宫格 -->
-      <view class="tool-grid" v-if="toolList.length > 0">
+      <!-- 分组工具列表 -->
+      <template v-if="toolList.length > 0">
         <view
-          v-for="tool in toolList"
-          :key="tool.id"
-          class="tool-card"
-          :style="{ '--tool-color': tool.color || '#38BDF8' }"
-          @click="openTool(tool)"
+          v-for="group in groupedTools"
+          :key="group.key"
+          class="tool-group"
         >
-          <view class="tool-icon">
-            <uni-icons
-              v-if="getToolIconType(tool)"
-              :type="getToolIconType(tool)"
-              size="30"
-              :color="tool.color || '#38BDF8'"
-            />
-            <svg-icon
-              v-else
-              :icon-class="tool.icon"
-              size="56rpx"
-              class-name="tool-icon-svg"
-            />
+          <view class="section-title">
+            <view class="section-accent" :style="{ backgroundColor: group.accent }"></view>
+            <text class="section-text">{{ group.label }}</text>
           </view>
-          <view class="tool-info">
-            <text class="tool-name">{{ tool.name }}</text>
-            <text class="tool-desc" v-if="tool.desc">{{ tool.desc }}</text>
-          </view>
-          <view class="tool-arrow">
-            <uni-icons type="right" size="18" :color="tool.color || '#38BDF8'" />
+          <view class="tool-grid">
+            <view
+              v-for="tool in group.tools"
+              :key="tool.id"
+              class="tool-card"
+              :style="{ '--tool-color': tool.color || '#38BDF8' }"
+              @click="openTool(tool)"
+            >
+              <view class="tool-icon">
+                <uni-icons
+                  v-if="getToolIconType(tool)"
+                  :type="getToolIconType(tool)"
+                  size="30"
+                  :color="tool.color || '#38BDF8'"
+                />
+                <svg-icon
+                  v-else
+                  :icon-class="tool.icon"
+                  size="56rpx"
+                  class-name="tool-icon-svg"
+                />
+              </view>
+              <view class="tool-info">
+                <view class="tool-name-line">
+                  <text class="tool-name">{{ tool.name }}</text>
+                  <text v-if="tool.isNew" class="badge-new">NEW</text>
+                </view>
+                <text class="tool-desc" v-if="tool.desc">{{ tool.desc }}</text>
+              </view>
+              <view class="tool-arrow">
+                <uni-icons type="right" size="18" :color="tool.color || '#38BDF8'" />
+              </view>
+            </view>
           </view>
         </view>
-      </view>
+      </template>
 
       <!-- 加载中 -->
       <view class="loading-state" v-else-if="loading">
@@ -84,7 +114,20 @@
 
 <script>
 import { getClientConfigKey } from '@/api/system/clientConfig'
+import { recordToolUse } from '@/utils/toolLog'
 import config from '@/config'
+
+/** 分组元信息（label 分组标题 / accent 主题色）；展示顺序由后台配置中各组首次出现顺序决定 */
+const TOOL_GROUPS = [
+  { key: 'finance', label: '财务计算', accent: '#6C9EFF' },
+  { key: 'life', label: '生活工具', accent: '#FB923C' },
+  { key: 'fun', label: '趣味 AI', accent: '#F472B6' },
+  { key: 'default', label: '常用工具', accent: '#38BDF8' }
+]
+
+/** 最近使用存储 key 与上限 */
+const RECENT_KEY = 'tools_recent_usage'
+const RECENT_MAX = 6
 
 export default {
   name: 'Tools',
@@ -95,8 +138,94 @@ export default {
       appVersion: '1.0.0',
       // 工具列表（由后台配置驱动）
       toolList: [],
+      // 最近使用（toolId 数组，新使用的在前）
+      recentIds: [],
       // 内置默认工具（后台未配置时的兜底，保证页面可用）
       defaultTools: [
+        {
+          id: 'mortgage',
+          name: '房贷计算器',
+          icon: 'wallet',
+          color: '#6C9EFF',
+          desc: '商贷 / 公积金，等额本息、本金对比',
+          type: 'page',
+          target: '/pages_tools/mortgage/index',
+          enabled: true,
+          group: 'finance',
+          isNew: true
+        },
+        {
+          id: 'tax',
+          name: '个税计算器',
+          icon: 'compose',
+          color: '#FBBF24',
+          desc: '年度累计预扣，年终奖单独计税',
+          type: 'page',
+          target: '/pages_tools/tax/index',
+          enabled: true,
+          group: 'finance',
+          isNew: true
+        },
+        {
+          id: 'exchange',
+          name: '汇率换算',
+          icon: 'flag',
+          color: '#34D399',
+          desc: '实时汇率，配合记账外币场景',
+          type: 'page',
+          target: '/pages_tools/exchange/index',
+          enabled: true,
+          group: 'finance',
+          isNew: true
+        },
+        {
+          id: 'ai-pickup',
+          name: 'AI 情话生成',
+          icon: 'heart',
+          color: '#A78BFA',
+          desc: '土味情话、藏头诗、三行情书',
+          type: 'page',
+          target: '/pages_tools/ai-pickup/index',
+          enabled: true,
+          group: 'fun',
+          isNew: true
+        },
+        {
+          id: 'what-to-eat',
+          name: '今天吃什么',
+          icon: 'shop',
+          color: '#F472B6',
+          desc: '选择困难症救星，转一转决定',
+          type: 'page',
+          target: '/pages_tools/what-to-eat/index',
+          enabled: true,
+          group: 'fun',
+          isNew: true
+        },
+        {
+          id: 'date-calc',
+          name: '日期计算器',
+          icon: 'calendar',
+          color: '#FB923C',
+          desc: '日期间隔、工作日、农历查询',
+          type: 'page',
+          target: '/pages_tools/date-calc/index',
+          enabled: true,
+          group: 'life',
+          isNew: true
+        },
+        {
+          id: 'img-compress',
+          name: '图片压缩',
+          icon: 'images',
+          color: '#60A5FA',
+          desc: '批量压缩，博客传图更省流量',
+          type: 'page',
+          target: '/pages_tools/img-compress/index',
+          enabled: true,
+          group: 'life',
+          isNew: true
+        },
         {
           id: 'wallpaper',
           name: '壁纸下载',
@@ -105,7 +234,8 @@ export default {
           desc: '精选高清壁纸，一键保存到相册',
           type: 'page',
           target: '/pages_wallpaper/wallpaper/index',
-          enabled: true
+          enabled: true,
+          group: 'life'
         },
         {
           id: 'blog',
@@ -120,14 +250,51 @@ export default {
       ]
     }
   },
+  computed: {
+    /**
+     * 按 group 分桶渲染：分组区块顺序 = 后台数组中各组「首次出现」的顺序，
+     * 组内工具按数组顺序 —— 后台上移/下移对小程序展示完全生效（含跨组移动）。
+     * 旧配置无 group 字段、或出现未知 group 时归入「常用工具」组（向后兼容）
+     */
+    groupedTools() {
+      const buckets = {}
+      this.toolList.forEach(tool => {
+        const known = TOOL_GROUPS.some(g => g.key === tool.group)
+        const key = known ? tool.group : 'default'
+        if (!buckets[key]) buckets[key] = []
+        buckets[key].push(tool)
+      })
+      // Object.keys 对字符串键保持插入顺序，即首次出现顺序
+      return Object.keys(buckets)
+        .map(key => {
+          const meta = TOOL_GROUPS.find(g => g.key === key)
+          return {
+            key,
+            label: meta.label,
+            accent: meta.accent,
+            tools: buckets[key]
+          }
+        })
+    },
+    /**
+     * 最近使用的工具对象列表（过滤已下线/已禁用的 id）
+     */
+    recentTools() {
+      return this.recentIds
+        .map(id => this.toolList.find(tool => tool.id === id))
+        .filter(Boolean)
+    }
+  },
   onLoad() {
     this.loadVersion()
+    this.loadRecentIds()
     this.loadTools()
   },
   onShow() {
     // 每次展示时刷新，保证后台改动及时生效
     if (this.$data.__loaded) {
       this.loadTools()
+      this.loadRecentIds()
     }
   },
   // 开启「转发给朋友」（需同时存在，朋友圈分享才会生效）
@@ -152,7 +319,14 @@ export default {
       const icon = tool && tool.icon
       const map = {
         picture: 'image',
-        article: 'compose'
+        images: 'images',
+        article: 'compose',
+        wallet: 'wallet',
+        compose: 'compose',
+        shop: 'shop',
+        calendar: 'calendar',
+        heart: 'heart',
+        flag: 'flag'
       }
       return map[icon] || ''
     },
@@ -171,6 +345,34 @@ export default {
         // #endif
       } catch (e) {
         console.warn('读取版本号失败', e)
+      }
+    },
+
+    /**
+     * 从本地缓存读取最近使用记录
+     */
+    loadRecentIds() {
+      try {
+        const cached = uni.getStorageSync(RECENT_KEY)
+        this.recentIds = Array.isArray(cached) ? cached.slice(0, RECENT_MAX) : []
+      } catch (e) {
+        console.warn('读取最近使用缓存失败', e)
+        this.recentIds = []
+      }
+    },
+
+    /**
+     * 记录最近使用（去重、置顶、截断）
+     * @param {string} id 工具 id
+     */
+    recordRecent(id) {
+      const list = this.recentIds.filter(item => item !== id)
+      list.unshift(id)
+      this.recentIds = list.slice(0, RECENT_MAX)
+      try {
+        uni.setStorageSync(RECENT_KEY, this.recentIds)
+      } catch (e) {
+        console.warn('保存最近使用缓存失败', e)
       }
     },
 
@@ -217,10 +419,13 @@ export default {
         uni.showToast({ title: '该工具未配置跳转地址', icon: 'none' })
         return
       }
+      // 使用打点（fire-and-forget，失败静默；page/web 工具都记）
+      recordToolUse(tool)
       if (tool.type === 'web') {
         this.openWeb(tool.target, tool.name)
       } else {
-        // page 类型，默认跳转（兼容后台老配置里的旧分包路径）
+        // page 类型记录最近使用后跳转（兼容后台老配置里的旧分包路径）
+        this.recordRecent(tool.id)
         this.$tab.navigateTo(this.normalizeToolTarget(tool.target))
       }
     },
@@ -357,6 +562,33 @@ page {
   }
 }
 
+/* 最近使用横滑条 */
+.recent-strip {
+  white-space: nowrap;
+  margin-bottom: $spacing-xs;
+
+  .recent-chip {
+    display: inline-flex;
+    align-items: center;
+    background: $bg-card;
+    border-radius: $radius-full;
+    padding: 14rpx 24rpx;
+    margin-right: 16rpx;
+    box-shadow: $shadow-card;
+    transition: transform $duration-fast $ease-default;
+
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &__text {
+      font-size: $font-caption;
+      color: $text-secondary;
+      font-weight: $font-weight-medium;
+    }
+  }
+}
+
 /* 工具宫格 */
 .tool-grid {
   display: flex;
@@ -397,10 +629,26 @@ page {
     flex-direction: column;
   }
 
+  .tool-name-line {
+    display: flex;
+    align-items: center;
+  }
+
   .tool-name {
     font-size: $font-h3;
     font-weight: $font-weight-semibold;
     color: $text-primary;
+  }
+
+  .badge-new {
+    font-size: 18rpx;
+    font-weight: $font-weight-bold;
+    color: $text-inverse;
+    background: $danger;
+    border-radius: 10rpx;
+    padding: 3rpx 10rpx;
+    margin-left: 12rpx;
+    letter-spacing: 1rpx;
   }
 
   .tool-desc {

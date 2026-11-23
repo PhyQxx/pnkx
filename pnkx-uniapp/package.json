@@ -4,12 +4,5 @@
     "dayjs": "^1.11.10",
     "js-pinyin": "^0.2.5",
     "opencode-supermemory": "^2.0.4"
-  },
-  "devDependencies": {
-    "@dcloudio/uni-app": "^3.0.0-alpha-5000720260410001",
-    "@dcloudio/uni-cli-i18n": "^2.0.2-5000720260410001",
-    "@dcloudio/uni-cli-shared": "^2.0.2-5000720260410001",
-    "@dcloudio/vite-plugin-uni": "^3.0.0-alpha-5000720260410001",
-    "vite": "^5.2.8"
   }
 }

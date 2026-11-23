@@ -101,26 +101,7 @@ import { getWallpaper, likeWallpaper, getDownloadStatus, shareReward } from '../
 import config from '@/config'
 import { getToken } from '@/utils/auth'
 import { toLogin } from '@/permission'
-
-function isPrivacyError(message) {
-  const msg = String(message || '').toLowerCase()
-  return msg.indexOf('privacy') !== -1 || msg.indexOf('隐私') !== -1
-}
-
-function isPrivacyScopeUndeclared(message) {
-  const msg = String(message || '').toLowerCase()
-  return msg.indexOf('api scope is not declared') !== -1 ||
-    msg.indexOf('not declared in the privacy agreement') !== -1
-}
-
-function isAuthError(message) {
-  const msg = String(message || '').toLowerCase()
-  return isPrivacyError(msg) ||
-    msg.indexOf('auth') !== -1 ||
-    msg.indexOf('deny') !== -1 ||
-    msg.indexOf('permission') !== -1 ||
-    msg.indexOf('未授权') !== -1
-}
+import { saveToAlbumWithAuth } from '@/utils/tools/albumSaver'
 
 export default {
   name: 'WallpaperDetail',
@@ -467,135 +448,11 @@ export default {
 
     /**
      * 通过权限校验后真正发起下载与保存
+     * 授权链路（微信隐私授权 → 曾拒绝引导设置页 → 保存）已收敛到
+     * utils/tools/albumSaver.saveToAlbumWithAuth，此处直接下载
      */
     proceedDownload() {
-      // 正式版可靠方案：先判断是否「曾被拒绝」。
-      // - 若用户曾拒绝过（authSetting 为 false），系统不再弹授权窗，
-      //   需引导去 openSetting 开启，否则后续 saveImageToPhotosAlbum 会静默失败。
-      // - 若未拒绝过（undefined 已授权或首次），直接下载并保存；
-      //   saveImageToPhotosAlbum 会在需要时自行弹出系统授权窗（这是微信
-      //   官方推荐做法，比预 authorize 更可靠，不受手势上下文丢失影响）。
-      this.ensureWechatPrivacyAuthorized().then(granted => {
-        if (!granted) return
-        this.checkAlbumDeniedBefore().then(denied => {
-          if (denied) {
-            this.promptOpenSetting()
-          } else {
-            this.downloadAndSave()
-          }
-        })
-      })
-    },
-
-    /**
-     * 微信隐私协议授权。未完成该流程时，正式版会返回
-     * saveImageToPhotosAlbum:fail appid privacy。
-     */
-    ensureWechatPrivacyAuthorized() {
-      return new Promise(resolve => {
-        // #ifndef MP-WEIXIN
-        resolve(true)
-        // #endif
-        // #ifdef MP-WEIXIN
-        const wxApi = typeof wx !== 'undefined' ? wx : null
-        if (!wxApi || !wxApi.requirePrivacyAuthorize) {
-          resolve(true)
-          return
-        }
-        wxApi.requirePrivacyAuthorize({
-          success: () => resolve(true),
-          fail: (err) => {
-            console.error('requirePrivacyAuthorize fail:', err && err.errMsg)
-            this.promptPrivacyAuthorize()
-            resolve(false)
-          }
-        })
-        // #endif
-      })
-    },
-
-    /**
-     * 引导用户查看/同意微信小程序隐私保护指引
-     */
-    promptPrivacyAuthorize() {
-      uni.showModal({
-        title: '隐私授权',
-        content: '保存壁纸到相册前，需要先同意小程序隐私保护指引。',
-        confirmText: '查看指引',
-        success: (res) => {
-          if (!res.confirm) return
-          // #ifdef MP-WEIXIN
-          this.openPrivacyContract()
-          // #endif
-        }
-      })
-    },
-
-    /**
-     * 小程序后台未在隐私保护指引中声明相册写入接口时的提示。
-     */
-    promptPrivacyScopeUndeclared() {
-      uni.showModal({
-        title: '隐私指引未配置',
-        content: '当前小程序隐私保护指引未声明“保存图片到相册/写入相册”用途，请先在微信公众平台补充后重新提审发布。',
-        showCancel: false,
-        confirmText: '知道了'
-      })
-    },
-
-    /**
-     * 判断用户是否「曾经拒绝过」相册写入权限
-     * <p>
-     * 仅当 authSetting['scope.writePhotosAlbum'] === false 时返回 true，
-     * 表示系统已不再自动弹授权窗，必须引导用户去设置页手动开启。
-     * undefined（首次或已授权）均返回 false，交给 saveImageToPhotosAlbum
-     * 自身在调用时弹出授权窗。
-     */
-    checkAlbumDeniedBefore() {
-      return new Promise(resolve => {
-        // #ifndef MP-WEIXIN
-        resolve(false)
-        // #endif
-        // #ifdef MP-WEIXIN
-        uni.getSetting({
-          success: (settingRes) => {
-            const albumAuth = settingRes.authSetting['scope.writePhotosAlbum']
-            resolve(albumAuth === false)
-          },
-          fail: () => resolve(false)
-        })
-        // #endif
-      })
-    },
-
-    /**
-     * 引导用户前往设置页开启相册权限
-     */
-    promptOpenSetting() {
-      uni.showModal({
-        title: '提示',
-        content: '需要相册访问权限才能保存壁纸，是否前往设置开启？',
-        confirmText: '去设置',
-        success: (modalRes) => {
-          if (modalRes.confirm) {
-            // #ifdef APP-PLUS
-            if (typeof plus !== 'undefined') {
-              plus.runtime.openURL('app-settings:')
-            }
-            // #endif
-            // #ifdef MP-WEIXIN
-            uni.openSetting({
-              success: (openRes) => {
-                // 用户在设置页开启后，继续下载保存
-                if (openRes.authSetting['scope.writePhotosAlbum'] === true) {
-                  this.downloadAndSave()
-                }
-              }
-            })
-            // #endif
-          }
-        }
-      })
+      this.downloadAndSave()
     },
 
     /**
@@ -675,35 +532,20 @@ export default {
     },
 
     /**
-     * 保存到相册
+     * 保存到相册（授权/隐私链路走共享 albumSaver）
      */
     saveToAlbum(tempPath) {
       this.downloadBtnText = '保存中...'
-      uni.saveImageToPhotosAlbum({
-        filePath: tempPath,
-        success: () => {
-          this.resetBtn()
-          uni.showToast({ title: '已保存到相册', icon: 'success' })
-          // 下载成功后刷新剩余次数，达上限则弹提醒
-          this.checkDownloadRemaining()
-        },
-        fail: (err) => {
-          this.resetBtn()
-          // 打印真实错误，便于排查（白名单、权限、文件格式等）
-          console.error('saveImageToPhotosAlbum fail:', err && err.errMsg)
-          const msg = (err && err.errMsg) || ''
-          // 权限类错误：saveImageToPhotosAlbum 被拒时会回传 auth deny，
-          // 微信保证此 fail 回调能拿到该错误，是正式版最可靠的兜底分支。
-          if (isPrivacyScopeUndeclared(msg)) {
-            this.promptPrivacyScopeUndeclared()
-          } else if (isPrivacyError(msg)) {
-            this.promptPrivacyAuthorize()
-          } else if (isAuthError(msg)) {
-            this.promptOpenSetting()
-          } else {
-            uni.showToast({ title: '保存失败：' + (msg || '未知错误'), icon: 'none', duration: 3000 })
-          }
-        }
+      saveToAlbumWithAuth(tempPath, {
+        successTitle: '已保存到相册',
+        // 用户在设置页开启权限后自动续跑下载保存（保持原有体验）
+        onGranted: () => this.downloadAndSave()
+      }).then(() => {
+        this.resetBtn()
+        // 下载成功后刷新剩余次数，达上限则弹提醒
+        this.checkDownloadRemaining()
+      }).catch(() => {
+        this.resetBtn()
       })
     },
 
