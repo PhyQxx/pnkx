@@ -283,7 +283,7 @@
         },
         {
           "path": "ai-pickup/index",
-          "style": { "navigationBarTitleText": "AI 情话生成" }
+          "style": { "navigationBarTitleText": "情话生成" }
         },
         {
           "path": "exchange/index",

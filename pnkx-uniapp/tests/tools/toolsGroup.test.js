@@ -83,5 +83,5 @@ test('分组标题与主题色映射正确', () => {
   assert.strictEqual(life.label, '生活工具')
   assert.strictEqual(life.accent, '#FB923C')
   const fun = groups.find(g => g.key === 'fun')
-  assert.strictEqual(fun.label, '趣味 AI')
+  assert.strictEqual(fun.label, '趣味工具')
 })

@@ -121,7 +121,7 @@ import config from '@/config'
 const TOOL_GROUPS = [
   { key: 'finance', label: '财务计算', accent: '#6C9EFF' },
   { key: 'life', label: '生活工具', accent: '#FB923C' },
-  { key: 'fun', label: '趣味 AI', accent: '#F472B6' },
+  { key: 'fun', label: '趣味工具', accent: '#F472B6' },
   { key: 'default', label: '常用工具', accent: '#38BDF8' }
 ]
 
@@ -180,7 +180,7 @@ export default {
         },
         {
           id: 'ai-pickup',
-          name: 'AI 情话生成',
+          name: '情话生成',
           icon: 'heart',
           color: '#A78BFA',
           desc: '土味情话、藏头诗、三行情书',
@@ -399,6 +399,10 @@ export default {
         }
         // 过滤无效项 + 禁用项（enabled !== false 兼容老数据，未配置视为启用）
         list = (list || []).filter(t => t && t.name && t.enabled !== false)
+        // 兼容后台已有配置中的旧名称。
+        list = list.map(tool => tool.id === 'ai-pickup' && /^AI\s*情话生成$/.test(tool.name)
+          ? { ...tool, name: '情话生成' }
+          : tool)
         this.toolList = list.length > 0 ? list : this.defaultTools
         this.$data.__loaded = true
       }).catch(() => {
