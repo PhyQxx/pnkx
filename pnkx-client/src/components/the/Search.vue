@@ -2,8 +2,10 @@
 import { NModal, NCard } from 'naive-ui'
 import type { SearchArticle } from '@/types/article'
 
+const { track } = useAnalytics()
 const router = useRouter()
 const searchStore = useSearchStore()
+watch(() => searchStore.showModal, open => { if (open) track('search_open') })
 const keyword = ref('')
 const articleList = ref<SearchArticle[]>([])
 
@@ -20,10 +22,15 @@ onBeforeUnmount(() => { searchVersion++ })
 watchDebounced(keyword, async (value) => {
   if (!value.trim() || !searchStore.showModal) return
   const version = searchVersion
-  const { data } = await article.getArticleList({
+  const operationId = crypto.randomUUID()
+  track('search_submit', { operationId })
+  try {
+  const { data, error } = await article.getArticleList({
     searchValue: value.trim(), pageNum: 1, pageSize: 5
   })
   if (version === searchVersion) articleList.value = data.value?.rows ?? []
+  track(error.value ? 'search_fail' : 'search_success', { operationId })
+  } catch { track('search_fail', { operationId }) }
 }, { debounce: 500 })
 
 const onClose = () => {
@@ -32,6 +39,7 @@ const onClose = () => {
 }
 
 const gotoArticle = (id: number) => {
+  track('search_click')
   searchStore.setModal(false)
   router.push(`/post/${id}`)
 }

@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
   id: undefined
 })
 
+const { track } = useAnalytics()
 const userStore = useUserStore()
 const blogStore = useBlogStore()
 const message = useMessage()
@@ -72,6 +73,8 @@ const onSubmit = () => {
     message.warning('内容不能为空！！！')
     return
   }
+  const operationId = crypto.randomUUID()
+  track('comment_submit', { operationId })
   // 解析表情
   content.value = useEmojiParse(EmojiApi.allEmoji, content.value)
   // 添加评论
@@ -82,6 +85,7 @@ const onSubmit = () => {
     messageBoard: props.type
   }).then(res => {
     if (res.data.value?.data) {
+      track('comment_success', { operationId })
       // 清空输入框
       content.value = ''
       if (blogStore.blogConfig?.commentCheck) {
@@ -93,8 +97,11 @@ const onSubmit = () => {
       params.pageNum = 0;
       getMessageList()
     } else {
+      track('comment_fail', { operationId })
       message.error('评论失败！！')
     }
+  }).catch(() => {
+    track('comment_fail', { operationId })
   }).finally(() => {
     loadingBar.finish();
   })

@@ -21,6 +21,7 @@ const isLoggedIn = computed(() => !!getToken())
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ (event: 'close'): void }>()
 // 输入框内容
+const { track } = useAnalytics()
 const inputText = ref('')
 // 消息列表
 const messages = ref<ChatMessage[]>([])
@@ -64,6 +65,7 @@ function scrollToBottom() {
  * 切换浮窗
  */
 watch(() => props.open, (open) => {
+  if (open) track('ai_open')
   // 首次打开若没有消息，加一条欢迎语
   if (open && messages.value.length === 0) {
     messages.value.push({
@@ -83,6 +85,8 @@ async function handleSend() {
   const question = inputText.value.trim()
   if (!question || loading.value) return
 
+  const operationId = crypto.randomUUID()
+  track('ai_submit', { operationId })
   // 追加用户消息
   messages.value.push({ role: 'user', content: question })
   // 追加占位的助手消息（流式填充）
@@ -152,8 +156,10 @@ async function handleSend() {
       resetTimeout()
       parse(decoder.decode(chunk.value, { stream: true }))
     }
+    track(done ? 'ai_success' : 'ai_fail', { operationId })
     if (!done) assistantMsg.notice = '连接已结束，回复可能不完整，请重新提问。'
   } catch (e: any) {
+    track(controller.signal.aborted && !timedOut ? 'ai_stop' : 'ai_fail', { operationId })
     assistantMsg.notice = controller.signal.aborted
       ? (timedOut ? '响应超时，已停止生成，请稍后重试。' : '已停止生成')
       : '回复中断：' + (e?.message || '网络异常，请稍后重试')

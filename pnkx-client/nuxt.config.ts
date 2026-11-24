@@ -2,6 +2,9 @@
 
 export default defineNuxtConfig({
   srcDir: 'src',
+  runtimeConfig: {
+    public: { analyticsEnabled: process.env.NODE_ENV === 'production' }
+  },
   app: {
     head: {
       charset: 'utf-8',

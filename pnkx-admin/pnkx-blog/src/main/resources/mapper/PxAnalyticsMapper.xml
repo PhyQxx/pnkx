@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pnkx.blog.mapper.PxAnalyticsMapper">
+ <insert id="insert">
+ INSERT INTO px_analytics_event(event_id,visitor_id,session_id,page_view_id,event_name,page_key,content_id,operation_id,referrer_host,user_id,duration_ms,occurred_at)
+ VALUES(#{eventId},#{visitorId},#{sessionId},#{pageViewId},#{eventName},#{pageKey},#{contentId},#{operationId},#{referrerHost},#{userId},#{durationMs},#{eventTime})
+ ON DUPLICATE KEY UPDATE event_id=event_id
+ </insert>
+ <sql id="filter">
+ WHERE occurred_at &gt;= #{start} AND occurred_at &lt; #{end}
+ <if test="pageKey != null and pageKey != ''">AND page_key=#{pageKey}</if>
+ <if test="visitorId != null and visitorId != ''">AND visitor_id=#{visitorId}</if>
+ <if test="sessionId != null and sessionId != ''">AND session_id=#{sessionId}</if>
+ </sql>
+ <select id="summary" resultType="map">
+ SELECT COALESCE(SUM(event_name='page_view'),0) AS pv, COUNT(DISTINCT visitor_id) AS uv,
+ COUNT(DISTINCT session_id) AS sessions, COALESCE(SUM(duration_ms),0) AS durationMs
+ FROM px_analytics_event <include refid="filter"/>
+ </select>
+ <select id="pages" resultType="map">
+ SELECT page_key AS pageKey,content_id AS contentId, SUM(event_name='page_view') AS pv,
+ COUNT(DISTINCT visitor_id) AS uv, SUM(duration_ms) AS durationMs
+ FROM px_analytics_event <include refid="filter"/>
+ GROUP BY page_key,content_id ORDER BY pv DESC LIMIT 100
+ </select>
+ <select id="features" resultType="map">
+ SELECT event_name AS eventName,COUNT(*) AS total,COUNT(DISTINCT visitor_id) AS uv
+ FROM px_analytics_event <include refid="filter"/> AND event_name NOT IN ('page_view','page_duration')
+ GROUP BY event_name ORDER BY total DESC
+ </select>
+ <select id="events" resultType="map">
+ SELECT event_id AS eventId,visitor_id AS visitorId,session_id AS sessionId,page_view_id AS pageViewId,
+ event_name AS eventName,page_key AS pageKey,content_id AS contentId,operation_id AS operationId,
+ duration_ms AS durationMs,DATE_FORMAT(occurred_at,'%Y-%m-%d %H:%i:%s') AS occurredAt
+ FROM px_analytics_event <include refid="filter"/> ORDER BY occurred_at DESC,id DESC
+ </select>
+</mapper>
