@@ -28,7 +28,7 @@
         <el-tab-pane label="操作成功率">
           <p class="hint">同一访客、会话与操作 ID 关联提交和结果，仅统计窗口内提交。跨窗口结果与未完成操作会影响成功率；这不是多步骤访问漏斗。</p>
           <el-table :data="report.conversions || []" empty-text="暂无操作记录">
-            <el-table-column label="功能"><template #default="{row}">{{ { search: '搜索', comment: '评论/留言', ai: 'AI助手' }[row.feature] || row.feature }}</template></el-table-column>
+            <el-table-column label="功能"><template #default="{row}">{{ { login: '登录', reply: '回复评论', search: '搜索', comment: '评论/留言', ai: 'AI助手' }[row.feature] || row.feature }}</template></el-table-column>
             <el-table-column label="提交次数" prop="attempts" /><el-table-column label="成功次数" prop="successes" /><el-table-column label="失败次数" prop="failures" /><el-table-column label="主动停止" prop="stops" />
             <el-table-column label="成功率"><template #default="{row}">{{ row.attempts ? (row.successes / row.attempts * 100).toFixed(1) : '0.0' }}%</template></el-table-column>
           </el-table>
@@ -59,7 +59,7 @@ const dates = ref(defaults()), pageKey = ref(''), visitorId = ref(''), sessionId
 const pageNum = ref(1), pageSize = ref(20), total = ref(0), rows = ref([]), loading = ref(false), error = ref('')
 const report = ref({ summary: {}, pages: [], features: [] })
 const pages = { home: '首页', post_detail: '文章详情', category: '分类', category_detail: '分类详情', archives: '归档', video: '视频', video_detail: '视频详情', album: '相册', message: '留言', link: '友链', share: '分享', login: '登录', user: '个人中心', other: '其他' }
-const events = { read_25: '正文位置25%', read_50: '正文位置50%', read_75: '正文位置75%', read_100: '正文到达底部', video_select: '选择视频', video_start: '视频开始播放', video_25: '播放位置25%', video_50: '播放位置50%', video_75: '播放位置75%', video_complete: '视频播放结束', video_error: '视频播放失败', page_view: '页面访问', page_duration: '有效停留', search_open: '打开搜索', search_submit: '搜索请求', search_success: '搜索成功', search_fail: '搜索失败', search_click: '点击搜索结果', comment_submit: '评论/留言提交', comment_success: '评论/留言成功', comment_fail: '评论/留言失败', ai_open: '打开AI', ai_submit: 'AI发送', ai_success: 'AI完成', ai_fail: 'AI失败', ai_stop: 'AI主动停止' }
+const events = { login_submit: '登录提交', login_success: '登录成功', login_fail: '登录失败', reply_submit: '回复提交', reply_success: '回复成功', reply_fail: '回复失败', read_25: '正文位置25%', read_50: '正文位置50%', read_75: '正文位置75%', read_100: '正文到达底部', video_select: '选择视频', video_start: '视频开始播放', video_25: '播放位置25%', video_50: '播放位置50%', video_75: '播放位置75%', video_complete: '视频播放结束', video_error: '视频播放失败', page_view: '页面访问', page_duration: '有效停留', search_open: '打开搜索', search_submit: '搜索请求', search_success: '搜索成功', search_fail: '搜索失败', search_click: '点击搜索结果', comment_submit: '评论/留言提交', comment_success: '评论/留言成功', comment_fail: '评论/留言失败', ai_open: '打开AI', ai_submit: 'AI发送', ai_success: 'AI完成', ai_fail: 'AI失败', ai_stop: 'AI主动停止' }
 const metrics = computed(() => [{ label: '浏览量 PV', value: report.value.summary.pv || 0 }, { label: '访客 UV', value: report.value.summary.uv || 0 }, { label: '活跃会话', value: report.value.summary.sessions || 0 }, { label: '有效停留（分钟）', value: Math.round((report.value.summary.durationMs || 0) / 60000) }])
 let version = 0
 async function load() {

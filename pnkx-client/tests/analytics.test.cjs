@@ -72,3 +72,16 @@ test('video target ID is preserved without changing page identity',async()=>{
  const e=h.requests.flat().find(e=>e.eventName==='video_start')
  assert.equal(e.targetId,'123');assert.equal(e.pageKey,'video');assert.equal(e.contentId,null)
 })
+test('login and reply results stay linked to their initiating operation',async()=>{
+ for (const feature of ['login','reply']) {
+  const h=harness();h.hooks['app:mounted']();await drain()
+  const operationId=crypto.randomUUID()
+  h.track(`${feature}_submit`,{operationId,targetId:feature==='reply'?'42':undefined})
+  h.go('/user');await drain()
+  h.track(`${feature}_success`,{operationId,targetId:feature==='reply'?'42':undefined})
+  h.timers.find(t=>t.ms===15000).fn();await drain()
+  const outcome=h.requests.flat().find(e=>e.eventName===`${feature}_success`)
+  assert.equal(outcome.pageKey,'home');assert.equal(outcome.operationId,operationId)
+  assert.equal('password' in outcome,false);assert.equal('content' in outcome,false)
+ }
+})

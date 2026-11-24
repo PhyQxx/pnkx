@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {NButton, useLoadingBar, useMessage} from 'naive-ui'
 
+const { track } = useAnalytics()
 const userStore = useUserStore()
 const router = useRouter()
 const message = useMessage()
@@ -35,18 +36,25 @@ const handleLogin = () => {
     return
   }
 
+  const operationId = crypto.randomUUID()
+  track('login_submit', { operationId })
   // 取消useFetch响应式参数自动发送请求
   const params = Object.assign({}, formLogin)
   loading.value = true
   loadingBar.start();
   user.login(params).then(res => {
     if (res.data.value?.token) {
+      track('login_success', { operationId })
       setToken(res.data.value.token)
       message.success('登录成功')
       router.push('/user').then(() => {
         userStore.getUserInfo()
       })
+    } else {
+      track('login_fail', { operationId })
     }
+  }).catch(() => {
+    track('login_fail', { operationId })
   }).finally(() => {
     loading.value = false
     loadingBar.finish();

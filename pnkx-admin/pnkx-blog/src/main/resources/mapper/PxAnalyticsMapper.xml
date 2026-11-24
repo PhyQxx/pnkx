@@ -46,7 +46,7 @@
  MIN(CASE WHEN event_name LIKE '%_fail' THEN occurred_at END) AS failTime,
  MIN(CASE WHEN event_name='ai_stop' THEN occurred_at END) AS stopTime
  FROM px_analytics_event <include refid="filter"/>
- AND operation_id IS NOT NULL AND event_name IN ('search_submit','search_success','search_fail','comment_submit','comment_success','comment_fail','ai_submit','ai_success','ai_fail','ai_stop')
+ AND operation_id IS NOT NULL AND event_name IN ('login_submit','login_success','login_fail','reply_submit','reply_success','reply_fail','search_submit','search_success','search_fail','comment_submit','comment_success','comment_fail','ai_submit','ai_success','ai_fail','ai_stop')
  GROUP BY visitor_id,session_id,operation_id,SUBSTRING_INDEX(event_name,'_',1)
  ) operations WHERE submitTime IS NOT NULL GROUP BY feature
  </select>

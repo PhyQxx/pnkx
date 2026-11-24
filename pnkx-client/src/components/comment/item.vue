@@ -16,6 +16,8 @@
   const emit = defineEmits<{
     (e: 'reloadReply', id: number): void
   }>()
+  const { track } = useAnalytics()
+  const replyPending = ref(false)
   const {comment} = useApi()
   const blogStore = useBlogStore()
   const userStore = useUserStore()
@@ -75,6 +77,7 @@
 
   // 提交
   async function onSubmit() {
+    if (replyPending.value) return
     if (!userStore.userInfo) {
       message.warning('请先登录（右上角~）')
       return
@@ -97,8 +100,13 @@
       replyId: props.data.id,
       replyUserId: props.data.createBy
     }
+    const operationId = crypto.randomUUID()
+    replyPending.value = true
+    track('reply_submit', { operationId, targetId: String(props.data.id) })
+    try {
     const {data} = await comment.addComment(params)
     if (data.value?.data) {
+      track('reply_success', { operationId, targetId: String(props.data.id) })
       content.value = ''
       isShowInput.value = false
       message.success('评论成功！！')
@@ -107,7 +115,13 @@
       const id = props.reply ? (props.data as Reply).replyId : props.data.id
       emit('reloadReply', id)
     } else {
+      track('reply_fail', { operationId, targetId: String(props.data.id) })
       message.error('评论失败！！')
+    }
+    } catch {
+      track('reply_fail', { operationId, targetId: String(props.data.id) })
+    } finally {
+      replyPending.value = false
     }
   }
 </script>
