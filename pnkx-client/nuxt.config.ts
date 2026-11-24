@@ -46,8 +46,7 @@ export default defineNuxtConfig({
       'vueuc',
       '@css-render/vue3-ssr',
       '@juggle/resize-observer',
-      'markdown-it',
-      'clipboard'
+      'markdown-it'
     ]
   },
   vite: {
@@ -77,7 +76,9 @@ export default defineNuxtConfig({
               'markdown-it/dist/markdown-it.js',
               'markdown-it-container',
               'markdown-it-for-inline',
-              'highlight.js/lib/common'
+              'highlight.js/lib/common',
+              // clipboard ships UMD; convert it to ESM before lazy article imports.
+              'clipboard'
             ]
           : []
     }
