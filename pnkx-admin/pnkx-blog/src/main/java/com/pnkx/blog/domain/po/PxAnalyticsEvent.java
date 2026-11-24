@@ -1,6 +1,9 @@
 package com.pnkx.blog.domain.po;
 
 public class PxAnalyticsEvent {
+    private String targetId;
+    public String getTargetId() { return targetId; }
+    public void setTargetId(String value) { targetId = value; }
     private String eventId;
     public String getEventId() { return eventId; }
     public void setEventId(String value) { eventId = value; }

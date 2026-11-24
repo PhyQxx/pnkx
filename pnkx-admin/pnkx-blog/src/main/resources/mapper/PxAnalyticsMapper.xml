@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.pnkx.blog.mapper.PxAnalyticsMapper">
  <insert id="insert">
- INSERT INTO px_analytics_event(event_id,visitor_id,session_id,page_view_id,event_name,page_key,content_id,operation_id,referrer_host,user_id,duration_ms,occurred_at)
- VALUES(#{eventId},#{visitorId},#{sessionId},#{pageViewId},#{eventName},#{pageKey},#{contentId},#{operationId},#{referrerHost},#{userId},#{durationMs},#{eventTime})
+ INSERT INTO px_analytics_event(event_id,visitor_id,session_id,page_view_id,event_name,page_key,content_id,target_id,operation_id,referrer_host,user_id,duration_ms,occurred_at)
+ VALUES(#{eventId},#{visitorId},#{sessionId},#{pageViewId},#{eventName},#{pageKey},#{contentId},#{targetId},#{operationId},#{referrerHost},#{userId},#{durationMs},#{eventTime})
  ON DUPLICATE KEY UPDATE event_id=event_id
  </insert>
  <sql id="filter">
@@ -19,7 +19,7 @@
  </select>
  <select id="pages" resultType="map">
  SELECT page_key AS pageKey,content_id AS contentId, SUM(event_name='page_view') AS pv,
- COUNT(DISTINCT visitor_id) AS uv, SUM(duration_ms) AS durationMs
+ COUNT(DISTINCT visitor_id) AS uv, SUM(duration_ms) AS durationMs, COUNT(DISTINCT CASE WHEN event_name='read_100' THEN page_view_id END) AS reachedEnd
  FROM px_analytics_event <include refid="filter"/>
  GROUP BY page_key,content_id ORDER BY pv DESC LIMIT 100
  </select>
@@ -30,8 +30,24 @@
  </select>
  <select id="events" resultType="map">
  SELECT event_id AS eventId,visitor_id AS visitorId,session_id AS sessionId,page_view_id AS pageViewId,
- event_name AS eventName,page_key AS pageKey,content_id AS contentId,operation_id AS operationId,
+ event_name AS eventName,page_key AS pageKey,content_id AS contentId,target_id AS targetId,operation_id AS operationId,
  duration_ms AS durationMs,DATE_FORMAT(occurred_at,'%Y-%m-%d %H:%i:%s') AS occurredAt
  FROM px_analytics_event <include refid="filter"/> ORDER BY occurred_at DESC,id DESC
+ </select>
+ <select id="conversions" resultType="map">
+ SELECT feature, COUNT(*) AS attempts,
+ SUM(successTime IS NOT NULL AND successTime &gt;= submitTime) AS successes,
+ SUM(failTime IS NOT NULL AND failTime &gt;= submitTime) AS failures,
+ SUM(stopTime IS NOT NULL AND stopTime &gt;= submitTime) AS stops
+ FROM (
+ SELECT visitor_id,session_id,operation_id,SUBSTRING_INDEX(event_name,'_',1) AS feature,
+ MIN(CASE WHEN event_name LIKE '%_submit' THEN occurred_at END) AS submitTime,
+ MIN(CASE WHEN event_name LIKE '%_success' THEN occurred_at END) AS successTime,
+ MIN(CASE WHEN event_name LIKE '%_fail' THEN occurred_at END) AS failTime,
+ MIN(CASE WHEN event_name='ai_stop' THEN occurred_at END) AS stopTime
+ FROM px_analytics_event <include refid="filter"/>
+ AND operation_id IS NOT NULL AND event_name IN ('search_submit','search_success','search_fail','comment_submit','comment_success','comment_fail','ai_submit','ai_success','ai_fail','ai_stop')
+ GROUP BY visitor_id,session_id,operation_id,SUBSTRING_INDEX(event_name,'_',1)
+ ) operations WHERE submitTime IS NOT NULL GROUP BY feature
  </select>
 </mapper>

@@ -37,6 +37,7 @@ public class PxAdminAnalyticsController extends BaseController {
     @GetMapping("/report")
     public AjaxResult report(@RequestParam Map<String,String> params) {
         Map<String,Object> q=query(params), result=new HashMap<>();
+        result.put("conversions",mapper.conversions(q));
         result.put("summary",mapper.summary(q)); result.put("pages",mapper.pages(q)); result.put("features",mapper.features(q));
         return AjaxResult.success(result);
     }

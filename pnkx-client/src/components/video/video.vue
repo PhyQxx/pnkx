@@ -14,8 +14,35 @@ import {
   useMessage
 } from "naive-ui";
 import vueDanmaku from 'vue3-danmaku';
+import { playbackThresholds, type AnalyticsEventName } from '@/utils/analytics'
 import type { Video } from '@/types/video'
 
+const { track } = useAnalytics()
+let playbackId = '', playbackStarted = false
+const videoDepth = new Set<number>()
+const videoOnce = new Set<string>()
+function trackVideo(name: AnalyticsEventName) {
+  if (!videoInfo.value?.id) return
+  playbackId ||= crypto.randomUUID()
+  track(name, { operationId: playbackId, targetId: String(videoInfo.value.id) })
+}
+function onVideoPlaying() {
+  if (!playbackStarted) { playbackStarted = true; trackVideo('video_start') }
+}
+function onVideoProgress(event: Event) {
+  const player = event.currentTarget as HTMLVideoElement
+  if (!playbackStarted || player.seeking || player.paused) return
+  for (const depth of playbackThresholds(player.currentTime, player.duration)) {
+    if (videoDepth.has(depth)) continue
+    videoDepth.add(depth)
+    trackVideo(`video_${depth}` as AnalyticsEventName)
+  }
+}
+function videoTerminal(name: 'video_complete' | 'video_error') {
+  if (videoOnce.has(name)) return
+  videoOnce.add(name)
+  trackVideo(name)
+}
 const route = useRoute();
 const id = +route.params.id
 definePageMeta({
@@ -28,6 +55,9 @@ const {video} = useApi();
 const {message} = useApi();
 // 当前播放
 const videoInfo = ref<Video>();
+watch(() => videoInfo.value?.id, () => {
+  playbackId = ''; playbackStarted = false; videoDepth.clear(); videoOnce.clear()
+}, { flush: 'sync' })
 watch(
     videoInfo,
     (value) => {
@@ -211,6 +241,7 @@ const timeFilter = (valueTime: string): string => {
 const handleSelectVideo = (videoItem: Video) => {
   loading.value = true;
   videoInfo.value = videoItem;
+  trackVideo('video_select')
   video.getVideo(Number(videoInfo.value?.id)).then(res => {
     videoInfo.value = res.data.value?.data;
     if (videoItem.visits) videoItem.visits++;
@@ -285,12 +316,16 @@ const copyLink = () => {
           <div class="relative m-auto bg-white" style="height: 60vh;">
             <video
                 ref="videoRef"
+                @playing="onVideoPlaying"
+                @timeupdate="onVideoProgress"
+                @ended="videoTerminal('video_complete')"
+                @error="videoTerminal('video_error')"
                 :key="videoInfo.url"
                 :poster="videoInfo.cover"
                 controls
                 style="border-radius: 0.5rem"
                 class="h-full w-full">
-              <source :src="videoInfo.url" type="video/mp4"/>
+              <source :src="videoInfo.url" type="video/mp4" @error="videoTerminal('video_error')"/>
             </video>
             <vue-danmaku
                 v-if="showMessage"

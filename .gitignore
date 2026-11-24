@@ -81,3 +81,6 @@ build/
 # 本地 AI 工具插件产物，不入库
 /pnkx-uniapp/.v2c/
 /pnkx-uniapp/.video_agent/
+
+# Version visitor analytics schema migrations with their implementation.
+!docs/analytics/*.sql

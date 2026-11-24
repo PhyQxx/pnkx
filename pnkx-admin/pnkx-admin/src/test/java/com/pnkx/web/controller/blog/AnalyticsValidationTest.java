@@ -19,4 +19,7 @@ class AnalyticsValidationTest {
     @Test void rejectsDurationOnClick() { var e=event();e.setDurationMs(1000L);assertThrows(ResponseStatusException.class,()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
     @Test void rejectsStaleEvent() { var e=event();e.setOccurredAt(0L);assertThrows(ResponseStatusException.class,()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
     @Test void rejectsMissingIdentity() { var e=event();e.setVisitorId(null);assertThrows(ResponseStatusException.class,()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
+    @Test void acceptsVideoTarget() { var e=event();e.setEventName("video_start");e.setTargetId("123");assertDoesNotThrow(()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
+    @Test void rejectsSensitiveTarget() { var e=event();e.setTargetId("email@example.com");assertThrows(ResponseStatusException.class,()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
+    @Test void acceptsReadingMilestone() { var e=event();e.setEventName("read_75");e.setPageKey("post_detail");assertDoesNotThrow(()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
 }

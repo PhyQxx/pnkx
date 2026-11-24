@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '@/utils/apiBase'
-import { analyticsPage, type AnalyticsTrack } from '@/utils/analytics'
+import { analyticsPage, readingThresholds, type AnalyticsEventName, type AnalyticsTrack } from '@/utils/analytics'
 
 export default defineNuxtPlugin((app) => {
   const config = useRuntimeConfig()
@@ -17,6 +17,7 @@ export default defineNuxtPlugin((app) => {
   let sessionId = (session && read(session, 'pnkx.analytics.session')) || id()
   let lastActivity = Number(session && read(session, 'pnkx.analytics.activity')) || 0
   let pageViewId = '', path = '', page = analyticsPage('/'), duration = 0
+  const readDepth = new Set<number>()
   let lastTick = Date.now(), lastInteraction = Date.now(), disposed = false
   let queue: Record<string, unknown>[] = [], sending = false
   let referrerHost: string | null = null
@@ -35,7 +36,7 @@ export default defineNuxtPlugin((app) => {
     const now = Date.now()
     if (now - lastActivity > 30 * 60 * 1000) {
       sessionId = id()
-      if (pageViewId) { pageViewId = id(); enqueue('page_view') }
+      if (pageViewId) { pageViewId = id(); readDepth.clear(); enqueue('page_view') }
     }
     lastActivity = now
     saveSession()
@@ -70,6 +71,7 @@ export default defineNuxtPlugin((app) => {
     tick(); reportDuration()
     pageViewId = ''
     ensureSession()
+    readDepth.clear()
     path = next; page = analyticsPage(next); pageViewId = id()
     lastTick = lastInteraction = Date.now()
     enqueue('page_view')
@@ -86,10 +88,22 @@ export default defineNuxtPlugin((app) => {
     }
     const before = queue.length
     enqueue(name, operationId)
+    if (options?.targetId && queue.length > before && /^[0-9]{1,20}$/.test(options.targetId)) queue[queue.length - 1].targetId = options.targetId
     if (operationId && queue.length > before) {
       const context = operations.get(operationId)
       if (context) Object.assign(queue[queue.length - 1], context)
       if (!name.endsWith('_submit')) operations.delete(operationId)
+    }
+  }
+  function measureReading() {
+    if (page.pageKey !== 'post_detail' || document.hidden) return
+    const article = document.querySelector('article.markdown-body')
+    if (!article) return
+    const bounds = article.getBoundingClientRect()
+    for (const depth of readingThresholds(bounds.top, bounds.height, window.innerHeight)) {
+      if (readDepth.has(depth)) continue
+      readDepth.add(depth)
+      track(`read_${depth}` as AnalyticsEventName)
     }
   }
   const interact = () => { ensureSession(); lastInteraction = Date.now() }
@@ -100,6 +114,7 @@ export default defineNuxtPlugin((app) => {
   app.hook('app:mounted', visit)
   const removeRoute = router.afterEach((_to, _from, failure) => { if (!failure) visit() })
   const tickTimer = setInterval(tick, 5000)
+  const readTimer = setInterval(measureReading, 1000)
   const sendTimer = setInterval(() => { reportDuration(); void flush() }, 15000)
   const activityEvents = ['pointerdown', 'keydown', 'scroll']
   activityEvents.forEach(name => window.addEventListener(name, interact, { passive: true }))
@@ -107,7 +122,7 @@ export default defineNuxtPlugin((app) => {
   window.addEventListener('pagehide', hide)
   window.addEventListener('pageshow', restore)
   if (import.meta.hot) import.meta.hot.dispose(() => {
-    disposed = true; clearInterval(tickTimer); clearInterval(sendTimer); removeRoute()
+    disposed = true; clearInterval(tickTimer); clearInterval(sendTimer); clearInterval(readTimer); removeRoute()
     activityEvents.forEach(name => window.removeEventListener(name, interact))
     document.removeEventListener('visibilitychange', hide)
     window.removeEventListener('pagehide', hide); window.removeEventListener('pageshow', restore)
