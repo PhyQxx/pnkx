@@ -1,46 +1,43 @@
 <script setup lang="ts">
-import loadingImgUrl from '@/assets/img/loading/loading.gif'
-import errorImgUrl from '@/assets/img/404/404.gif'
-
 interface Props {
   src: string
+  alt?: string
 }
-const props = defineProps<Props>()
-// const imageStore = useImageStore()
-const imgRef = ref<HTMLElement | null>(null)
-const imgSrc = ref(loadingImgUrl)
+const props = withDefaults(defineProps<Props>(), { alt: '' })
+const failed = ref(false)
+const attempt = ref(0)
 
-const loadingImage = () => {
-  const img = new Image()
-  img.src = props.src
-  img.onload = () => {
-    imgSrc.value = props.src
-  }
-  img.onerror = () => {
-    imgSrc.value = errorImgUrl
-  }
+watch(() => props.src, () => {
+  failed.value = false
+  attempt.value++
+}, { flush: 'sync' })
+
+function retry() {
+  failed.value = false
+  attempt.value++
 }
-
-onMounted(() => {
-  // 图片懒加载
-  const observer = new IntersectionObserver((arr) => {
-    if (arr[0].isIntersecting) {
-      // 进入可视区，加载图片
-      loadingImage()
-      imgRef.value && observer.unobserve(imgRef.value)
-    }
-  })
-
-  imgRef.value && observer.observe(imgRef.value)
-})
 </script>
 
 <template>
-  <div ref="imgRef" class="group h-full w-full">
+  <div class="group relative h-full w-full">
+    <!-- Native lazy loading avoids a separate preload Image request. -->
     <img
+      v-if="src && !failed"
+      :key="attempt"
       class="h-full w-full rounded-[inherit] object-cover transition-transform duration-500 group-hover:scale-110"
-      :src="imgSrc"
-      alt=""
+      :src="src"
+      :alt="alt"
+      loading="lazy"
+      decoding="async"
+      @error="failed = true"
     />
+    <div
+      v-else
+      class="flex h-full min-h-24 w-full flex-col items-center justify-center gap-2 rounded-[inherit] bg-zinc-100 text-sm text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+      role="status"
+    >
+      <span>{{ src ? '图片暂时无法加载' : '暂无图片' }}</span>
+      <button v-if="src" type="button" class="underline" @click.stop.prevent="retry">重新加载</button>
+    </div>
   </div>
 </template>
