@@ -33,6 +33,7 @@ function fetch<T>(url: UrlType, option: any) {
   const userStore = useUserStore()
   const { tokenPrefix, getToken, removeToken } = useToken()
   const route = useRoute()
+  const startedWithToken = !!getToken()
   async function fail(status: number, text?: string) {
     if (status === 401) {
       const hadToken = !!getToken()
@@ -43,6 +44,8 @@ function fetch<T>(url: UrlType, option: any) {
         if (route.path !== '/login') {
           await nuxtApp.runWithContext(() => navigateTo('/login'))
         }
+      } else if (!startedWithToken) {
+        notifyError(text || '请先登录后再试')
       }
     } else {
       notifyError(text || (({ 403: '没有权限访问该资源', 404: '服务器资源不存在', 500: '服务器内部错误' } as Record<number, string>)[status] ?? '请求失败，请稍后重试'))
@@ -68,7 +71,8 @@ function fetch<T>(url: UrlType, option: any) {
     async onResponseError({ response }) {
       await fail(response.status, response._data?.msg)
     },
-    onRequestError() {
+    onRequestError({ error }) {
+      if (error.name === 'AbortError') return
       notifyError('网络连接失败或请求超时，请稍后重试')
     },
     // 合并参数

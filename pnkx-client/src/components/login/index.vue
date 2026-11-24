@@ -19,6 +19,7 @@ const formLogin = reactive({userName: '', password: ''})
 const loading = ref(false)
 
 const handleLogin = () => {
+  if (loading.value) return
   if (!formLogin.userName) {
     message.warning('请输入邮箱号！')
     return
@@ -31,6 +32,7 @@ const handleLogin = () => {
 
   if (!formLogin.password) {
     message.warning('请输入密码！')
+    return
   }
 
   // 取消useFetch响应式参数自动发送请求
