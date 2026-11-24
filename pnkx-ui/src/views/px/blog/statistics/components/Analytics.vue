@@ -15,8 +15,8 @@
     <p v-if="feature || targetId" class="hint">当前指标仅包含筛选命中的事件，PV和停留可能为0；成功率需同一操作的提交和结果均命中筛选。</p>
     <div v-loading="loading">
       <div class="metrics"><div v-for="item in metrics" :key="item.label"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div></div>
-      <el-tabs>
-        <el-tab-pane label="每日趋势">
+
+        <section v-show="activeTab === 'trend'" aria-label="每日趋势">
           <p class="hint">北京时间每日PV与UV。每日UV不能相加作为区间UV；当前筛选同时作用于趋势与概览。</p>
           <div class="trend" aria-label="每日PV与UV柱状图">
             <div v-for="day in report.trend || []" :key="day.day" class="trend-day" :title="`${day.day} PV ${day.pv} / UV ${day.uv}`">
@@ -25,8 +25,8 @@
           </div>
           <p class="hint">蓝色：PV · 绿色：UV。精确数值见下表。</p>
           <el-table :data="report.trend || []"><el-table-column label="日期" prop="day" /><el-table-column label="PV" prop="pv" /><el-table-column label="UV" prop="uv" /><el-table-column label="活跃会话" prop="sessions" /></el-table>
-        </el-tab-pane>
-        <el-tab-pane label="数据维护">
+        </section>
+        <section v-show="activeTab === 'retention'" aria-label="数据维护">
           <p>明细保留90天。清理默认关闭，需由运维配置启用并在定时任务中调度 analyticsCleanupTask.run。此处只读预览，不执行删除。当前尚无长期汇总，清理后对应日期的趋势、轨迹和漏斗将不可查询。</p>
           <el-button :loading="retentionLoading" @click="loadRetention">查看清理预览</el-button>
           <el-alert v-if="retentionError" :title="retentionError" type="error" :closable="false" />
@@ -36,29 +36,29 @@
             <el-descriptions-item label="早于截止点的记录">{{ retention.expiredCount }}</el-descriptions-item>
             <el-descriptions-item label="单次最多删除">{{ retention.maxRowsPerRun }}</el-descriptions-item>
           </el-descriptions>
-        </el-tab-pane>
-        <el-tab-pane label="页面排行">
+        </section>
+        <section v-show="activeTab === 'pages'" aria-label="页面排行">
           <el-table :data="report.pages" empty-text="此范围暂无页面数据（最多展示前100项）">
             <el-table-column label="页面"><template #default="{row}">{{ pages[row.pageKey] || row.pageKey }}</template></el-table-column>
             <el-table-column label="正文到达底部次数" prop="reachedEnd" min-width="150" /><el-table-column label="内容标题" min-width="180"><template #default="{row}">{{ row.contentTitle || (row.contentId ? '内容已删除或无标题' : '—') }}</template></el-table-column><el-table-column label="内容ID" prop="contentId" /><el-table-column label="PV" prop="pv" /><el-table-column label="UV" prop="uv" />
             <el-table-column label="平均有效停留"><template #default="{row}">{{ row.pv ? Math.round(row.durationMs / row.pv / 1000) : 0 }} 秒</template></el-table-column>
           </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="功能事件">
+        </section>
+        <section v-show="activeTab === 'features'" aria-label="功能事件">
           <el-table :data="report.features" empty-text="此范围暂无功能事件">
             <el-table-column label="功能动作"><template #default="{row}">{{ events[row.eventName] || row.eventName }}</template></el-table-column>
             <el-table-column label="次数" prop="total" /><el-table-column label="使用人数" prop="uv" />
           </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="操作成功率">
+        </section>
+        <section v-show="activeTab === 'conversions'" aria-label="操作成功率">
           <p class="hint">同一访客、会话与操作 ID 关联提交和结果，仅统计窗口内提交。跨窗口结果与未完成操作会影响成功率；这不是多步骤访问漏斗。</p>
           <el-table :data="report.conversions || []" empty-text="暂无操作记录">
             <el-table-column label="功能"><template #default="{row}">{{ { register: '注册请求', activation: '账号激活', login: '登录', reply: '回复评论', search: '搜索', comment: '评论/留言', ai: 'AI助手' }[row.feature] || row.feature }}</template></el-table-column>
             <el-table-column label="提交次数" prop="attempts" /><el-table-column label="成功次数" prop="successes" /><el-table-column label="失败次数" prop="failures" /><el-table-column label="主动停止" prop="stops" />
             <el-table-column label="成功率"><template #default="{row}">{{ row.attempts ? (row.successes / row.attempts * 100).toFixed(1) : '0.0' }}%</template></el-table-column>
           </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="转化漏斗">
+        </section>
+        <section v-show="activeTab === 'funnels'" aria-label="转化漏斗">
           <p class="hint">按会话去重，步骤按时间顺序，结果关联同一次操作。沿用日期、页面、内容、访客和会话筛选；忽略功能及目标ID筛选。单次最多20000条相关事件，超限请缩小范围。历史搜索点击无操作ID时无法关联。</p>
           <el-button :loading="funnelLoading" @click="loadFunnels">按当前筛选计算漏斗</el-button>
           <el-alert v-if="funnelError" :title="funnelError" type="error" :closable="false" />
@@ -68,8 +68,8 @@
             <el-table-column label="总转化率"><template #default="{row}">{{ row.first ? (100*row.third/row.first).toFixed(1)+'%' : '—' }}</template></el-table-column>
             <el-table-column label="未完成会话"><template #default="{row}">{{ row.first-row.third }}</template></el-table-column>
           </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="访问轨迹">
+        </section>
+        <section v-show="activeTab === 'timeline'" aria-label="访问轨迹">
           <p class="hint">点击访客或会话可筛选轨迹。提交和结果通过操作 ID 关联；结果为客户端观测。</p>
           <el-table :data="rows" empty-text="此范围暂无轨迹">
             <el-table-column label="时间" prop="occurredAt" width="170" />
@@ -80,12 +80,13 @@
             <el-table-column label="目标内容ID" prop="targetId" /><el-table-column label="停留毫秒" prop="durationMs" /><el-table-column label="操作 ID" prop="operationId" min-width="160" show-overflow-tooltip />
           </el-table>
           <pagination v-show="total > 0" v-model:page="pageNum" v-model:limit="pageSize" :total="total" @pagination="load" />
-        </el-tab-pane>
-      </el-tabs>
+        </section>
+
     </div>
   </el-card>
 </template>
 <script setup>
+defineProps({ activeTab: { type: String, default: 'trend' } })
 import { computed, onMounted, ref, watch } from 'vue'
 import dayjs from 'dayjs'
 import { analyticsReport, analyticsEvents, analyticsFunnels, analyticsRetention } from '@/api/px/blog/analytics'

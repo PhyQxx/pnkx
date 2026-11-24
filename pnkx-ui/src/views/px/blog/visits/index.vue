@@ -1,7 +1,5 @@
 <template>
     <div class="app-container">
-        <Analytics v-if="showAnalytics" />
-        <el-button class="mb8" @click="showAnalytics = !showAnalytics">{{ showAnalytics ? "收起行为分析" : "查看页面与功能分析" }}</el-button>
         <el-form :inline="true" :model="queryParams" label-width="68px" ref="queryForm" v-show="showSearch">
             <el-form-item label="IP地址" prop="ip">
                 <el-input
@@ -121,15 +119,13 @@
 </template>
 
 <script>
-import Analytics from "./Analytics.vue";
 import {listVisits, delVisits, exportVisits} from "@/api/px/blog/visits";
 
 export default {
     name: "Visits",
-    components: { Analytics },
+    components: {},
     data() {
         return {
-            showAnalytics: false,
             // 遮罩层
             loading: true,
             // 选中数组
