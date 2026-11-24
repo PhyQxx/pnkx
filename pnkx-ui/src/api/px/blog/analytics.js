@@ -3,3 +3,5 @@ export const analyticsReport = params => request({ url: '/admin/analytics/report
 export const analyticsEvents = params => request({ url: '/admin/analytics/events', method: 'get', params })
 
 export const analyticsFunnels = params => request({ url: '/admin/analytics/funnels', method: 'get', params })
+
+export const analyticsRetention = () => request({ url: '/admin/analytics/retention', method: 'get' })

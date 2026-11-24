@@ -63,4 +63,17 @@
  AND event_name IN ('search_submit','search_success','search_click','read_50','comment_submit','comment_success','ai_open','ai_submit','ai_success')
  ORDER BY occurred_at,id LIMIT 20001
  </select>
+ <select id="trend" resultType="map">
+ SELECT DATE_FORMAT(occurred_at,'%Y-%m-%d') AS day,
+ SUM(event_name='page_view') AS pv,COUNT(DISTINCT visitor_id) AS uv,
+ COUNT(DISTINCT session_id) AS sessions
+ FROM px_analytics_event <include refid="filter"/>
+ GROUP BY DATE_FORMAT(occurred_at,'%Y-%m-%d') ORDER BY day
+ </select>
+ <select id="countExpired" resultType="long">
+ SELECT COUNT(*) FROM px_analytics_event WHERE occurred_at &lt; #{cutoff}
+ </select>
+ <delete id="deleteExpired">
+ DELETE FROM px_analytics_event WHERE occurred_at &lt; #{cutoff} ORDER BY occurred_at,id LIMIT 1000
+ </delete>
 </mapper>

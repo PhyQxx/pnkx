@@ -16,6 +16,27 @@
     <div v-loading="loading">
       <div class="metrics"><div v-for="item in metrics" :key="item.label"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div></div>
       <el-tabs>
+        <el-tab-pane label="每日趋势">
+          <p class="hint">北京时间每日PV与UV。每日UV不能相加作为区间UV；当前筛选同时作用于趋势与概览。</p>
+          <div class="trend" aria-label="每日PV与UV柱状图">
+            <div v-for="day in report.trend || []" :key="day.day" class="trend-day" :title="`${day.day} PV ${day.pv} / UV ${day.uv}`">
+              <div class="trend-bars"><i :style="{height: `${100 * day.pv / trendMax}%`}" /><i :style="{height: `${100 * day.uv / trendMax}%`}" /></div><span>{{ day.day.slice(5) }}</span>
+            </div>
+          </div>
+          <p class="hint">蓝色：PV · 绿色：UV。精确数值见下表。</p>
+          <el-table :data="report.trend || []"><el-table-column label="日期" prop="day" /><el-table-column label="PV" prop="pv" /><el-table-column label="UV" prop="uv" /><el-table-column label="活跃会话" prop="sessions" /></el-table>
+        </el-tab-pane>
+        <el-tab-pane label="数据维护">
+          <p>明细保留90天。清理默认关闭，需由运维配置启用并在定时任务中调度 analyticsCleanupTask.run。此处只读预览，不执行删除。当前尚无长期汇总，清理后对应日期的趋势、轨迹和漏斗将不可查询。</p>
+          <el-button :loading="retentionLoading" @click="loadRetention">查看清理预览</el-button>
+          <el-alert v-if="retentionError" :title="retentionError" type="error" :closable="false" />
+          <el-descriptions v-if="retention" :column="1" border>
+            <el-descriptions-item label="清理开关">{{ retention.enabled ? '已启用（实际执行还需调度）' : '已关闭' }}</el-descriptions-item>
+            <el-descriptions-item label="北京时间截止点">{{ retention.cutoff }}</el-descriptions-item>
+            <el-descriptions-item label="早于截止点的记录">{{ retention.expiredCount }}</el-descriptions-item>
+            <el-descriptions-item label="单次最多删除">{{ retention.maxRowsPerRun }}</el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
         <el-tab-pane label="页面排行">
           <el-table :data="report.pages" empty-text="此范围暂无页面数据（最多展示前100项）">
             <el-table-column label="页面"><template #default="{row}">{{ pages[row.pageKey] || row.pageKey }}</template></el-table-column>
@@ -67,7 +88,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import dayjs from 'dayjs'
-import { analyticsReport, analyticsEvents, analyticsFunnels } from '@/api/px/blog/analytics'
+import { analyticsReport, analyticsEvents, analyticsFunnels, analyticsRetention } from '@/api/px/blog/analytics'
 const shanghaiToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(new Date())
 const defaults = () => [dayjs(shanghaiToday()).subtract(6, 'day').format('YYYY-MM-DD'), shanghaiToday()]
 const dates = ref(defaults()), pageKey = ref(''), visitorId = ref(''), sessionId = ref('')
@@ -89,6 +110,14 @@ async function loadFunnels() {
     if(version===funnelVersion) funnels.value=result.data
   } catch { if(version===funnelVersion) funnelError.value='漏斗计算失败，请检查权限或缩小日期/页面范围（最多20000条相关事件）。' }
   finally { if(version===funnelVersion) funnelLoading.value=false }
+}
+const trendMax = computed(() => Math.max(1,...(report.value.trend || []).flatMap(row=>[Number(row.pv),Number(row.uv)])))
+const retention = ref(null), retentionLoading = ref(false), retentionError = ref('')
+async function loadRetention() {
+  retentionLoading.value=true; retentionError.value=''
+  try { retention.value=(await analyticsRetention()).data }
+  catch { retention.value=null; retentionError.value='清理预览加载失败，请检查权限和数据库。' }
+  finally { retentionLoading.value=false }
 }
 let version = 0
 async function load() {
@@ -114,6 +143,11 @@ function filterSession(row) { visitorId.value = row.visitorId; sessionId.value =
 onMounted(load)
 </script>
 <style scoped>
+.trend { display:flex; overflow-x:auto; gap:8px; padding:16px 0; }
+.trend-day { flex:1; min-width:42px; font-size:11px; text-align:center; }
+.trend-bars { height:140px; display:flex; align-items:flex-end; justify-content:center; gap:3px; }
+.trend-bars i { display:block; width:12px; background:var(--el-color-primary); }
+.trend-bars i + i { background:var(--el-color-success); }
 .analytics-panel { margin-bottom: 24px; }
 .hint { color: var(--el-text-color-secondary); font-size: 12px; margin-left: 12px; }
 .metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; margin: 20px 0; }

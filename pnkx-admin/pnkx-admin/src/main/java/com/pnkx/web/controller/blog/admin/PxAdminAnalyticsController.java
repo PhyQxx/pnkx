@@ -18,6 +18,7 @@ import java.util.*;
 @PreAuthorize("@ss.hasPermi('admin:visits:list')")
 public class PxAdminAnalyticsController extends BaseController {
     @Resource private PxAnalyticsMapper mapper;
+    @Resource private com.pnkx.blog.service.AnalyticsRetention retention;
     private Map<String,Object> query(Map<String,String> params) {
         try {
             LocalDate today=LocalDate.now(ZoneId.of("Asia/Shanghai"));
@@ -36,9 +37,17 @@ public class PxAdminAnalyticsController extends BaseController {
             return q;
         } catch (RuntimeException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid filters; date range maximum 31 days"); }
     }
+    @GetMapping("/retention")
+    public AjaxResult retention() { return AjaxResult.success(retention.preview()); }
     @GetMapping("/report")
     public AjaxResult report(@RequestParam Map<String,String> params) {
         Map<String,Object> q=query(params), result=new HashMap<>();
+        Map<String,Map<String,Object>> days=new HashMap<>();
+        for(var row:mapper.trend(q)) days.put(String.valueOf(row.get("day")),row);
+        List<Map<String,Object>> trend=new ArrayList<>();
+        LocalDate first=((LocalDateTime)q.get("start")).toLocalDate(), end=((LocalDateTime)q.get("end")).toLocalDate();
+        for(LocalDate d=first;d.isBefore(end);d=d.plusDays(1)) trend.add(days.getOrDefault(d.toString(),Map.of("day",d.toString(),"pv",0,"uv",0,"sessions",0)));
+        result.put("trend",trend);
         result.put("conversions",mapper.conversions(q));
         result.put("summary",mapper.summary(q)); result.put("pages",mapper.pages(q)); result.put("features",mapper.features(q));
         return AjaxResult.success(result);
