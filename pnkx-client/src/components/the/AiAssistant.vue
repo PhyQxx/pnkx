@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { NButton, NInput, NSpin, useMessage } from 'naive-ui'
+import { createSseParser } from '@/utils/sse'
 import { API_BASE_URL } from '@/utils/apiBase'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   pending?: boolean
+  notice?: string
 }
 
 const { getToken, tokenPrefix } = useToken()
@@ -23,6 +25,9 @@ const inputText = ref('')
 const messages = ref<ChatMessage[]>([])
 // 是否正在等待响应
 const loading = ref(false)
+let activeController: AbortController | undefined
+function stopGeneration() { activeController?.abort() }
+onBeforeUnmount(stopGeneration)
 // 滚动容器引用
 const scrollBody = ref<HTMLElement | null>(null)
 
@@ -93,12 +98,23 @@ async function handleSend() {
     .slice(-7, -1)
     .map(m => ({ role: m.role, content: m.content }))
 
+  const controller = new AbortController()
+  activeController = controller
+  let timedOut = false
+  let timer: ReturnType<typeof setTimeout>
+  const resetTimeout = () => {
+    clearTimeout(timer)
+    timer = setTimeout(() => { timedOut = true; controller.abort() }, 60000)
+  }
+  resetTimeout()
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
   try {
     const endpoint = isLoggedIn.value ? '/ai/chat/stream' : '/client/ai/chat/stream'
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (isLoggedIn.value) headers.Authorization = tokenPrefix + getToken()
     const res = await fetch(`${baseURL}${endpoint}`, {
       method: 'POST',
+      signal: controller.signal,
       headers,
       body: JSON.stringify({ question, messages: history })
     })
@@ -107,47 +123,39 @@ async function handleSend() {
       throw new Error(`请求失败（${res.status}）`)
     }
 
-    const reader = res.body.getReader()
+    reader = res.body.getReader()
     const decoder = new TextDecoder('utf-8')
-    let buffer = ''
     let done = false
-
-    assistantMsg.pending = false
-
+    const parse = createSseParser((text) => {
+      if (done) return
+      if (text === '[DONE]') { done = true; return }
+      assistantMsg.pending = false
+      assistantMsg.content += text
+      scrollToBottom()
+    })
     while (!done) {
-      const { done: readerDone, value } = await reader.read()
-      if (readerDone) break
-      buffer += decoder.decode(value, { stream: true })
-
-      // SSE 事件以空行分隔
-      const events = buffer.split('\n\n')
-      buffer = events.pop() || ''
-
-      for (const evt of events) {
-        // 一个事件可能含多行 data:，按 SSE 规范用 \n 连接
-        const dataLines: string[] = []
-        for (const line of evt.split('\n')) {
-          if (line.startsWith('data:')) {
-            dataLines.push(line.slice(5))
-          }
-        }
-        if (dataLines.length === 0) continue
-        const text = dataLines.join('\n')
-        if (text === '[DONE]') {
-          done = true
-          break
-        }
-        assistantMsg.content += text
-        scrollToBottom()
+      const chunk = await reader.read()
+      if (chunk.done) {
+        parse(decoder.decode())
+        break
       }
+      resetTimeout()
+      parse(decoder.decode(chunk.value, { stream: true }))
     }
+    if (!done) assistantMsg.notice = '连接已结束，回复可能不完整，请重新提问。'
   } catch (e: any) {
-    assistantMsg.pending = false
-    assistantMsg.content = '抱歉，出错了：' + (e?.message || '网络异常，请稍后重试')
+    assistantMsg.notice = controller.signal.aborted
+      ? (timedOut ? '响应超时，已停止生成，请稍后重试。' : '已停止生成')
+      : '回复中断：' + (e?.message || '网络异常，请稍后重试')
     if (String(e?.message || '').includes('401')) {
       message.warning('登录已过期，请重新登录')
     }
   } finally {
+    clearTimeout(timer!)
+    await reader?.cancel().catch(() => {})
+    reader?.releaseLock()
+    activeController = undefined
+    assistantMsg.pending = false
     loading.value = false
     scrollToBottom()
   }
@@ -157,6 +165,7 @@ async function handleSend() {
  * 清空对话
  */
 function handleClear() {
+  stopGeneration()
   messages.value = []
 }
 
@@ -164,7 +173,7 @@ function handleClear() {
  * 输入框回车发送（Shift+Enter 换行）
  */
 function handleEnter(e: KeyboardEvent) {
-  if (e.shiftKey) return
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return
   e.preventDefault()
   handleSend()
 }
@@ -252,6 +261,7 @@ function handleEnter(e: KeyboardEvent) {
                 class="markdown-body !text-sm"
                 v-html="renderMarkdown(msg.content)"
               />
+              <p v-if="msg.notice" class="mt-2 text-xs text-gray-500" role="status">{{ msg.notice }}</p>
             </template>
           </div>
         </div>
@@ -268,7 +278,9 @@ function handleEnter(e: KeyboardEvent) {
             :disabled="loading"
             @keydown="handleEnter"
           />
+          <NButton v-if="loading" @click="stopGeneration">停止</NButton>
           <NButton
+            v-else
             circle
             type="primary"
             :loading="loading"

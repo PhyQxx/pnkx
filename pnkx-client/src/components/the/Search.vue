@@ -9,26 +9,22 @@ const articleList = ref<SearchArticle[]>([])
 
 const { $markdownItSearch } = useNuxtApp()
 
-// 防抖
-watchDebounced(
-  keyword,
-  async (value) => {
-    if (value.trim() === '') {
-      articleList.value = []
-    } else {
-      const { article } = useApi()
-      const { data } = await article.getArticleList({
-        searchValue: value.trim(),
-        pageNum: 1,
-        pageSize: 5
-      })
-      if (data.value?.rows) {
-        articleList.value = data.value?.rows
-      }
-    }
-  },
-  { debounce: 500 }
-)
+const { article } = useApi()
+// Invalidate immediately, including during the debounce window and modal close.
+let searchVersion = 0
+watch([keyword, () => searchStore.showModal], () => {
+  searchVersion++
+  articleList.value = []
+}, { flush: 'sync' })
+onBeforeUnmount(() => { searchVersion++ })
+watchDebounced(keyword, async (value) => {
+  if (!value.trim() || !searchStore.showModal) return
+  const version = searchVersion
+  const { data } = await article.getArticleList({
+    searchValue: value.trim(), pageNum: 1, pageSize: 5
+  })
+  if (version === searchVersion) articleList.value = data.value?.rows ?? []
+}, { debounce: 500 })
 
 const onClose = () => {
   keyword.value = ''
