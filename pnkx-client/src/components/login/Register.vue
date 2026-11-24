@@ -14,6 +14,7 @@ const emit = defineEmits<{
   (e: 'toggle', type: string): void
 }>()
 
+const { track } = useAnalytics()
 const message = useMessage()
 const fromRegister = reactive({userName: '', password: ''})
 
@@ -21,6 +22,7 @@ const {user} = useApi()
 // 登录加载标志
 const loading = ref(false)
 const handleRegister = async () => {
+  if (loading.value) return
   const reg = /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
   if (!fromRegister.userName.trim()) {
     message.warning('请输入邮箱号！')
@@ -47,13 +49,20 @@ const handleRegister = async () => {
       message.warning('请输入密码！')
       return
     }
+    const operationId = crypto.randomUUID()
+    track('register_submit', { operationId })
     const params = Object.assign({}, fromRegister)
     loading.value = true
     loadingBar.start()
     user.register(params).then(res => {
       if (res.data.value?.data) {
+        track('register_success', { operationId })
         message.success('注册成功，激活邮件已发送至您的邮箱！')
+      } else {
+        track('register_fail', { operationId })
       }
+    }).catch(() => {
+      track('register_fail', { operationId })
     }).finally(() => {
       loading.value = false
       loadingBar.finish();

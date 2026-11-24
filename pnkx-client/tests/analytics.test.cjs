@@ -85,3 +85,12 @@ test('login and reply results stay linked to their initiating operation',async()
   assert.equal('password' in outcome,false);assert.equal('content' in outcome,false)
  }
 })
+test('activation before app mounted gets page context without duplicate PV',async()=>{
+ const h=harness(), operationId=crypto.randomUUID()
+ h.track('activation_submit',{operationId});await drain()
+ h.hooks['app:mounted']();h.track('activation_success',{operationId})
+ h.timers.find(t=>t.ms===15000).fn();await drain()
+ const all=h.requests.flat()
+ assert.equal(all.filter(e=>e.eventName==='page_view').length,1)
+ assert.equal(all.find(e=>e.eventName==='activation_submit').pageViewId,all.find(e=>e.eventName==='activation_success').pageViewId)
+})

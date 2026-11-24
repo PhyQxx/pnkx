@@ -26,9 +26,11 @@ public class PxAdminAnalyticsController extends BaseController {
             if (!end.isAfter(start) || end.isAfter(start.plusDays(31))) throw new IllegalArgumentException();
             Map<String,Object> q=new HashMap<>();
             q.put("start",start.atStartOfDay()); q.put("end",end.atStartOfDay());
-            for (String key: List.of("pageKey","visitorId","sessionId")) {
+            for (String key: List.of("pageKey","visitorId","sessionId","contentId","targetId","feature")) {
                 String value=params.get(key);
                 if (value != null && value.length()>40) throw new IllegalArgumentException();
+                if ((key.equals("contentId") || key.equals("targetId")) && value != null && !value.isEmpty() && !value.matches("[0-9]{1,20}")) throw new IllegalArgumentException();
+                if (key.equals("feature") && value != null && !value.isEmpty() && !Set.of("search","comment","reply","ai","login","register","activation","video","read").contains(value)) throw new IllegalArgumentException();
                 q.put(key,value);
             }
             return q;

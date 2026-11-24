@@ -11,6 +11,9 @@
  <if test="pageKey != null and pageKey != ''">AND page_key=#{pageKey}</if>
  <if test="visitorId != null and visitorId != ''">AND visitor_id=#{visitorId}</if>
  <if test="sessionId != null and sessionId != ''">AND session_id=#{sessionId}</if>
+ <if test="contentId != null and contentId != ''">AND content_id=#{contentId}</if>
+ <if test="targetId != null and targetId != ''">AND target_id=#{targetId}</if>
+ <if test="feature != null and feature != ''">AND SUBSTRING_INDEX(event_name,'_',1)=#{feature}</if>
  </sql>
  <select id="summary" resultType="map">
  SELECT COALESCE(SUM(event_name='page_view'),0) AS pv, COUNT(DISTINCT visitor_id) AS uv,
@@ -18,7 +21,9 @@
  FROM px_analytics_event <include refid="filter"/>
  </select>
  <select id="pages" resultType="map">
- SELECT page_key AS pageKey,content_id AS contentId, SUM(event_name='page_view') AS pv,
+ SELECT page_key AS pageKey,content_id AS contentId,
+ CASE WHEN page_key='post_detail' THEN (SELECT a.title FROM px_article a WHERE a.id=content_id)
+ WHEN page_key='video_detail' THEN (SELECT v.title FROM px_video v WHERE v.id=content_id) ELSE NULL END AS contentTitle, SUM(event_name='page_view') AS pv,
  COUNT(DISTINCT visitor_id) AS uv, SUM(duration_ms) AS durationMs, COUNT(DISTINCT CASE WHEN event_name='read_100' THEN page_view_id END) AS reachedEnd
  FROM px_analytics_event <include refid="filter"/>
  GROUP BY page_key,content_id ORDER BY pv DESC LIMIT 100
@@ -46,7 +51,7 @@
  MIN(CASE WHEN event_name LIKE '%_fail' THEN occurred_at END) AS failTime,
  MIN(CASE WHEN event_name='ai_stop' THEN occurred_at END) AS stopTime
  FROM px_analytics_event <include refid="filter"/>
- AND operation_id IS NOT NULL AND event_name IN ('login_submit','login_success','login_fail','reply_submit','reply_success','reply_fail','search_submit','search_success','search_fail','comment_submit','comment_success','comment_fail','ai_submit','ai_success','ai_fail','ai_stop')
+ AND operation_id IS NOT NULL AND event_name IN ('register_submit','register_success','register_fail','activation_submit','activation_success','activation_fail','login_submit','login_success','login_fail','reply_submit','reply_success','reply_fail','search_submit','search_success','search_fail','comment_submit','comment_success','comment_fail','ai_submit','ai_success','ai_fail','ai_stop')
  GROUP BY visitor_id,session_id,operation_id,SUBSTRING_INDEX(event_name,'_',1)
  ) operations WHERE submitTime IS NOT NULL GROUP BY feature
  </select>

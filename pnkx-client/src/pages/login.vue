@@ -2,6 +2,7 @@
 import {useMessage, useDialog, useLoadingBar} from "naive-ui";
 
 const {user} = useApi()
+const { track } = useAnalytics()
 const message = useMessage()
 const dialog = useDialog()
 const loadingBar = useLoadingBar();
@@ -19,15 +20,21 @@ const route = useRoute();
 const activationUserName: any = route.query.activationUserName
 const activationToken: any = route.query.activationToken
 
-if (activationUserName) {
+onMounted(() => {
+if (typeof activationUserName === 'string' && typeof activationToken === 'string') {
+  const operationId = crypto.randomUUID()
+  track('activation_submit', { operationId })
   user.activation(activationUserName, activationToken).then(res => {
     if (res.data.value?.data) {
+      track('activation_success', { operationId })
       message.success('激活成功，请登录！')
     } else {
+      track('activation_fail', { operationId })
       message.error('激活链接无效或已过期！')
     }
-  })
+  }).catch(() => { track('activation_fail', { operationId }) })
 }
+})
 
 // 获取重置账号
 const restUserName: any = route.query.restUserName

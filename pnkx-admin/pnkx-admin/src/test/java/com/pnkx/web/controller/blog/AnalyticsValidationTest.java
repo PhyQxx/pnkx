@@ -23,7 +23,7 @@ class AnalyticsValidationTest {
     @Test void rejectsSensitiveTarget() { var e=event();e.setTargetId("email@example.com");assertThrows(ResponseStatusException.class,()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
     @Test void acceptsReadingMilestone() { var e=event();e.setEventName("read_75");e.setPageKey("post_detail");assertDoesNotThrow(()->PxClientAnalyticsController.validate(e,System.currentTimeMillis())); }
     @Test void acceptsLoginAndReplyOutcomes() {
-        for (String name : new String[]{"login_submit","login_success","login_fail","reply_submit","reply_success","reply_fail"}) {
+        for (String name : new String[]{"register_submit","register_success","register_fail","activation_submit","activation_success","activation_fail","login_submit","login_success","login_fail","reply_submit","reply_success","reply_fail"}) {
             var e=event();e.setEventName(name);
             assertDoesNotThrow(()->PxClientAnalyticsController.validate(e,System.currentTimeMillis()));
         }

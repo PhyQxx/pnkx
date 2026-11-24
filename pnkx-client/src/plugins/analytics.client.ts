@@ -80,6 +80,7 @@ export default defineNuxtPlugin((app) => {
   // Attribute async results to the page where the operation started.
   const operations = new Map<string, { pageViewId: string; sessionId: string; pageKey: string; contentId: string | null }>()
   const track: AnalyticsTrack = (name, options) => {
+    if (!pageViewId) visit()
     ensureSession()
     const operationId = options?.operationId
     if (operationId && name.endsWith('_submit')) {

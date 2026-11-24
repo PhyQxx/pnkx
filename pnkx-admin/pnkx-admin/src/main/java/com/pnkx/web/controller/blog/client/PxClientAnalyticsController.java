@@ -20,7 +20,7 @@ import java.util.*;
 public class PxClientAnalyticsController {
     @Resource private PxAnalyticsMapper mapper;
     @Resource private ToolboxRateLimiter limiter;
-    private static final Set<String> EVENTS = Set.of("login_submit","login_success","login_fail","reply_submit","reply_success","reply_fail","read_25","read_50","read_75","read_100","video_select","video_start","video_25","video_50","video_75","video_complete","video_error","page_view","page_duration","search_open","search_submit","search_success","search_fail","search_click","comment_submit","comment_success","comment_fail","ai_open","ai_submit","ai_success","ai_fail","ai_stop");
+    private static final Set<String> EVENTS = Set.of("register_submit","register_success","register_fail","activation_submit","activation_success","activation_fail","login_submit","login_success","login_fail","reply_submit","reply_success","reply_fail","read_25","read_50","read_75","read_100","video_select","video_start","video_25","video_50","video_75","video_complete","video_error","page_view","page_duration","search_open","search_submit","search_success","search_fail","search_click","comment_submit","comment_success","comment_fail","ai_open","ai_submit","ai_success","ai_fail","ai_stop");
     private static final Set<String> PAGES = Set.of("home","post_detail","category","category_detail","archives","video","video_detail","album","message","link","share","login","user","other");
     private static boolean uuid(String s) { return s != null && s.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"); }
     public static void validate(PxAnalyticsEvent e, long now) {
