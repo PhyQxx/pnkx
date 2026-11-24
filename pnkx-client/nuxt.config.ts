@@ -3,7 +3,7 @@
 export default defineNuxtConfig({
   srcDir: 'src',
   runtimeConfig: {
-    public: { analyticsEnabled: process.env.NODE_ENV === 'production' }
+    public: { analyticsEnabled: process.env.NUXT_PUBLIC_ANALYTICS_ENABLED ?? (process.env.NODE_ENV === 'production') }
   },
   app: {
     head: {
