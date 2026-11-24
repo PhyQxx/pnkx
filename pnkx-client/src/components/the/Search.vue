@@ -14,7 +14,9 @@ const { $markdownItSearch } = useNuxtApp()
 const { article } = useApi()
 // Invalidate immediately, including during the debounce window and modal close.
 let searchVersion = 0
+let resultOperationId: string | undefined
 watch([keyword, () => searchStore.showModal], () => {
+  resultOperationId = undefined
   searchVersion++
   articleList.value = []
 }, { flush: 'sync' })
@@ -28,7 +30,10 @@ watchDebounced(keyword, async (value) => {
   const { data, error } = await article.getArticleList({
     searchValue: value.trim(), pageNum: 1, pageSize: 5
   })
-  if (version === searchVersion) articleList.value = data.value?.rows ?? []
+  if (version === searchVersion) {
+    articleList.value = data.value?.rows ?? []
+    resultOperationId = error.value ? undefined : operationId
+  }
   track(error.value ? 'search_fail' : 'search_success', { operationId })
   } catch { track('search_fail', { operationId }) }
 }, { debounce: 500 })
@@ -39,7 +44,7 @@ const onClose = () => {
 }
 
 const gotoArticle = (id: number) => {
-  track('search_click')
+  track('search_click', { operationId: resultOperationId, targetId: String(id) })
   searchStore.setModal(false)
   router.push(`/post/${id}`)
 }

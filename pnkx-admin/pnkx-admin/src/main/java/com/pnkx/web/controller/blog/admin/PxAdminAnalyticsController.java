@@ -43,6 +43,15 @@ public class PxAdminAnalyticsController extends BaseController {
         result.put("summary",mapper.summary(q)); result.put("pages",mapper.pages(q)); result.put("features",mapper.features(q));
         return AjaxResult.success(result);
     }
+    @GetMapping("/funnels")
+    public AjaxResult funnels(@RequestParam Map<String,String> params) {
+        Map<String,Object> q=query(params);
+        // A feature/target filter would remove necessary prerequisite steps.
+        q.put("feature",null); q.put("targetId",null);
+        var rows=mapper.funnelEvents(q);
+        if(rows.size()>20000) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"漏斗事件超过20000条，请缩小日期或页面范围");
+        return AjaxResult.success(com.pnkx.blog.service.AnalyticsFunnels.calculate(rows));
+    }
     @GetMapping("/events")
     public TableDataInfo events(@RequestParam Map<String,String> params, @RequestParam(defaultValue="1") int pageNum, @RequestParam(defaultValue="20") int pageSize) {
         Map<String,Object> q=query(params);

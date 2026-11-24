@@ -55,4 +55,12 @@
  GROUP BY visitor_id,session_id,operation_id,SUBSTRING_INDEX(event_name,'_',1)
  ) operations WHERE submitTime IS NOT NULL GROUP BY feature
  </select>
+ <select id="funnelEvents" resultType="map">
+ SELECT visitor_id AS visitorId,session_id AS sessionId,page_view_id AS pageViewId,
+ operation_id AS operationId,event_name AS eventName,page_key AS pageKey,
+ DATE_FORMAT(occurred_at,'%Y-%m-%d %H:%i:%s.%f') AS time
+ FROM px_analytics_event <include refid="filter"/>
+ AND event_name IN ('search_submit','search_success','search_click','read_50','comment_submit','comment_success','ai_open','ai_submit','ai_success')
+ ORDER BY occurred_at,id LIMIT 20001
+ </select>
 </mapper>

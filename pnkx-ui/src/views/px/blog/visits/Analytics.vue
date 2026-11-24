@@ -37,6 +37,17 @@
             <el-table-column label="成功率"><template #default="{row}">{{ row.attempts ? (row.successes / row.attempts * 100).toFixed(1) : '0.0' }}%</template></el-table-column>
           </el-table>
         </el-tab-pane>
+        <el-tab-pane label="转化漏斗">
+          <p class="hint">按会话去重，步骤按时间顺序，结果关联同一次操作。沿用日期、页面、内容、访客和会话筛选；忽略功能及目标ID筛选。单次最多20000条相关事件，超限请缩小范围。历史搜索点击无操作ID时无法关联。</p>
+          <el-button :loading="funnelLoading" @click="loadFunnels">按当前筛选计算漏斗</el-button>
+          <el-alert v-if="funnelError" :title="funnelError" type="error" :closable="false" />
+          <el-table :data="funnels" empty-text="点击计算以获取当前筛选结果">
+            <el-table-column label="漏斗步骤" min-width="320"><template #default="{row}">{{ {search:'搜索提交 → 搜索成功 → 点击结果',article:'正文到达50% → 提交评论 → 评论成功',ai:'打开AI → 发送问题 → 回答完成'}[row.funnel] }}</template></el-table-column>
+            <el-table-column label="第一步会话" prop="first" /><el-table-column label="第二步会话" prop="second" /><el-table-column label="第三步会话" prop="third" />
+            <el-table-column label="总转化率"><template #default="{row}">{{ row.first ? (100*row.third/row.first).toFixed(1)+'%' : '—' }}</template></el-table-column>
+            <el-table-column label="未完成会话"><template #default="{row}">{{ row.first-row.third }}</template></el-table-column>
+          </el-table>
+        </el-tab-pane>
         <el-tab-pane label="访问轨迹">
           <p class="hint">点击访客或会话可筛选轨迹。提交和结果通过操作 ID 关联；结果为客户端观测。</p>
           <el-table :data="rows" empty-text="此范围暂无轨迹">
@@ -54,9 +65,9 @@
   </el-card>
 </template>
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import dayjs from 'dayjs'
-import { analyticsReport, analyticsEvents } from '@/api/px/blog/analytics'
+import { analyticsReport, analyticsEvents, analyticsFunnels } from '@/api/px/blog/analytics'
 const shanghaiToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(new Date())
 const defaults = () => [dayjs(shanghaiToday()).subtract(6, 'day').format('YYYY-MM-DD'), shanghaiToday()]
 const dates = ref(defaults()), pageKey = ref(''), visitorId = ref(''), sessionId = ref('')
@@ -67,6 +78,18 @@ const featureNames = {search:'搜索',comment:'评论',reply:'回复',ai:'AI助�
 const contentId = ref(''), targetId = ref(''), feature = ref('')
 const events = { register_submit: '注册提交', register_success: '注册请求成功', register_fail: '注册失败', activation_submit: '激活提交', activation_success: '账号激活成功', activation_fail: '激活失败', login_submit: '登录提交', login_success: '登录成功', login_fail: '登录失败', reply_submit: '回复提交', reply_success: '回复成功', reply_fail: '回复失败', read_25: '正文位置25%', read_50: '正文位置50%', read_75: '正文位置75%', read_100: '正文到达底部', video_select: '选择视频', video_start: '视频开始播放', video_25: '播放位置25%', video_50: '播放位置50%', video_75: '播放位置75%', video_complete: '视频播放结束', video_error: '视频播放失败', page_view: '页面访问', page_duration: '有效停留', search_open: '打开搜索', search_submit: '搜索请求', search_success: '搜索成功', search_fail: '搜索失败', search_click: '点击搜索结果', comment_submit: '评论/留言提交', comment_success: '评论/留言成功', comment_fail: '评论/留言失败', ai_open: '打开AI', ai_submit: 'AI发送', ai_success: 'AI完成', ai_fail: 'AI失败', ai_stop: 'AI主动停止' }
 const metrics = computed(() => [{ label: '浏览量 PV', value: report.value.summary.pv || 0 }, { label: '访客 UV', value: report.value.summary.uv || 0 }, { label: '活跃会话', value: report.value.summary.sessions || 0 }, { label: '有效停留（分钟）', value: Math.round((report.value.summary.durationMs || 0) / 60000) }])
+const funnels = ref([]), funnelLoading = ref(false), funnelError = ref('')
+let funnelVersion = 0
+watch([dates,pageKey,contentId,visitorId,sessionId], () => { funnelVersion++; funnels.value=[]; funnelError.value=''; funnelLoading.value=false }, {deep:true})
+async function loadFunnels() {
+  const version=++funnelVersion
+  funnelLoading.value=true; funnelError.value=''; funnels.value=[]
+  try {
+    const result=await analyticsFunnels({startDate:dates.value?.[0],endDate:dates.value?.[1],pageKey:pageKey.value,contentId:contentId.value,visitorId:visitorId.value,sessionId:sessionId.value})
+    if(version===funnelVersion) funnels.value=result.data
+  } catch { if(version===funnelVersion) funnelError.value='漏斗计算失败，请检查权限或缩小日期/页面范围（最多20000条相关事件）。' }
+  finally { if(version===funnelVersion) funnelLoading.value=false }
+}
 let version = 0
 async function load() {
   const current = ++version
